@@ -4,11 +4,13 @@ package model
 // the entry, their traffic leaves the internet from an exit. Node id 0 means
 // this panel itself.
 type Cascade struct {
-	Id               int           `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
-	Name             string        `json:"name" example:"RU → DE"`
-	Enable           bool          `json:"enable" gorm:"default:true" example:"true"`
-	EntryNodeId      int           `json:"entryNodeId" gorm:"column:entry_node_id" example:"1"`
-	ExitNodeIds      []int         `json:"exitNodeIds" gorm:"serializer:json;column:exit_node_ids"`
+	Id          int    `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
+	Name        string `json:"name" example:"RU → DE"`
+	Enable      bool   `json:"enable" gorm:"default:true" example:"true"`
+	EntryNodeId int    `json:"entryNodeId" gorm:"column:entry_node_id" example:"1"`
+	ExitNodeIds []int  `json:"exitNodeIds" gorm:"serializer:json;column:exit_node_ids"`
+	// ExitCountry, when set, makes every enabled node of that country an exit.
+	ExitCountry      string        `json:"exitCountry" gorm:"column:exit_country" example:"DE"`
 	EntryInboundTags []string      `json:"entryInboundTags" gorm:"serializer:json;column:entry_inbound_tags"`
 	Strategy         string        `json:"strategy" gorm:"default:leastPing" example:"leastPing"`
 	Links            []CascadeLink `json:"links" gorm:"serializer:json"`

@@ -1715,6 +1715,11 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": 1,
         "type": "integer"
       },
+      "exitCountry": {
+        "description": "ExitCountry, when set, makes every enabled node of that country an exit.",
+        "example": "DE",
+        "type": "string"
+      },
       "exitNodeIds": {
         "items": {
           "type": "integer"
@@ -1752,6 +1757,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "enable",
       "entryInboundTags",
       "entryNodeId",
+      "exitCountry",
       "exitNodeIds",
       "id",
       "lastError",
@@ -3736,6 +3742,11 @@ export const SCHEMAS: Record<string, unknown> = {
         "format": "int64",
         "type": "integer"
       },
+      "country": {
+        "description": "Country is the ISO 3166-1 alpha-2 code country cascades group exits by.",
+        "example": "DE",
+        "type": "string"
+      },
       "cpuPct": {
         "example": 23.5,
         "type": "number"
@@ -3902,6 +3913,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "clientCount",
       "configDirty",
       "configDirtyAt",
+      "country",
       "cpuPct",
       "createdAt",
       "depletedCount",
@@ -3979,6 +3991,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "clearApiToken": {
         "type": "boolean"
       },
+      "country": {
+        "type": "string"
+      },
       "enable": {
         "type": "boolean"
       },
@@ -4036,6 +4051,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "address",
       "allowPrivateAddress",
       "basePath",
+      "country",
       "enable",
       "id",
       "inboundSyncMode",
@@ -4081,6 +4097,10 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": 0,
         "format": "int64",
         "type": "integer"
+      },
+      "country": {
+        "example": "DE",
+        "type": "string"
       },
       "cpuPct": {
         "example": 12.5,
@@ -4240,6 +4260,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "clientCount",
       "configDirty",
       "configDirtyAt",
+      "country",
       "cpuPct",
       "createdAt",
       "depletedCount",

@@ -23,9 +23,15 @@ export function masterBaseUrl(): string {
   return `${window.location.origin}${base.endsWith('/') ? base.slice(0, -1) : base}`;
 }
 
-export function buildJoinCommand(master: string, token: string, insecure: boolean): string {
+export function buildJoinCommand(
+  master: string,
+  token: string,
+  insecure: boolean,
+  country = '',
+): string {
   const curl = insecure ? 'curl -fsSLk' : 'curl -fsSL';
-  const flags = insecure ? ' --insecure' : '';
+  const code = country.trim().toUpperCase();
+  const flags = `${/^[A-Z]{2}$/.test(code) ? ` --country ${code}` : ''}${insecure ? ' --insecure' : ''}`;
   return `${curl} '${master}/node-join/install.sh' | bash -s -- --master '${master}' --join '${token}'${flags}`;
 }
 
@@ -33,6 +39,7 @@ export default function NodeJoinModal({ open, onClose }: NodeJoinModalProps) {
   const { t } = useTranslation();
   const [nonce, setNonce] = useState(0);
   const [insecure, setInsecure] = useState(window.location.protocol !== 'https:');
+  const [country, setCountry] = useState('');
 
   // Every open (and every "new command") mints a fresh one-time token.
   const query = useQuery({
@@ -51,8 +58,8 @@ export default function NodeJoinModal({ open, onClose }: NodeJoinModalProps) {
   const error = query.error ? query.error.message : '';
 
   const command = useMemo(
-    () => (join ? buildJoinCommand(masterBaseUrl(), join.token, insecure) : ''),
-    [join, insecure],
+    () => (join ? buildJoinCommand(masterBaseUrl(), join.token, insecure, country) : ''),
+    [join, insecure, country],
   );
 
   const onCopy = async () => {
@@ -94,6 +101,14 @@ export default function NodeJoinModal({ open, onClose }: NodeJoinModalProps) {
           >
             {t('pages.nodes.join.regenerate')}
           </Button>
+          <Input
+            aria-label={t('pages.nodes.country')}
+            placeholder={t('pages.nodes.country')}
+            maxLength={2}
+            value={country}
+            onChange={(e) => setCountry(e.target.value.toUpperCase())}
+            style={{ width: 120 }}
+          />
           <Checkbox checked={insecure} onChange={(e) => setInsecure(e.target.checked)}>
             {t('pages.nodes.join.insecure')}
           </Checkbox>

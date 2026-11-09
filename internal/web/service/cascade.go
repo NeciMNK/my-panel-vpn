@@ -34,6 +34,7 @@ type CascadeRequest struct {
 	Enable           bool     `json:"enable" example:"true"`
 	EntryNodeId      int      `json:"entryNodeId" example:"1"`
 	ExitNodeIds      []int    `json:"exitNodeIds" example:"2"`
+	ExitCountry      string   `json:"exitCountry" example:"DE"`
 	EntryInboundTags []string `json:"entryInboundTags"`
 	Strategy         string   `json:"strategy" example:"leastPing"`
 }
@@ -67,7 +68,17 @@ func (s *CascadeService) validate(req *CascadeRequest) error {
 	if req == nil {
 		return common.NewError("cascade request is required")
 	}
-	if len(req.ExitNodeIds) == 0 {
+	req.ExitCountry = strings.ToUpper(strings.TrimSpace(req.ExitCountry))
+	if req.ExitCountry != "" {
+		if !isCountryCode(req.ExitCountry) {
+			return common.NewError("country must be a two-letter code such as DE")
+		}
+		exits, err := countryExits(req.ExitCountry, req.EntryNodeId)
+		if err != nil {
+			return err
+		}
+		req.ExitNodeIds = exits
+	} else if len(req.ExitNodeIds) == 0 {
 		return common.NewError("pick at least one exit server")
 	}
 	seen := map[int]bool{}
@@ -107,7 +118,8 @@ func (s *CascadeService) Create(ctx context.Context, req *CascadeRequest, userID
 	defer cascadeMu.Unlock()
 	c := &model.Cascade{
 		Name: strings.TrimSpace(req.Name), Enable: req.Enable, EntryNodeId: req.EntryNodeId,
-		ExitNodeIds: req.ExitNodeIds, EntryInboundTags: req.EntryInboundTags, Strategy: req.Strategy,
+		ExitNodeIds: req.ExitNodeIds, ExitCountry: req.ExitCountry, EntryInboundTags: req.EntryInboundTags,
+		Strategy: req.Strategy,
 	}
 	if err := database.GetDB().Create(c).Error; err != nil {
 		return nil, err
@@ -138,6 +150,7 @@ func (s *CascadeService) Update(ctx context.Context, id int, req *CascadeRequest
 	c.Enable = req.Enable
 	c.EntryNodeId = req.EntryNodeId
 	c.ExitNodeIds = req.ExitNodeIds
+	c.ExitCountry = req.ExitCountry
 	c.EntryInboundTags = req.EntryInboundTags
 	c.Strategy = req.Strategy
 	err = s.apply(ctx, c, prevEntry, userID, masterAddress)
@@ -415,5 +428,40 @@ func (s *CascadeService) removeLink(l model.CascadeLink) {
 		if _, err := (&ClientService{}).DeleteByEmail(inboundSvc, l.Email, false); err != nil {
 			logger.Debug("cascade: delete link client", l.Email, ":", err)
 		}
+	}
+}
+
+// countryExits lists the enabled nodes of a country, entry excluded, in id order.
+func countryExits(country string, entryNodeID int) ([]int, error) {
+	var ids []int
+	err := database.GetDB().Model(model.Node{}).
+		Where("country = ? AND enable = ? AND id <> ?", country, true, entryNodeID).
+		Order("id asc").Pluck("id", &ids).Error
+	return ids, err
+}
+
+// ReconcileCountryCascades re-resolves country cascades after nodes were
+// added, removed, re-enabled or moved to another country, and re-applies those
+// whose exit set changed.
+func (s *CascadeService) ReconcileCountryCascades(ctx context.Context) {
+	cascadeMu.Lock()
+	defer cascadeMu.Unlock()
+	var rows []*model.Cascade
+	if err := database.GetDB().Where("exit_country <> ''").Find(&rows).Error; err != nil {
+		logger.Warning("cascade: list country cascades:", err)
+		return
+	}
+	for _, c := range rows {
+		exits, err := countryExits(c.ExitCountry, c.EntryNodeId)
+		if err != nil {
+			logger.Warning("cascade", c.Id, ": resolve country exits:", err)
+			continue
+		}
+		if slices.Equal(exits, c.ExitNodeIds) {
+			continue
+		}
+		c.ExitNodeIds = exits
+		err = s.apply(ctx, c, c.EntryNodeId, 1, "")
+		s.saveState(c, err)
 	}
 }

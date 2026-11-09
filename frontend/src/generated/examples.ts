@@ -421,6 +421,7 @@ export const EXAMPLES: Record<string, unknown> = {
       ""
     ],
     "entryNodeId": 1,
+    "exitCountry": "DE",
     "exitNodeIds": [
       0
     ],
@@ -966,6 +967,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "clientCount": 27,
     "configDirty": false,
     "configDirtyAt": 0,
+    "country": "DE",
     "cpuPct": 23.5,
     "createdAt": 1700000000,
     "depletedCount": 1,
@@ -1016,6 +1018,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "apiToken": null,
     "basePath": "",
     "clearApiToken": false,
+    "country": "",
     "enable": false,
     "id": 0,
     "inboundSyncMode": "all",
@@ -1038,6 +1041,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "clientCount": 25,
     "configDirty": false,
     "configDirtyAt": 0,
+    "country": "DE",
     "cpuPct": 12.5,
     "createdAt": 1700000000,
     "depletedCount": 1,

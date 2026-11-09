@@ -40,6 +40,7 @@ type NodeJoinRequest struct {
 	BasePath   string `json:"basePath"`
 	ApiToken   string `json:"apiToken"`
 	CertSha256 string `json:"certSha256"`
+	Country    string `json:"country"`
 }
 
 func hashJoinToken(token string) string {
@@ -123,6 +124,7 @@ func (s *NodeService) JoinNode(req *NodeJoinRequest, remoteIP string) (*NodeView
 		TlsVerifyMode:    "pin",
 		PinnedCertSha256: strings.TrimSpace(req.CertSha256),
 		InboundSyncMode:  "all",
+		Country:          req.Country,
 	}
 	if ip := net.ParseIP(address); ip != nil && (ip.IsPrivate() || ip.IsLoopback()) {
 		node.AllowPrivateAddress = true

@@ -1741,6 +1741,11 @@
             "example": 1,
             "type": "integer"
           },
+          "exitCountry": {
+            "description": "ExitCountry, when set, makes every enabled node of that country an exit.",
+            "example": "DE",
+            "type": "string"
+          },
           "exitNodeIds": {
             "items": {
               "type": "integer"
@@ -1778,6 +1783,7 @@
           "enable",
           "entryInboundTags",
           "entryNodeId",
+          "exitCountry",
           "exitNodeIds",
           "id",
           "lastError",
@@ -3762,6 +3768,11 @@
             "format": "int64",
             "type": "integer"
           },
+          "country": {
+            "description": "Country is the ISO 3166-1 alpha-2 code country cascades group exits by.",
+            "example": "DE",
+            "type": "string"
+          },
           "cpuPct": {
             "example": 23.5,
             "type": "number"
@@ -3928,6 +3939,7 @@
           "clientCount",
           "configDirty",
           "configDirtyAt",
+          "country",
           "cpuPct",
           "createdAt",
           "depletedCount",
@@ -4005,6 +4017,9 @@
           "clearApiToken": {
             "type": "boolean"
           },
+          "country": {
+            "type": "string"
+          },
           "enable": {
             "type": "boolean"
           },
@@ -4062,6 +4077,7 @@
           "address",
           "allowPrivateAddress",
           "basePath",
+          "country",
           "enable",
           "id",
           "inboundSyncMode",
@@ -4107,6 +4123,10 @@
             "example": 0,
             "format": "int64",
             "type": "integer"
+          },
+          "country": {
+            "example": "DE",
+            "type": "string"
           },
           "cpuPct": {
             "example": 12.5,
@@ -4266,6 +4286,7 @@
           "clientCount",
           "configDirty",
           "configDirtyAt",
+          "country",
           "cpuPct",
           "createdAt",
           "depletedCount",
@@ -11568,6 +11589,7 @@
                         ""
                       ],
                       "entryNodeId": 1,
+                      "exitCountry": "DE",
                       "exitNodeIds": [
                         0
                       ],
@@ -11654,6 +11676,7 @@
                       ""
                     ],
                     "entryNodeId": 1,
+                    "exitCountry": "DE",
                     "exitNodeIds": [
                       0
                     ],
@@ -11750,6 +11773,7 @@
                       ""
                     ],
                     "entryNodeId": 1,
+                    "exitCountry": "DE",
                     "exitNodeIds": [
                       0
                     ],
@@ -11860,6 +11884,7 @@
                       "clientCount": 25,
                       "configDirty": false,
                       "configDirtyAt": 0,
+                      "country": "DE",
                       "cpuPct": 12.5,
                       "createdAt": 1700000000,
                       "depletedCount": 1,
@@ -12064,6 +12089,7 @@
                     "clientCount": 25,
                     "configDirty": false,
                     "configDirtyAt": 0,
+                    "country": "DE",
                     "cpuPct": 12.5,
                     "createdAt": 1700000000,
                     "depletedCount": 1,
@@ -12355,6 +12381,7 @@
                     "clientCount": 25,
                     "configDirty": false,
                     "configDirtyAt": 0,
+                    "country": "DE",
                     "cpuPct": 12.5,
                     "createdAt": 1700000000,
                     "depletedCount": 1,
@@ -17585,6 +17612,7 @@
                   "clientCount": 25,
                   "configDirty": false,
                   "configDirtyAt": 0,
+                  "country": "DE",
                   "cpuPct": 12.5,
                   "createdAt": 1700000000,
                   "depletedCount": 1,

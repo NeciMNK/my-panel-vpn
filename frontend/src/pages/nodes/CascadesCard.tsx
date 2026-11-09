@@ -9,6 +9,7 @@ import {
   Input,
   Modal,
   Popconfirm,
+  Segmented,
   Select,
   Space,
   Switch,
@@ -35,6 +36,7 @@ export interface CascadeRecord {
   enable: boolean;
   entryNodeId: number;
   exitNodeIds: number[];
+  exitCountry: string;
   entryInboundTags: string[] | null;
   strategy: string;
   links: CascadeLink[] | null;
@@ -46,6 +48,7 @@ export interface CascadeForm {
   enable: boolean;
   entryNodeId: number;
   exitNodeIds: number[];
+  exitCountry: string;
   entryInboundTags: string[];
   strategy: string;
 }
@@ -60,9 +63,23 @@ export function emptyCascadeForm(): CascadeForm {
     enable: true,
     entryNodeId: 0,
     exitNodeIds: [],
+    exitCountry: '',
     entryInboundTags: [],
     strategy: 'leastPing',
   };
+}
+
+// Countries the exit picker offers: every code set on a (non-transitive) node.
+export function nodeCountries(nodes: { country?: string; transitive?: boolean }[]): string[] {
+  const set = new Set<string>();
+  for (const n of nodes) if (!n.transitive && n.country) set.add(n.country.toUpperCase());
+  return [...set].sort();
+}
+
+// "🇩🇪" from "DE": regional indicator symbols, so no flag images are shipped.
+export function countryFlag(code: string): string {
+  if (!/^[A-Za-z]{2}$/.test(code)) return '';
+  return String.fromCodePoint(...[...code.toUpperCase()].map((c) => 0x1f1a5 + c.charCodeAt(0)));
 }
 
 // The exit picker never offers the entry: a server cannot chain to itself.
@@ -128,6 +145,7 @@ export default function CascadesCard({ nodes }: CascadesCardProps) {
       enable: c.enable,
       entryNodeId: c.entryNodeId,
       exitNodeIds: c.exitNodeIds ?? [],
+      exitCountry: c.exitCountry ?? '',
       entryInboundTags: c.entryInboundTags ?? [],
       strategy: c.strategy || 'leastPing',
     });
@@ -145,6 +163,7 @@ export default function CascadesCard({ nodes }: CascadesCardProps) {
         enable,
         entryNodeId: c.entryNodeId,
         exitNodeIds: c.exitNodeIds ?? [],
+        exitCountry: c.exitCountry ?? '',
         entryInboundTags: c.entryInboundTags ?? [],
         strategy: c.strategy,
       },
@@ -158,6 +177,11 @@ export default function CascadesCard({ nodes }: CascadesCardProps) {
       render: (_: unknown, c: CascadeRecord) => (
         <Space wrap size={4}>
           <Tag color="blue">{serverName(c.entryNodeId)}</Tag>→
+          {c.exitCountry && (
+            <Tag color="gold">
+              {countryFlag(c.exitCountry)} {c.exitCountry} ({(c.exitNodeIds ?? []).length})
+            </Tag>
+          )}
           {(c.exitNodeIds ?? []).map((id) => (
             <Tag key={id} color="green">
               {serverName(id)}
@@ -210,6 +234,8 @@ export default function CascadesCard({ nodes }: CascadesCardProps) {
   ];
 
   const exits = form ? exitOptions(servers, form.entryNodeId) : [];
+  const countries = nodeCountries(nodes);
+  const byCountry = form !== null && form.exitCountry !== '';
 
   return (
     <Card
@@ -265,17 +291,48 @@ export default function CascadesCard({ nodes }: CascadesCardProps) {
                 }
               />
             </Form.Item>
-            <Form.Item label={t('pages.nodes.cascade.exits')} required>
-              <Select
-                aria-label={t('pages.nodes.cascade.exits')}
-                mode="multiple"
-                tagRender={selectTagRender}
-                value={form.exitNodeIds}
-                options={exits}
-                onChange={(v: number[]) => setForm({ ...form, exitNodeIds: v })}
+            <Form.Item label={t('pages.nodes.cascade.exitMode')}>
+              <Segmented
+                value={byCountry ? 'country' : 'servers'}
+                options={[
+                  { value: 'servers', label: t('pages.nodes.cascade.exitModeServers') },
+                  {
+                    value: 'country',
+                    label: t('pages.nodes.cascade.exitModeCountry'),
+                    disabled: countries.length === 0,
+                  },
+                ]}
+                onChange={(v) =>
+                  setForm({ ...form, exitCountry: v === 'country' ? (countries[0] ?? '') : '' })
+                }
               />
             </Form.Item>
-            {form.exitNodeIds.length > 1 && (
+            {byCountry ? (
+              <Form.Item
+                label={t('pages.nodes.cascade.country')}
+                extra={t('pages.nodes.cascade.countryHint')}
+                required
+              >
+                <Select
+                  aria-label={t('pages.nodes.cascade.country')}
+                  value={form.exitCountry}
+                  options={countries.map((c) => ({ value: c, label: `${countryFlag(c)} ${c}` }))}
+                  onChange={(v: string) => setForm({ ...form, exitCountry: v })}
+                />
+              </Form.Item>
+            ) : (
+              <Form.Item label={t('pages.nodes.cascade.exits')} required>
+                <Select
+                  aria-label={t('pages.nodes.cascade.exits')}
+                  mode="multiple"
+                  tagRender={selectTagRender}
+                  value={form.exitNodeIds}
+                  options={exits}
+                  onChange={(v: number[]) => setForm({ ...form, exitNodeIds: v })}
+                />
+              </Form.Item>
+            )}
+            {(byCountry || form.exitNodeIds.length > 1) && (
               <Form.Item label={t('pages.nodes.cascade.strategy')}>
                 <Select
                   aria-label={t('pages.nodes.cascade.strategy')}

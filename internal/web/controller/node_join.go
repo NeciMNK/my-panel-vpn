@@ -73,6 +73,7 @@ func (a *NodeJoinController) register(c *gin.Context) {
 		return
 	}
 	logger.Info(fmt.Sprintf("node %q joined from %s", view.Name, getRemoteIp(c)))
+	reconcileCountryCascades()
 	c.JSON(http.StatusOK, gin.H{"success": true, "msg": "joined", "obj": gin.H{"id": view.Id, "name": view.Name}})
 }
 

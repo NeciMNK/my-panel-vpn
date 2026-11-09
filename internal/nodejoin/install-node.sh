@@ -8,6 +8,7 @@ JOIN=""
 ADDRESS=""
 PANEL_PORT=""
 NAME=""
+COUNTRY=""
 INSECURE=0
 XUI_DIR="${XUI_MAIN_FOLDER:-/usr/local/x-ui}"
 CERT_DIR="/etc/x-ui/node-cert"
@@ -31,6 +32,7 @@ Usage: install-node.sh --master <url> --join <token> [options]
   --address HOST   address the master should use for this node (default: the IP the master sees)
   --port PORT      panel port for this node (default: random free port)
   --name NAME      node name on the master (default: hostname)
+  --country CC     two-letter country code, joins that country's cascades (e.g. DE)
   --insecure       accept a self-signed certificate on the master
 USAGE
 }
@@ -42,6 +44,7 @@ while [[ $# -gt 0 ]]; do
     --address) ADDRESS="${2:-}"; shift 2 ;;
     --port) PANEL_PORT="${2:-}"; shift 2 ;;
     --name) NAME="${2:-}"; shift 2 ;;
+    --country) COUNTRY="${2:-}"; shift 2 ;;
     --insecure) INSECURE=1; shift ;;
     -h | --help) usage; exit 0 ;;
     *) usage; die "unknown option: $1" ;;
@@ -157,10 +160,11 @@ fi
 [[ -n "$NAME" ]] || NAME="$(hostname -s 2>/dev/null || hostname)"
 NAME="$(printf '%s' "$NAME" | tr -cd 'A-Za-z0-9._-' | cut -c1-48)"
 ADDRESS="$(printf '%s' "$ADDRESS" | tr -cd 'A-Za-z0-9.:_-')"
+COUNTRY="$(printf '%s' "$COUNTRY" | tr -cd 'A-Za-z' | cut -c1-2 | tr 'a-z' 'A-Z')"
 
 info "Registering with the master"
-PAYLOAD=$(printf '{"join":"%s","name":"%s","address":"%s","port":%s,"basePath":"%s","apiToken":"%s","certSha256":"%s"}' \
-    "$JOIN" "$NAME" "$ADDRESS" "$PANEL_PORT" "$BASE_PATH" "$API_TOKEN" "$CERT_PIN")
+PAYLOAD=$(printf '{"join":"%s","name":"%s","address":"%s","port":%s,"basePath":"%s","apiToken":"%s","certSha256":"%s","country":"%s"}' \
+    "$JOIN" "$NAME" "$ADDRESS" "$PANEL_PORT" "$BASE_PATH" "$API_TOKEN" "$CERT_PIN" "$COUNTRY")
 RESPONSE="$("${CURL[@]}" -X POST -H 'Content-Type: application/json' -d "$PAYLOAD" "$MASTER/node-join/register")" ||
     die "registration failed"
 if ! printf '%s' "$RESPONSE" | grep -q '"success":true'; then

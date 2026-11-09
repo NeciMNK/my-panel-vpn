@@ -419,6 +419,7 @@ export interface Cascade {
   enable: boolean;
   entryInboundTags: string[];
   entryNodeId: number;
+  exitCountry: string;
   exitNodeIds: number[];
   id: number;
   lastError: string;
@@ -863,6 +864,7 @@ export interface Node {
   clientCount: number;
   configDirty: boolean;
   configDirtyAt: number;
+  country: string;
   cpuPct: number;
   createdAt: number;
   depletedCount: number;
@@ -911,6 +913,7 @@ export interface NodeMutationRequest {
   apiToken?: string | null;
   basePath: string;
   clearApiToken?: boolean;
+  country: string;
   enable: boolean;
   id: number;
   inboundSyncMode: string;
@@ -932,6 +935,7 @@ export interface NodeView {
   clientCount: number;
   configDirty: boolean;
   configDirtyAt: number;
+  country: string;
   cpuPct: number;
   createdAt: number;
   depletedCount: number;

@@ -1241,8 +1241,16 @@
         "toasts": {
           "saved": "Cascade saved",
           "deleted": "Cascade deleted"
-        }
-      }
+        },
+        "exitMode": "Exits",
+        "exitModeServers": "Picked servers",
+        "exitModeCountry": "All servers of a country",
+        "country": "Exit country",
+        "countryHint": "Traffic leaves through the fastest server of this country. New nodes of the country join automatically."
+      },
+      "country": "Country",
+      "countryHint": "Two-letter country code (DE, NL, FI). Nodes of one country together join \"by country\" cascades.",
+      "countryInvalid": "Use a two-letter country code such as DE"
     },
     "settings": {
       "defaultTag": "Varsayılan",

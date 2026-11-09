@@ -14,4 +14,9 @@ describe('buildJoinCommand', () => {
     expect(cmd.startsWith('curl -fsSLk ')).toBe(true);
     expect(cmd.endsWith(' --insecure')).toBe(true);
   });
+
+  it('passes a valid country code and ignores anything else', () => {
+    expect(buildJoinCommand('https://m', 't', false, 'de')).toContain(' --country DE');
+    expect(buildJoinCommand('https://m', 't', false, 'D')).not.toContain('--country');
+  });
 });
