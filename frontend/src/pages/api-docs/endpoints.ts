@@ -1743,6 +1743,46 @@ export const sections: readonly Section[] = [
   },
 
   {
+    id: 'cascades',
+    title: 'Cascades',
+    description:
+      'Entry → exit server chains. The panel provisions a hidden VLESS+REALITY inbound on every exit and an outbound plus a catch-all routing rule (or a balancer for several exits) on the entry. Node id 0 means this panel. All endpoints under /panel/api/cascades.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/cascades/list',
+        summary: 'List every cascade with its provisioned links and the last apply error.',
+        responseSchema: 'Cascade',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/cascades/add',
+        summary:
+          'Create a cascade and apply it: exits get their link inbound, the entry gets the outbound(s) and the routing rule. Empty entryInboundTags chains every inbound of the entry.',
+        body: '{\n  "name": "RU → DE",\n  "enable": true,\n  "entryNodeId": 1,\n  "exitNodeIds": [2, 3],\n  "entryInboundTags": [],\n  "strategy": "leastPing"\n}',
+        responseSchema: 'Cascade',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/cascades/update/:id',
+        summary:
+          'Change a cascade (entry, exits, chained inbounds, strategy, enable) and re-apply it. Removed exits lose their link inbound; adding an exit adds it to the balancer.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Cascade ID.' }],
+        body: '{\n  "name": "RU → DE",\n  "enable": true,\n  "entryNodeId": 1,\n  "exitNodeIds": [2, 3],\n  "entryInboundTags": [],\n  "strategy": "leastPing"\n}',
+        responseSchema: 'Cascade',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/cascades/del/:id',
+        summary:
+          'Remove a cascade from the entry template and delete its link inbounds on every exit.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Cascade ID.' }],
+      },
+    ],
+  },
+
+  {
     id: 'nodes',
     title: 'Nodes',
     description:

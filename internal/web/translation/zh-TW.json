@@ -1222,6 +1222,26 @@
         "regenerate": "New command",
         "insecure": "The master uses a self-signed certificate",
         "hint": "The command works once and expires at {{time}}. The server must be {{arch}}, like the master."
+      },
+      "cascade": {
+        "title": "Cascades",
+        "add": "New cascade",
+        "edit": "Edit cascade",
+        "name": "Name",
+        "route": "Entry → exit",
+        "state": "State",
+        "enable": "Enabled",
+        "entry": "Entry server",
+        "exits": "Exit servers",
+        "strategy": "How to pick the exit",
+        "inbounds": "Only these entry inbounds",
+        "inboundsHint": "Empty = all traffic of the entry server goes through the cascade.",
+        "desc": "Users connect to the entry server and reach the internet through the exit. The panel creates the link between the servers itself. Several exits = load balancing.",
+        "deleteConfirm": "Delete the cascade and its link inbounds?",
+        "toasts": {
+          "saved": "Cascade saved",
+          "deleted": "Cascade deleted"
+        }
       }
     },
     "settings": {

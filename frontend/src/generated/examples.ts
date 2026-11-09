@@ -414,6 +414,46 @@ export const EXAMPLES: Record<string, unknown> = {
     "code": "tools",
     "detail": "awg"
   },
+  "Cascade": {
+    "createdAt": 0,
+    "enable": true,
+    "entryInboundTags": [
+      ""
+    ],
+    "entryNodeId": 1,
+    "exitNodeIds": [
+      0
+    ],
+    "id": 1,
+    "lastError": "",
+    "links": [
+      {
+        "address": "",
+        "clientId": "",
+        "email": "",
+        "inboundId": 0,
+        "nodeId": 0,
+        "port": 0,
+        "publicKey": "",
+        "serverName": "",
+        "shortId": ""
+      }
+    ],
+    "name": "RU → DE",
+    "strategy": "leastPing",
+    "updatedAt": 0
+  },
+  "CascadeLink": {
+    "address": "",
+    "clientId": "",
+    "email": "",
+    "inboundId": 0,
+    "nodeId": 0,
+    "port": 0,
+    "publicKey": "",
+    "serverName": "",
+    "shortId": ""
+  },
   "Client": {
     "adTag": "0123456789abcdef0123456789abcdef",
     "allowedIPs": [

@@ -1,0 +1,31 @@
+package model
+
+// Cascade chains an entry server to one or more exit servers: users connect to
+// the entry, their traffic leaves the internet from an exit. Node id 0 means
+// this panel itself.
+type Cascade struct {
+	Id               int           `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
+	Name             string        `json:"name" example:"RU → DE"`
+	Enable           bool          `json:"enable" gorm:"default:true" example:"true"`
+	EntryNodeId      int           `json:"entryNodeId" gorm:"column:entry_node_id" example:"1"`
+	ExitNodeIds      []int         `json:"exitNodeIds" gorm:"serializer:json;column:exit_node_ids"`
+	EntryInboundTags []string      `json:"entryInboundTags" gorm:"serializer:json;column:entry_inbound_tags"`
+	Strategy         string        `json:"strategy" gorm:"default:leastPing" example:"leastPing"`
+	Links            []CascadeLink `json:"links" gorm:"serializer:json"`
+	LastError        string        `json:"lastError" gorm:"column:last_error"`
+	CreatedAt        int64         `json:"createdAt" gorm:"autoCreateTime"`
+	UpdatedAt        int64         `json:"updatedAt" gorm:"autoUpdateTime"`
+}
+
+// CascadeLink is the hidden VLESS+REALITY hop the master provisions on one exit.
+type CascadeLink struct {
+	NodeId     int    `json:"nodeId"`
+	InboundId  int    `json:"inboundId"`
+	Address    string `json:"address"`
+	Port       int    `json:"port"`
+	ClientId   string `json:"clientId"`
+	Email      string `json:"email"`
+	PublicKey  string `json:"publicKey"`
+	ShortId    string `json:"shortId"`
+	ServerName string `json:"serverName"`
+}

@@ -1694,6 +1694,118 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "Cascade": {
+    "description": "Cascade chains an entry server to one or more exit servers: users connect to\nthe entry, their traffic leaves the internet from an exit. Node id 0 means\nthis panel itself.",
+    "properties": {
+      "createdAt": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "enable": {
+        "example": true,
+        "type": "boolean"
+      },
+      "entryInboundTags": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "entryNodeId": {
+        "example": 1,
+        "type": "integer"
+      },
+      "exitNodeIds": {
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "lastError": {
+        "type": "string"
+      },
+      "links": {
+        "items": {
+          "$ref": "#/components/schemas/CascadeLink"
+        },
+        "type": "array"
+      },
+      "name": {
+        "example": "RU → DE",
+        "type": "string"
+      },
+      "strategy": {
+        "example": "leastPing",
+        "type": "string"
+      },
+      "updatedAt": {
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "createdAt",
+      "enable",
+      "entryInboundTags",
+      "entryNodeId",
+      "exitNodeIds",
+      "id",
+      "lastError",
+      "links",
+      "name",
+      "strategy",
+      "updatedAt"
+    ],
+    "type": "object"
+  },
+  "CascadeLink": {
+    "description": "CascadeLink is the hidden VLESS+REALITY hop the master provisions on one exit.",
+    "properties": {
+      "address": {
+        "type": "string"
+      },
+      "clientId": {
+        "type": "string"
+      },
+      "email": {
+        "type": "string"
+      },
+      "inboundId": {
+        "type": "integer"
+      },
+      "nodeId": {
+        "type": "integer"
+      },
+      "port": {
+        "type": "integer"
+      },
+      "publicKey": {
+        "type": "string"
+      },
+      "serverName": {
+        "type": "string"
+      },
+      "shortId": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "address",
+      "clientId",
+      "email",
+      "inboundId",
+      "nodeId",
+      "port",
+      "publicKey",
+      "serverName",
+      "shortId"
+    ],
+    "type": "object"
+  },
   "Client": {
     "description": "Client represents a client configuration for Xray inbounds with traffic limits and settings.",
     "properties": {

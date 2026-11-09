@@ -34,6 +34,7 @@ import AppSidebar from '@/layouts/AppSidebar';
 import NodeList from './NodeList';
 import NodeFormModal from './NodeFormModal';
 import NodeJoinModal from './NodeJoinModal';
+import CascadesCard from './CascadesCard';
 import { setMessageInstance } from '@/utils/messageBus';
 import { HttpUtil } from '@/utils';
 import type { PanelUpdateInfo } from '../index/PanelUpdateModal';
@@ -377,6 +378,10 @@ export default function NodesPage() {
                       onUpdateNode={onUpdateNode}
                       onUpdateSelected={onUpdateSelected}
                     />
+                  </Col>
+
+                  <Col span={24}>
+                    <CascadesCard nodes={nodes} />
                   </Col>
                 </Row>
               )}

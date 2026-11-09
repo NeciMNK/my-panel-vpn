@@ -249,6 +249,8 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	nodes := api.Group("/nodes")
 	a.nodeController = NewNodeController(nodes)
 
+	NewCascadeController(api.Group("/cascades"))
+
 	// Hosts API — per-inbound override endpoints for subscription links
 	hosts := api.Group("/hosts")
 	a.hostController = NewHostController(hosts)

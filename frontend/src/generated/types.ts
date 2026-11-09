@@ -414,6 +414,32 @@ export interface Blocker {
   detail?: string;
 }
 
+export interface Cascade {
+  createdAt: number;
+  enable: boolean;
+  entryInboundTags: string[];
+  entryNodeId: number;
+  exitNodeIds: number[];
+  id: number;
+  lastError: string;
+  links: CascadeLink[];
+  name: string;
+  strategy: string;
+  updatedAt: number;
+}
+
+export interface CascadeLink {
+  address: string;
+  clientId: string;
+  email: string;
+  inboundId: number;
+  nodeId: number;
+  port: number;
+  publicKey: string;
+  serverName: string;
+  shortId: string;
+}
+
 export interface Client {
   adTag?: string;
   allowedIPs?: string[];

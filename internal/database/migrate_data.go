@@ -62,6 +62,7 @@ func migrationModels() []any {
 		&model.SubBalancer{},
 		&model.TuicTrafficReceipt{},
 		&model.NodeJoinToken{},
+		&model.Cascade{},
 	}
 }
 

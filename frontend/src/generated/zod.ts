@@ -438,6 +438,34 @@ export const BlockerSchema = z.object({
 });
 export type Blocker = z.infer<typeof BlockerSchema>;
 
+export const CascadeSchema = z.object({
+  createdAt: z.number().int(),
+  enable: z.boolean(),
+  entryInboundTags: z.array(z.string()),
+  entryNodeId: z.number().int(),
+  exitNodeIds: z.array(z.number().int()),
+  id: z.number().int(),
+  lastError: z.string(),
+  links: z.array(z.lazy(() => CascadeLinkSchema)),
+  name: z.string(),
+  strategy: z.string(),
+  updatedAt: z.number().int(),
+});
+export type Cascade = z.infer<typeof CascadeSchema>;
+
+export const CascadeLinkSchema = z.object({
+  address: z.string(),
+  clientId: z.string(),
+  email: z.string(),
+  inboundId: z.number().int(),
+  nodeId: z.number().int(),
+  port: z.number().int(),
+  publicKey: z.string(),
+  serverName: z.string(),
+  shortId: z.string(),
+});
+export type CascadeLink = z.infer<typeof CascadeLinkSchema>;
+
 export const ClientSchema = z.object({
   adTag: z.string().optional(),
   allowedIPs: z.array(z.string()).optional(),
