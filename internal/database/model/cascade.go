@@ -31,3 +31,14 @@ type CascadeLink struct {
 	ShortId    string `json:"shortId"`
 	ServerName string `json:"serverName"`
 }
+
+// CascadePin keeps one user on one exit of a multi-exit cascade, so a reconnect
+// within the hold window leaves the internet from the same IP.
+type CascadePin struct {
+	Id        int    `json:"id" gorm:"primaryKey;autoIncrement"`
+	CascadeId int    `json:"cascadeId" gorm:"column:cascade_id;uniqueIndex:idx_cascade_pin_user"`
+	Email     string `json:"email" gorm:"uniqueIndex:idx_cascade_pin_user"`
+	NodeId    int    `json:"nodeId" gorm:"column:node_id"`
+	LastSeen  int64  `json:"lastSeen" gorm:"column:last_seen"`
+	CreatedAt int64  `json:"createdAt" gorm:"autoCreateTime"`
+}

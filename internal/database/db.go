@@ -89,6 +89,7 @@ func allModels() []any {
 		&model.TuicTrafficReceipt{},
 		&model.NodeJoinToken{},
 		&model.Cascade{},
+		&model.CascadePin{},
 	}
 }
 

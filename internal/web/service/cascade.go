@@ -171,6 +171,9 @@ func (s *CascadeService) Delete(ctx context.Context, id int) error {
 	for _, l := range c.Links {
 		s.removeLink(l)
 	}
+	if err := database.GetDB().Where("cascade_id = ?", id).Delete(&model.CascadePin{}).Error; err != nil {
+		return err
+	}
 	return database.GetDB().Delete(&model.Cascade{}, id).Error
 }
 
@@ -242,14 +245,18 @@ func (s *CascadeService) rewriteEntry(ctx context.Context, nodeID int, c *model.
 	}
 	stripManaged(tmpl.Config, cascadePrefix(c.Id))
 	if install && len(c.Links) > 0 {
-		applyCascadeToTemplate(tmpl.Config, c)
+		pins, err := loadCascadePins(c.Id)
+		if err != nil {
+			return err
+		}
+		applyCascadeToTemplate(tmpl.Config, c, pins)
 	}
 	return store.Save(ctx, tmpl)
 }
 
 // applyCascadeToTemplate adds one outbound per exit and a tail rule sending
 // the chained inbounds (all when none were picked) to it or to a balancer.
-func applyCascadeToTemplate(cfg map[string]any, c *model.Cascade) {
+func applyCascadeToTemplate(cfg map[string]any, c *model.Cascade, pins []model.CascadePin) {
 	for _, l := range c.Links {
 		appendOutbounds(cfg, cascadeOutbound(c.Id, l))
 	}
@@ -274,6 +281,7 @@ func applyCascadeToTemplate(cfg map[string]any, c *model.Cascade) {
 			observeSubjects(cfg, "burstObservatory", selector)
 		}
 		rule["balancerTag"] = cascadeRouteTag(c.Id)
+		appendTailRules(cfg, cascadePinRules(c, pins)...)
 	}
 	appendTailRules(cfg, rule)
 }

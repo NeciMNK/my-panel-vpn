@@ -63,6 +63,7 @@ func migrationModels() []any {
 		&model.TuicTrafficReceipt{},
 		&model.NodeJoinToken{},
 		&model.Cascade{},
+		&model.CascadePin{},
 	}
 }
 
