@@ -965,6 +965,11 @@ export const EXAMPLES: Record<string, unknown> = {
     "xrayState": "",
     "xrayVersion": "25.10.31"
   },
+  "NodeJoinTokenView": {
+    "arch": "amd64",
+    "expiresAt": 1700003600,
+    "token": "m3Yx0QmRZ2bq0l5w2b3h1C9rYx0QmRZ2bq0l5w2b3h0"
+  },
   "NodeMutationRequest": {
     "address": "",
     "allowPrivateAddress": false,

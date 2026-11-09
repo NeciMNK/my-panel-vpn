@@ -1825,6 +1825,13 @@ export const sections: readonly Section[] = [
       },
       {
         method: 'POST',
+        path: '/panel/api/nodes/joinToken',
+        summary:
+          'Mint a one-time join token (valid for one hour) for the "add node with one command" installer. The installer downloads this panel\'s own build from <base>/node-join/bundle (so the node must share this panel\'s CPU architecture, reported as arch) and registers itself at <base>/node-join/register, pinned to its self-signed certificate.',
+        responseSchema: 'NodeJoinTokenView',
+      },
+      {
+        method: 'POST',
         path: '/panel/api/nodes/add',
         summary:
           'Register a new remote node. Provide its URL, write-only apiToken, and optional remark / allowPrivateAddress flag. Responses expose hasApiToken only.',

@@ -1214,7 +1214,15 @@
       "pinnedCertPlaceholder": "base64 veya hex SHA-256",
       "fetchPin": "Getir",
       "pinFetched": "Düğümün geçerli sertifikası alındı",
-      "pinFetchFailed": "Sertifika alınamadı"
+      "pinFetchFailed": "Sertifika alınamadı",
+      "join": {
+        "button": "Add with one command",
+        "title": "Add a node with one command",
+        "desc": "Run this command as root on the new server. It downloads this panel's build, sets up a node with a random port, path and certificate, and registers it here by itself.",
+        "regenerate": "New command",
+        "insecure": "The master uses a self-signed certificate",
+        "hint": "The command works once and expires at {{time}}. The server must be {{arch}}, like the master."
+      }
     },
     "settings": {
       "defaultTag": "Varsayılan",

@@ -873,6 +873,12 @@ export interface Node {
   xrayVersion: string;
 }
 
+export interface NodeJoinTokenView {
+  arch: string;
+  expiresAt: number;
+  token: string;
+}
+
 export interface NodeMutationRequest {
   address: string;
   allowPrivateAddress: boolean;

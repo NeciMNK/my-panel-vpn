@@ -930,6 +930,13 @@ export const NodeSchema = z.object({
 });
 export type Node = z.infer<typeof NodeSchema>;
 
+export const NodeJoinTokenViewSchema = z.object({
+  arch: z.string(),
+  expiresAt: z.number().int(),
+  token: z.string(),
+});
+export type NodeJoinTokenView = z.infer<typeof NodeJoinTokenViewSchema>;
+
 export const NodeMutationRequestSchema = z.object({
   address: z.string(),
   allowPrivateAddress: z.boolean(),

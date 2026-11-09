@@ -3824,6 +3824,30 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "NodeJoinTokenView": {
+    "description": "NodeJoinTokenView is what the master UI needs to print the install command.",
+    "properties": {
+      "arch": {
+        "example": "amd64",
+        "type": "string"
+      },
+      "expiresAt": {
+        "example": 1700003600,
+        "format": "int64",
+        "type": "integer"
+      },
+      "token": {
+        "example": "m3Yx0QmRZ2bq0l5w2b3h1C9rYx0QmRZ2bq0l5w2b3h0",
+        "type": "string"
+      }
+    },
+    "required": [
+      "arch",
+      "expiresAt",
+      "token"
+    ],
+    "type": "object"
+  },
   "NodeMutationRequest": {
     "description": "NodeMutationRequest is the node write/probe contract. ApiToken is accepted\nonly as input. On update, nil means keep the stored token; replacement and\nclearing are explicit and mutually exclusive.",
     "properties": {

@@ -3850,6 +3850,30 @@
         ],
         "type": "object"
       },
+      "NodeJoinTokenView": {
+        "description": "NodeJoinTokenView is what the master UI needs to print the install command.",
+        "properties": {
+          "arch": {
+            "example": "amd64",
+            "type": "string"
+          },
+          "expiresAt": {
+            "example": 1700003600,
+            "format": "int64",
+            "type": "integer"
+          },
+          "token": {
+            "example": "m3Yx0QmRZ2bq0l5w2b3h1C9rYx0QmRZ2bq0l5w2b3h0",
+            "type": "string"
+          }
+        },
+        "required": [
+          "arch",
+          "expiresAt",
+          "token"
+        ],
+        "type": "object"
+      },
       "NodeMutationRequest": {
         "description": "NodeMutationRequest is the node write/probe contract. ApiToken is accepted\nonly as input. On update, nil means keep the stored token; replacement and\nclearing are explicit and mutually exclusive.",
         "properties": {
@@ -11818,6 +11842,46 @@
                       "type": "string"
                     },
                     "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/nodes/joinToken": {
+      "post": {
+        "tags": [
+          "Nodes"
+        ],
+        "summary": "Mint a one-time join token (valid for one hour) for the \"add node with one command\" installer. The installer downloads this panel's own build from <base>/node-join/bundle (so the node must share this panel's CPU architecture, reported as arch) and registers itself at <base>/node-join/register, pinned to its self-signed certificate.",
+        "operationId": "post_panel_api_nodes_joinToken",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/NodeJoinTokenView"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "arch": "amd64",
+                    "expiresAt": 1700003600,
+                    "token": "m3Yx0QmRZ2bq0l5w2b3h1C9rYx0QmRZ2bq0l5w2b3h0"
                   }
                 }
               }
