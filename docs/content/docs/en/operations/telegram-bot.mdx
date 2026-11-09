@@ -82,6 +82,16 @@ code, so a config can be handed to a client who cannot reach Telegram yet.
 Regular users get buttons for their own usage, subscription links, individual
 links, and QR codes.
 
+## Client payments
+
+When **Settings → Telegram → Payment** has a price or payment details, a client's
+bot screen also shows when to pay (the earliest expiry of its subscriptions, or
+"due now" once one has expired), how much and where. The same block is added to
+the client's expiry/quota warning. The client's **I have paid** button pages every
+admin with a **Renew** button per subscription, which opens the usual expiry
+picker; repeat taps within 10 minutes are ignored. With both fields empty clients
+see no payment block.
+
 ## Reports & alerts
 
 - **Periodic report** — on the `tgRunTime` schedule (default `@daily`), the bot
@@ -117,6 +127,8 @@ The warning lead times come from `expireDiff` (days before expiry) and
 | `tgCpu` / `tgMemory` | `80` / `80`          | CPU / memory alert thresholds (percent).       |
 | `tgLang`       | `en-US`                    | Bot language.                                  |
 | `tgEnabledEvents` | `login.attempt,cpu.high`| Which events to deliver.                       |
+| `tgPaymentAmount` | _(none)_                | Price shown to clients, as typed (e.g. `300 RUB / month`). |
+| `tgPaymentDetails` | _(none)_               | Where to pay: card, phone or a payment link.   |
 
 <Callout type="warn">
   The bot token controls your bot — keep it secret and only add **trusted** admin

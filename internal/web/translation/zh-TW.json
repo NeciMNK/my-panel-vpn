@@ -1853,7 +1853,12 @@
       "subHostSortMode": "訂閱節點排序",
       "subHostSortInbound": "入站順序（預設）",
       "subHostSortHosts": "主機順序",
-      "subHostSortModeDesc": "跨入站使用主機頁面中的排序。此設定決定伺服器輸出順序；用戶端應用程式仍可能自行排序。"
+      "subHostSortModeDesc": "跨入站使用主機頁面中的排序。此設定決定伺服器輸出順序；用戶端應用程式仍可能自行排序。",
+      "tgPayment": "Payment",
+      "tgPaymentAmount": "Price",
+      "tgPaymentAmountDesc": "How much a client pays, shown in the bot as typed, e.g. 300 RUB / month. Leave both payment fields empty to hide payment from clients.",
+      "tgPaymentDetails": "Where to pay",
+      "tgPaymentDetailsDesc": "Card number, phone for transfers or a payment link. Clients see it in the bot next to the date their subscription ends, and can tell you they have paid."
     },
     "xray": {
       "save": "儲存",
@@ -2644,7 +2649,8 @@
       "qrLegendJSON": "{{ .Code }}. JSON 訂閱",
       "qrLegendLink": "{{ .Code }}. 應用程式連結 {{ .App }}",
       "backupFailed": "無法讀取資料庫，未傳送備份。",
-      "privateOnly": "🤖 此機器人僅在私聊中運作。請在私訊中開啟它。"
+      "privateOnly": "🤖 此機器人僅在私聊中運作。請在私訊中開啟它。",
+      "paymentReported": "💳 {{ .User }} reports a payment for: "
     },
     "buttons": {
       "closeKeyboard": "❌ 關閉鍵盤",
@@ -2704,7 +2710,9 @@
       "qrCode": "🔳 QR code",
       "broadcast": "📢 廣播",
       "attachInbound": "關聯入站 ({{ .Count }})",
-      "attachDone": "✅ 完成"
+      "attachDone": "✅ 完成",
+      "iPaid": "✅ I have paid",
+      "renewClient": "📅 Renew {{ .Email }}"
     },
     "answers": {
       "broadcastStarted": "🚀 群發已開始。",
@@ -2731,7 +2739,9 @@
       "askToAddUserId": "未找到您的配置！\r\n請向管理員詢問，在您的配置中使用您的 Telegram 使用者 ChatID。\r\n\r\n您的使用者 ChatID：<code>{{ .TgUserID }}</code>",
       "chooseClient": "為入站 {{ .Inbound }} 選擇一個客戶",
       "chooseInbound": "選擇一個入站",
-      "qrCodeForClient": "客戶端 {{ .Email }} 的二維碼："
+      "qrCodeForClient": "客戶端 {{ .Email }} 的二維碼：",
+      "paymentReported": "✅ The admin has been notified. Your subscription will be extended once the payment is confirmed.",
+      "paymentAlreadyReported": "⏳ You have already reported this payment. Please wait for the admin to confirm it."
     },
     "screens": {
       "panel": "Panel",
@@ -2762,6 +2772,13 @@
     "noValue": "—",
     "notices": {
       "repeat": "\r\n\r\n🔁 repeated {{ .Count }}× · last {{ .Time }}"
+    },
+    "payment": {
+      "title": "\r\n💳 <b>Payment</b>\r\n",
+      "dueOn": "📅 Pay by: {{ .Date }}\r\n",
+      "overdue": "⛔ Your subscription expired on {{ .Date }}: payment is due now\r\n",
+      "amount": "💰 Amount: {{ .Amount }}\r\n",
+      "details": "🏦 Where to pay:\r\n{{ .Details }}\r\n"
     }
   },
   "discord": {

@@ -1,7 +1,13 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, Button, Input, Select, Space, Switch, Tabs } from 'antd';
-import { BellOutlined, SendOutlined, SettingOutlined, WarningOutlined } from '@ant-design/icons';
+import {
+  BellOutlined,
+  SendOutlined,
+  SettingOutlined,
+  WalletOutlined,
+  WarningOutlined,
+} from '@ant-design/icons';
 import { HttpUtil, LanguageManager } from '@/utils';
 import type { AllSetting } from '@/models/setting';
 import { SettingListItem } from '@/components/ui';
@@ -250,6 +256,40 @@ export default function TelegramTab({ allSetting, updateSetting }: TelegramTabPr
                 description={t('pages.settings.tgEventBusNotifyDesc')}
               >
                 <TelegramNotifications allSetting={allSetting} updateSetting={updateSetting} />
+              </SettingListItem>
+            </>
+          ),
+        },
+        {
+          key: '3',
+          label: catTabLabel(
+            <WalletOutlined aria-hidden />,
+            t('pages.settings.tgPayment'),
+            isMobile,
+          ),
+          children: (
+            <>
+              <SettingListItem
+                paddings="small"
+                title={t('pages.settings.tgPaymentAmount')}
+                description={t('pages.settings.tgPaymentAmountDesc')}
+              >
+                <Input
+                  value={allSetting.tgPaymentAmount}
+                  placeholder="300 RUB / month"
+                  onChange={(e) => updateSetting({ tgPaymentAmount: e.target.value })}
+                />
+              </SettingListItem>
+              <SettingListItem
+                paddings="small"
+                title={t('pages.settings.tgPaymentDetails')}
+                description={t('pages.settings.tgPaymentDetailsDesc')}
+              >
+                <Input.TextArea
+                  value={allSetting.tgPaymentDetails}
+                  autoSize={{ minRows: 2, maxRows: 6 }}
+                  onChange={(e) => updateSetting({ tgPaymentDetails: e.target.value })}
+                />
               </SettingListItem>
             </>
           ),

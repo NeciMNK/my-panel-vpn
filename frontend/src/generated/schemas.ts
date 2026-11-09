@@ -538,6 +538,15 @@ export const SCHEMAS: Record<string, unknown> = {
         "minimum": 0,
         "type": "integer"
       },
+      "tgPaymentAmount": {
+        "description": "Shown to clients in the bot as how much and where to pay; both empty bills nobody.",
+        "example": "300 RUB / month",
+        "type": "string"
+      },
+      "tgPaymentDetails": {
+        "example": "Card 2200 0000 0000 0000",
+        "type": "string"
+      },
       "tgRunTime": {
         "type": "string"
       },
@@ -751,6 +760,8 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgEnabledEvents",
       "tgLang",
       "tgMemory",
+      "tgPaymentAmount",
+      "tgPaymentDetails",
       "tgRunTime",
       "timeLocation",
       "trafficDiff",
@@ -1329,6 +1340,15 @@ export const SCHEMAS: Record<string, unknown> = {
         "minimum": 0,
         "type": "integer"
       },
+      "tgPaymentAmount": {
+        "description": "Shown to clients in the bot as how much and where to pay; both empty bills nobody.",
+        "example": "300 RUB / month",
+        "type": "string"
+      },
+      "tgPaymentDetails": {
+        "example": "Card 2200 0000 0000 0000",
+        "type": "string"
+      },
       "tgRunTime": {
         "type": "string"
       },
@@ -1550,6 +1570,8 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgEnabledEvents",
       "tgLang",
       "tgMemory",
+      "tgPaymentAmount",
+      "tgPaymentDetails",
       "tgRunTime",
       "timeLocation",
       "trafficDiff",

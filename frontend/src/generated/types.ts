@@ -177,6 +177,8 @@ export interface AllSetting {
   tgEnabledEvents: string;
   tgLang: string;
   tgMemory: number;
+  tgPaymentAmount: string;
+  tgPaymentDetails: string;
   tgRunTime: string;
   timeLocation: string;
   trafficDiff: number;
@@ -368,6 +370,8 @@ export interface AllSettingView {
   tgEnabledEvents: string;
   tgLang: string;
   tgMemory: number;
+  tgPaymentAmount: string;
+  tgPaymentDetails: string;
   tgRunTime: string;
   timeLocation: string;
   trafficDiff: number;

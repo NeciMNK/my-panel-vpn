@@ -1853,7 +1853,12 @@
       "subHostSortMode": "Orden de nodos de suscripción",
       "subHostSortInbound": "Orden de entradas (predeterminado)",
       "subHostSortHosts": "Orden de hosts",
-      "subHostSortModeDesc": "Sigue el orden de la página de hosts entre distintas entradas. Determina el orden emitido por el servidor; las aplicaciones cliente pueden aplicar su propio orden."
+      "subHostSortModeDesc": "Sigue el orden de la página de hosts entre distintas entradas. Determina el orden emitido por el servidor; las aplicaciones cliente pueden aplicar su propio orden.",
+      "tgPayment": "Payment",
+      "tgPaymentAmount": "Price",
+      "tgPaymentAmountDesc": "How much a client pays, shown in the bot as typed, e.g. 300 RUB / month. Leave both payment fields empty to hide payment from clients.",
+      "tgPaymentDetails": "Where to pay",
+      "tgPaymentDetailsDesc": "Card number, phone for transfers or a payment link. Clients see it in the bot next to the date their subscription ends, and can tell you they have paid."
     },
     "xray": {
       "save": "Guardar configuración",
@@ -2644,7 +2649,8 @@
       "qrLegendJSON": "{{ .Code }}. Suscripción JSON",
       "qrLegendLink": "{{ .Code }}. Enlace de la app {{ .App }}",
       "backupFailed": "No se pudo leer la base de datos; no se envió ninguna copia de seguridad.",
-      "privateOnly": "🤖 Este bot solo funciona en el chat privado. Ábrelo en un mensaje directo."
+      "privateOnly": "🤖 Este bot solo funciona en el chat privado. Ábrelo en un mensaje directo.",
+      "paymentReported": "💳 {{ .User }} reports a payment for: "
     },
     "buttons": {
       "closeKeyboard": "❌ Cerrar Teclado",
@@ -2704,7 +2710,9 @@
       "qrCode": "🔳 QR code",
       "broadcast": "📢 Difusión",
       "attachInbound": "Adjuntar entrada ({{ .Count }})",
-      "attachDone": "✅ Listo"
+      "attachDone": "✅ Listo",
+      "iPaid": "✅ I have paid",
+      "renewClient": "📅 Renew {{ .Email }}"
     },
     "answers": {
       "broadcastStarted": "🚀 Difusión iniciada.",
@@ -2731,7 +2739,9 @@
       "askToAddUserId": "¡No se encuentra su configuración!\r\nPor favor, pídale a su administrador que use su ChatID de usuario de Telegram en su(s) configuración(es).\r\n\r\nSu ChatID de usuario: <code>{{ .TgUserID }}</code>",
       "chooseClient": "Elige un Cliente para Inbound {{ .Inbound }}",
       "chooseInbound": "Elige un Inbound",
-      "qrCodeForClient": "Código QR para el cliente {{ .Email }}:"
+      "qrCodeForClient": "Código QR para el cliente {{ .Email }}:",
+      "paymentReported": "✅ The admin has been notified. Your subscription will be extended once the payment is confirmed.",
+      "paymentAlreadyReported": "⏳ You have already reported this payment. Please wait for the admin to confirm it."
     },
     "screens": {
       "panel": "Panel",
@@ -2762,6 +2772,13 @@
     "noValue": "—",
     "notices": {
       "repeat": "\r\n\r\n🔁 repeated {{ .Count }}× · last {{ .Time }}"
+    },
+    "payment": {
+      "title": "\r\n💳 <b>Payment</b>\r\n",
+      "dueOn": "📅 Pay by: {{ .Date }}\r\n",
+      "overdue": "⛔ Your subscription expired on {{ .Date }}: payment is due now\r\n",
+      "amount": "💰 Amount: {{ .Amount }}\r\n",
+      "details": "🏦 Where to pay:\r\n{{ .Details }}\r\n"
     }
   },
   "discord": {

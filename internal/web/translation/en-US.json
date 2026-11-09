@@ -1974,7 +1974,12 @@
       "subHostSortMode": "Subscription Node Ordering",
       "subHostSortInbound": "Inbound order (default)",
       "subHostSortHosts": "Hosts order",
-      "subHostSortModeDesc": "Hosts order follows the Hosts page across inbounds. This controls the order emitted by the server; client apps may apply their own sorting."
+      "subHostSortModeDesc": "Hosts order follows the Hosts page across inbounds. This controls the order emitted by the server; client apps may apply their own sorting.",
+      "tgPayment": "Payment",
+      "tgPaymentAmount": "Price",
+      "tgPaymentAmountDesc": "How much a client pays, shown in the bot as typed, e.g. 300 RUB / month. Leave both payment fields empty to hide payment from clients.",
+      "tgPaymentDetails": "Where to pay",
+      "tgPaymentDetailsDesc": "Card number, phone for transfers or a payment link. Clients see it in the bot next to the date their subscription ends, and can tell you they have paid."
     },
     "xray": {
       "save": "Save",
@@ -2644,7 +2649,8 @@
       "qrLegendJSON": "{{ .Code }}. JSON subscription",
       "qrLegendLink": "{{ .Code }}. App link {{ .App }}",
       "backupFailed": "Could not read the database; no backup was sent.",
-      "privateOnly": "🤖 This bot works in private chat only. Please open it in a direct message."
+      "privateOnly": "🤖 This bot works in private chat only. Please open it in a direct message.",
+      "paymentReported": "💳 {{ .User }} reports a payment for: "
     },
     "buttons": {
       "closeKeyboard": "❌ Close Keyboard",
@@ -2704,7 +2710,9 @@
       "qrCode": "🔳 QR code",
       "broadcast": "📢 Broadcast",
       "attachInbound": "Attach inbound ({{ .Count }})",
-      "attachDone": "✅ Done"
+      "attachDone": "✅ Done",
+      "iPaid": "✅ I have paid",
+      "renewClient": "📅 Renew {{ .Email }}"
     },
     "answers": {
       "broadcastStarted": "🚀 Broadcast started.",
@@ -2731,7 +2739,9 @@
       "askToAddUserId": "Your configuration is not found!\r\nPlease ask your admin to use your Telegram ChatID in your configuration(s).\r\n\r\nYour ChatID: <code>{{ .TgUserID }}</code>",
       "chooseClient": "Choose a Client for Inbound {{ .Inbound }}",
       "chooseInbound": "Choose an Inbound",
-      "qrCodeForClient": "QRCode for client {{ .Email }}:"
+      "qrCodeForClient": "QRCode for client {{ .Email }}:",
+      "paymentReported": "✅ The admin has been notified. Your subscription will be extended once the payment is confirmed.",
+      "paymentAlreadyReported": "⏳ You have already reported this payment. Please wait for the admin to confirm it."
     },
     "screens": {
       "panel": "Panel",
@@ -2762,6 +2772,13 @@
     "noValue": "—",
     "notices": {
       "repeat": "\r\n\r\n🔁 repeated {{ .Count }}× · last {{ .Time }}"
+    },
+    "payment": {
+      "title": "\r\n💳 <b>Payment</b>\r\n",
+      "dueOn": "📅 Pay by: {{ .Date }}\r\n",
+      "overdue": "⛔ Your subscription expired on {{ .Date }}: payment is due now\r\n",
+      "amount": "💰 Amount: {{ .Amount }}\r\n",
+      "details": "🏦 Where to pay:\r\n{{ .Details }}\r\n"
     }
   },
   "discord": {

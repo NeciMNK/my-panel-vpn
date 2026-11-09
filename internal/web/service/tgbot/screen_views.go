@@ -59,6 +59,10 @@ func (t *Tgbot) screenClientHome(chatID, userID int64, delivery ...screenDeliver
 			))
 		}
 	}
+	if info := t.loadPaymentInfo(); info.billed() {
+		body.WriteString(t.paymentBlock(info, traffics))
+		rows = append(rows, t.paidButtonRow())
+	}
 	t.renderScreen(chatID, t.rootScreen("main", body.String(), rows...), delivery...)
 }
 

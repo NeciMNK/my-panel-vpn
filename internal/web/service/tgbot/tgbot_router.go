@@ -1026,6 +1026,8 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 		t.restartXrayFromScreen(callbackQuery)
 	case "rst_all", "reset_all_traffics":
 		t.renderScreen(chatId, t.resetAllConfirm())
+	case cbClientPaid:
+		t.reportClientPayment(callbackQuery)
 	case "client_traffic":
 		t.answerSilent(callbackQuery.ID)
 		t.getClientUsage(chatId, callbackQuery.From.ID, screenEditOrReplace)
@@ -1239,7 +1241,7 @@ func isClientSelfCallback(data string) bool {
 	// "hide" is how any recipient puts a message away: it carries no target of its
 	// own (it is the message it sits on), so it is safe for anyone to reach.
 	case "home", "hide", "client_traffic", "client_commands", "client_sub_links",
-		"client_individual_links", "client_qr_links":
+		"client_individual_links", "client_qr_links", cbClientPaid:
 		return true
 	// Paging only turns the screen already tracked for the caller's own chat.
 	case cbPageNext, cbPagePrev, cbPageNone:

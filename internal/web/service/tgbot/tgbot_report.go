@@ -303,7 +303,7 @@ func (t *Tgbot) notifyExhausted() {
 							if _, done := chatIDsDone[chatID]; !done && !checkAdmin(chatID) {
 								chatIDsDone[chatID] = struct{}{}
 								var disabledClients []xray.ClientTraffic
-								var exhaustedClients []xray.ClientTraffic
+								var exhaustedClients []*xray.ClientTraffic
 								traffics, err := t.inboundService.GetClientTrafficTgBot(client.TgID)
 								if err != nil {
 									logger.Warningf("Unable to load Telegram client traffic for %d: %v", chatID, err)
@@ -315,7 +315,7 @@ func (t *Tgbot) notifyExhausted() {
 										if traffic.Enable {
 											if (traffic.ExpiryTime > 0 && (traffic.ExpiryTime-now < exDiff)) ||
 												(traffic.Total > 0 && (traffic.Total-(traffic.Up+traffic.Down) < trDiff)) {
-												exhaustedClients = append(exhaustedClients, *traffic)
+												exhaustedClients = append(exhaustedClients, traffic)
 											}
 										} else {
 											disabledClients = append(disabledClients, *traffic)
@@ -335,12 +335,12 @@ func (t *Tgbot) notifyExhausted() {
 										output.WriteString("\r\n")
 										output.WriteString(t.I18nBot("tgbot.messages.depleteSoon", "Deplete=="+strconv.Itoa(len(exhaustedClients))))
 										for _, traffic := range exhaustedClients {
-											output.WriteString(t.clientInfoMsg(&traffic, true, false, false, true, true, false))
+											output.WriteString(t.clientInfoMsg(traffic, true, false, false, true, true, false))
 											output.WriteString("\r\n")
 										}
 										// The alert is routine and daily: give it the same dismiss the
 										// rest of the bot uses instead of a message a client cannot clear.
-										t.sendNotice(chatID, output.String())
+										t.sendExpiryReminder(chatID, output.String(), exhaustedClients)
 									}
 								}
 							}

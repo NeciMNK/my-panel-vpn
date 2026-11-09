@@ -1853,7 +1853,12 @@
       "subHostSortMode": "ترتیب گره‌های اشتراک",
       "subHostSortInbound": "ترتیب ورودی‌ها (پیش‌فرض)",
       "subHostSortHosts": "ترتیب میزبان‌ها",
-      "subHostSortModeDesc": "ترتیب میزبان‌ها در صفحهٔ میزبان‌ها، میان همهٔ ورودی‌ها اعمال می‌شود. این تنظیم ترتیب خروجی سرور را تعیین می‌کند؛ برنامهٔ کلاینت ممکن است ترتیب دیگری اعمال کند."
+      "subHostSortModeDesc": "ترتیب میزبان‌ها در صفحهٔ میزبان‌ها، میان همهٔ ورودی‌ها اعمال می‌شود. این تنظیم ترتیب خروجی سرور را تعیین می‌کند؛ برنامهٔ کلاینت ممکن است ترتیب دیگری اعمال کند.",
+      "tgPayment": "Payment",
+      "tgPaymentAmount": "Price",
+      "tgPaymentAmountDesc": "How much a client pays, shown in the bot as typed, e.g. 300 RUB / month. Leave both payment fields empty to hide payment from clients.",
+      "tgPaymentDetails": "Where to pay",
+      "tgPaymentDetailsDesc": "Card number, phone for transfers or a payment link. Clients see it in the bot next to the date their subscription ends, and can tell you they have paid."
     },
     "xray": {
       "save": "ذخیره",
@@ -2644,7 +2649,8 @@
       "qrLegendJSON": "{{ .Code }}. اشتراک JSON",
       "qrLegendLink": "{{ .Code }}. لینک برنامه {{ .App }}",
       "backupFailed": "خواندن پایگاه داده ممکن نشد؛ هیچ نسخه پشتیبانی ارسال نشد.",
-      "privateOnly": "🤖 این ربات فقط در چت خصوصی کار میکند. لطفاً آن را در پیام مستقیم باز کنید."
+      "privateOnly": "🤖 این ربات فقط در چت خصوصی کار میکند. لطفاً آن را در پیام مستقیم باز کنید.",
+      "paymentReported": "💳 {{ .User }} reports a payment for: "
     },
     "buttons": {
       "closeKeyboard": "❌ بستن کیبورد",
@@ -2704,7 +2710,9 @@
       "qrCode": "🔳 QR code",
       "broadcast": "📢 همگانی",
       "attachInbound": "افزودن ورودی ({{ .Count }})",
-      "attachDone": "✅ انجام شد"
+      "attachDone": "✅ انجام شد",
+      "iPaid": "✅ I have paid",
+      "renewClient": "📅 Renew {{ .Email }}"
     },
     "answers": {
       "broadcastStarted": "🚀 ارسال گروهی آغاز شد.",
@@ -2731,7 +2739,9 @@
       "askToAddUserId": "پیکربندی شما یافت نشد!\r\nلطفاً از مدیر خود بخواهید که شناسه کاربر تلگرام خود را در پیکربندی (های) خود استفاده کند.\r\n\r\nشناسه کاربری شما: <code>{{ .TgUserID }}</code>",
       "chooseClient": "یک مشتری برای ورودی {{ .Inbound }} انتخاب کنید",
       "chooseInbound": "یک ورودی انتخاب کنید",
-      "qrCodeForClient": "کد QR برای کاربر {{ .Email }}:"
+      "qrCodeForClient": "کد QR برای کاربر {{ .Email }}:",
+      "paymentReported": "✅ The admin has been notified. Your subscription will be extended once the payment is confirmed.",
+      "paymentAlreadyReported": "⏳ You have already reported this payment. Please wait for the admin to confirm it."
     },
     "screens": {
       "panel": "Panel",
@@ -2762,6 +2772,13 @@
     "noValue": "—",
     "notices": {
       "repeat": "\r\n\r\n🔁 repeated {{ .Count }}× · last {{ .Time }}"
+    },
+    "payment": {
+      "title": "\r\n💳 <b>Payment</b>\r\n",
+      "dueOn": "📅 Pay by: {{ .Date }}\r\n",
+      "overdue": "⛔ Your subscription expired on {{ .Date }}: payment is due now\r\n",
+      "amount": "💰 Amount: {{ .Amount }}\r\n",
+      "details": "🏦 Where to pay:\r\n{{ .Details }}\r\n"
     }
   },
   "discord": {

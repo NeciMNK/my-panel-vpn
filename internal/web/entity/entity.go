@@ -55,6 +55,9 @@ type AllSetting struct {
 	TgMemory        int    `json:"tgMemory" form:"tgMemory" validate:"gte=0,lte=100"`
 	TgLang          string `json:"tgLang" form:"tgLang"`
 	TgEnabledEvents string `json:"tgEnabledEvents" form:"tgEnabledEvents"`
+	// Shown to clients in the bot as how much and where to pay; both empty bills nobody.
+	TgPaymentAmount  string `json:"tgPaymentAmount" form:"tgPaymentAmount" example:"300 RUB / month"`
+	TgPaymentDetails string `json:"tgPaymentDetails" form:"tgPaymentDetails" example:"Card 2200 0000 0000 0000"`
 
 	SmtpEnable         bool   `json:"smtpEnable" form:"smtpEnable"`
 	SmtpHost           string `json:"smtpHost" form:"smtpHost"`

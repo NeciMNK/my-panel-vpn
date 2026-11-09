@@ -1853,7 +1853,12 @@
       "subHostSortMode": "Abonelik düğümü sıralaması",
       "subHostSortInbound": "Gelen bağlantı sırası (varsayılan)",
       "subHostSortHosts": "Ana bilgisayar sırası",
-      "subHostSortModeDesc": "Farklı gelen bağlantılarda Ana Bilgisayarlar sayfasının sırasını izler. Sunucunun çıktı sırasını belirler; istemci uygulamaları kendi sıralamalarını uygulayabilir."
+      "subHostSortModeDesc": "Farklı gelen bağlantılarda Ana Bilgisayarlar sayfasının sırasını izler. Sunucunun çıktı sırasını belirler; istemci uygulamaları kendi sıralamalarını uygulayabilir.",
+      "tgPayment": "Payment",
+      "tgPaymentAmount": "Price",
+      "tgPaymentAmountDesc": "How much a client pays, shown in the bot as typed, e.g. 300 RUB / month. Leave both payment fields empty to hide payment from clients.",
+      "tgPaymentDetails": "Where to pay",
+      "tgPaymentDetailsDesc": "Card number, phone for transfers or a payment link. Clients see it in the bot next to the date their subscription ends, and can tell you they have paid."
     },
     "xray": {
       "save": "Kaydet",
@@ -2644,7 +2649,8 @@
       "qrLegendJSON": "{{ .Code }}. JSON abonelik",
       "qrLegendLink": "{{ .Code }}. Uygulama bağlantısı {{ .App }}",
       "backupFailed": "Veritabanı okunamadı; yedek gönderilmedi.",
-      "privateOnly": "🤖 Bu bot yalnızca özel sohbette çalışır. Lütfen doğrudan mesajda açın."
+      "privateOnly": "🤖 Bu bot yalnızca özel sohbette çalışır. Lütfen doğrudan mesajda açın.",
+      "paymentReported": "💳 {{ .User }} reports a payment for: "
     },
     "buttons": {
       "closeKeyboard": "❌ Klavyeyi Kapat",
@@ -2704,7 +2710,9 @@
       "qrCode": "🔳 QR code",
       "broadcast": "📢 Yayın",
       "attachInbound": "Inbound ekle ({{ .Count }})",
-      "attachDone": "✅ Tamam"
+      "attachDone": "✅ Tamam",
+      "iPaid": "✅ I have paid",
+      "renewClient": "📅 Renew {{ .Email }}"
     },
     "answers": {
       "broadcastStarted": "🚀 Toplu gönderim başladı.",
@@ -2731,7 +2739,9 @@
       "askToAddUserId": "Yapılandırmanız bulunamadı!\r\nLütfen yöneticinizden Telegram Chat ID'nizi yapılandırmanıza eklemesini isteyin.\r\n\r\nSizin Chat ID'niz: <code>{{ .TgUserID }}</code>",
       "chooseClient": "Gelen Bağlantı {{ .Inbound }} için bir Kullanıcı Seçin",
       "chooseInbound": "Bir Gelen Bağlantı Seçin",
-      "qrCodeForClient": "{{ .Email }} istemcisi için QR Kodu:"
+      "qrCodeForClient": "{{ .Email }} istemcisi için QR Kodu:",
+      "paymentReported": "✅ The admin has been notified. Your subscription will be extended once the payment is confirmed.",
+      "paymentAlreadyReported": "⏳ You have already reported this payment. Please wait for the admin to confirm it."
     },
     "screens": {
       "panel": "Panel",
@@ -2762,6 +2772,13 @@
     "noValue": "—",
     "notices": {
       "repeat": "\r\n\r\n🔁 repeated {{ .Count }}× · last {{ .Time }}"
+    },
+    "payment": {
+      "title": "\r\n💳 <b>Payment</b>\r\n",
+      "dueOn": "📅 Pay by: {{ .Date }}\r\n",
+      "overdue": "⛔ Your subscription expired on {{ .Date }}: payment is due now\r\n",
+      "amount": "💰 Amount: {{ .Amount }}\r\n",
+      "details": "🏦 Where to pay:\r\n{{ .Details }}\r\n"
     }
   },
   "discord": {

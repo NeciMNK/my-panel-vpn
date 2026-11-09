@@ -1853,7 +1853,12 @@
       "subHostSortMode": "Thứ tự nút đăng ký",
       "subHostSortInbound": "Thứ tự kết nối vào (mặc định)",
       "subHostSortHosts": "Thứ tự máy chủ",
-      "subHostSortModeDesc": "Theo thứ tự trên trang Máy chủ giữa các kết nối vào. Thiết lập này quyết định thứ tự do máy chủ xuất ra; ứng dụng khách có thể tự sắp xếp lại."
+      "subHostSortModeDesc": "Theo thứ tự trên trang Máy chủ giữa các kết nối vào. Thiết lập này quyết định thứ tự do máy chủ xuất ra; ứng dụng khách có thể tự sắp xếp lại.",
+      "tgPayment": "Payment",
+      "tgPaymentAmount": "Price",
+      "tgPaymentAmountDesc": "How much a client pays, shown in the bot as typed, e.g. 300 RUB / month. Leave both payment fields empty to hide payment from clients.",
+      "tgPaymentDetails": "Where to pay",
+      "tgPaymentDetailsDesc": "Card number, phone for transfers or a payment link. Clients see it in the bot next to the date their subscription ends, and can tell you they have paid."
     },
     "xray": {
       "importRules": "Nhập quy tắc",
@@ -2644,7 +2649,8 @@
       "qrLegendJSON": "{{ .Code }}. Gói đăng ký JSON",
       "qrLegendLink": "{{ .Code }}. Liên kết ứng dụng {{ .App }}",
       "backupFailed": "Không đọc được cơ sở dữ liệu; không có bản sao lưu nào được gửi.",
-      "privateOnly": "🤖 Bot này chỉ hoạt động trong trò chuyện riêng. Hãy mở nó trong tin nhắn trực tiếp."
+      "privateOnly": "🤖 Bot này chỉ hoạt động trong trò chuyện riêng. Hãy mở nó trong tin nhắn trực tiếp.",
+      "paymentReported": "💳 {{ .User }} reports a payment for: "
     },
     "buttons": {
       "closeKeyboard": "❌ Đóng Bàn Phím",
@@ -2704,7 +2710,9 @@
       "qrCode": "🔳 QR code",
       "broadcast": "📢 Phát tin",
       "attachInbound": "Đính kèm inbound ({{ .Count }})",
-      "attachDone": "✅ Xong"
+      "attachDone": "✅ Xong",
+      "iPaid": "✅ I have paid",
+      "renewClient": "📅 Renew {{ .Email }}"
     },
     "answers": {
       "broadcastStarted": "🚀 Đã bắt đầu phát tin.",
@@ -2731,7 +2739,9 @@
       "askToAddUserId": "Cấu hình của bạn không được tìm thấy!\r\nVui lòng yêu cầu Quản trị viên sử dụng ID người dùng telegram của bạn trong cấu hình của bạn.\r\n\r\nID người dùng của bạn: <code>{{ .TgUserID }}</code>",
       "chooseClient": "Chọn một Khách hàng cho Inbound {{ .Inbound }}",
       "chooseInbound": "Chọn một Inbound",
-      "qrCodeForClient": "Mã QR cho khách hàng {{ .Email }}:"
+      "qrCodeForClient": "Mã QR cho khách hàng {{ .Email }}:",
+      "paymentReported": "✅ The admin has been notified. Your subscription will be extended once the payment is confirmed.",
+      "paymentAlreadyReported": "⏳ You have already reported this payment. Please wait for the admin to confirm it."
     },
     "screens": {
       "panel": "Panel",
@@ -2762,6 +2772,13 @@
     "noValue": "—",
     "notices": {
       "repeat": "\r\n\r\n🔁 repeated {{ .Count }}× · last {{ .Time }}"
+    },
+    "payment": {
+      "title": "\r\n💳 <b>Payment</b>\r\n",
+      "dueOn": "📅 Pay by: {{ .Date }}\r\n",
+      "overdue": "⛔ Your subscription expired on {{ .Date }}: payment is due now\r\n",
+      "amount": "💰 Amount: {{ .Amount }}\r\n",
+      "details": "🏦 Where to pay:\r\n{{ .Details }}\r\n"
     }
   },
   "discord": {

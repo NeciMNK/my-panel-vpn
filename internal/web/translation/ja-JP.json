@@ -1853,7 +1853,12 @@
       "subHostSortMode": "サブスクリプションのノード順序",
       "subHostSortInbound": "インバウンド順（既定）",
       "subHostSortHosts": "ホスト順",
-      "subHostSortModeDesc": "異なるインバウンド間でもホストページの順序に従います。サーバーが出力する順序を指定しますが、クライアントアプリが独自に並べ替える場合があります。"
+      "subHostSortModeDesc": "異なるインバウンド間でもホストページの順序に従います。サーバーが出力する順序を指定しますが、クライアントアプリが独自に並べ替える場合があります。",
+      "tgPayment": "Payment",
+      "tgPaymentAmount": "Price",
+      "tgPaymentAmountDesc": "How much a client pays, shown in the bot as typed, e.g. 300 RUB / month. Leave both payment fields empty to hide payment from clients.",
+      "tgPaymentDetails": "Where to pay",
+      "tgPaymentDetailsDesc": "Card number, phone for transfers or a payment link. Clients see it in the bot next to the date their subscription ends, and can tell you they have paid."
     },
     "xray": {
       "importRules": "ルールをインポート",
@@ -2644,7 +2649,8 @@
       "qrLegendJSON": "{{ .Code }}. JSON サブスクリプション",
       "qrLegendLink": "{{ .Code }}. アプリのリンク {{ .App }}",
       "backupFailed": "データベースを読み取れませんでした。バックアップは送信されていません。",
-      "privateOnly": "🤖 このボットは個人チャットでのみ動作します。ダイレクトメッセージで開いてください。"
+      "privateOnly": "🤖 このボットは個人チャットでのみ動作します。ダイレクトメッセージで開いてください。",
+      "paymentReported": "💳 {{ .User }} reports a payment for: "
     },
     "buttons": {
       "closeKeyboard": "❌ キーボードを閉じる",
@@ -2704,7 +2710,9 @@
       "qrCode": "🔳 QR code",
       "broadcast": "📢 一斉送信",
       "attachInbound": "インバウンドを追加 ({{ .Count }})",
-      "attachDone": "✅ 完了"
+      "attachDone": "✅ 完了",
+      "iPaid": "✅ I have paid",
+      "renewClient": "📅 Renew {{ .Email }}"
     },
     "answers": {
       "broadcastStarted": "🚀 一括送信を開始しました。",
@@ -2731,7 +2739,9 @@
       "askToAddUserId": "設定が見つかりませんでした！\r\n管理者に問い合わせて、設定にTelegramユーザーのChatIDを使用してください。\r\n\r\nあなたのユーザーChatID：<code>{{ .TgUserID }}</code>",
       "chooseClient": "インバウンド {{ .Inbound }} のクライアントを選択",
       "chooseInbound": "インバウンドを選択",
-      "qrCodeForClient": "クライアント {{ .Email }} のQRコード:"
+      "qrCodeForClient": "クライアント {{ .Email }} のQRコード:",
+      "paymentReported": "✅ The admin has been notified. Your subscription will be extended once the payment is confirmed.",
+      "paymentAlreadyReported": "⏳ You have already reported this payment. Please wait for the admin to confirm it."
     },
     "screens": {
       "panel": "Panel",
@@ -2762,6 +2772,13 @@
     "noValue": "—",
     "notices": {
       "repeat": "\r\n\r\n🔁 repeated {{ .Count }}× · last {{ .Time }}"
+    },
+    "payment": {
+      "title": "\r\n💳 <b>Payment</b>\r\n",
+      "dueOn": "📅 Pay by: {{ .Date }}\r\n",
+      "overdue": "⛔ Your subscription expired on {{ .Date }}: payment is due now\r\n",
+      "amount": "💰 Amount: {{ .Amount }}\r\n",
+      "details": "🏦 Where to pay:\r\n{{ .Details }}\r\n"
     }
   },
   "discord": {

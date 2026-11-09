@@ -45,6 +45,8 @@ export const AllSettingSchema = z
     outboundDownThreshold: z.number().int().min(1).max(100).optional(),
     nodeDownThreshold: z.number().int().min(1).max(100).optional(),
     tgLang: z.string().optional(),
+    tgPaymentAmount: z.string().optional(),
+    tgPaymentDetails: z.string().optional(),
     twoFactorEnable: z.boolean().optional(),
     twoFactorToken: z.string().optional(),
     xrayTemplateConfig: z.string().optional(),
