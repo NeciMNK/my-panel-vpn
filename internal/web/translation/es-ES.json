@@ -107,7 +107,18 @@
     "support": "Soporte",
     "qrTitle": "Escanea. Importa. Conéctate.",
     "qrHint": "Escanéalo con tu aplicación cliente. Mantén este código en privado.",
-    "saveQr": "Guardar QR"
+    "saveQr": "Guardar QR",
+    "platformDetected": "Detectado automáticamente",
+    "recommended": "Recomendada",
+    "stepInstall": "Instala la aplicación",
+    "stepInstallHint": "Descarga {app} e instálala en este dispositivo.",
+    "stepAdd": "Añade la suscripción",
+    "stepAddHint": "Pulsa el botón: {app} se abrirá e importará tu suscripción.",
+    "stepAddCopyHint": "{app} no importa con un toque: copia el enlace y añádelo en la app desde el portapapeles.",
+    "stepConnect": "Conéctate",
+    "stepConnectHint": "Abre {app}, elige un servidor y activa la conexión.",
+    "addSubscription": "Añadir suscripción",
+    "copyLink": "Copiar enlace"
   },
   "menu": {
     "theme": "Tema",

@@ -107,7 +107,18 @@
     "support": "Dukungan",
     "qrTitle": "Pindai. Impor. Terhubung.",
     "qrHint": "Pindai dengan aplikasi klien Anda. Jaga kerahasiaan kode ini.",
-    "saveQr": "Simpan QR"
+    "saveQr": "Simpan QR",
+    "platformDetected": "Terdeteksi otomatis",
+    "recommended": "Disarankan",
+    "stepInstall": "Pasang aplikasi",
+    "stepInstallHint": "Unduh {app} dan pasang di perangkat ini.",
+    "stepAdd": "Tambahkan langganan",
+    "stepAddHint": "Ketuk tombol: {app} terbuka dan mengimpor langganan Anda.",
+    "stepAddCopyHint": "{app} tidak bisa impor dengan sekali ketuk: salin tautan, lalu tambahkan di aplikasi dari papan klip.",
+    "stepConnect": "Hubungkan",
+    "stepConnectHint": "Buka {app}, pilih server, dan aktifkan koneksi.",
+    "addSubscription": "Tambah langganan",
+    "copyLink": "Salin tautan"
   },
   "menu": {
     "theme": "Tema",

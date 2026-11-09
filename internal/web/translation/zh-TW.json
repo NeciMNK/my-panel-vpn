@@ -107,7 +107,18 @@
     "support": "支援",
     "qrTitle": "掃描。匯入。連線。",
     "qrHint": "使用用戶端應用程式掃描。請勿外洩此 QR 碼。",
-    "saveQr": "儲存 QR 碼"
+    "saveQr": "儲存 QR 碼",
+    "platformDetected": "已自動偵測",
+    "recommended": "推薦",
+    "stepInstall": "安裝應用程式",
+    "stepInstallHint": "下載 {app} 並安裝到此裝置。",
+    "stepAdd": "新增訂閱",
+    "stepAddHint": "點擊按鈕：{app} 會開啟並匯入你的訂閱。",
+    "stepAddCopyHint": "{app} 不支援一鍵匯入：請複製連結，然後在應用程式中從剪貼簿新增。",
+    "stepConnect": "連線",
+    "stepConnectHint": "開啟 {app}，選擇伺服器並開啟連線。",
+    "addSubscription": "新增訂閱",
+    "copyLink": "複製連結"
   },
   "menu": {
     "theme": "主題",
