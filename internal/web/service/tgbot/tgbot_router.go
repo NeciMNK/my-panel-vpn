@@ -271,8 +271,12 @@ func (t *Tgbot) answerCommand(message *telego.Message, chatId int64, isAdmin boo
 			t.claimInvite(chatId, message.From.ID, commandArgs[0])
 		}
 		// A stranger learns only its ChatID, which is what an admin needs to bind it.
-		if !isAdmin && (sentForChat(message) || t.levelOf(message.From.ID) == levelStranger) {
+		if !isAdmin && sentForChat(message) {
 			t.sendNotice(chatId, t.I18nBot("tgbot.answers.askToAddUserId", "TgUserID=="+strconv.FormatInt(message.From.ID, 10)))
+			return
+		}
+		if !isAdmin && t.levelOf(message.From.ID) == levelStranger {
+			t.sendStrangerWelcome(chatId, message.From.ID)
 			return
 		}
 		t.clearBroadcastPrompt(messageActor(*message))
@@ -425,6 +429,24 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 			case "client_qr_links":
 				t.screenClientQR(chatId, email)
 				return
+			case "pay_ok":
+				if len(dataArray) == 3 {
+					t.confirmPayment(callbackQuery, email, dataArray[2])
+					return
+				}
+				t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
+			case "trust":
+				t.toggleTrusted(callbackQuery, email)
+			case "free_ok":
+				if !t.approveFreePlan(chatId, actor, dataArray[1]) {
+					t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
+					return
+				}
+				t.answerSilent(callbackQuery.ID)
+			case "free_no":
+				t.declineFreePlan(callbackQuery, dataArray[1])
+			case cbClientPaid:
+				t.reportClientPayment(callbackQuery, dataArray[1])
 			case "client_get_usage":
 				t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.messages.email", "Email=="+email))
 				t.searchClientScreen(chatId, email)
@@ -966,6 +988,11 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 		}
 	}
 
+	if months, ok := strings.CutPrefix(callbackQuery.Data, cbClientPaid+" "); ok {
+		t.reportClientPayment(callbackQuery, months)
+		return
+	}
+
 	switch callbackQuery.Data {
 	case "home":
 		t.screenHome(chatId, callbackQuery.From.ID)
@@ -1027,7 +1054,10 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 	case "rst_all", "reset_all_traffics":
 		t.renderScreen(chatId, t.resetAllConfirm())
 	case cbClientPaid:
-		t.reportClientPayment(callbackQuery)
+		t.answerSilent(callbackQuery.ID)
+		t.screenPlanPicker(chatId)
+	case cbClientDefer:
+		t.deferPayment(callbackQuery)
 	case "client_traffic":
 		t.answerSilent(callbackQuery.ID)
 		t.getClientUsage(chatId, callbackQuery.From.ID, screenEditOrReplace)
@@ -1171,8 +1201,12 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 			t.sendNotice(chatId, t.I18nBot("tgbot.messages.error_add_client", "error=="+err.Error()))
 			return
 		}
-		email := draft.email
+		email, freePlan, tgID := draft.email, draft.freePlan, draft.tgID
 		addClientDrafts.reset(actor)
+		if userID, err := strconv.ParseInt(tgID, 10, 64); freePlan && err == nil && userID > 0 {
+			t.sendNotice(userID, t.I18nBot("tgbot.messages.freeApproved", "GB=="+strconv.Itoa(freePlanGB)))
+			t.screenClientHome(userID, userID, screenSendNew)
+		}
 		// The new client's card is the screen: the links and the QR hang off it,
 		// so nobody has to go looking for the client they just created.
 		t.searchClientScreen(chatId, email)
@@ -1241,10 +1275,13 @@ func isClientSelfCallback(data string) bool {
 	// "hide" is how any recipient puts a message away: it carries no target of its
 	// own (it is the message it sits on), so it is safe for anyone to reach.
 	case "home", "hide", "client_traffic", "client_commands", "client_sub_links",
-		"client_individual_links", "client_qr_links", cbClientPaid:
+		"client_individual_links", "client_qr_links", cbClientPaid, cbClientDefer:
 		return true
 	// Paging only turns the screen already tracked for the caller's own chat.
 	case cbPageNext, cbPagePrev, cbPageNone:
+		return true
+	}
+	if _, isReport := strings.CutPrefix(data, cbClientPaid+" "); isReport {
 		return true
 	}
 	_, _, ok := splitClientLinkCallback(data)

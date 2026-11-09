@@ -147,6 +147,7 @@ func (t *Tgbot) clientRows(email string) [][]telego.InlineKeyboardButton {
 			t.btn("tgbot.buttons.qrCode", t.encodeQuery("client_qr_links "+email)),
 		),
 		tu.InlineKeyboardRow(t.btn("tgbot.buttons.toggle", t.encodeQuery("toggle_enable "+email))),
+		t.trustedRow(email),
 		t.backRow(),
 	}
 }

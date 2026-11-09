@@ -61,7 +61,7 @@ func (t *Tgbot) screenClientHome(chatID, userID int64, delivery ...screenDeliver
 	}
 	if info := t.loadPaymentInfo(); info.billed() {
 		body.WriteString(t.paymentBlock(info, traffics))
-		rows = append(rows, t.paidButtonRow())
+		rows = append(rows, t.paymentRows(traffics)...)
 	}
 	t.renderScreen(chatID, t.rootScreen("main", body.String(), rows...), delivery...)
 }

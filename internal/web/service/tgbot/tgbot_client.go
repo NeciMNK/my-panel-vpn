@@ -123,11 +123,20 @@ func (t *Tgbot) SubmitAddClient(draft *clientDraft) (bool, error) {
 		Reset:      draft.reset,
 		TgID:       tgIDInt,
 	}
+	if draft.freePlan {
+		client.TotalGB = freePlanGB * 1024 * 1024 * 1024
+		client.TrafficReset = "monthly"
+		client.TrafficResetDay = 1
+	}
 
-	return t.clientService.Create(&t.inboundService, &service.ClientCreatePayload{
+	needRestart, err := t.clientService.Create(&t.inboundService, &service.ClientCreatePayload{
 		Client:     client,
 		InboundIds: inboundIDs,
 	})
+	if err == nil && draft.freePlan {
+		err = t.markFreePlan(draft.email)
+	}
+	return needRestart, err
 }
 
 // buildSubscriptionURLs builds the HTML sub page URL and JSON subscription URL for a client email

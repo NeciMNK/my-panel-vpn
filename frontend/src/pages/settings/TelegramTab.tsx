@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Button, Input, Select, Space, Switch, Tabs } from 'antd';
+import { Alert, Button, Input, InputNumber, Select, Space, Switch, Tabs } from 'antd';
 import {
   BellOutlined,
   SendOutlined,
@@ -9,6 +9,7 @@ import {
   WarningOutlined,
 } from '@ant-design/icons';
 import { HttpUtil, LanguageManager } from '@/utils';
+import { onNumber } from '@/utils/onNumber';
 import type { AllSetting } from '@/models/setting';
 import { SettingListItem } from '@/components/ui';
 import { TelegramNotifications } from '@/components/ui/notifications/TelegramNotifications';
@@ -271,13 +272,36 @@ export default function TelegramTab({ allSetting, updateSetting }: TelegramTabPr
             <>
               <SettingListItem
                 paddings="small"
-                title={t('pages.settings.tgPaymentAmount')}
-                description={t('pages.settings.tgPaymentAmountDesc')}
+                title={t('pages.settings.tgPaymentPrice')}
+                description={t('pages.settings.tgPaymentPriceDesc')}
+              >
+                <Space.Compact style={{ width: '100%' }}>
+                  <InputNumber
+                    min={0}
+                    precision={0}
+                    value={allSetting.tgPaymentPrice}
+                    aria-label={t('pages.settings.tgPaymentPrice')}
+                    onChange={onNumber((v) => updateSetting({ tgPaymentPrice: v }))}
+                    style={{ width: '60%' }}
+                  />
+                  <Input
+                    value={allSetting.tgPaymentCurrency}
+                    aria-label={t('pages.settings.tgPaymentCurrency')}
+                    placeholder={t('pages.settings.tgPaymentCurrency')}
+                    onChange={(e) => updateSetting({ tgPaymentCurrency: e.target.value })}
+                    style={{ width: '40%' }}
+                  />
+                </Space.Compact>
+              </SettingListItem>
+              <SettingListItem
+                paddings="small"
+                title={t('pages.settings.tgPaymentDiscounts')}
+                description={t('pages.settings.tgPaymentDiscountsDesc')}
               >
                 <Input
-                  value={allSetting.tgPaymentAmount}
-                  placeholder="300 RUB / month"
-                  onChange={(e) => updateSetting({ tgPaymentAmount: e.target.value })}
+                  value={allSetting.tgPaymentDiscounts}
+                  placeholder="3:10, 6:15, 12:20"
+                  onChange={(e) => updateSetting({ tgPaymentDiscounts: e.target.value })}
                 />
               </SettingListItem>
               <SettingListItem
@@ -289,6 +313,16 @@ export default function TelegramTab({ allSetting, updateSetting }: TelegramTabPr
                   value={allSetting.tgPaymentDetails}
                   autoSize={{ minRows: 2, maxRows: 6 }}
                   onChange={(e) => updateSetting({ tgPaymentDetails: e.target.value })}
+                />
+              </SettingListItem>
+              <SettingListItem
+                paddings="small"
+                title={t('pages.settings.tgFreePlan')}
+                description={t('pages.settings.tgFreePlanDesc')}
+              >
+                <Switch
+                  checked={allSetting.tgFreePlanEnable}
+                  onChange={(v) => updateSetting({ tgFreePlanEnable: v })}
                 />
               </SettingListItem>
             </>

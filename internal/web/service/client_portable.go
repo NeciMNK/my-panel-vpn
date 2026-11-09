@@ -308,6 +308,9 @@ func (s *ClientService) DeleteOrphans() (int, error) {
 			if e := tx.Where("client_id IN ?", batch).Delete(&model.ClientExternalLink{}).Error; e != nil {
 				return e
 			}
+			if e := tx.Where("client_id IN ?", batch).Delete(&model.ClientBilling{}).Error; e != nil {
+				return e
+			}
 		}
 		if len(emails) > 0 {
 			for _, batch := range chunkStrings(emails, sqlInChunk) {

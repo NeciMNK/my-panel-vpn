@@ -84,13 +84,27 @@ links, and QR codes.
 
 ## Client payments
 
-When **Settings → Telegram → Payment** has a price or payment details, a client's
-bot screen also shows when to pay (the earliest expiry of its subscriptions, or
-"due now" once one has expired), how much and where. The same block is added to
-the client's expiry/quota warning. The client's **I have paid** button pages every
-admin with a **Renew** button per subscription, which opens the usual expiry
-picker; repeat taps within 10 minutes are ignored. With both fields empty clients
-see no payment block.
+Set **Settings → Telegram → Payment** to bill clients through the bot:
+
+- **Monthly price**, currency and **discounts for longer terms** (`months:percent`,
+  e.g. `3:10, 6:15, 12:20`). The client's screen lists every term with its total,
+  when to pay (the earliest expiry, or "due now" once it has lapsed) and where.
+  The same block is added to the client's expiry/quota warning.
+- **I have paid** asks the client which term it paid for and pages every admin
+  with a **✅ email: +N mo** button per subscription. One tap extends the term from
+  its end (or from now if it lapsed) and tells the client. Repeat reports within
+  10 minutes are ignored.
+- **Pay later**: in the bot's client card an admin marks a client **Trusted**.
+  A trusted client whose subscription ends within 15 days can extend it by 15 days
+  once on credit; admins are told, and the next confirmed payment repays those
+  days. A second deferral needs a payment first.
+- **Free plan**: with it on, a Telegram account that is not a client gets a
+  **Request a free subscription** button. Admins approve it in the bot, which
+  opens the add-client wizard prefilled with the user's Telegram ID, 10 GB and a
+  monthly traffic reset; the admin picks the inbounds. Confirming any payment
+  for a free client removes the limit.
+
+With no price and no payment details, clients see no payment block.
 
 ## Reports & alerts
 
@@ -127,8 +141,10 @@ The warning lead times come from `expireDiff` (days before expiry) and
 | `tgCpu` / `tgMemory` | `80` / `80`          | CPU / memory alert thresholds (percent).       |
 | `tgLang`       | `en-US`                    | Bot language.                                  |
 | `tgEnabledEvents` | `login.attempt,cpu.high`| Which events to deliver.                       |
-| `tgPaymentAmount` | _(none)_                | Price shown to clients, as typed (e.g. `300 RUB / month`). |
+| `tgPaymentPrice` / `tgPaymentCurrency` | `0` / _(none)_ | Monthly price and its currency. |
+| `tgPaymentDiscounts` | _(none)_             | Longer terms, `months:percent` pairs.          |
 | `tgPaymentDetails` | _(none)_               | Where to pay: card, phone or a payment link.   |
+| `tgFreePlanEnable` | `false`                | Let strangers request a free 10 GB/month plan. |
 
 <Callout type="warn">
   The bot token controls your bot — keep it secret and only add **trusted** admin

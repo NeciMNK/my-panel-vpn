@@ -1855,10 +1855,15 @@
       "subHostSortHosts": "ترتیب میزبان‌ها",
       "subHostSortModeDesc": "ترتیب میزبان‌ها در صفحهٔ میزبان‌ها، میان همهٔ ورودی‌ها اعمال می‌شود. این تنظیم ترتیب خروجی سرور را تعیین می‌کند؛ برنامهٔ کلاینت ممکن است ترتیب دیگری اعمال کند.",
       "tgPayment": "Payment",
-      "tgPaymentAmount": "Price",
-      "tgPaymentAmountDesc": "How much a client pays, shown in the bot as typed, e.g. 300 RUB / month. Leave both payment fields empty to hide payment from clients.",
       "tgPaymentDetails": "Where to pay",
-      "tgPaymentDetailsDesc": "Card number, phone for transfers or a payment link. Clients see it in the bot next to the date their subscription ends, and can tell you they have paid."
+      "tgPaymentDetailsDesc": "Card number, phone for transfers or a payment link. Clients see it in the bot next to the date their subscription ends, and can tell you they have paid.",
+      "tgPaymentPrice": "Monthly price",
+      "tgPaymentPriceDesc": "Price of one month. Longer terms are offered with the discounts below. 0 hides prices; leave the payment details empty too to hide payment from clients.",
+      "tgPaymentCurrency": "Currency",
+      "tgPaymentDiscounts": "Discounts for longer terms",
+      "tgPaymentDiscountsDesc": "months:percent, comma-separated, e.g. 3:10, 6:15, 12:20. Each becomes a term clients can pay for.",
+      "tgFreePlan": "Free plan",
+      "tgFreePlanDesc": "Let unknown Telegram users ask for a free subscription (10 GB a month). Every request must be approved by an admin in the bot; paying for any term removes the limit."
     },
     "xray": {
       "save": "ذخیره",
@@ -2650,7 +2655,12 @@
       "qrLegendLink": "{{ .Code }}. لینک برنامه {{ .App }}",
       "backupFailed": "خواندن پایگاه داده ممکن نشد؛ هیچ نسخه پشتیبانی ارسال نشد.",
       "privateOnly": "🤖 این ربات فقط در چت خصوصی کار میکند. لطفاً آن را در پیام مستقیم باز کنید.",
-      "paymentReported": "💳 {{ .User }} reports a payment for: "
+      "paymentReported": "💳 {{ .User }} paid for {{ .Months }} mo ({{ .Total }}): ",
+      "paymentConfirmed": "✅ Payment confirmed: {{ .Email }} is active until {{ .Date }}.",
+      "graceTaken": "⏳ {{ .User }} deferred payment by {{ .Days }} days for: ",
+      "freeRequested": "🆓 {{ .User }} asks for a free subscription ({{ .GB }} GB a month).",
+      "freeApproved": "🎉 Your free subscription is ready: {{ .GB }} GB a month. Pay for any term to remove the limit.",
+      "freeDeclined": "❌ Your request for a free subscription was declined."
     },
     "buttons": {
       "closeKeyboard": "❌ بستن کیبورد",
@@ -2712,7 +2722,13 @@
       "attachInbound": "افزودن ورودی ({{ .Count }})",
       "attachDone": "✅ انجام شد",
       "iPaid": "✅ I have paid",
-      "renewClient": "📅 Renew {{ .Email }}"
+      "planOption": "{{ .Months }} mo",
+      "payLater": "⏳ Pay later (up to {{ .Days }} days)",
+      "confirmPayment": "✅ {{ .Email }}: +{{ .Months }} mo",
+      "trusted": "⭐ Trusted (pay later): {{ .State }}",
+      "requestFree": "🆓 Request a free subscription ({{ .GB }} GB/month)",
+      "approve": "✅ Approve",
+      "decline": "❌ Decline"
     },
     "answers": {
       "broadcastStarted": "🚀 ارسال گروهی آغاز شد.",
@@ -2741,7 +2757,12 @@
       "chooseInbound": "یک ورودی انتخاب کنید",
       "qrCodeForClient": "کد QR برای کاربر {{ .Email }}:",
       "paymentReported": "✅ The admin has been notified. Your subscription will be extended once the payment is confirmed.",
-      "paymentAlreadyReported": "⏳ You have already reported this payment. Please wait for the admin to confirm it."
+      "paymentAlreadyReported": "⏳ You have already reported this payment. Please wait for the admin to confirm it.",
+      "paymentConfirmed": "✅ Payment confirmed for {{ .Email }}",
+      "graceGranted": "⏳ Extended by {{ .Days }} days. Please pay before {{ .Date }}.",
+      "graceUnavailable": "Deferred payment is not available right now.",
+      "freeRequested": "✅ Request sent. The admin will review it.",
+      "freeAlreadyRequested": "⏳ You have already sent a request. Please wait."
     },
     "screens": {
       "panel": "Panel",
@@ -2758,7 +2779,8 @@
       "onlines": "Online",
       "deplete": "Running out",
       "commands": "Commands",
-      "broadcast": "Broadcast"
+      "broadcast": "Broadcast",
+      "pay": "Payment"
     },
     "inline": {
       "noneTitle": "Nothing found",
@@ -2777,8 +2799,13 @@
       "title": "\r\n💳 <b>Payment</b>\r\n",
       "dueOn": "📅 Pay by: {{ .Date }}\r\n",
       "overdue": "⛔ Your subscription expired on {{ .Date }}: payment is due now\r\n",
-      "amount": "💰 Amount: {{ .Amount }}\r\n",
-      "details": "🏦 Where to pay:\r\n{{ .Details }}\r\n"
+      "details": "🏦 Where to pay:\r\n{{ .Details }}\r\n",
+      "deferredUntil": "⏳ Payment deferred: pay before {{ .Date }}\r\n",
+      "freePlan": "🆓 Free plan: {{ .GB }} GB a month. Pay for any term to remove the limit.\r\n",
+      "plansTitle": "💰 Price:\r\n",
+      "plan": "• {{ .Months }} mo — {{ .Total }}\r\n",
+      "planDiscounted": "• {{ .Months }} mo — {{ .Total }} (−{{ .Percent }}%)\r\n",
+      "choosePlan": "💳 Which term did you pay for?"
     }
   },
   "discord": {

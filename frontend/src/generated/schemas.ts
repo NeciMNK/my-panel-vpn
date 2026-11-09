@@ -530,6 +530,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgEnabledEvents": {
         "type": "string"
       },
+      "tgFreePlanEnable": {
+        "type": "boolean"
+      },
       "tgLang": {
         "type": "string"
       },
@@ -538,14 +541,23 @@ export const SCHEMAS: Record<string, unknown> = {
         "minimum": 0,
         "type": "integer"
       },
-      "tgPaymentAmount": {
-        "description": "Shown to clients in the bot as how much and where to pay; both empty bills nobody.",
-        "example": "300 RUB / month",
+      "tgPaymentCurrency": {
+        "example": "RUB",
         "type": "string"
       },
       "tgPaymentDetails": {
         "example": "Card 2200 0000 0000 0000",
         "type": "string"
+      },
+      "tgPaymentDiscounts": {
+        "example": "3:10, 6:15, 12:20",
+        "type": "string"
+      },
+      "tgPaymentPrice": {
+        "description": "Monthly price, multi-month discounts and payment details shown to clients in the bot.",
+        "example": 300,
+        "minimum": 0,
+        "type": "integer"
       },
       "tgRunTime": {
         "type": "string"
@@ -758,10 +770,13 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgBotToken",
       "tgCpu",
       "tgEnabledEvents",
+      "tgFreePlanEnable",
       "tgLang",
       "tgMemory",
-      "tgPaymentAmount",
+      "tgPaymentCurrency",
       "tgPaymentDetails",
+      "tgPaymentDiscounts",
+      "tgPaymentPrice",
       "tgRunTime",
       "timeLocation",
       "trafficDiff",
@@ -1332,6 +1347,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgEnabledEvents": {
         "type": "string"
       },
+      "tgFreePlanEnable": {
+        "type": "boolean"
+      },
       "tgLang": {
         "type": "string"
       },
@@ -1340,14 +1358,23 @@ export const SCHEMAS: Record<string, unknown> = {
         "minimum": 0,
         "type": "integer"
       },
-      "tgPaymentAmount": {
-        "description": "Shown to clients in the bot as how much and where to pay; both empty bills nobody.",
-        "example": "300 RUB / month",
+      "tgPaymentCurrency": {
+        "example": "RUB",
         "type": "string"
       },
       "tgPaymentDetails": {
         "example": "Card 2200 0000 0000 0000",
         "type": "string"
+      },
+      "tgPaymentDiscounts": {
+        "example": "3:10, 6:15, 12:20",
+        "type": "string"
+      },
+      "tgPaymentPrice": {
+        "description": "Monthly price, multi-month discounts and payment details shown to clients in the bot.",
+        "example": 300,
+        "minimum": 0,
+        "type": "integer"
       },
       "tgRunTime": {
         "type": "string"
@@ -1568,10 +1595,13 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgBotToken",
       "tgCpu",
       "tgEnabledEvents",
+      "tgFreePlanEnable",
       "tgLang",
       "tgMemory",
-      "tgPaymentAmount",
+      "tgPaymentCurrency",
       "tgPaymentDetails",
+      "tgPaymentDiscounts",
+      "tgPaymentPrice",
       "tgRunTime",
       "timeLocation",
       "trafficDiff",

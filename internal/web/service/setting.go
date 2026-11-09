@@ -98,8 +98,11 @@ var defaultValueMap = map[string]string{
 	"tgCpu":                       "80",
 	"tgMemory":                    "80",
 	"tgLang":                      "en-US",
-	"tgPaymentAmount":             "",
+	"tgPaymentPrice":              "0",
+	"tgPaymentCurrency":           "",
+	"tgPaymentDiscounts":          "",
 	"tgPaymentDetails":            "",
+	"tgFreePlanEnable":            "false",
 	"twoFactorEnable":             "false",
 	"twoFactorToken":              "",
 	"happLinkEnable":              "false",
@@ -661,8 +664,20 @@ func (s *SettingService) GetTgBotBackup() (bool, error) {
 	return s.getBool("tgBotBackup")
 }
 
-func (s *SettingService) GetTgPaymentAmount() (string, error) {
-	return s.getString("tgPaymentAmount")
+func (s *SettingService) GetTgPaymentPrice() (int, error) {
+	return s.getInt("tgPaymentPrice")
+}
+
+func (s *SettingService) GetTgPaymentCurrency() (string, error) {
+	return s.getString("tgPaymentCurrency")
+}
+
+func (s *SettingService) GetTgPaymentDiscounts() (string, error) {
+	return s.getString("tgPaymentDiscounts")
+}
+
+func (s *SettingService) GetTgFreePlanEnable() (bool, error) {
+	return s.getBool("tgFreePlanEnable")
 }
 
 func (s *SettingService) GetTgPaymentDetails() (string, error) {
