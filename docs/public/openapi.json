@@ -11728,6 +11728,104 @@
         }
       }
     },
+    "/panel/api/nodes/{id}/xray/*path": {
+      "get": {
+        "tags": [
+          "Nodes"
+        ],
+        "summary": "Proxy a read of the node's Xray settings API (/panel/api/xray/*path on the node). Lets the central panel's Xray page show a node's outbounds, routing, balancers, WARP and geodata. The node's response is returned unchanged.",
+        "operationId": "get_panel_api_nodes_id_xray_path",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Node ID.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "required": true,
+            "description": "Path under /panel/api/xray on the node, e.g. getOutboundsTraffic.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Nodes"
+        ],
+        "summary": "Proxy a write to the node's Xray settings API (/panel/api/xray/*path on the node), e.g. update, warp/reg or balancerOverride, so outbounds, routing, balancers and WARP of every node are edited from the central panel. The node's response is returned unchanged.",
+        "operationId": "post_panel_api_nodes_id_xray_path",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Node ID.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "required": true,
+            "description": "Path under /panel/api/xray on the node, e.g. update.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/panel/api/nodes/add": {
       "post": {
         "tags": [

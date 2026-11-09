@@ -2385,7 +2385,9 @@
       "defaultOutboundDesc": "Lalu lintas tanpa aturan routing memakai outbound ini (yang pertama dalam daftar).",
       "routingScript": "Skrip Routing",
       "routingScriptDesc": "Path ke file .lua yang mendefinisikan HandleRoute, absolut atau relatif terhadap folder bin Xray. Skrip lalu memilih setiap rute dan Xray mengabaikan semua aturan routing, termasuk aturan api panel: arahkan inbound api ke outbound api atau statistik trafik dan perubahan klien langsung akan berhenti. Xray tidak akan berjalan jika file tidak ada atau tidak valid.",
-      "routingScriptActive": "Skrip routing diatur di {section}, jadi Xray mengabaikan aturan ini."
+      "routingScriptActive": "Skrip routing diatur di {section}, jadi Xray mengabaikan aturan ini.",
+      "targetNode": "Server",
+      "targetLocal": "This server (master)"
     },
     "hosts": {
       "addHost": "Tambah Host",

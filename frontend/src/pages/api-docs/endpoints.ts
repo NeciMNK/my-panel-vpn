@@ -1794,6 +1794,36 @@ export const sections: readonly Section[] = [
           '{\n  "success": true,\n  "obj": {\n    "webCertFile": "/root/cert/example.com/fullchain.pem",\n    "webKeyFile": "/root/cert/example.com/privkey.pem"\n  }\n}',
       },
       {
+        method: 'GET',
+        path: '/panel/api/nodes/:id/xray/*path',
+        summary:
+          "Proxy a read of the node's Xray settings API (/panel/api/xray/*path on the node). Lets the central panel's Xray page show a node's outbounds, routing, balancers, WARP and geodata. The node's response is returned unchanged.",
+        params: [
+          { name: 'id', in: 'path', type: 'number', desc: 'Node ID.' },
+          {
+            name: 'path',
+            in: 'path',
+            type: 'string',
+            desc: 'Path under /panel/api/xray on the node, e.g. getOutboundsTraffic.',
+          },
+        ],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/nodes/:id/xray/*path',
+        summary:
+          "Proxy a write to the node's Xray settings API (/panel/api/xray/*path on the node), e.g. update, warp/reg or balancerOverride, so outbounds, routing, balancers and WARP of every node are edited from the central panel. The node's response is returned unchanged.",
+        params: [
+          { name: 'id', in: 'path', type: 'number', desc: 'Node ID.' },
+          {
+            name: 'path',
+            in: 'path',
+            type: 'string',
+            desc: 'Path under /panel/api/xray on the node, e.g. update.',
+          },
+        ],
+      },
+      {
         method: 'POST',
         path: '/panel/api/nodes/add',
         summary:

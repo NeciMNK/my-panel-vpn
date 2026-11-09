@@ -28,6 +28,8 @@ func NewNodeController(g *gin.RouterGroup) *NodeController {
 
 func (a *NodeController) initRouter(g *gin.RouterGroup) {
 	g.GET("/list", a.list)
+	g.GET("/:id/xray/*path", a.xrayProxy)
+	g.POST("/:id/xray/*path", a.xrayProxy)
 	g.GET("/get/:id", a.get)
 	g.GET("/webCert/:id", a.webCert)
 

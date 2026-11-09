@@ -37,6 +37,18 @@ _openapi:
         panel.
       url: '#fetch-a-nodes-own-web-tls-certificatekey-file-paths-proxied-to-the-node-used-by-the-inbound-forms-set-cert-from-panel-so-a-node-assigned-inbound-gets-paths-that-exist-on-the-node-not-the-central-panel'
     - depth: 2
+      title: Proxy a read of the node's Xray settings API (/panel/api/xray/*path on
+        the node). Lets the central panel's Xray page show a node's outbounds,
+        routing, balancers, WARP and geodata. The node's response is returned
+        unchanged.
+      url: '#proxy-a-read-of-the-nodes-xray-settings-api-panelapixraypath-on-the-node-lets-the-central-panels-xray-page-show-a-nodes-outbounds-routing-balancers-warp-and-geodata-the-nodes-response-is-returned-unchanged'
+    - depth: 2
+      title: Proxy a write to the node's Xray settings API (/panel/api/xray/*path on
+        the node), e.g. update, warp/reg or balancerOverride, so outbounds,
+        routing, balancers and WARP of every node are edited from the central
+        panel. The node's response is returned unchanged.
+      url: '#proxy-a-write-to-the-nodes-xray-settings-api-panelapixraypath-on-the-node-eg-update-warpreg-or-balanceroverride-so-outbounds-routing-balancers-and-warp-of-every-node-are-edited-from-the-central-panel-the-nodes-response-is-returned-unchanged'
+    - depth: 2
       title: Register a new remote node. Provide its URL, write-only apiToken, and
         optional remark / allowPrivateAddress flag. Responses expose hasApiToken
         only.
@@ -105,6 +117,16 @@ _openapi:
           node-assigned inbound gets paths that exist on the node, not the
           central panel.
         id: fetch-a-nodes-own-web-tls-certificatekey-file-paths-proxied-to-the-node-used-by-the-inbound-forms-set-cert-from-panel-so-a-node-assigned-inbound-gets-paths-that-exist-on-the-node-not-the-central-panel
+      - content: Proxy a read of the node's Xray settings API (/panel/api/xray/*path on
+          the node). Lets the central panel's Xray page show a node's outbounds,
+          routing, balancers, WARP and geodata. The node's response is returned
+          unchanged.
+        id: proxy-a-read-of-the-nodes-xray-settings-api-panelapixraypath-on-the-node-lets-the-central-panels-xray-page-show-a-nodes-outbounds-routing-balancers-warp-and-geodata-the-nodes-response-is-returned-unchanged
+      - content: Proxy a write to the node's Xray settings API (/panel/api/xray/*path on
+          the node), e.g. update, warp/reg or balancerOverride, so outbounds,
+          routing, balancers and WARP of every node are edited from the central
+          panel. The node's response is returned unchanged.
+        id: proxy-a-write-to-the-nodes-xray-settings-api-panelapixraypath-on-the-node-eg-update-warpreg-or-balanceroverride-so-outbounds-routing-balancers-and-warp-of-every-node-are-edited-from-the-central-panel-the-nodes-response-is-returned-unchanged
       - content: Register a new remote node. Provide its URL, write-only apiToken, and
           optional remark / allowPrivateAddress flag. Responses expose
           hasApiToken only.
@@ -149,7 +171,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/nodes/list","method":"get"},{"path":"/panel/api/nodes/mtls/ca","method":"post"},{"path":"/panel/api/nodes/mtls/trustCA","method":"post"},{"path":"/panel/api/nodes/mtls/reloadClient","method":"post"},{"path":"/panel/api/nodes/get/{id}","method":"get"},{"path":"/panel/api/nodes/webCert/{id}","method":"get"},{"path":"/panel/api/nodes/add","method":"post"},{"path":"/panel/api/nodes/update/{id}","method":"post"},{"path":"/panel/api/nodes/del/{id}","method":"post"},{"path":"/panel/api/nodes/setEnable/{id}","method":"post"},{"path":"/panel/api/nodes/test","method":"post"},{"path":"/panel/api/nodes/certFingerprint","method":"post"},{"path":"/panel/api/nodes/inbounds","method":"post"},{"path":"/panel/api/nodes/probe/{id}","method":"post"},{"path":"/panel/api/nodes/updatePanel","method":"post"},{"path":"/panel/api/nodes/history/{id}/{metric}/{bucket}","method":"get"}]} showTitle />
+      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/nodes/list","method":"get"},{"path":"/panel/api/nodes/mtls/ca","method":"post"},{"path":"/panel/api/nodes/mtls/trustCA","method":"post"},{"path":"/panel/api/nodes/mtls/reloadClient","method":"post"},{"path":"/panel/api/nodes/get/{id}","method":"get"},{"path":"/panel/api/nodes/webCert/{id}","method":"get"},{"path":"/panel/api/nodes/{id}/xray/*path","method":"get"},{"path":"/panel/api/nodes/{id}/xray/*path","method":"post"},{"path":"/panel/api/nodes/add","method":"post"},{"path":"/panel/api/nodes/update/{id}","method":"post"},{"path":"/panel/api/nodes/del/{id}","method":"post"},{"path":"/panel/api/nodes/setEnable/{id}","method":"post"},{"path":"/panel/api/nodes/test","method":"post"},{"path":"/panel/api/nodes/certFingerprint","method":"post"},{"path":"/panel/api/nodes/inbounds","method":"post"},{"path":"/panel/api/nodes/probe/{id}","method":"post"},{"path":"/panel/api/nodes/updatePanel","method":"post"},{"path":"/panel/api/nodes/history/{id}/{metric}/{bucket}","method":"get"}]} showTitle />
     </>
   );
 }

@@ -2385,7 +2385,9 @@
       "defaultOutboundDesc": "Lưu lượng không khớp quy tắc định tuyến dùng outbound này (mục đầu danh sách).",
       "routingScript": "Script định tuyến",
       "routingScriptDesc": "Đường dẫn tới tệp .lua định nghĩa HandleRoute, tuyệt đối hoặc tương đối với thư mục bin của Xray. Khi đó script chọn mọi tuyến và Xray bỏ qua tất cả quy tắc định tuyến, kể cả quy tắc api của panel: hãy chuyển inbound api tới outbound api, nếu không thống kê lưu lượng và việc áp dụng thay đổi client trực tiếp sẽ dừng. Xray sẽ không khởi động nếu tệp không tồn tại hoặc không hợp lệ.",
-      "routingScriptActive": "Một script định tuyến đã được đặt trong {section}, nên Xray bỏ qua các quy tắc này."
+      "routingScriptActive": "Một script định tuyến đã được đặt trong {section}, nên Xray bỏ qua các quy tắc này.",
+      "targetNode": "Server",
+      "targetLocal": "This server (master)"
     },
     "hosts": {
       "addHost": "Thêm Host",

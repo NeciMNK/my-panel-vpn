@@ -2506,7 +2506,9 @@
       "defaultOutboundDesc": "Prevádzka bez zhody s pravidlom smerovania použije tento výstup. Xray používa prvý výstup v zozname.",
       "routingScript": "Skript smerovania",
       "routingScriptDesc": "Cesta k súboru .lua s funkciou HandleRoute, absolútna alebo vzhľadom na priečinok bin Xray. Skript vyberá každú trasu a Xray ignoruje všetky pravidlá vrátane pravidla api panelu. Vstup api preto smerujte na výstup api, inak prestanú fungovať štatistiky spotreby aj zmeny klientov za behu. Ak súbor chýba alebo je neplatný, Xray sa nespustí.",
-      "routingScriptActive": "V časti {section} je nastavený skript smerovania, preto Xray tieto pravidlá ignoruje."
+      "routingScriptActive": "V časti {section} je nastavený skript smerovania, preto Xray tieto pravidlá ignoruje.",
+      "targetNode": "Server",
+      "targetLocal": "This server (master)"
     },
     "sponsors": {
       "title": "Sponzori",

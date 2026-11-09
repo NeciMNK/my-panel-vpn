@@ -2385,7 +2385,9 @@
       "defaultOutboundDesc": "Yönlendirme kuralıyla eşleşmeyen trafik bu gideni kullanır (listedeki ilk giden).",
       "routingScript": "Yönlendirme Betiği",
       "routingScriptDesc": "HandleRoute tanımlayan bir .lua dosyasının yolu; mutlak ya da Xray bin klasörüne göre göreli. Betik bundan sonra her rotayı seçer ve Xray, panelin api kuralı dahil tüm yönlendirme kurallarını yok sayar: api gelen bağlantısını api giden bağlantısına yönlendirin, yoksa trafik istatistikleri ve canlı istemci değişiklikleri durur. Dosya yoksa veya geçersizse Xray başlamaz.",
-      "routingScriptActive": "{section} bölümünde bir yönlendirme betiği ayarlı, bu yüzden Xray bu kuralları yok sayar."
+      "routingScriptActive": "{section} bölümünde bir yönlendirme betiği ayarlı, bu yüzden Xray bu kuralları yok sayar.",
+      "targetNode": "Server",
+      "targetLocal": "This server (master)"
     },
     "hosts": {
       "addHost": "Host Ekle",

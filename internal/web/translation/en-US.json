@@ -2506,7 +2506,9 @@
       "defaultOutboundDesc": "Traffic that does not match any routing rule uses this outbound (Xray uses the first outbound in the list).",
       "routingScript": "Routing Script",
       "routingScriptDesc": "Path to a .lua file defining HandleRoute, absolute or relative to the Xray bin folder. The script then picks every route and Xray ignores all routing rules, the panel's api rule included: send the api inbound to the api outbound or traffic stats and live client changes stop. Xray will not start if the file is missing or invalid.",
-      "routingScriptActive": "A routing script is set under {section}, so Xray ignores these rules."
+      "routingScriptActive": "A routing script is set under {section}, so Xray ignores these rules.",
+      "targetNode": "Server",
+      "targetLocal": "This server (master)"
     },
     "sponsors": {
       "title": "Sponsors",

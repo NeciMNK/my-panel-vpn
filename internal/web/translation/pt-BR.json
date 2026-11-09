@@ -2385,7 +2385,9 @@
       "defaultOutboundDesc": "Tráfego sem regra de roteamento usa esta saída (a primeira da lista).",
       "routingScript": "Script de roteamento",
       "routingScriptDesc": "Caminho para um arquivo .lua que define HandleRoute, absoluto ou relativo à pasta bin do Xray. O script passa a escolher cada rota e o Xray ignora todas as regras de roteamento, inclusive a regra api do painel: envie o inbound api para o outbound api ou as estatísticas de tráfego e as alterações de clientes ao vivo param. O Xray não inicia se o arquivo estiver ausente ou for inválido.",
-      "routingScriptActive": "Há um script de roteamento definido em {section}, então o Xray ignora estas regras."
+      "routingScriptActive": "Há um script de roteamento definido em {section}, então o Xray ignora estas regras.",
+      "targetNode": "Server",
+      "targetLocal": "This server (master)"
     },
     "hosts": {
       "addHost": "Adicionar Host",

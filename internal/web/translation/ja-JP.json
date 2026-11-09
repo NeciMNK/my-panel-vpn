@@ -2385,7 +2385,9 @@
       "defaultOutboundDesc": "ルーティング規則に一致しないトラフィックはこのアウトバウンドを使います（一覧の先頭）。",
       "routingScript": "ルーティングスクリプト",
       "routingScriptDesc": "HandleRoute を定義した .lua ファイルのパス（絶対パス、または Xray の bin フォルダからの相対パス）。設定するとスクリプトがすべての経路を選び、Xray はパネルの api ルールを含むすべてのルーティングルールを無視します。api インバウンドを api アウトバウンドへ送らないと、トラフィック統計とクライアント変更の即時反映が止まります。ファイルが存在しないか不正な場合、Xray は起動しません。",
-      "routingScriptActive": "{section} でルーティングスクリプトが設定されているため、Xray はこれらのルールを無視します。"
+      "routingScriptActive": "{section} でルーティングスクリプトが設定されているため、Xray はこれらのルールを無視します。",
+      "targetNode": "Server",
+      "targetLocal": "This server (master)"
     },
     "hosts": {
       "addHost": "ホストを追加",
