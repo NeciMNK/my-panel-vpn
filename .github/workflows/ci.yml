@@ -31,7 +31,7 @@ permissions:
 
 jobs:
   go-test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
@@ -46,7 +46,7 @@ jobs:
           go test -shuffle=on -count=1 $(cat /tmp/go-packages.txt)
 
   postgres-durable-first:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     services:
       postgres:
         image: postgres:16
@@ -159,7 +159,7 @@ jobs:
   # The migration tests write and drop their own tables, so they need a
   # scratch database instead of the durable one the panel tests use.
   postgres-migration:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     services:
       postgres:
         image: postgres:16
@@ -206,7 +206,7 @@ jobs:
           fi
 
   codegen:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
@@ -225,7 +225,7 @@ jobs:
         run: cmp frontend/public/openapi.json docs/public/openapi.json
 
   govulncheck:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
@@ -241,7 +241,7 @@ jobs:
 
   # Race + shuffle hygiene gate: data races and order-dependent tests fail the build.
   race:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
@@ -259,7 +259,7 @@ jobs:
   # A real master and node panel, each its own process, driven through node sync.
   # A SKIP here means the binary was never handed over, so it fails the job.
   node-e2e:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
@@ -275,7 +275,7 @@ jobs:
   # Brief native-fuzz smoke on the security-/parser-critical decoders. Each runs the
   # generated corpus plus 30s of exploration; a crash here is a real input-handling bug.
   fuzz-smoke:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
@@ -290,7 +290,7 @@ jobs:
           go test -run '^$' -fuzz 'FuzzDecodeCertPin$' -fuzztime=30s ./internal/web/runtime/
 
   golangci:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
@@ -311,7 +311,7 @@ jobs:
   # and are gated on errors only; the scripts that are clean today are gated on
   # everything.
   shell-lint:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v7
@@ -327,13 +327,13 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y shellcheck
       - name: shellcheck
         run: |
-          shellcheck --severity=style DockerInit.sh DockerEntrypoint.sh deploy/test/smoke-noninteractive.sh deploy/test/installer-panel-port.sh
+          shellcheck --severity=style DockerInit.sh DockerEntrypoint.sh deploy/test/smoke-noninteractive.sh deploy/test/installer-panel-port.sh deploy/ci-runner/proxmox-runner.sh
           shellcheck --severity=error install.sh update.sh x-ui.sh
       - name: Installer panel port regression tests
         run: bash deploy/test/installer-panel-port.sh
 
   frontend:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
