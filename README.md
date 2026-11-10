@@ -1,5 +1,9 @@
 [English](/README.md) | [فارسی](/README.fa_IR.md) | [العربية](/README.ar_EG.md) | [中文](/README.zh_CN.md) | [Español](/README.es_ES.md) | [Русский](/README.ru_RU.md) | [Türkçe](/README.tr_TR.md)
 
+> [!NOTE]
+> **my-panel-vpn** is a personal fork of [3X-UI](https://github.com/MHSanaei/3x-ui), not an official 3X-UI release.
+> It is licensed under GPL-3.0 like upstream; see [`NOTICE.md`](NOTICE.md) for attribution, what changed and third-party licenses.
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./media/3x-ui-dark.png">
