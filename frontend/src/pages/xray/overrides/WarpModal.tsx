@@ -7,6 +7,7 @@ import { FormProvider, useForm, useWatch } from 'react-hook-form';
 import { HttpUtil, SizeFormatter, ObjectUtil, Wireguard } from '@/utils';
 import { FormField } from '@/components/form/rhf';
 import './WarpModal.css';
+import { xrayApi } from '@/api/xrayTarget';
 
 interface WarpModalProps {
   open: boolean;
@@ -190,7 +191,7 @@ export default function WarpModal({
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const msg = await HttpUtil.post<string>('/panel/api/xray/warp/data');
+      const msg = await HttpUtil.post<string>(xrayApi('/warp/data'));
       if (msg?.success) {
         const raw = msg.obj;
         setWarpData(raw && raw.length > 0 ? JSON.parse(raw) : null);
@@ -230,7 +231,7 @@ export default function WarpModal({
     setLoading(true);
     try {
       const keys = Wireguard.generateKeypair();
-      const msg = await HttpUtil.post<string>('/panel/api/xray/warp/reg', keys);
+      const msg = await HttpUtil.post<string>(xrayApi('/warp/reg'), keys);
       if (msg?.success && msg.obj) {
         const resp = JSON.parse(msg.obj);
         setWarpData(resp.data);
@@ -245,7 +246,7 @@ export default function WarpModal({
   async function getConfig() {
     setLoading(true);
     try {
-      const msg = await HttpUtil.post<string>('/panel/api/xray/warp/config');
+      const msg = await HttpUtil.post<string>(xrayApi('/warp/config'));
       if (msg?.success && msg.obj) {
         const parsed = JSON.parse(msg.obj);
         setWarpConfig(parsed);
@@ -259,7 +260,7 @@ export default function WarpModal({
   async function changeIp() {
     setLoading(true);
     try {
-      const msg = await HttpUtil.post<string>('/panel/api/xray/warp/changeIp');
+      const msg = await HttpUtil.post<string>(xrayApi('/warp/changeIp'));
       if (msg?.success && msg.obj) {
         const parsed = JSON.parse(msg.obj);
         setWarpData(parsed.data);
@@ -287,7 +288,7 @@ export default function WarpModal({
   async function saveInterval() {
     setLoading(true);
     try {
-      const msg = await HttpUtil.post('/panel/api/xray/warp/interval', {
+      const msg = await HttpUtil.post(xrayApi('/warp/interval'), {
         interval: methods.getValues('updateInterval'),
       });
       if (msg?.success) {
@@ -304,7 +305,7 @@ export default function WarpModal({
     setLoading(true);
     setLicenseError('');
     try {
-      const msg = await HttpUtil.post<string>('/panel/api/xray/warp/license', {
+      const msg = await HttpUtil.post<string>(xrayApi('/warp/license'), {
         license: licenseValue,
       });
       if (msg?.success && msg.obj) {
@@ -322,7 +323,7 @@ export default function WarpModal({
   async function delConfig() {
     setLoading(true);
     try {
-      const msg = await HttpUtil.post('/panel/api/xray/warp/del');
+      const msg = await HttpUtil.post(xrayApi('/warp/del'));
       if (msg?.success) {
         setWarpData(null);
         setWarpConfig(null);
@@ -338,7 +339,7 @@ export default function WarpModal({
   async function addMasqueOutbound() {
     setLoading(true);
     try {
-      const msg = await HttpUtil.post<string>('/panel/api/xray/warp/regMasque');
+      const msg = await HttpUtil.post<string>(xrayApi('/warp/regMasque'));
       if (!msg?.success || !msg.obj) return;
       const outbound = buildWarpMasqueOutbound(JSON.parse(msg.obj) as WarpMasqueRegistration);
       const index = templateSettings?.outbounds?.findIndex((o) => o?.tag === 'warp-masque') ?? -1;

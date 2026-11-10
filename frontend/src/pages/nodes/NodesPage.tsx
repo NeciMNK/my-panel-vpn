@@ -33,6 +33,12 @@ import { useNodeMutations } from '@/api/queries/useNodeMutations';
 import AppSidebar from '@/layouts/AppSidebar';
 import NodeList from './NodeList';
 import NodeFormModal from './NodeFormModal';
+import NodeJoinModal from './NodeJoinModal';
+import CascadesCard from './CascadesCard';
+import HomeNetworksCard from './HomeNetworksCard';
+import WarpSwitchCard from './WarpSwitchCard';
+import SpeedCard from './SpeedCard';
+import MastersCard from './MastersCard';
 import { setMessageInstance } from '@/utils/messageBus';
 import { HttpUtil } from '@/utils';
 import type { PanelUpdateInfo } from '../index/PanelUpdateModal';
@@ -104,6 +110,7 @@ export default function NodesPage() {
   const [formNode, setFormNode] = useState<NodeRecord | null>(null);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [mtlsOpen, setMtlsOpen] = useState(false);
+  const [joinOpen, setJoinOpen] = useState(false);
   const [trustCa, setTrustCa] = useState('');
   const [copyingCa, setCopyingCa] = useState(false);
   const [savingTrustCa, setSavingTrustCa] = useState(false);
@@ -366,6 +373,7 @@ export default function NodesPage() {
                       selectedIds={selectedIds}
                       onSelectionChange={setSelectedIds}
                       onAdd={onAdd}
+                      onQuickJoin={() => setJoinOpen(true)}
                       onMtls={() => setMtlsOpen(true)}
                       onEdit={onEdit}
                       onDelete={onDelete}
@@ -375,11 +383,39 @@ export default function NodesPage() {
                       onUpdateSelected={onUpdateSelected}
                     />
                   </Col>
+
+                  <Col span={24}>
+                    <MastersCard />
+                  </Col>
+
+                  <Col span={24}>
+                    <CascadesCard nodes={nodes} />
+                  </Col>
+
+                  <Col span={24}>
+                    <HomeNetworksCard nodes={nodes} />
+                  </Col>
+
+                  <Col span={24}>
+                    <WarpSwitchCard nodes={nodes} />
+                  </Col>
+
+                  <Col span={24}>
+                    <SpeedCard nodes={nodes} />
+                  </Col>
                 </Row>
               )}
             </Spin>
           </Layout.Content>
         </Layout>
+
+        <NodeJoinModal
+          open={joinOpen}
+          onClose={() => {
+            setJoinOpen(false);
+            void refetch();
+          }}
+        />
 
         <NodeFormModal
           open={formOpen}

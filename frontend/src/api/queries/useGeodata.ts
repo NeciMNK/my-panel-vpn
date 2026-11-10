@@ -11,6 +11,7 @@ import {
 import type { GeoCategoryPage, GeoEntryPage, GeoFile, GeodataTokenIssue } from '@/generated/types';
 import { HttpUtil } from '@/utils';
 import { parseMsg } from '@/utils/zodValidate';
+import { xrayApi } from '@/api/xrayTarget';
 
 const GeoFileListSchema = z.array(GeoFileSchema);
 const GeodataTokenIssueListSchema = z.array(GeodataTokenIssueSchema);
@@ -26,7 +27,7 @@ export interface ValidateGeoTokensInput {
 }
 
 async function fetchGeodataFiles(): Promise<GeoFile[]> {
-  const msg = await HttpUtil.get('/panel/api/xray/geodata/files', undefined, { silent: true });
+  const msg = await HttpUtil.get(xrayApi('/geodata/files'), undefined, { silent: true });
   if (!msg?.success) throw new Error(msg?.msg || 'Failed to fetch geodata files');
   const validated = parseMsg(msg, GeoFileListSchema, 'xray/geodata/files');
   return Array.isArray(validated.obj) ? validated.obj : [];
@@ -34,7 +35,7 @@ async function fetchGeodataFiles(): Promise<GeoFile[]> {
 
 async function fetchGeodataCategories(file: string, query: string): Promise<GeoCategoryPage> {
   const msg = await HttpUtil.get(
-    '/panel/api/xray/geodata/categories',
+    xrayApi('/geodata/categories'),
     { file, q: query },
     { silent: true },
   );
@@ -51,7 +52,7 @@ async function fetchGeodataEntries(
   limit: number,
 ): Promise<GeoEntryPage> {
   const msg = await HttpUtil.get(
-    '/panel/api/xray/geodata/entries',
+    xrayApi('/geodata/entries'),
     { file, code, q: query, offset, limit },
     { silent: true },
   );
@@ -99,7 +100,7 @@ export function useValidateGeoTokens() {
   return useMutation<GeodataTokenIssue[], Error, ValidateGeoTokensInput>({
     mutationFn: async ({ tokens, kind }) => {
       const msg = await HttpUtil.post(
-        '/panel/api/xray/geodata/validate',
+        xrayApi('/geodata/validate'),
         { tokens: tokens.join(','), kind },
         { silent: true },
       );

@@ -231,7 +231,7 @@ var defaultValueMap = map[string]string{
 	"ldapDefaultLimitIP":     "0",
 
 	// Event bus — per-subscriber event filtering (empty = all disabled)
-	"tgEnabledEvents":   "login.attempt,cpu.high",
+	"tgEnabledEvents":   "login.attempt,cpu.high,speed.low,master.leader",
 	"smtpEnabledEvents": "login.attempt,cpu.high",
 	"smtpCpu":           "80",
 	"smtpMemory":        "80",

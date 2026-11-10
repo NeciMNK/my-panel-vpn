@@ -24,6 +24,13 @@ func run(root, outDir string) error {
 		{
 			Path: resolveRel(root, "internal/database/model"),
 			StructAllow: setOf(
+				"Cascade",
+				"CascadeLink",
+				"HomeNetwork",
+				"HomeAccessRule",
+				"WarpSwitch",
+				"ClientSpeed",
+				"ServerCapacity",
 				"User",
 				"Inbound",
 				"FallbackParentInfo",
@@ -95,6 +102,9 @@ func run(root, outDir string) error {
 			Path: resolveRel(root, "internal/web/service"),
 			StructAllow: setOf(
 				"InboundOption",
+				"SpeedOverview",
+				"MasterStatus",
+				"ServerFreeSpeed",
 				"HappLinkResult",
 				"ClientSlim",
 				"ClientRenewalPreviewRequest",
@@ -108,6 +118,7 @@ func run(root, outDir string) error {
 				"MLKEM768Response",
 				"NodeMutationRequest",
 				"NodeView",
+				"NodeJoinTokenView",
 				"ProbeResultUI",
 				"RealityScanResult",
 				"GeodataTokenIssue",

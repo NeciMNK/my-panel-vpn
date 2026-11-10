@@ -16,6 +16,7 @@ import (
 	"runtime"
 	"strings"
 	"syscall"
+	"time"
 	_ "unsafe"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/config"
@@ -348,6 +349,53 @@ func updateTgbotSetting(tgBotToken string, tgBotChatid string, tgBotRuntime stri
 
 // encryptNodeTokens re-encrypts stored tokens after enablement or rotation.
 // It requires migration|required mode and a configured key.
+// clusterCommand runs `x-ui cluster <is-leader|status>` and returns the exit code.
+func clusterCommand(args []string) int {
+	_ = godotenv.Load()
+	if len(args) != 1 || (args[0] != "is-leader" && args[0] != "status") {
+		fmt.Println("usage: x-ui cluster is-leader|status")
+		return 2
+	}
+	// is-leader runs from keepalived, which does not load the panel's env file.
+	if args[0] == "is-leader" {
+		leads, err := service.ReadClusterRole(time.Now().Unix())
+		if err != nil {
+			fmt.Println(err)
+			return 1
+		}
+		if !leads {
+			fmt.Println("follower")
+			return 1
+		}
+		fmt.Println("leader")
+		return 0
+	}
+	if !service.ClusterEnabled() {
+		fmt.Println("XUI_MASTER_PRIORITY is not set: this panel is a single master")
+		return 1
+	}
+	if err := database.InitDB(config.GetDBPath()); err != nil {
+		fmt.Println("database initialization failed:", err)
+		return 1
+	}
+	masters, err := (&service.MasterClusterService{}).List()
+	if err != nil {
+		fmt.Println(err)
+		return 1
+	}
+	for _, m := range masters {
+		state := "down"
+		switch {
+		case m.Leader:
+			state = "leader"
+		case m.Alive:
+			state = "follower"
+		}
+		fmt.Printf("%d\t%s\t%s\t%s\n", m.Priority, m.Name, state, m.Url)
+	}
+	return 0
+}
+
 func encryptNodeTokens() {
 	_ = godotenv.Load()
 	if err := initNodeTokenCrypto(); err != nil {
@@ -673,6 +721,8 @@ func main() {
 		migrateDb()
 	case "encrypt-tokens":
 		encryptNodeTokens()
+	case "cluster":
+		os.Exit(clusterCommand(os.Args[2:]))
 	case "migrate-db":
 		if err := migrateDbCmd.Parse(os.Args[2:]); err != nil {
 			fmt.Println(err)
@@ -775,6 +825,8 @@ Commands:
     migrate        migrate from other/old x-ui
     migrate-db     SQLite <-> .dump (--dump/--restore) or copy into PostgreSQL (--dsn)
     encrypt-tokens encrypt node bearer tokens with the configured active key
+    cluster        is-leader: exit 0 only on the leading master (keepalived check);
+                   status: list the masters sharing the database
     setting        set settings
     install-awg-kernel
                    build and install the AmneziaWG kernel module (required for

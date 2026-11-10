@@ -2000,15 +2000,11 @@ func pgConnEnv(dsn string) (env []string, dbname string, err error) {
 	if dbname == "" {
 		return nil, "", common.NewError("PostgreSQL DSN is missing a database name")
 	}
-	host := u.Hostname()
-	if host == "" {
-		host = "127.0.0.1"
+	hosts, ports, err := pgHostsAndPorts(u.Host)
+	if err != nil {
+		return nil, "", err
 	}
-	port := u.Port()
-	if port == "" {
-		port = "5432"
-	}
-	env = append(os.Environ(), "PGHOST="+host, "PGPORT="+port, "PGDATABASE="+dbname)
+	env = append(os.Environ(), "PGHOST="+hosts, "PGPORT="+ports, "PGDATABASE="+dbname)
 	if user := u.User.Username(); user != "" {
 		env = append(env, "PGUSER="+user)
 	}
@@ -2018,7 +2014,35 @@ func pgConnEnv(dsn string) (env []string, dbname string, err error) {
 	if sslmode := u.Query().Get("sslmode"); sslmode != "" {
 		env = append(env, "PGSSLMODE="+sslmode)
 	}
+	if attrs := u.Query().Get("target_session_attrs"); attrs != "" {
+		env = append(env, "PGTARGETSESSIONATTRS="+attrs)
+	}
 	return env, dbname, nil
+}
+
+// pgHostsAndPorts splits a DSN host list ("a:5432,b:5433", a Patroni cluster)
+// into libpq's comma-separated PGHOST and PGPORT.
+func pgHostsAndPorts(hostList string) (hosts, ports string, err error) {
+	var hs, ps []string
+	for _, part := range strings.Split(hostList, ",") {
+		host, port := part, "5432"
+		if h, p, splitErr := stdnet.SplitHostPort(part); splitErr == nil {
+			host, port = h, p
+		} else if strings.HasPrefix(part, "[") && strings.HasSuffix(part, "]") {
+			host = strings.Trim(part, "[]")
+		}
+		if host == "" {
+			host = "127.0.0.1"
+		}
+		if port == "" {
+			port = "5432"
+		}
+		if _, convErr := strconv.Atoi(port); convErr != nil {
+			return "", "", common.NewErrorf("invalid port %q in PostgreSQL DSN", port)
+		}
+		hs, ps = append(hs, host), append(ps, port)
+	}
+	return strings.Join(hs, ","), strings.Join(ps, ","), nil
 }
 
 func (s *ServerService) exportPostgresDB() ([]byte, error) {

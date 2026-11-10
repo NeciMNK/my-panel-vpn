@@ -1694,6 +1694,124 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "Cascade": {
+    "description": "Cascade chains an entry server to one or more exit servers: users connect to\nthe entry, their traffic leaves the internet from an exit. Node id 0 means\nthis panel itself.",
+    "properties": {
+      "createdAt": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "enable": {
+        "example": true,
+        "type": "boolean"
+      },
+      "entryInboundTags": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "entryNodeId": {
+        "example": 1,
+        "type": "integer"
+      },
+      "exitCountry": {
+        "description": "ExitCountry, when set, makes every enabled node of that country an exit.",
+        "example": "DE",
+        "type": "string"
+      },
+      "exitNodeIds": {
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "lastError": {
+        "type": "string"
+      },
+      "links": {
+        "items": {
+          "$ref": "#/components/schemas/CascadeLink"
+        },
+        "type": "array"
+      },
+      "name": {
+        "example": "RU → DE",
+        "type": "string"
+      },
+      "strategy": {
+        "example": "leastPing",
+        "type": "string"
+      },
+      "updatedAt": {
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "createdAt",
+      "enable",
+      "entryInboundTags",
+      "entryNodeId",
+      "exitCountry",
+      "exitNodeIds",
+      "id",
+      "lastError",
+      "links",
+      "name",
+      "strategy",
+      "updatedAt"
+    ],
+    "type": "object"
+  },
+  "CascadeLink": {
+    "description": "CascadeLink is the hidden VLESS+REALITY hop the master provisions on one exit.",
+    "properties": {
+      "address": {
+        "type": "string"
+      },
+      "clientId": {
+        "type": "string"
+      },
+      "email": {
+        "type": "string"
+      },
+      "inboundId": {
+        "type": "integer"
+      },
+      "nodeId": {
+        "type": "integer"
+      },
+      "port": {
+        "type": "integer"
+      },
+      "publicKey": {
+        "type": "string"
+      },
+      "serverName": {
+        "type": "string"
+      },
+      "shortId": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "address",
+      "clientId",
+      "email",
+      "inboundId",
+      "nodeId",
+      "port",
+      "publicKey",
+      "serverName",
+      "shortId"
+    ],
+    "type": "object"
+  },
   "Client": {
     "description": "Client represents a client configuration for Xray inbounds with traffic limits and settings.",
     "properties": {
@@ -2325,6 +2443,34 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "ClientSpeed": {
+    "description": "ClientSpeed is a user's speed contract: MaxMbps caps them (0 = no cap),\nMinMbps is the speed a server must still have free for them (0 = any).",
+    "properties": {
+      "email": {
+        "example": "anna",
+        "type": "string"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "maxMbps": {
+        "example": 100,
+        "type": "integer"
+      },
+      "minMbps": {
+        "example": 20,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "email",
+      "id",
+      "maxMbps",
+      "minMbps"
+    ],
+    "type": "object"
+  },
   "ClientTraffic": {
     "description": "ClientTraffic represents traffic statistics and limits for a specific client.\nIt tracks upload/download usage, expiry times, and online status for inbound clients.",
     "properties": {
@@ -2693,6 +2839,149 @@ export const SCHEMAS: Record<string, unknown> = {
     "required": [
       "id",
       "seederName"
+    ],
+    "type": "object"
+  },
+  "HomeAccessRule": {
+    "description": "HomeAccessRule lets users (by email or client group) reach some targets of\na home network; no targets means the whole network.",
+    "properties": {
+      "emails": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "groups": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "targets": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "emails",
+      "groups",
+      "targets"
+    ],
+    "type": "object"
+  },
+  "HomeNetwork": {
+    "description": "HomeNetwork is a network behind a tunnel (WireGuard, OpenVPN or L2TP/IPsec)\nthat one server holds; users reach only the subnets and IPs their rules allow.",
+    "properties": {
+      "config": {
+        "description": "Config is the pasted wg-quick or .ovpn file.",
+        "type": "string"
+      },
+      "createdAt": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "enable": {
+        "example": true,
+        "type": "boolean"
+      },
+      "errors": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "type": "object"
+      },
+      "gatewayNodeId": {
+        "example": 0,
+        "type": "integer"
+      },
+      "hosts": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "kind": {
+        "example": "wireguard",
+        "type": "string"
+      },
+      "link": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CascadeLink"
+          }
+        ],
+        "nullable": true
+      },
+      "name": {
+        "example": "Home",
+        "type": "string"
+      },
+      "password": {
+        "type": "string"
+      },
+      "psk": {
+        "type": "string"
+      },
+      "rules": {
+        "items": {
+          "$ref": "#/components/schemas/HomeAccessRule"
+        },
+        "type": "array"
+      },
+      "server": {
+        "example": "203.0.113.7",
+        "type": "string"
+      },
+      "servers": {
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      },
+      "subnets": {
+        "description": "Subnets and Hosts are every address of the home network the panel routes.",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "tunnelState": {
+        "example": "active",
+        "type": "string"
+      },
+      "updatedAt": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "username": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "config",
+      "createdAt",
+      "enable",
+      "errors",
+      "gatewayNodeId",
+      "hosts",
+      "id",
+      "kind",
+      "name",
+      "password",
+      "psk",
+      "rules",
+      "server",
+      "servers",
+      "subnets",
+      "tunnelState",
+      "updatedAt",
+      "username"
     ],
     "type": "object"
   },
@@ -3566,6 +3855,50 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "MasterStatus": {
+    "description": "MasterStatus is one master as the masters card shows it.",
+    "properties": {
+      "alive": {
+        "example": true,
+        "type": "boolean"
+      },
+      "lastSeen": {
+        "example": 1762736400,
+        "format": "int64",
+        "type": "integer"
+      },
+      "leader": {
+        "example": true,
+        "type": "boolean"
+      },
+      "name": {
+        "example": "master-1",
+        "type": "string"
+      },
+      "priority": {
+        "example": 1,
+        "type": "integer"
+      },
+      "self": {
+        "example": true,
+        "type": "boolean"
+      },
+      "url": {
+        "example": "https://panel-1.example.com:2053",
+        "type": "string"
+      }
+    },
+    "required": [
+      "alive",
+      "lastSeen",
+      "leader",
+      "name",
+      "priority",
+      "self",
+      "url"
+    ],
+    "type": "object"
+  },
   "Msg": {
     "properties": {
       "msg": {
@@ -3623,6 +3956,11 @@ export const SCHEMAS: Record<string, unknown> = {
       "configDirtyAt": {
         "format": "int64",
         "type": "integer"
+      },
+      "country": {
+        "description": "Country is the ISO 3166-1 alpha-2 code country cascades group exits by.",
+        "example": "DE",
+        "type": "string"
       },
       "cpuPct": {
         "example": 23.5,
@@ -3790,6 +4128,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "clientCount",
       "configDirty",
       "configDirtyAt",
+      "country",
       "cpuPct",
       "createdAt",
       "depletedCount",
@@ -3824,6 +4163,30 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "NodeJoinTokenView": {
+    "description": "NodeJoinTokenView is what the master UI needs to print the install command.",
+    "properties": {
+      "arch": {
+        "example": "amd64",
+        "type": "string"
+      },
+      "expiresAt": {
+        "example": 1700003600,
+        "format": "int64",
+        "type": "integer"
+      },
+      "token": {
+        "example": "m3Yx0QmRZ2bq0l5w2b3h1C9rYx0QmRZ2bq0l5w2b3h0",
+        "type": "string"
+      }
+    },
+    "required": [
+      "arch",
+      "expiresAt",
+      "token"
+    ],
+    "type": "object"
+  },
   "NodeMutationRequest": {
     "description": "NodeMutationRequest is the node write/probe contract. ApiToken is accepted\nonly as input. On update, nil means keep the stored token; replacement and\nclearing are explicit and mutually exclusive.",
     "properties": {
@@ -3842,6 +4205,9 @@ export const SCHEMAS: Record<string, unknown> = {
       },
       "clearApiToken": {
         "type": "boolean"
+      },
+      "country": {
+        "type": "string"
       },
       "enable": {
         "type": "boolean"
@@ -3900,6 +4266,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "address",
       "allowPrivateAddress",
       "basePath",
+      "country",
       "enable",
       "id",
       "inboundSyncMode",
@@ -3945,6 +4312,10 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": 0,
         "format": "int64",
         "type": "integer"
+      },
+      "country": {
+        "example": "DE",
+        "type": "string"
       },
       "cpuPct": {
         "example": 12.5,
@@ -4104,6 +4475,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "clientCount",
       "configDirty",
       "configDirtyAt",
+      "country",
       "cpuPct",
       "createdAt",
       "depletedCount",
@@ -4470,6 +4842,62 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "ServerCapacity": {
+    "description": "ServerCapacity is the link speed of one server (node id 0 = this panel),\nwhich the free speed per user is measured against.",
+    "properties": {
+      "capacityMbps": {
+        "example": 1000,
+        "type": "integer"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "nodeId": {
+        "example": 0,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "capacityMbps",
+      "id",
+      "nodeId"
+    ],
+    "type": "object"
+  },
+  "ServerFreeSpeed": {
+    "description": "ServerFreeSpeed is the live load of a server with a known capacity.",
+    "properties": {
+      "capacityMbps": {
+        "example": 1000,
+        "type": "integer"
+      },
+      "freePerUserMbps": {
+        "example": 44.5,
+        "type": "number"
+      },
+      "nodeId": {
+        "example": 0,
+        "type": "integer"
+      },
+      "online": {
+        "example": 12,
+        "type": "integer"
+      },
+      "usedMbps": {
+        "example": 420.5,
+        "type": "number"
+      }
+    },
+    "required": [
+      "capacityMbps",
+      "freePerUserMbps",
+      "nodeId",
+      "online",
+      "usedMbps"
+    ],
+    "type": "object"
+  },
   "ServerSettings": {
     "description": "ServerSettings is the \"server\" block of an AmneziaWG inbound's Settings\nJSON: the interface-level configuration shared by every client/peer. The\nlisten port is deliberately not duplicated here — it lives on the inbound\nrow itself (Inbound.Port), like every other protocol.",
     "properties": {
@@ -4635,6 +5063,35 @@ export const SCHEMAS: Record<string, unknown> = {
       "id",
       "key",
       "value"
+    ],
+    "type": "object"
+  },
+  "SpeedOverview": {
+    "description": "SpeedOverview is everything the speed card shows.",
+    "properties": {
+      "clients": {
+        "items": {
+          "$ref": "#/components/schemas/ClientSpeed"
+        },
+        "type": "array"
+      },
+      "load": {
+        "items": {
+          "$ref": "#/components/schemas/ServerFreeSpeed"
+        },
+        "type": "array"
+      },
+      "servers": {
+        "items": {
+          "$ref": "#/components/schemas/ServerCapacity"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "clients",
+      "load",
+      "servers"
     ],
     "type": "object"
   },
@@ -4947,6 +5404,45 @@ export const SCHEMAS: Record<string, unknown> = {
       "id",
       "password",
       "username"
+    ],
+    "type": "object"
+  },
+  "WarpSwitch": {
+    "description": "WarpSwitch is one server's WARP switch: off, all traffic, or only the listed\nsites (domains, geosite: and regexp: entries). Node id 0 is this panel.",
+    "properties": {
+      "domains": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "lastError": {
+        "type": "string"
+      },
+      "mode": {
+        "example": "domains",
+        "type": "string"
+      },
+      "nodeId": {
+        "example": 0,
+        "type": "integer"
+      },
+      "updatedAt": {
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "domains",
+      "id",
+      "lastError",
+      "mode",
+      "nodeId",
+      "updatedAt"
     ],
     "type": "object"
   }
