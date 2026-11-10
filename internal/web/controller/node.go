@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"slices"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
@@ -379,12 +380,20 @@ func (a *NodeController) history(c *gin.Context) {
 	jsonObj(c, a.nodeService.AggregateNodeMetric(id, metric, bucket, 60), nil)
 }
 
+// nodeReconciles tracks the detached post-node-change reconciles so tests can
+// drain them before the next test swaps the global DB out from under them.
+var nodeReconciles sync.WaitGroup
+
+func runNodeReconcile(reconcile func(context.Context)) {
+	nodeReconciles.Go(func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		defer cancel()
+		reconcile(ctx)
+	})
+}
+
 // reconcileCountryCascades re-resolves "all servers of a country" cascades in
 // the background after a node change, so the admin's request never waits on it.
 func reconcileCountryCascades() {
-	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
-		defer cancel()
-		(&service.CascadeService{}).ReconcileCountryCascades(ctx)
-	}()
+	runNodeReconcile((&service.CascadeService{}).ReconcileCountryCascades)
 }
