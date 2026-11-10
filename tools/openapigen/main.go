@@ -133,6 +133,9 @@ func run(root, outDir string) error {
 				"PanelProxyCheck",
 				"LedgerReport",
 				"LedgerNonPaying",
+				"ClientBillingView",
+				"PaymentPlanPrice",
+				"PaymentResult",
 			),
 		},
 		{

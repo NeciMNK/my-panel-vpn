@@ -293,20 +293,4 @@ func (t *Tgbot) toggleNonPaying(callbackQuery *telego.CallbackQuery, email strin
 	t.searchClientScreen(callbackQuery.Message.GetChat().ID, email)
 }
 
-// bookPayment records a confirmed payment as income; without a price there is no amount to book.
-func (t *Tgbot) bookPayment(email string, months int) {
-	info := t.loadPaymentInfo()
-	if info.price <= 0 {
-		return
-	}
-	amount := months * info.price
-	if plan, ok := info.plan(months); ok {
-		amount = plan.Total(info.price)
-	}
-	note := t.I18nBot("tgbot.ledger.paymentNote", "Months=="+strconv.Itoa(months))
-	if err := t.ledgerService.RecordPayment(email, amount, note, time.Now()); err != nil {
-		logger.Warning("ledger: booking payment for", email, "failed:", err)
-	}
-}
-
 func currentLedgerMonth() string { return service.LedgerMonthOf(time.Now()) }

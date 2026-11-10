@@ -273,32 +273,6 @@ func trafficOf(t *testing.T, email string) *xray.ClientTraffic {
 	return traffic
 }
 
-func TestPaidExpiry(t *testing.T) {
-	now := time.Date(2026, 11, 9, 12, 0, 0, 0, time.UTC).UnixMilli()
-	day := dayMillis
-	cases := []struct {
-		name    string
-		expiry  int64
-		billing model.ClientBilling
-		days    int
-		want    int64
-	}{
-		{name: "running term is extended from its end", expiry: now + 5*day, days: 30, want: now + 35*day},
-		{name: "lapsed term restarts from now", expiry: now - 5*day, days: 30, want: now + 30*day},
-		{name: "credit is repaid first", expiry: now + 20*day, billing: model.ClientBilling{GraceDays: 15}, days: 30, want: now + 35*day},
-		{name: "countdown not started grows", expiry: -10 * day, days: 30, want: -40 * day},
-		{name: "free plan gets a dated term", expiry: 0, billing: model.ClientBilling{FreePlan: true}, days: 90, want: now + 90*day},
-		{name: "unlimited paid client stays unlimited", expiry: 0, days: 30, want: 0},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			if got := paidExpiry(tc.expiry, &tc.billing, tc.days, now); got != tc.want {
-				t.Errorf("paidExpiry = %d, want %d (diff %d days)", got, tc.want, (got-tc.want)/day)
-			}
-		})
-	}
-}
-
 // Confirming a free client's payment must give it the paid term, lift the
 // 10 GB quota and tell the client; otherwise "pay to remove the limit" is a lie.
 func TestConfirmPaymentLiftsFreePlanAndNotifiesClient(t *testing.T) {
@@ -388,7 +362,7 @@ func TestTrustedClientDefersPayment(t *testing.T) {
 	resetThrottles(t)
 	tap(tb, 5757, "client_paid 1", false)
 	tap(tb, 9001, "pay_ok trusted@x 1", true)
-	if want := due.Add(monthDays * 24 * time.Hour).UnixMilli(); trafficOf(t, "trusted@x").ExpiryTime != want {
+	if want := due.Add(service.PaymentMonthDays * 24 * time.Hour).UnixMilli(); trafficOf(t, "trusted@x").ExpiryTime != want {
 		t.Errorf("expiry after paying = %v, want %v: the credit was not repaid",
 			time.UnixMilli(trafficOf(t, "trusted@x").ExpiryTime), time.UnixMilli(want))
 	}
@@ -543,7 +517,7 @@ func TestConfirmPaymentAppliesOnceForOneReport(t *testing.T) {
 	tap(tb, 5757, "client_paid 1", false)
 	tap(tb, 9001, "pay_ok twice@x 1", true)
 	once := trafficOf(t, "twice@x").ExpiryTime
-	if want := due.Add(monthDays * 24 * time.Hour).UnixMilli(); once != want {
+	if want := due.Add(service.PaymentMonthDays * 24 * time.Hour).UnixMilli(); once != want {
 		t.Fatalf("expiry after the first confirm = %v, want %v", time.UnixMilli(once), time.UnixMilli(want))
 	}
 	tap(tb, 9002, "pay_ok twice@x 1", true)

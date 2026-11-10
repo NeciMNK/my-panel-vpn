@@ -517,6 +517,19 @@ export const ClientSchema = z.object({
 });
 export type Client = z.infer<typeof ClientSchema>;
 
+export const ClientBillingViewSchema = z.object({
+  currency: z.string(),
+  email: z.string(),
+  expiryTime: z.number().int(),
+  freePlan: z.boolean(),
+  graceDays: z.number().int(),
+  nonPaying: z.boolean(),
+  pendingMonths: z.number().int(),
+  plans: z.array(z.lazy(() => PaymentPlanPriceSchema)),
+  trusted: z.boolean(),
+});
+export type ClientBillingView = z.infer<typeof ClientBillingViewSchema>;
+
 export const ClientInboundSchema = z.object({
   clientId: z.number().int(),
   createdAt: z.number().int(),
@@ -1176,6 +1189,22 @@ export const PanelUpdateStatusSchema = z.object({
   state: z.string(),
 });
 export type PanelUpdateStatus = z.infer<typeof PanelUpdateStatusSchema>;
+
+export const PaymentPlanPriceSchema = z.object({
+  discountPercent: z.number().int(),
+  months: z.number().int(),
+  total: z.number().int(),
+});
+export type PaymentPlanPrice = z.infer<typeof PaymentPlanPriceSchema>;
+
+export const PaymentResultSchema = z.object({
+  amount: z.number().int(),
+  currency: z.string(),
+  email: z.string(),
+  expiryTime: z.number().int(),
+  months: z.number().int(),
+});
+export type PaymentResult = z.infer<typeof PaymentResultSchema>;
 
 export const PeerActivitySchema = z.object({
   allowedIPs: z.string(),

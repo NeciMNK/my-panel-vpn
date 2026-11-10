@@ -2081,6 +2081,62 @@
         ],
         "type": "object"
       },
+      "ClientBillingView": {
+        "description": "ClientBillingView is one client's payment state for the API.",
+        "properties": {
+          "currency": {
+            "example": "RUB",
+            "type": "string"
+          },
+          "email": {
+            "example": "alice",
+            "type": "string"
+          },
+          "expiryTime": {
+            "example": 1767225600000,
+            "format": "int64",
+            "type": "integer"
+          },
+          "freePlan": {
+            "example": false,
+            "type": "boolean"
+          },
+          "graceDays": {
+            "example": 0,
+            "type": "integer"
+          },
+          "nonPaying": {
+            "example": false,
+            "type": "boolean"
+          },
+          "pendingMonths": {
+            "example": 0,
+            "type": "integer"
+          },
+          "plans": {
+            "items": {
+              "$ref": "#/components/schemas/PaymentPlanPrice"
+            },
+            "type": "array"
+          },
+          "trusted": {
+            "example": false,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "currency",
+          "email",
+          "expiryTime",
+          "freePlan",
+          "graceDays",
+          "nonPaying",
+          "pendingMonths",
+          "plans",
+          "trusted"
+        ],
+        "type": "object"
+      },
       "ClientInbound": {
         "properties": {
           "clientId": {
@@ -4904,6 +4960,63 @@
         ],
         "type": "object"
       },
+      "PaymentPlanPrice": {
+        "description": "PaymentPlanPrice is one payable term with its total in the payment currency (0 without a price).",
+        "properties": {
+          "discountPercent": {
+            "example": 10,
+            "type": "integer"
+          },
+          "months": {
+            "example": 3,
+            "type": "integer"
+          },
+          "total": {
+            "example": 810,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "discountPercent",
+          "months",
+          "total"
+        ],
+        "type": "object"
+      },
+      "PaymentResult": {
+        "description": "PaymentResult is what one applied payment changed.",
+        "properties": {
+          "amount": {
+            "example": 810,
+            "type": "integer"
+          },
+          "currency": {
+            "example": "RUB",
+            "type": "string"
+          },
+          "email": {
+            "example": "alice",
+            "type": "string"
+          },
+          "expiryTime": {
+            "example": 1774915200000,
+            "format": "int64",
+            "type": "integer"
+          },
+          "months": {
+            "example": 3,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "amount",
+          "currency",
+          "email",
+          "expiryTime",
+          "months"
+        ],
+        "type": "object"
+      },
       "PeerActivity": {
         "description": "PeerActivity is one peer's live embedded-Device-reported state, the\ncounterpart of an Xray access-log entry: a tunnel logs no requests, only\nhandshakes and bytes.",
         "properties": {
@@ -5941,6 +6054,10 @@
     {
       "name": "Ledger",
       "description": "Profit/loss book for selling VPN access: recurring monthly server costs, booked income and one-off expenses, and the clients and groups that never pay. Money is in whole units of the Telegram payment currency. All endpoints under /panel/api/ledger."
+    },
+    {
+      "name": "Billing",
+      "description": "Client payments for outside systems such as a payment provider's webhook or a shop. A payment applied here does exactly what the admin's confirm in the Telegram bot does: it extends the term, lifts a free plan's quota, repays credit days and books the income in the ledger. Prices come from the Telegram payment settings. All endpoints under /panel/api/billing."
     },
     {
       "name": "Hosts",
@@ -14655,6 +14772,126 @@
                       "type": "string"
                     },
                     "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/billing/client": {
+      "get": {
+        "tags": [
+          "Billing"
+        ],
+        "summary": "One client's payment state: expiry, trusted/free-plan/non-paying marks, credit days, a pending bot report, and every payable term with its price.",
+        "operationId": "get_panel_api_billing_client",
+        "parameters": [
+          {
+            "name": "email",
+            "in": "query",
+            "required": true,
+            "description": "The client's email.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/ClientBillingView"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "currency": "RUB",
+                    "email": "alice",
+                    "expiryTime": 1767225600000,
+                    "freePlan": false,
+                    "graceDays": 0,
+                    "nonPaying": false,
+                    "pendingMonths": 0,
+                    "plans": [
+                      {
+                        "discountPercent": 10,
+                        "months": 3,
+                        "total": 810
+                      }
+                    ],
+                    "trusted": false
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/billing/pay": {
+      "post": {
+        "tags": [
+          "Billing"
+        ],
+        "summary": "Apply a payment for 1-36 months. A running term is extended from its end, a lapsed one restarts from now. Any payment the client reported in the bot is settled, so a later confirm there cannot apply it twice. note defaults to \"<months> mo\" in the ledger.",
+        "operationId": "post_panel_api_billing_pay",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "email": "alice",
+                "months": 3,
+                "note": "YooKassa 2c4f"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/PaymentResult"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "amount": 810,
+                    "currency": "RUB",
+                    "email": "alice",
+                    "expiryTime": 1774915200000,
+                    "months": 3
                   }
                 }
               }

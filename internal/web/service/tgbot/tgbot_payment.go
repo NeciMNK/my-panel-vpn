@@ -28,7 +28,6 @@ const (
 	graceDays         = 15
 	graceCooldownDays = 30
 	freePlanGB        = 10
-	monthDays         = 30
 	dayMillis         = int64(24 * time.Hour / time.Millisecond)
 	paymentDate       = "2006-01-02 15:04"
 	freeEmailMax      = 32
@@ -74,19 +73,9 @@ func (p paymentInfo) planTotal(plan entity.PaymentPlan) string {
 
 func (t *Tgbot) loadPaymentInfo() paymentInfo {
 	info := paymentInfo{}
-	var err error
-	if info.price, err = t.settingService.GetTgPaymentPrice(); err != nil {
-		logger.Warning("Unable to read tgPaymentPrice:", err)
-	}
-	currency, _ := t.settingService.GetTgPaymentCurrency()
+	info.price, info.currency, info.plans = t.billingService.PaymentPlans()
 	details, _ := t.settingService.GetTgPaymentDetails()
-	discounts, _ := t.settingService.GetTgPaymentDiscounts()
-	info.currency = strings.TrimSpace(currency)
 	info.details = strings.TrimSpace(details)
-	if info.plans, err = entity.ParsePaymentPlans(discounts); err != nil {
-		logger.Warning("Ignoring invalid tgPaymentDiscounts:", err)
-		info.plans = []entity.PaymentPlan{{Months: 1}}
-	}
 	return info
 }
 
@@ -293,33 +282,13 @@ func (t *Tgbot) reportClientPayment(callbackQuery *telego.CallbackQuery, monthsT
 	t.screenClientHome(callbackQuery.Message.GetChat().ID, from.ID)
 }
 
-// paidExpiry is the expiry after paying for days: credit already granted is
-// repaid first, and a lapsed subscription restarts from now, not from its end.
-func paidExpiry(expiry int64, billing *model.ClientBilling, days int, now int64) int64 {
-	switch {
-	case expiry > 0:
-		base := expiry - int64(billing.GraceDays)*dayMillis
-		if base < now {
-			base = now
-		}
-		return base + int64(days)*dayMillis
-	case expiry < 0:
-		return expiry - int64(days)*dayMillis
-	case billing.FreePlan:
-		return now + int64(days)*dayMillis
-	default:
-		return 0
-	}
-}
-
-// confirmPayment is the admin's tap on a payment report: it extends the term,
-// lifts a free plan's quota and settles any credit, then tells the client.
+// confirmPayment is the admin's tap on a payment report: it claims the report
+// once, applies the payment like the API does, then tells the client.
 func (t *Tgbot) confirmPayment(callbackQuery *telego.CallbackQuery, email, monthsText string) {
 	chatID := callbackQuery.Message.GetChat().ID
 	months, err := strconv.Atoi(monthsText)
-	traffic, trafficErr := t.inboundService.GetClientTrafficByEmail(email)
 	billing, billingErr := t.clientService.GetBillingByEmail(email)
-	if err != nil || months <= 0 || trafficErr != nil || traffic == nil || billingErr != nil {
+	if err != nil || months <= 0 || billingErr != nil {
 		t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
 		return
 	}
@@ -328,41 +297,20 @@ func (t *Tgbot) confirmPayment(callbackQuery *telego.CallbackQuery, email, month
 		t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.paymentAlreadyConfirmed", "Email=="+email))
 		return
 	}
-	expiry := paidExpiry(traffic.ExpiryTime, billing, months*monthDays, time.Now().UnixMilli())
-	if expiry != traffic.ExpiryTime {
-		needRestart, err := t.clientService.ResetClientExpiryTimeByEmail(&t.inboundService, email, expiry)
-		if needRestart {
-			t.xrayService.SetToNeedRestart()
-		}
-		if err != nil {
-			logger.Warning("confirmPayment: expiry update failed:", err)
-			t.restorePendingPayment(billing.ClientId, months)
-			t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
-			return
-		}
+	note := t.I18nBot("tgbot.ledger.paymentNote", "Months=="+strconv.Itoa(months))
+	result, err := t.billingService.ApplyPayment(email, months, note, time.Now())
+	if err != nil {
+		logger.Warning("confirmPayment:", err)
+		t.restorePendingPayment(billing.ClientId, months)
+		t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
+		return
 	}
-	if billing.FreePlan {
-		needRestart, err := t.clientService.ResetClientTrafficLimitByEmail(&t.inboundService, email, 0)
-		if needRestart {
-			t.xrayService.SetToNeedRestart()
-		}
-		if err != nil {
-			logger.Warning("confirmPayment: lifting the free quota failed:", err)
-			t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
-			return
-		}
-	}
-	billing.FreePlan, billing.GraceDays = false, 0
-	if err := t.clientService.SaveBilling(billing); err != nil {
-		logger.Warning("confirmPayment: saving billing failed:", err)
-	}
-	t.bookPayment(email, months)
 	tgID := t.clientTgID(email)
 	paymentReports.forget(tgID)
 	if tgID != 0 {
 		until := t.I18nBot("tgbot.unlimited")
-		if expiry > 0 {
-			until = time.UnixMilli(expiry).Format(paymentDate)
+		if result.ExpiryTime > 0 {
+			until = time.UnixMilli(result.ExpiryTime).Format(paymentDate)
 		}
 		t.sendNotice(tgID, t.I18nBot("tgbot.messages.paymentConfirmed", "Email=="+email, "Date=="+until))
 	}
