@@ -63,3 +63,14 @@ type SystemMetricData struct {
 	Percent   float64 // current usage percentage
 	Threshold int     // configured threshold
 }
+
+// EventSpeedLow fires when a server can no longer give its users their minimum
+// speed and no other server can take new connections instead.
+const EventSpeedLow EventType = "speed.low"
+
+// SpeedLowData says how much speed per user a server still has free.
+type SpeedLowData struct {
+	FreePerUserMbps float64
+	MinMbps         int
+	Users           []string
+}

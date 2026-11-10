@@ -1306,6 +1306,20 @@
         "toasts": {
           "saved": "WARP switch saved"
         }
+      },
+      "speed": {
+        "title": "Speed limits",
+        "desc": "Max caps a user's speed on every server they use. Min is the speed a server must still have free for the user: when a server drops below it, new connections go to another server of the cascade, and if no server has room the admin gets a Telegram alert. Set each server's link speed so free speed can be measured.",
+        "server": "Server",
+        "capacity": "Link speed, Mbit/s",
+        "load": "Load",
+        "loadValue": "{used} Mbit/s used, {online} online, {free} Mbit/s free per user",
+        "user": "User",
+        "min": "Min, Mbit/s",
+        "max": "Max, Mbit/s",
+        "toasts": {
+          "saved": "Speed limits saved"
+        }
       }
     },
     "settings": {
@@ -1945,7 +1959,8 @@
       "subHostSortMode": "订阅节点排序",
       "subHostSortInbound": "入站顺序（默认）",
       "subHostSortHosts": "主机顺序",
-      "subHostSortModeDesc": "跨入站使用主机页面中的排序。此设置决定服务器输出顺序；客户端应用仍可能自行排序。"
+      "subHostSortModeDesc": "跨入站使用主机页面中的排序。此设置决定服务器输出顺序；客户端应用仍可能自行排序。",
+      "eventSpeedLow": "Speed below user minimum"
     },
     "xray": {
       "importRules": "导入规则",
@@ -2738,7 +2753,8 @@
       "qrLegendJSON": "{{ .Code }}. JSON 订阅",
       "qrLegendLink": "{{ .Code }}. 应用链接 {{ .App }}",
       "backupFailed": "无法读取数据库，未发送备份。",
-      "privateOnly": "🤖 此机器人仅在私聊中工作。请在私信中打开它。"
+      "privateOnly": "🤖 此机器人仅在私聊中工作。请在私信中打开它。",
+      "speedLow": "Server {{ .Server }} has {{ .Free }} Mbit/s free per user, below the {{ .Min }} Mbit/s minimum of {{ .Users }}, and no other server has room. Add a server or raise its link speed."
     },
     "buttons": {
       "closeKeyboard": "❌ 关闭键盘",

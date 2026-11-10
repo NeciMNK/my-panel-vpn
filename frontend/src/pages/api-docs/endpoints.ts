@@ -1823,6 +1823,34 @@ export const sections: readonly Section[] = [
   },
 
   {
+    id: 'speed',
+    title: 'Speed limits',
+    description:
+      "Per-user speed contracts. maxMbps is a hard cap enforced with tc on every server the user's IPs were seen on in the last 30 minutes; minMbps is the speed a server must still have free per user, so new cascade users go to an exit with room and the admin gets a speed.low alert when no server has any. Free speed is measured against each server's link speed. All endpoints under /panel/api/speed.",
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/speed/overview',
+        summary:
+          'User limits, server link speeds, and the live load of every server with a link speed.',
+        responseSchema: 'SpeedOverview',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/speed/client',
+        summary: "Set one user's minimum and maximum speed in Mbit/s; both 0 removes them.",
+        body: '{\n  "email": "anna",\n  "minMbps": 20,\n  "maxMbps": 100\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/speed/capacity',
+        summary: "Set one server's link speed in Mbit/s (node id 0 = this panel); 0 removes it.",
+        body: '{\n  "nodeId": 0,\n  "capacityMbps": 1000\n}',
+      },
+    ],
+  },
+
+  {
     id: 'warp-switch',
     title: 'WARP switch',
     description:
@@ -2605,6 +2633,13 @@ export const sections: readonly Section[] = [
         path: '/panel/api/xray/homeTunnel/:id',
         summary: 'On a gateway server: whether a home network tunnel runs and its interface is up.',
         params: [{ name: 'id', in: 'path', type: 'number', desc: 'Home network ID.' }],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/xray/speedPlan',
+        summary:
+          'On any server: enforce per-IP speed caps with tc on the default interface. Called by the master; an unchanged plan is a no-op.',
+        body: '{\n  "limits": [{ "ip": "203.0.113.7", "mbps": 100 }]\n}',
       },
       {
         method: 'POST',

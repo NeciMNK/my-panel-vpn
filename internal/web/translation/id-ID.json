@@ -1306,6 +1306,20 @@
         "toasts": {
           "saved": "WARP switch saved"
         }
+      },
+      "speed": {
+        "title": "Speed limits",
+        "desc": "Max caps a user's speed on every server they use. Min is the speed a server must still have free for the user: when a server drops below it, new connections go to another server of the cascade, and if no server has room the admin gets a Telegram alert. Set each server's link speed so free speed can be measured.",
+        "server": "Server",
+        "capacity": "Link speed, Mbit/s",
+        "load": "Load",
+        "loadValue": "{used} Mbit/s used, {online} online, {free} Mbit/s free per user",
+        "user": "User",
+        "min": "Min, Mbit/s",
+        "max": "Max, Mbit/s",
+        "toasts": {
+          "saved": "Speed limits saved"
+        }
       }
     },
     "settings": {
@@ -1945,7 +1959,8 @@
       "subHostSortMode": "Urutan node langganan",
       "subHostSortInbound": "Urutan inbound (bawaan)",
       "subHostSortHosts": "Urutan host",
-      "subHostSortModeDesc": "Mengikuti urutan di halaman Host untuk semua inbound. Ini menentukan urutan keluaran server; aplikasi klien dapat menerapkan urutan sendiri."
+      "subHostSortModeDesc": "Mengikuti urutan di halaman Host untuk semua inbound. Ini menentukan urutan keluaran server; aplikasi klien dapat menerapkan urutan sendiri.",
+      "eventSpeedLow": "Speed below user minimum"
     },
     "xray": {
       "save": "Simpan",
@@ -2738,7 +2753,8 @@
       "qrLegendJSON": "{{ .Code }}. Langganan JSON",
       "qrLegendLink": "{{ .Code }}. Tautan aplikasi {{ .App }}",
       "backupFailed": "Tidak dapat membaca basis data; tidak ada cadangan yang dikirim.",
-      "privateOnly": "🤖 Bot ini hanya berfungsi di obrolan pribadi. Silakan buka di pesan langsung."
+      "privateOnly": "🤖 Bot ini hanya berfungsi di obrolan pribadi. Silakan buka di pesan langsung.",
+      "speedLow": "Server {{ .Server }} has {{ .Free }} Mbit/s free per user, below the {{ .Min }} Mbit/s minimum of {{ .Users }}, and no other server has room. Add a server or raise its link speed."
     },
     "buttons": {
       "closeKeyboard": "❌ Tutup Papan Ketik",

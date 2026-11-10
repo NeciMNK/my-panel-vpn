@@ -154,6 +154,16 @@ func (t *Tgbot) formatEventMessage(e eventbus.Event) string {
 		}
 		return ""
 
+	case eventbus.EventSpeedLow:
+		if data, ok := e.Data.(*eventbus.SpeedLowData); ok {
+			return header + "🐢 " + t.I18nBot("tgbot.messages.speedLow",
+				"Server=="+oneLine(e.Source),
+				"Free=="+strconv.FormatFloat(data.FreePerUserMbps, 'f', 1, 64),
+				"Min=="+strconv.Itoa(data.MinMbps),
+				"Users=="+oneLine(strings.Join(data.Users, ", ")))
+		}
+		return ""
+
 	case eventbus.EventLoginAttempt:
 		if data, ok := e.Data.(*eventbus.LoginEventData); ok {
 			if data.Status == "success" {

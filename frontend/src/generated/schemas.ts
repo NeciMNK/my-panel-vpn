@@ -2443,6 +2443,34 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "ClientSpeed": {
+    "description": "ClientSpeed is a user's speed contract: MaxMbps caps them (0 = no cap),\nMinMbps is the speed a server must still have free for them (0 = any).",
+    "properties": {
+      "email": {
+        "example": "anna",
+        "type": "string"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "maxMbps": {
+        "example": 100,
+        "type": "integer"
+      },
+      "minMbps": {
+        "example": 20,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "email",
+      "id",
+      "maxMbps",
+      "minMbps"
+    ],
+    "type": "object"
+  },
   "ClientTraffic": {
     "description": "ClientTraffic represents traffic statistics and limits for a specific client.\nIt tracks upload/download usage, expiry times, and online status for inbound clients.",
     "properties": {
@@ -4770,6 +4798,62 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "ServerCapacity": {
+    "description": "ServerCapacity is the link speed of one server (node id 0 = this panel),\nwhich the free speed per user is measured against.",
+    "properties": {
+      "capacityMbps": {
+        "example": 1000,
+        "type": "integer"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "nodeId": {
+        "example": 0,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "capacityMbps",
+      "id",
+      "nodeId"
+    ],
+    "type": "object"
+  },
+  "ServerFreeSpeed": {
+    "description": "ServerFreeSpeed is the live load of a server with a known capacity.",
+    "properties": {
+      "capacityMbps": {
+        "example": 1000,
+        "type": "integer"
+      },
+      "freePerUserMbps": {
+        "example": 44.5,
+        "type": "number"
+      },
+      "nodeId": {
+        "example": 0,
+        "type": "integer"
+      },
+      "online": {
+        "example": 12,
+        "type": "integer"
+      },
+      "usedMbps": {
+        "example": 420.5,
+        "type": "number"
+      }
+    },
+    "required": [
+      "capacityMbps",
+      "freePerUserMbps",
+      "nodeId",
+      "online",
+      "usedMbps"
+    ],
+    "type": "object"
+  },
   "ServerSettings": {
     "description": "ServerSettings is the \"server\" block of an AmneziaWG inbound's Settings\nJSON: the interface-level configuration shared by every client/peer. The\nlisten port is deliberately not duplicated here — it lives on the inbound\nrow itself (Inbound.Port), like every other protocol.",
     "properties": {
@@ -4935,6 +5019,35 @@ export const SCHEMAS: Record<string, unknown> = {
       "id",
       "key",
       "value"
+    ],
+    "type": "object"
+  },
+  "SpeedOverview": {
+    "description": "SpeedOverview is everything the speed card shows.",
+    "properties": {
+      "clients": {
+        "items": {
+          "$ref": "#/components/schemas/ClientSpeed"
+        },
+        "type": "array"
+      },
+      "load": {
+        "items": {
+          "$ref": "#/components/schemas/ServerFreeSpeed"
+        },
+        "type": "array"
+      },
+      "servers": {
+        "items": {
+          "$ref": "#/components/schemas/ServerCapacity"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "clients",
+      "load",
+      "servers"
     ],
     "type": "object"
   },

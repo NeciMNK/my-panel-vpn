@@ -92,6 +92,8 @@ func allModels() []any {
 		&model.CascadePin{},
 		&model.HomeNetwork{},
 		&model.WarpSwitch{},
+		&model.ClientSpeed{},
+		&model.ServerCapacity{},
 	}
 }
 

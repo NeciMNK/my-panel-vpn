@@ -1306,6 +1306,20 @@
         "toasts": {
           "saved": "WARP switch saved"
         }
+      },
+      "speed": {
+        "title": "Speed limits",
+        "desc": "Max caps a user's speed on every server they use. Min is the speed a server must still have free for the user: when a server drops below it, new connections go to another server of the cascade, and if no server has room the admin gets a Telegram alert. Set each server's link speed so free speed can be measured.",
+        "server": "Server",
+        "capacity": "Link speed, Mbit/s",
+        "load": "Load",
+        "loadValue": "{used} Mbit/s used, {online} online, {free} Mbit/s free per user",
+        "user": "User",
+        "min": "Min, Mbit/s",
+        "max": "Max, Mbit/s",
+        "toasts": {
+          "saved": "Speed limits saved"
+        }
       }
     },
     "settings": {
@@ -1945,7 +1959,8 @@
       "subHostSortMode": "ترتيب عقد الاشتراك",
       "subHostSortInbound": "ترتيب الاتصالات الواردة (الافتراضي)",
       "subHostSortHosts": "ترتيب المضيفين",
-      "subHostSortModeDesc": "يتبع ترتيب المضيفين صفحة المضيفين عبر جميع الاتصالات الواردة. يحدد هذا ترتيب مخرجات الخادم؛ وقد تطبق تطبيقات العميل ترتيبًا آخر."
+      "subHostSortModeDesc": "يتبع ترتيب المضيفين صفحة المضيفين عبر جميع الاتصالات الواردة. يحدد هذا ترتيب مخرجات الخادم؛ وقد تطبق تطبيقات العميل ترتيبًا آخر.",
+      "eventSpeedLow": "Speed below user minimum"
     },
     "xray": {
       "save": "احفظ",
@@ -2738,7 +2753,8 @@
       "qrLegendJSON": "{{ .Code }}. اشتراك JSON",
       "qrLegendLink": "{{ .Code }}. رابط التطبيق {{ .App }}",
       "backupFailed": "فشل قراءة قاعدة البيانات؛ لم يُرسل أي نسخة احتياطية.",
-      "privateOnly": "🤖 يعمل هذا البوت في المحادثة الخاصة فقط. يرجى فتحه في رسالة مباشرة."
+      "privateOnly": "🤖 يعمل هذا البوت في المحادثة الخاصة فقط. يرجى فتحه في رسالة مباشرة.",
+      "speedLow": "Server {{ .Server }} has {{ .Free }} Mbit/s free per user, below the {{ .Min }} Mbit/s minimum of {{ .Users }}, and no other server has room. Add a server or raise its link speed."
     },
     "buttons": {
       "closeKeyboard": "❌ اقفل الكيبورد",

@@ -1306,6 +1306,20 @@
         "toasts": {
           "saved": "WARP switch saved"
         }
+      },
+      "speed": {
+        "title": "Speed limits",
+        "desc": "Max caps a user's speed on every server they use. Min is the speed a server must still have free for the user: when a server drops below it, new connections go to another server of the cascade, and if no server has room the admin gets a Telegram alert. Set each server's link speed so free speed can be measured.",
+        "server": "Server",
+        "capacity": "Link speed, Mbit/s",
+        "load": "Load",
+        "loadValue": "{used} Mbit/s used, {online} online, {free} Mbit/s free per user",
+        "user": "User",
+        "min": "Min, Mbit/s",
+        "max": "Max, Mbit/s",
+        "toasts": {
+          "saved": "Speed limits saved"
+        }
       }
     },
     "settings": {
@@ -1945,7 +1959,8 @@
       "subHostSortMode": "サブスクリプションのノード順序",
       "subHostSortInbound": "インバウンド順（既定）",
       "subHostSortHosts": "ホスト順",
-      "subHostSortModeDesc": "異なるインバウンド間でもホストページの順序に従います。サーバーが出力する順序を指定しますが、クライアントアプリが独自に並べ替える場合があります。"
+      "subHostSortModeDesc": "異なるインバウンド間でもホストページの順序に従います。サーバーが出力する順序を指定しますが、クライアントアプリが独自に並べ替える場合があります。",
+      "eventSpeedLow": "Speed below user minimum"
     },
     "xray": {
       "importRules": "ルールをインポート",
@@ -2738,7 +2753,8 @@
       "qrLegendJSON": "{{ .Code }}. JSON サブスクリプション",
       "qrLegendLink": "{{ .Code }}. アプリのリンク {{ .App }}",
       "backupFailed": "データベースを読み取れませんでした。バックアップは送信されていません。",
-      "privateOnly": "🤖 このボットは個人チャットでのみ動作します。ダイレクトメッセージで開いてください。"
+      "privateOnly": "🤖 このボットは個人チャットでのみ動作します。ダイレクトメッセージで開いてください。",
+      "speedLow": "Server {{ .Server }} has {{ .Free }} Mbit/s free per user, below the {{ .Min }} Mbit/s minimum of {{ .Users }}, and no other server has room. Add a server or raise its link speed."
     },
     "buttons": {
       "closeKeyboard": "❌ キーボードを閉じる",

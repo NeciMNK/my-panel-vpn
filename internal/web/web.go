@@ -315,6 +315,7 @@ const (
 	cadenceRemoteRouting = "@every 5m"
 	cadenceCascadeSticky = "@every 15s"
 	cadenceHomeNetwork   = "@every 1m"
+	cadenceSpeed         = "@every 30s"
 	cadenceXrayLogPrune  = "@every 10m"
 	cadenceCheckHash     = "@every 2m"
 	// cpu.Percent samples over a full minute (blocking), so a finer cadence just
@@ -373,6 +374,7 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 
 	_, _ = s.cron.AddJob(cadenceCascadeSticky, job.NewCascadeStickyJob())
 	_, _ = s.cron.AddJob(cadenceHomeNetwork, job.NewHomeNetworkJob())
+	_, _ = s.cron.AddJob(cadenceSpeed, job.NewSpeedJob())
 
 	// Warm permanent routing URLs immediately and refresh them outside the
 	// latency-sensitive subscription request path.

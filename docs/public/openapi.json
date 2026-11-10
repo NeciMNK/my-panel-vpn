@@ -2469,6 +2469,34 @@
         ],
         "type": "object"
       },
+      "ClientSpeed": {
+        "description": "ClientSpeed is a user's speed contract: MaxMbps caps them (0 = no cap),\nMinMbps is the speed a server must still have free for them (0 = any).",
+        "properties": {
+          "email": {
+            "example": "anna",
+            "type": "string"
+          },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "maxMbps": {
+            "example": 100,
+            "type": "integer"
+          },
+          "minMbps": {
+            "example": 20,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "email",
+          "id",
+          "maxMbps",
+          "minMbps"
+        ],
+        "type": "object"
+      },
       "ClientTraffic": {
         "description": "ClientTraffic represents traffic statistics and limits for a specific client.\nIt tracks upload/download usage, expiry times, and online status for inbound clients.",
         "properties": {
@@ -4796,6 +4824,62 @@
         ],
         "type": "object"
       },
+      "ServerCapacity": {
+        "description": "ServerCapacity is the link speed of one server (node id 0 = this panel),\nwhich the free speed per user is measured against.",
+        "properties": {
+          "capacityMbps": {
+            "example": 1000,
+            "type": "integer"
+          },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "nodeId": {
+            "example": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "capacityMbps",
+          "id",
+          "nodeId"
+        ],
+        "type": "object"
+      },
+      "ServerFreeSpeed": {
+        "description": "ServerFreeSpeed is the live load of a server with a known capacity.",
+        "properties": {
+          "capacityMbps": {
+            "example": 1000,
+            "type": "integer"
+          },
+          "freePerUserMbps": {
+            "example": 44.5,
+            "type": "number"
+          },
+          "nodeId": {
+            "example": 0,
+            "type": "integer"
+          },
+          "online": {
+            "example": 12,
+            "type": "integer"
+          },
+          "usedMbps": {
+            "example": 420.5,
+            "type": "number"
+          }
+        },
+        "required": [
+          "capacityMbps",
+          "freePerUserMbps",
+          "nodeId",
+          "online",
+          "usedMbps"
+        ],
+        "type": "object"
+      },
       "ServerSettings": {
         "description": "ServerSettings is the \"server\" block of an AmneziaWG inbound's Settings\nJSON: the interface-level configuration shared by every client/peer. The\nlisten port is deliberately not duplicated here — it lives on the inbound\nrow itself (Inbound.Port), like every other protocol.",
         "properties": {
@@ -4961,6 +5045,35 @@
           "id",
           "key",
           "value"
+        ],
+        "type": "object"
+      },
+      "SpeedOverview": {
+        "description": "SpeedOverview is everything the speed card shows.",
+        "properties": {
+          "clients": {
+            "items": {
+              "$ref": "#/components/schemas/ClientSpeed"
+            },
+            "type": "array"
+          },
+          "load": {
+            "items": {
+              "$ref": "#/components/schemas/ServerFreeSpeed"
+            },
+            "type": "array"
+          },
+          "servers": {
+            "items": {
+              "$ref": "#/components/schemas/ServerCapacity"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "clients",
+          "load",
+          "servers"
         ],
         "type": "object"
       },
@@ -5381,6 +5494,10 @@
     {
       "name": "Home networks",
       "description": "Home LANs behind a WireGuard, OpenVPN or L2TP/IPsec tunnel held by one gateway server (node id 0 = this panel). Every other server reaches the gateway through a hidden VLESS+REALITY link. Users reach only the subnets and IPs their rules allow; everything else in the home network is blocked. All endpoints under /panel/api/homeNetworks."
+    },
+    {
+      "name": "Speed limits",
+      "description": "Per-user speed contracts. maxMbps is a hard cap enforced with tc on every server the user's IPs were seen on in the last 30 minutes; minMbps is the speed a server must still have free per user, so new cascade users go to an exit with room and the admin gets a speed.low alert when no server has any. Free speed is measured against each server's link speed. All endpoints under /panel/api/speed."
     },
     {
       "name": "WARP switch",
@@ -12381,6 +12498,156 @@
         }
       }
     },
+    "/panel/api/speed/overview": {
+      "get": {
+        "tags": [
+          "Speed limits"
+        ],
+        "summary": "User limits, server link speeds, and the live load of every server with a link speed.",
+        "operationId": "get_panel_api_speed_overview",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/SpeedOverview"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "clients": [
+                      {
+                        "email": "anna",
+                        "id": 1,
+                        "maxMbps": 100,
+                        "minMbps": 20
+                      }
+                    ],
+                    "load": [
+                      {
+                        "capacityMbps": 1000,
+                        "freePerUserMbps": 44.5,
+                        "nodeId": 0,
+                        "online": 12,
+                        "usedMbps": 420.5
+                      }
+                    ],
+                    "servers": [
+                      {
+                        "capacityMbps": 1000,
+                        "id": 1,
+                        "nodeId": 0
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/speed/client": {
+      "post": {
+        "tags": [
+          "Speed limits"
+        ],
+        "summary": "Set one user's minimum and maximum speed in Mbit/s; both 0 removes them.",
+        "operationId": "post_panel_api_speed_client",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "email": "anna",
+                "minMbps": 20,
+                "maxMbps": 100
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/speed/capacity": {
+      "post": {
+        "tags": [
+          "Speed limits"
+        ],
+        "summary": "Set one server's link speed in Mbit/s (node id 0 = this panel); 0 removes it.",
+        "operationId": "post_panel_api_speed_capacity",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "nodeId": 0,
+                "capacityMbps": 1000
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/panel/api/warpSwitch/list": {
       "get": {
         "tags": [
@@ -16079,6 +16346,54 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/xray/speedPlan": {
+      "post": {
+        "tags": [
+          "Xray Settings"
+        ],
+        "summary": "On any server: enforce per-IP speed caps with tc on the default interface. Called by the master; an unchanged plan is a no-op.",
+        "operationId": "post_panel_api_xray_speedPlan",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "limits": [
+                  {
+                    "ip": "203.0.113.7",
+                    "mbps": 100
+                  }
+                ]
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful response",

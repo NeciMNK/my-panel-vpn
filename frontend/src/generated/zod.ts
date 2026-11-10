@@ -610,6 +610,14 @@ export const ClientSlimSchema = z.object({
 });
 export type ClientSlim = z.infer<typeof ClientSlimSchema>;
 
+export const ClientSpeedSchema = z.object({
+  email: z.string(),
+  id: z.number().int(),
+  maxMbps: z.number().int(),
+  minMbps: z.number().int(),
+});
+export type ClientSpeed = z.infer<typeof ClientSpeedSchema>;
+
 export const ClientTrafficSchema = z.object({
   down: z.number().int(),
   email: z.string(),
@@ -1143,6 +1151,22 @@ export const RealityScanResultSchema = z.object({
 });
 export type RealityScanResult = z.infer<typeof RealityScanResultSchema>;
 
+export const ServerCapacitySchema = z.object({
+  capacityMbps: z.number().int(),
+  id: z.number().int(),
+  nodeId: z.number().int(),
+});
+export type ServerCapacity = z.infer<typeof ServerCapacitySchema>;
+
+export const ServerFreeSpeedSchema = z.object({
+  capacityMbps: z.number().int(),
+  freePerUserMbps: z.number(),
+  nodeId: z.number().int(),
+  online: z.number().int(),
+  usedMbps: z.number(),
+});
+export type ServerFreeSpeed = z.infer<typeof ServerFreeSpeedSchema>;
+
 export const ServerSettingsSchema = z.object({
   contentPaddingAddition: z.string().optional(),
   disableCookies: z.boolean(),
@@ -1191,6 +1215,13 @@ export const SettingSchema = z.object({
   value: z.string(),
 });
 export type Setting = z.infer<typeof SettingSchema>;
+
+export const SpeedOverviewSchema = z.object({
+  clients: z.array(z.lazy(() => ClientSpeedSchema)),
+  load: z.array(z.lazy(() => ServerFreeSpeedSchema)),
+  servers: z.array(z.lazy(() => ServerCapacitySchema)),
+});
+export type SpeedOverview = z.infer<typeof SpeedOverviewSchema>;
 
 export const SponsorSchema = z.object({
   enable: z.boolean().nullable().optional(),

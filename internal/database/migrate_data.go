@@ -66,6 +66,8 @@ func migrationModels() []any {
 		&model.CascadePin{},
 		&model.HomeNetwork{},
 		&model.WarpSwitch{},
+		&model.ClientSpeed{},
+		&model.ServerCapacity{},
 	}
 }
 

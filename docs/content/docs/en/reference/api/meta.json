@@ -17,6 +17,7 @@
     "cascades",
     "home-networks",
     "warp-switch",
+    "speed-limits",
     "backup",
     "websocket"
   ]

@@ -1306,6 +1306,20 @@
         "toasts": {
           "saved": "WARP switch saved"
         }
+      },
+      "speed": {
+        "title": "Speed limits",
+        "desc": "Max caps a user's speed on every server they use. Min is the speed a server must still have free for the user: when a server drops below it, new connections go to another server of the cascade, and if no server has room the admin gets a Telegram alert. Set each server's link speed so free speed can be measured.",
+        "server": "Server",
+        "capacity": "Link speed, Mbit/s",
+        "load": "Load",
+        "loadValue": "{used} Mbit/s used, {online} online, {free} Mbit/s free per user",
+        "user": "User",
+        "min": "Min, Mbit/s",
+        "max": "Max, Mbit/s",
+        "toasts": {
+          "saved": "Speed limits saved"
+        }
       }
     },
     "settings": {
@@ -1945,7 +1959,8 @@
       "subHostSortMode": "Orden de nodos de suscripción",
       "subHostSortInbound": "Orden de entradas (predeterminado)",
       "subHostSortHosts": "Orden de hosts",
-      "subHostSortModeDesc": "Sigue el orden de la página de hosts entre distintas entradas. Determina el orden emitido por el servidor; las aplicaciones cliente pueden aplicar su propio orden."
+      "subHostSortModeDesc": "Sigue el orden de la página de hosts entre distintas entradas. Determina el orden emitido por el servidor; las aplicaciones cliente pueden aplicar su propio orden.",
+      "eventSpeedLow": "Speed below user minimum"
     },
     "xray": {
       "save": "Guardar configuración",
@@ -2738,7 +2753,8 @@
       "qrLegendJSON": "{{ .Code }}. Suscripción JSON",
       "qrLegendLink": "{{ .Code }}. Enlace de la app {{ .App }}",
       "backupFailed": "No se pudo leer la base de datos; no se envió ninguna copia de seguridad.",
-      "privateOnly": "🤖 Este bot solo funciona en el chat privado. Ábrelo en un mensaje directo."
+      "privateOnly": "🤖 Este bot solo funciona en el chat privado. Ábrelo en un mensaje directo.",
+      "speedLow": "Server {{ .Server }} has {{ .Free }} Mbit/s free per user, below the {{ .Min }} Mbit/s minimum of {{ .Users }}, and no other server has room. Add a server or raise its link speed."
     },
     "buttons": {
       "closeKeyboard": "❌ Cerrar Teclado",

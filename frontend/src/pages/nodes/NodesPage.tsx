@@ -37,6 +37,7 @@ import NodeJoinModal from './NodeJoinModal';
 import CascadesCard from './CascadesCard';
 import HomeNetworksCard from './HomeNetworksCard';
 import WarpSwitchCard from './WarpSwitchCard';
+import SpeedCard from './SpeedCard';
 import { setMessageInstance } from '@/utils/messageBus';
 import { HttpUtil } from '@/utils';
 import type { PanelUpdateInfo } from '../index/PanelUpdateModal';
@@ -392,6 +393,10 @@ export default function NodesPage() {
 
                   <Col span={24}>
                     <WarpSwitchCard nodes={nodes} />
+                  </Col>
+
+                  <Col span={24}>
+                    <SpeedCard nodes={nodes} />
                   </Col>
                 </Row>
               )}

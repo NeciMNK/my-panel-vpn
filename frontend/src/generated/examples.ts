@@ -634,6 +634,12 @@ export const EXAMPLES: Record<string, unknown> = {
     "traffic": null,
     "updatedAt": 1735100000000
   },
+  "ClientSpeed": {
+    "email": "anna",
+    "id": 1,
+    "maxMbps": 100,
+    "minMbps": 20
+  },
   "ClientTraffic": {
     "down": 2097152,
     "email": "user1",
@@ -1207,6 +1213,18 @@ export const EXAMPLES: Record<string, unknown> = {
     "tlsVersion": "1.3",
     "x25519": true
   },
+  "ServerCapacity": {
+    "capacityMbps": 1000,
+    "id": 1,
+    "nodeId": 0
+  },
+  "ServerFreeSpeed": {
+    "capacityMbps": 1000,
+    "freePerUserMbps": 44.5,
+    "nodeId": 0,
+    "online": 12,
+    "usedMbps": 420.5
+  },
   "ServerSettings": {
     "contentPaddingAddition": "",
     "disableCookies": false,
@@ -1251,6 +1269,32 @@ export const EXAMPLES: Record<string, unknown> = {
     "id": 0,
     "key": "",
     "value": ""
+  },
+  "SpeedOverview": {
+    "clients": [
+      {
+        "email": "anna",
+        "id": 1,
+        "maxMbps": 100,
+        "minMbps": 20
+      }
+    ],
+    "load": [
+      {
+        "capacityMbps": 1000,
+        "freePerUserMbps": 44.5,
+        "nodeId": 0,
+        "online": 12,
+        "usedMbps": 420.5
+      }
+    ],
+    "servers": [
+      {
+        "capacityMbps": 1000,
+        "id": 1,
+        "nodeId": 0
+      }
+    ]
   },
   "Sponsor": {
     "enable": true,

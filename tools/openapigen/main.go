@@ -29,6 +29,8 @@ func run(root, outDir string) error {
 				"HomeNetwork",
 				"HomeAccessRule",
 				"WarpSwitch",
+				"ClientSpeed",
+				"ServerCapacity",
 				"User",
 				"Inbound",
 				"FallbackParentInfo",
@@ -100,6 +102,8 @@ func run(root, outDir string) error {
 			Path: resolveRel(root, "internal/web/service"),
 			StructAllow: setOf(
 				"InboundOption",
+				"SpeedOverview",
+				"ServerFreeSpeed",
 				"HappLinkResult",
 				"ClientSlim",
 				"ClientRenewalPreviewRequest",

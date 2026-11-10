@@ -576,6 +576,13 @@ export interface ClientSlim {
   updatedAt: number;
 }
 
+export interface ClientSpeed {
+  email: string;
+  id: number;
+  maxMbps: number;
+  minMbps: number;
+}
+
 export interface ClientTraffic {
   down: number;
   email: string;
@@ -1073,6 +1080,20 @@ export interface RealityScanResult {
   x25519: boolean;
 }
 
+export interface ServerCapacity {
+  capacityMbps: number;
+  id: number;
+  nodeId: number;
+}
+
+export interface ServerFreeSpeed {
+  capacityMbps: number;
+  freePerUserMbps: number;
+  nodeId: number;
+  online: number;
+  usedMbps: number;
+}
+
 export interface ServerSettings {
   contentPaddingAddition?: string;
   disableCookies: boolean;
@@ -1118,6 +1139,12 @@ export interface Setting {
   id: number;
   key: string;
   value: string;
+}
+
+export interface SpeedOverview {
+  clients: ClientSpeed[];
+  load: ServerFreeSpeed[];
+  servers: ServerCapacity[];
 }
 
 export interface Sponsor {

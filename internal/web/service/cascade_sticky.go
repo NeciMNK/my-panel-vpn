@@ -30,6 +30,16 @@ type stickyView struct {
 	Healthy         map[int]bool
 	OnlineHere      map[string]bool
 	OnlineElsewhere map[string]bool
+	// FreeMbps is what a new user would get per exit (missing = capacity not
+	// set); MinMbps is each user's minimum speed.
+	FreeMbps map[int]float64
+	MinMbps  map[string]int
+}
+
+// hasRoom reports whether exit id still leaves need Mbit/s for one more user.
+func (v stickyView) hasRoom(id, need int) bool {
+	free, known := v.FreeMbps[id]
+	return need == 0 || !known || free >= float64(need)
 }
 
 // nextCascadePins returns the pins after one pass and whether any user moved,
@@ -75,10 +85,14 @@ func nextCascadePins(pins []model.CascadePin, v stickyView) ([]model.CascadePin,
 	}
 	sort.Strings(newcomers)
 	for _, email := range newcomers {
-		best := -1
+		best, roomy := -1, false
 		for _, id := range v.Exits {
-			if usable[id] && (best < 0 || load[id] < load[best]) {
-				best = id
+			if !usable[id] {
+				continue
+			}
+			room := v.hasRoom(id, v.MinMbps[email])
+			if best < 0 || (room && !roomy) || (room == roomy && load[id] < load[best]) {
+				best, roomy = id, room
 			}
 		}
 		kept = append(kept, model.CascadePin{Email: email, NodeId: best, LastSeen: v.Now})
@@ -200,6 +214,16 @@ func (s *CascadeService) StickCascadeUsers(ctx context.Context) {
 	}
 	byGuid := (&InboundService{}).GetOnlineClientsByGuid()
 	now := time.Now().Unix()
+	free, mins := map[int]float64{}, map[string]int{}
+	world := &speedWorld{nodes: nodes, guidOf: guidOf, byGuid: byGuid}
+	if loads, err := world.loads(); err == nil {
+		for id, l := range loads {
+			free[id] = l.freeForNewUser()
+		}
+	}
+	if m, err := minSpeeds(); err == nil {
+		mins = m
+	}
 
 	for _, c := range rows {
 		old, err := loadCascadePins(c.Id)
@@ -210,7 +234,7 @@ func (s *CascadeService) StickCascadeUsers(ctx context.Context) {
 		if len(c.Links) < 2 && len(old) == 0 {
 			continue
 		}
-		view := stickyView{Now: now, Healthy: healthy}
+		view := stickyView{Now: now, Healthy: healthy, FreeMbps: free, MinMbps: mins}
 		if len(c.Links) >= 2 {
 			for _, l := range c.Links {
 				view.Exits = append(view.Exits, l.NodeId)

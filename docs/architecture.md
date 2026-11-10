@@ -419,6 +419,7 @@ All registered in `web.go` → `startTask()`. Each is a struct with a `Run()` me
 | `@every 10s`        | `amneziawg_job`                                                                                  | Reconcile embedded AmneziaWG interfaces against enabled local inbounds                |
 | `@every 15s`        | `cascade_sticky_job`                                                                             | Keep users of multi-exit cascades on one exit; release 15 min after they go offline   |
 | `@every 1m`         | `home_network_job`                                                                               | Re-apply home networks whose groups, servers or last apply changed                    |
+| `@every 30s`        | `speed_job`                                                                                      | Push per-user speed caps (tc) to every server; alert when a minimum speed cannot be met |
 | `@every 5m`         | `outbound_subscription_job`                                                                      | Refresh outbound provider configs                                                     |
 | `@every 10m`        | `clear_logs_job` (`PruneXrayLogsJob`)                                                            | Truncate Xray access/error logs once either exceeds 64 MiB                            |
 | `@hourly`           | `warp_ip_job`, `periodic_traffic_reset_job("hourly")`                                            | WARP IP rotation; traffic resets                                                      |

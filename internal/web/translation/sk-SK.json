@@ -1427,6 +1427,20 @@
         "toasts": {
           "saved": "WARP switch saved"
         }
+      },
+      "speed": {
+        "title": "Speed limits",
+        "desc": "Max caps a user's speed on every server they use. Min is the speed a server must still have free for the user: when a server drops below it, new connections go to another server of the cascade, and if no server has room the admin gets a Telegram alert. Set each server's link speed so free speed can be measured.",
+        "server": "Server",
+        "capacity": "Link speed, Mbit/s",
+        "load": "Load",
+        "loadValue": "{used} Mbit/s used, {online} online, {free} Mbit/s free per user",
+        "user": "User",
+        "min": "Min, Mbit/s",
+        "max": "Max, Mbit/s",
+        "toasts": {
+          "saved": "Speed limits saved"
+        }
       }
     },
     "settings": {
@@ -2066,7 +2080,8 @@
       "subHostSortMode": "Poradie uzlov v predplatnom",
       "subHostSortInbound": "Poradie inboundov (predvolené)",
       "subHostSortHosts": "Poradie hostiteľov",
-      "subHostSortModeDesc": "Poradie hostiteľov sa riadi stránkou Hostitelia naprieč inboundmi. Určuje poradie, ktoré odosiela server; klientske aplikácie môžu použiť vlastné triedenie."
+      "subHostSortModeDesc": "Poradie hostiteľov sa riadi stránkou Hostitelia naprieč inboundmi. Určuje poradie, ktoré odosiela server; klientske aplikácie môžu použiť vlastné triedenie.",
+      "eventSpeedLow": "Speed below user minimum"
     },
     "xray": {
       "save": "Uložiť",
@@ -2738,7 +2753,8 @@
       "qrLegendJSON": "{{ .Code }}. Predplatné JSON",
       "qrLegendLink": "{{ .Code }}. Odkaz pre aplikáciu {{ .App }}",
       "backupFailed": "Databázu sa nepodarilo prečítať; záloha nebola odoslaná.",
-      "privateOnly": "🤖 Tento bot funguje len v súkromnom chate. Otvorte ho, prosím, v priamej správe."
+      "privateOnly": "🤖 Tento bot funguje len v súkromnom chate. Otvorte ho, prosím, v priamej správe.",
+      "speedLow": "Server {{ .Server }} has {{ .Free }} Mbit/s free per user, below the {{ .Min }} Mbit/s minimum of {{ .Users }}, and no other server has room. Add a server or raise its link speed."
     },
     "buttons": {
       "closeKeyboard": "❌ Zavrieť klávesnicu",

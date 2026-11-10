@@ -84,6 +84,36 @@ func TestNextCascadePins(t *testing.T) {
 			wantChanged: true,
 		},
 		{
+			name: "a newcomer with a minimum skips the less loaded exit without room",
+			pins: []model.CascadePin{{Id: 1, Email: "anna", NodeId: 5, LastSeen: now}},
+			view: stickyView{
+				Now: now, Exits: []int{2, 5}, Healthy: allUp, OnlineHere: emailSet("anna", "bob"),
+				FreeMbps: map[int]float64{2: 10, 5: 60}, MinMbps: map[string]int{"bob": 50},
+			},
+			want:        map[string]int{"anna": 5, "bob": 5},
+			wantChanged: true,
+		},
+		{
+			name: "an exit with room is not traded for a less loaded one without",
+			pins: []model.CascadePin{{Id: 1, Email: "anna", NodeId: 2, LastSeen: now}},
+			view: stickyView{
+				Now: now, Exits: []int{2, 5}, Healthy: allUp, OnlineHere: emailSet("anna", "bob"),
+				FreeMbps: map[int]float64{2: 60, 5: 10}, MinMbps: map[string]int{"bob": 50},
+			},
+			want:        map[string]int{"anna": 2, "bob": 2},
+			wantChanged: true,
+		},
+		{
+			name: "with no exit left with room the least loaded one still takes the user",
+			pins: []model.CascadePin{{Id: 1, Email: "anna", NodeId: 2, LastSeen: now}},
+			view: stickyView{
+				Now: now, Exits: []int{2, 5}, Healthy: allUp, OnlineHere: emailSet("anna", "bob"),
+				FreeMbps: map[int]float64{2: 5, 5: 10}, MinMbps: map[string]int{"bob": 50},
+			},
+			want:        map[string]int{"anna": 2, "bob": 5},
+			wantChanged: true,
+		},
+		{
 			name:        "a removed exit drops its pins",
 			pins:        []model.CascadePin{{Id: 1, Email: "anna", NodeId: 9, LastSeen: now}},
 			view:        stickyView{Now: now, Exits: []int{2, 5}, Healthy: allUp},
