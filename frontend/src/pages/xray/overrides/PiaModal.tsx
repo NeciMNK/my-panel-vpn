@@ -8,6 +8,7 @@ import { HttpUtil } from '@/utils';
 import { FormField } from '@/components/form/rhf';
 import { countryFlag, countryName } from '../outbounds/outbounds-tab-helpers';
 import './PiaModal.css';
+import { xrayApi } from '@/api/xrayTarget';
 
 interface PiaOutboundRow {
   tag?: string;
@@ -180,14 +181,14 @@ export default function PiaModal({
   }, [filteredServers, methods]);
 
   const fetchCountries = useCallback(async () => {
-    const msg = await HttpUtil.post<PiaCountry[]>('/panel/api/xray/pia/countries');
+    const msg = await HttpUtil.post<PiaCountry[]>(xrayApi('/pia/countries'));
     if (msg?.success && Array.isArray(msg.obj)) setCountries(msg.obj);
   }, []);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const msg = await HttpUtil.post<PiaAccount | null>('/panel/api/xray/pia/data');
+      const msg = await HttpUtil.post<PiaAccount | null>(xrayApi('/pia/data'));
       if (msg?.success) {
         const next = msg.obj ?? null;
         setPiaData(next);
@@ -213,7 +214,7 @@ export default function PiaModal({
   async function login() {
     setLoading(true);
     try {
-      const msg = await HttpUtil.post<PiaAccount>('/panel/api/xray/pia/reg', {
+      const msg = await HttpUtil.post<PiaAccount>(xrayApi('/pia/reg'), {
         username: methods.getValues('username'),
         password: methods.getValues('password'),
       });
@@ -230,7 +231,7 @@ export default function PiaModal({
   async function logout() {
     setLoading(true);
     try {
-      const msg = await HttpUtil.post('/panel/api/xray/pia/del');
+      const msg = await HttpUtil.post(xrayApi('/pia/del'));
       if (msg?.success) {
         setPiaData(null);
         methods.reset(EMPTY);
@@ -251,7 +252,7 @@ export default function PiaModal({
     methods.setValue('regionId', null);
     try {
       const msg = await HttpUtil.post<{ regions?: PiaRegion[]; servers?: PiaServer[] }>(
-        '/panel/api/xray/pia/servers',
+        xrayApi('/pia/servers'),
         { countryCode: newCountryCode },
       );
       if (!msg?.success || !msg.obj) return;
@@ -269,7 +270,7 @@ export default function PiaModal({
     selectedHostname: string,
   ): Promise<Record<string, unknown> | null> {
     if (!selectedHostname) return null;
-    const msg = await HttpUtil.post<PiaKey>('/panel/api/xray/pia/addKey', {
+    const msg = await HttpUtil.post<PiaKey>(xrayApi('/pia/addKey'), {
       hostname: selectedHostname,
     });
     if (!msg?.success) return null;

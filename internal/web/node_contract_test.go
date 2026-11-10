@@ -2,6 +2,7 @@ package web
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -300,6 +301,23 @@ func TestMasterNodeContract(t *testing.T) {
 					}
 					_, err := master.ListRemoteTags(ctx)
 					return err
+				}, nil},
+				{"ProxyXray reads and writes the node's Xray template", []string{"ProxyXray"}, func() error {
+					resp, err := master.ProxyXray(ctx, http.MethodPost, "/", "", "", nil)
+					if err != nil {
+						return err
+					}
+					if resp.Status != http.StatusOK || !strings.Contains(string(resp.Body), `"success":true`) {
+						return fmt.Errorf("xray read: HTTP %d %s", resp.Status, resp.Body)
+					}
+					resp, err = master.ProxyXray(ctx, http.MethodGet, "/getOutboundsTraffic", "", "", nil)
+					if err != nil {
+						return err
+					}
+					if resp.Status != http.StatusOK {
+						return fmt.Errorf("outbound traffic: HTTP %d", resp.Status)
+					}
+					return nil
 				}, nil},
 				{"RestartXray is accepted by the node", []string{"RestartXray"}, func() error {
 					// No core binary here: only the node's own restart failure may come back.

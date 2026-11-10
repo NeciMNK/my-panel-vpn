@@ -87,6 +87,14 @@ func allModels() []any {
 		&model.OutboundSubscription{},
 		&model.SubBalancer{},
 		&model.TuicTrafficReceipt{},
+		&model.NodeJoinToken{},
+		&model.Cascade{},
+		&model.CascadePin{},
+		&model.HomeNetwork{},
+		&model.WarpSwitch{},
+		&model.ClientSpeed{},
+		&model.ServerCapacity{},
+		&model.MasterMember{},
 	}
 }
 

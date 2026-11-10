@@ -35,6 +35,7 @@ interface NodeListProps {
   selectedIds: number[];
   onSelectionChange: (ids: number[]) => void;
   onAdd: () => void;
+  onQuickJoin: () => void;
   onMtls: () => void;
   onEdit: (node: NodeRecord) => void;
   onDelete: (node: NodeRecord) => void;
@@ -180,6 +181,7 @@ export default function NodeList({
   selectedIds,
   onSelectionChange,
   onAdd,
+  onQuickJoin,
   onMtls,
   onEdit,
   onDelete,
@@ -593,6 +595,9 @@ export default function NodeList({
       <div className="toolbar">
         <Button type="primary" icon={<PlusOutlined aria-hidden />} onClick={onAdd}>
           {t('pages.nodes.addNode')}
+        </Button>
+        <Button icon={<ThunderboltOutlined aria-hidden />} onClick={onQuickJoin}>
+          {t('pages.nodes.join.button')}
         </Button>
         <Button icon={<SafetyCertificateOutlined aria-hidden />} onClick={onMtls}>
           {t('pages.nodes.mtls.title')}

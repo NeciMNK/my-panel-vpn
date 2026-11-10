@@ -6,6 +6,7 @@ import { AimOutlined } from '@ant-design/icons';
 import { HttpUtil } from '@/utils';
 import { useInboundOptions } from '@/api/queries/useInboundOptions';
 import { buildRemarkByTag, formatInboundTag } from './helpers';
+import { xrayApi } from '@/api/xrayTarget';
 
 interface RouteTesterProps {
   inboundTags: string[];
@@ -42,7 +43,7 @@ export default function RouteTester({ inboundTags, isMobile }: RouteTesterProps)
     setTesting(true);
     setResult(null);
     try {
-      const msg = await HttpUtil.post('/panel/api/xray/routeTest', {
+      const msg = await HttpUtil.post(xrayApi('/routeTest'), {
         domain: isIp ? '' : value,
         ip: isIp ? value : '',
         port: port ?? 0,

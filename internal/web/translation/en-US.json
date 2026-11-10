@@ -1334,7 +1334,132 @@
       "pinnedCertPlaceholder": "base64 or hex SHA-256",
       "fetchPin": "Fetch",
       "pinFetched": "Fetched the node's current certificate",
-      "pinFetchFailed": "Could not fetch the certificate"
+      "pinFetchFailed": "Could not fetch the certificate",
+      "join": {
+        "button": "Add with one command",
+        "title": "Add a node with one command",
+        "desc": "Run this command as root on the new server. It downloads this panel's build, sets up a node with a random port, path and certificate, and registers it here by itself.",
+        "regenerate": "New command",
+        "insecure": "The master uses a self-signed certificate",
+        "hint": "The command works once and expires at {{time}}. The server must be {{arch}}, like the master."
+      },
+      "cascade": {
+        "title": "Cascades",
+        "add": "New cascade",
+        "edit": "Edit cascade",
+        "name": "Name",
+        "route": "Entry → exit",
+        "state": "State",
+        "enable": "Enabled",
+        "entry": "Entry server",
+        "exits": "Exit servers",
+        "strategy": "How to pick the exit",
+        "inbounds": "Only these entry inbounds",
+        "inboundsHint": "Empty = all traffic of the entry server goes through the cascade.",
+        "desc": "Users connect to the entry server and reach the internet through the exit. The panel creates the link between the servers itself. Several exits = load balancing.",
+        "deleteConfirm": "Delete the cascade and its link inbounds?",
+        "toasts": {
+          "saved": "Cascade saved",
+          "deleted": "Cascade deleted"
+        },
+        "exitMode": "Exits",
+        "exitModeServers": "Picked servers",
+        "exitModeCountry": "All servers of a country",
+        "country": "Exit country",
+        "countryHint": "Traffic leaves through the fastest server of this country. New nodes of the country join automatically."
+      },
+      "country": "Country",
+      "countryHint": "Two-letter country code (DE, NL, FI). Nodes of one country together join \"by country\" cascades.",
+      "countryInvalid": "Use a two-letter country code such as DE",
+      "home": {
+        "title": "Home networks",
+        "add": "New home network",
+        "edit": "Edit home network",
+        "name": "Name",
+        "network": "Network",
+        "rules": "Who can reach what",
+        "state": "State",
+        "enable": "Enabled",
+        "desc": "One server keeps a tunnel to your home; users of every other server reach it through that server. Only the addresses below are routed home, and only the users in the rules may use them.",
+        "kind": "Connection to home",
+        "kinds": {
+          "wireguard": "WireGuard",
+          "openvpn": "OpenVPN",
+          "l2tp": "L2TP/IPsec"
+        },
+        "gateway": "Server that holds the tunnel",
+        "gatewayHint": "OpenVPN and L2TP clients are installed on this server automatically (Debian/Ubuntu).",
+        "config": "Config file",
+        "configHintWg": "Paste the WireGuard config exported by the home router: [Interface] and one [Peer].",
+        "configHintOvpn": "Paste the .ovpn file. Its routes and scripts are ignored: only the addresses below go through the tunnel.",
+        "server": "L2TP server address",
+        "username": "Username",
+        "password": "Password",
+        "psk": "IPsec pre-shared key (empty = L2TP without IPsec)",
+        "subnets": "Home subnets",
+        "subnetsHint": "For example 192.168.1.0/24. Press Enter after each one.",
+        "hosts": "Single home addresses",
+        "hostsHint": "For example 192.168.1.10 for a NAS or a camera.",
+        "rulesHint": "A rule lets the listed users and client groups reach some addresses of this network. Everyone else is blocked from all of them.",
+        "ruleUsers": "Users",
+        "ruleGroups": "Client groups",
+        "ruleTargets": "Addresses",
+        "ruleTargetsAll": "Empty = the whole network.",
+        "addRule": "Add rule",
+        "deleteConfirm": "Delete the home network, stop its tunnel and remove its rules from every server?",
+        "toasts": {
+          "saved": "Home network saved",
+          "deleted": "Home network deleted"
+        }
+      },
+      "warp": {
+        "title": "WARP",
+        "server": "Server",
+        "mode": "WARP",
+        "domains": "Sites through WARP",
+        "modes": {
+          "off": "Off",
+          "all": "All traffic",
+          "domains": "Only these sites"
+        },
+        "desc": "One switch per server. The first time it is turned on the server registers its own WARP account. Sites: domains, geosite: or regexp: entries. WARP only takes traffic that no cascade, home network or other rule claimed.",
+        "toasts": {
+          "saved": "WARP switch saved"
+        }
+      },
+      "speed": {
+        "title": "Speed limits",
+        "desc": "Max caps a user's speed on every server they use. Min is the speed a server must still have free for the user: when a server drops below it, new connections go to another server of the cascade, and if no server has room the admin gets a Telegram alert. Set each server's link speed so free speed can be measured.",
+        "server": "Server",
+        "capacity": "Link speed, Mbit/s",
+        "load": "Load",
+        "loadValue": "{used} Mbit/s used, {online} online, {free} Mbit/s free per user",
+        "user": "User",
+        "min": "Min, Mbit/s",
+        "max": "Max, Mbit/s",
+        "toasts": {
+          "saved": "Speed limits saved"
+        }
+      },
+      "masters": {
+        "title": "Masters",
+        "desc": "Masters that share this panel's database. The best-ranked running master leads: it syncs nodes, resets traffic, keeps cascade pins and runs the bots. When it goes down the next one takes over within about half a minute, and it takes the lead back 30 seconds after it returns.",
+        "name": "Master",
+        "priority": "Priority",
+        "address": "Address",
+        "state": "State",
+        "lastSeen": "Last heartbeat",
+        "states": {
+          "leader": "Leader",
+          "follower": "Standby",
+          "down": "Down"
+        },
+        "self": "this panel",
+        "forget": "Forget",
+        "toasts": {
+          "forgotten": "Master removed from the list"
+        }
+      }
     },
     "settings": {
       "defaultTag": "Default",
@@ -1973,7 +2098,9 @@
       "subHostSortMode": "Subscription Node Ordering",
       "subHostSortInbound": "Inbound order (default)",
       "subHostSortHosts": "Hosts order",
-      "subHostSortModeDesc": "Hosts order follows the Hosts page across inbounds. This controls the order emitted by the server; client apps may apply their own sorting."
+      "subHostSortModeDesc": "Hosts order follows the Hosts page across inbounds. This controls the order emitted by the server; client apps may apply their own sorting.",
+      "eventSpeedLow": "Speed below user minimum",
+      "eventMasterLeader": "Another master took over"
     },
     "xray": {
       "save": "Save",
@@ -2505,7 +2632,9 @@
       "defaultOutboundDesc": "Traffic that does not match any routing rule uses this outbound (Xray uses the first outbound in the list).",
       "routingScript": "Routing Script",
       "routingScriptDesc": "Path to a .lua file defining HandleRoute, absolute or relative to the Xray bin folder. The script then picks every route and Xray ignores all routing rules, the panel's api rule included: send the api inbound to the api outbound or traffic stats and live client changes stop. Xray will not start if the file is missing or invalid.",
-      "routingScriptActive": "A routing script is set under {section}, so Xray ignores these rules."
+      "routingScriptActive": "A routing script is set under {section}, so Xray ignores these rules.",
+      "targetNode": "Server",
+      "targetLocal": "This server (master)"
     }
   },
   "tgbot": {
@@ -2634,7 +2763,10 @@
       "qrLegendJSON": "{{ .Code }}. JSON subscription",
       "qrLegendLink": "{{ .Code }}. App link {{ .App }}",
       "backupFailed": "Could not read the database; no backup was sent.",
-      "privateOnly": "🤖 This bot works in private chat only. Please open it in a direct message."
+      "privateOnly": "🤖 This bot works in private chat only. Please open it in a direct message.",
+      "speedLow": "Server {{ .Server }} has {{ .Free }} Mbit/s free per user, below the {{ .Min }} Mbit/s minimum of {{ .Users }}, and no other server has room. Add a server or raise its link speed.",
+      "masterLeader": "Master {{ .Master }} now leads the panel cluster.",
+      "masterLeaderPrevious": "It took over from {{ .Previous }}."
     },
     "buttons": {
       "closeKeyboard": "❌ Close Keyboard",

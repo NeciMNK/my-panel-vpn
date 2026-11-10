@@ -1736,6 +1736,161 @@ export const sections: readonly Section[] = [
   },
 
   {
+    id: 'cascades',
+    title: 'Cascades',
+    description:
+      'Entry → exit server chains. The panel provisions a hidden VLESS+REALITY inbound on every exit and an outbound plus a catch-all routing rule (or a balancer for several exits) on the entry. Node id 0 means this panel. All endpoints under /panel/api/cascades.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/cascades/list',
+        summary: 'List every cascade with its provisioned links and the last apply error.',
+        responseSchema: 'Cascade',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/cascades/add',
+        summary:
+          'Create a cascade and apply it: exits get their link inbound, the entry gets the outbound(s) and the routing rule. Empty entryInboundTags chains every inbound of the entry.',
+        body: '{\n  "name": "RU → DE",\n  "enable": true,\n  "entryNodeId": 1,\n  "exitNodeIds": [2, 3],\n  "entryInboundTags": [],\n  "strategy": "leastPing"\n}',
+        responseSchema: 'Cascade',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/cascades/update/:id',
+        summary:
+          'Change a cascade (entry, exits, chained inbounds, strategy, enable) and re-apply it. Removed exits lose their link inbound; adding an exit adds it to the balancer.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Cascade ID.' }],
+        body: '{\n  "name": "RU → DE",\n  "enable": true,\n  "entryNodeId": 1,\n  "exitNodeIds": [2, 3],\n  "entryInboundTags": [],\n  "strategy": "leastPing"\n}',
+        responseSchema: 'Cascade',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/cascades/del/:id',
+        summary:
+          'Remove a cascade from the entry template and delete its link inbounds on every exit.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Cascade ID.' }],
+      },
+    ],
+  },
+
+  {
+    id: 'home-networks',
+    title: 'Home networks',
+    description:
+      'Home LANs behind a WireGuard, OpenVPN or L2TP/IPsec tunnel held by one gateway server (node id 0 = this panel). Every other server reaches the gateway through a hidden VLESS+REALITY link. Users reach only the subnets and IPs their rules allow; everything else in the home network is blocked. All endpoints under /panel/api/homeNetworks.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/homeNetworks/list',
+        summary:
+          'List every home network with its rules, tunnel state and the last per-server apply errors.',
+        responseSchema: 'HomeNetwork',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/homeNetworks/add',
+        summary:
+          'Create a home network and apply it: the gateway brings the tunnel up, every server gets allow rules per user or client group and a deny rule for the rest of the network. Empty targets in a rule mean the whole network.',
+        body: '{\n  "name": "Home",\n  "enable": true,\n  "kind": "wireguard",\n  "gatewayNodeId": 0,\n  "config": "[Interface]\\nPrivateKey = ...\\nAddress = 10.8.0.2/32\\n\\n[Peer]\\nPublicKey = ...\\nEndpoint = home.example.net:51820",\n  "subnets": ["192.168.1.0/24"],\n  "hosts": ["192.168.1.10"],\n  "rules": [{ "emails": ["anna"], "groups": ["family"], "targets": [] }]\n}',
+        responseSchema: 'HomeNetwork',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/homeNetworks/update/:id',
+        summary:
+          'Change a home network (tunnel, gateway, subnets, IPs, access rules) and re-apply it on every server.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Home network ID.' }],
+        body: '{\n  "name": "Home",\n  "enable": true,\n  "kind": "wireguard",\n  "gatewayNodeId": 0,\n  "config": "[Interface]\\nPrivateKey = ...\\nAddress = 10.8.0.2/32\\n\\n[Peer]\\nPublicKey = ...\\nEndpoint = home.example.net:51820",\n  "subnets": ["192.168.1.0/24"],\n  "hosts": ["192.168.1.10"],\n  "rules": [{ "emails": ["anna"], "groups": ["family"], "targets": [] }]\n}',
+        responseSchema: 'HomeNetwork',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/homeNetworks/del/:id',
+        summary: 'Remove the home network from every server, stop its tunnel and delete its link.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Home network ID.' }],
+      },
+    ],
+  },
+
+  {
+    id: 'masters',
+    title: 'Masters',
+    description:
+      'Several master panels can share one database (XUI_MASTER_PRIORITY, XUI_MASTER_NAME, XUI_MASTER_URL). Each writes a heartbeat every 5s; the best-ranked master that has been up for 30s leads and alone runs node sync, traffic resets, cascade pins and the bots. The list is empty on a single master. All endpoints under /panel/api/masters.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/masters/list',
+        summary: 'Every master that joined, whether it is alive and which one leads.',
+        responseSchema: 'MasterStatus',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/masters/forget',
+        summary:
+          'Remove a master that is down for good from the list. A running master is refused.',
+        body: '{\n  "name": "master-2"\n}',
+      },
+    ],
+  },
+
+  {
+    id: 'speed',
+    title: 'Speed limits',
+    description:
+      "Per-user speed contracts. maxMbps is a hard cap enforced with tc on every server the user's IPs were seen on in the last 30 minutes; minMbps is the speed a server must still have free per user, so new cascade users go to an exit with room and the admin gets a speed.low alert when no server has any. Free speed is measured against each server's link speed. All endpoints under /panel/api/speed.",
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/speed/overview',
+        summary:
+          'User limits, server link speeds, and the live load of every server with a link speed.',
+        responseSchema: 'SpeedOverview',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/speed/client',
+        summary: "Set one user's minimum and maximum speed in Mbit/s; both 0 removes them.",
+        body: '{\n  "email": "anna",\n  "minMbps": 20,\n  "maxMbps": 100\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/speed/capacity',
+        summary: "Set one server's link speed in Mbit/s (node id 0 = this panel); 0 removes it.",
+        body: '{\n  "nodeId": 0,\n  "capacityMbps": 1000\n}',
+      },
+    ],
+  },
+
+  {
+    id: 'warp-switch',
+    title: 'WARP switch',
+    description:
+      'One Cloudflare WARP switch per server (node id 0 = this panel): off, all traffic, or only the listed sites. Turning it on registers the server\'s WARP account when it has none and adds the stock "warp" outbound; the routing rule is always the last one, so cascades, home networks and the admin\'s own rules decide first. All endpoints under /panel/api/warpSwitch.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/warpSwitch/list',
+        summary: 'List the switch position of every server that has one.',
+        responseSchema: 'WarpSwitch',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/warpSwitch/set',
+        summary:
+          "Move one server's switch and rewrite its Xray template. Domains accept plain domains, geosite: and regexp: entries.",
+        body: '{\n  "nodeId": 0,\n  "mode": "domains",\n  "domains": ["geosite:openai", "chatgpt.com"]\n}',
+        responseSchema: 'WarpSwitch',
+      },
+    ],
+  },
+
+  {
     id: 'nodes',
     title: 'Nodes',
     description:
@@ -1785,6 +1940,43 @@ export const sections: readonly Section[] = [
         params: [{ name: 'id', in: 'path', type: 'number', desc: 'Node ID.' }],
         response:
           '{\n  "success": true,\n  "obj": {\n    "webCertFile": "/root/cert/example.com/fullchain.pem",\n    "webKeyFile": "/root/cert/example.com/privkey.pem"\n  }\n}',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/nodes/:id/xray/*path',
+        summary:
+          "Proxy a read of the node's Xray settings API (/panel/api/xray/*path on the node). Lets the central panel's Xray page show a node's outbounds, routing, balancers, WARP and geodata. The node's response is returned unchanged.",
+        params: [
+          { name: 'id', in: 'path', type: 'number', desc: 'Node ID.' },
+          {
+            name: 'path',
+            in: 'path',
+            type: 'string',
+            desc: 'Path under /panel/api/xray on the node, e.g. getOutboundsTraffic.',
+          },
+        ],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/nodes/:id/xray/*path',
+        summary:
+          "Proxy a write to the node's Xray settings API (/panel/api/xray/*path on the node), e.g. update, warp/reg or balancerOverride, so outbounds, routing, balancers and WARP of every node are edited from the central panel. The node's response is returned unchanged.",
+        params: [
+          { name: 'id', in: 'path', type: 'number', desc: 'Node ID.' },
+          {
+            name: 'path',
+            in: 'path',
+            type: 'string',
+            desc: 'Path under /panel/api/xray on the node, e.g. update.',
+          },
+        ],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/nodes/joinToken',
+        summary:
+          'Mint a one-time join token (valid for one hour) for the "add node with one command" installer. The installer downloads this panel\'s own build from <base>/node-join/bundle (so the node must share this panel\'s CPU architecture, reported as arch) and registers itself at <base>/node-join/register, pinned to its self-signed certificate.',
+        responseSchema: 'NodeJoinTokenView',
       },
       {
         method: 'POST',
@@ -2444,6 +2636,26 @@ export const sections: readonly Section[] = [
           },
         ],
         body: 'tag=b1&target=proxy',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/xray/homeTunnel',
+        summary:
+          "On a gateway server: bring a home network's OpenVPN or L2TP/IPsec client up (installing it when missing) or tear it down. Called by the master; answers within 45s even while the client still installs.",
+        body: '{\n  "id": 1,\n  "kind": "openvpn",\n  "enable": true,\n  "openvpn": "client\\nremote home.example.net 1194\\n...",\n  "routes": ["192.168.1.0/24"]\n}',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/xray/homeTunnel/:id',
+        summary: 'On a gateway server: whether a home network tunnel runs and its interface is up.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Home network ID.' }],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/xray/speedPlan',
+        summary:
+          'On any server: enforce per-IP speed caps with tc on the default interface. Called by the master; an unchanged plan is a no-op.',
+        body: '{\n  "limits": [{ "ip": "203.0.113.7", "mbps": 100 }]\n}',
       },
       {
         method: 'POST',

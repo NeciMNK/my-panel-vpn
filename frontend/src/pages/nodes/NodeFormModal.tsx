@@ -54,6 +54,7 @@ function defaultValues(): NodeFormValues {
     inboundSyncMode: 'all',
     inboundTags: [],
     outboundTag: '',
+    country: '',
   };
 }
 
@@ -154,6 +155,7 @@ export default function NodeFormModal({
       inboundSyncMode: values.inboundSyncMode,
       inboundTags: values.inboundSyncMode === 'selected' ? values.inboundTags : [],
       outboundTag: values.outboundTag || '',
+      country: (values.country || '').toUpperCase(),
     };
     if (token) payload.apiToken = token;
     return payload;
@@ -394,6 +396,19 @@ export default function NodeFormModal({
                     ? t('pages.nodes.apiTokenKeepHint')
                     : t('pages.nodes.apiTokenPlaceholder')
                 }
+              />
+            </FormField>
+
+            <FormField
+              label={t('pages.nodes.country')}
+              name="country"
+              tooltip={t('pages.nodes.countryHint')}
+              rules={{ validate: rhfZodValidate(NodeFormSchema.shape.country) }}
+            >
+              <Input
+                maxLength={2}
+                placeholder="DE"
+                style={{ textTransform: 'uppercase', width: 96 }}
               />
             </FormField>
 
