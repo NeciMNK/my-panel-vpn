@@ -13,6 +13,7 @@ working; nobody has to refresh anything.
 | What | Remnawave | 3x-ui |
 | --- | --- | --- |
 | VLESS UUID, Trojan/Shadowsocks password | `vlessUuid`, `trojanPassword`, `ssPassword` | client `id`, `password` |
+| Hysteria2 auth, salamander password | `vlessUuid`, inbound `finalmask` | client `auth`, inbound `finalmask` |
 | Subscription id (last part of the link) | `shortUuid` | `subId` |
 | Subscription path and address | from `subscriptionUrl`, e.g. `https://sub.example.com/<shortUuid>` | `subPath`, `subJsonPath`, `subClashPath`, `subURI` |
 | Ports, Reality keys, `shortIds`, SNI | from the config profile | from the inbound |
@@ -24,12 +25,19 @@ working; nobody has to refresh anything.
 
 Not imported: routing, outbounds and DNS of Remnawave config profiles (set them
 in the Xray template of the panel and nodes), host filters by internal squad,
-external squads, host xhttp extra params, Hysteria inbounds. HWID device lists
+external squads, host xhttp extra params. HWID device lists
 are not imported: the limit is kept and devices register again on their next
 subscription refresh. A Remnawave user with both Trojan and Shadowsocks under
 different passwords gets the Trojan password for Shadowsocks too, so that one
 config updates only after a subscription refresh. The import window lists every
 such case before importing.
+
+Remnawave nodes read TLS certificates (Hysteria, VLESS/Trojan over TLS) from
+their own disk, for example `/opt/certs/server.crt`. The import window names
+every such file: copy it to the same path on the server the inbound moves to
+before importing, or that inbound fails to start. An inbound whose Remnawave
+hosts are all disabled is imported with "Exclude from subscription" on, as
+Remnawave did not list it either.
 
 The source panel is never modified. To roll back, start it again.
 

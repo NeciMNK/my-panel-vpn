@@ -13,6 +13,7 @@ icon: ArrowRightLeft
 | Что | Remnawave | 3x-ui |
 | --- | --- | --- |
 | UUID VLESS, пароли Trojan/Shadowsocks | `vlessUuid`, `trojanPassword`, `ssPassword` | `id`, `password` клиентов |
+| Ключ Hysteria2, пароль salamander | `vlessUuid`, `finalmask` подключения | `auth` клиента, `finalmask` подключения |
 | ID подписки (последняя часть ссылки) | `shortUuid` | `subId` |
 | Путь и адрес подписки | из `subscriptionUrl`, например `https://sub.example.com/<shortUuid>` | `subPath`, `subJsonPath`, `subClashPath`, `subURI` |
 | Порты, Reality-ключи, `shortIds`, SNI | из config profile | из подключения |
@@ -24,12 +25,19 @@ icon: ArrowRightLeft
 
 Не переносятся: маршрутизация, outbounds и DNS из config profile Remnawave
 (настройте их в шаблоне Xray панели и нод), фильтры хостов по internal squads,
-external squads, xhttp extra params хостов, подключения Hysteria. Списки
+external squads, xhttp extra params хостов. Списки
 устройств HWID не переносятся: лимит сохраняется, а устройства регистрируются
 заново при первом обновлении подписки. Если у пользователя Remnawave есть и
 Trojan, и Shadowsocks с разными паролями, Shadowsocks получит пароль Trojan, и
 этот один конфиг обновится только после обновления подписки. Окно переноса
 показывает все такие случаи до импорта.
+
+Ноды Remnawave читают TLS-сертификаты (Hysteria, VLESS/Trojan с TLS) со своего
+диска, например `/opt/certs/server.crt`. Окно переноса называет каждый такой
+файл: до импорта положите его по тому же пути на сервер, куда переезжает
+подключение, иначе оно не запустится. Подключение, у которого в Remnawave все
+хосты выключены, переносится с включённым «Не показывать в подписке», потому
+что Remnawave его тоже не показывала.
 
 Исходная панель при переносе не меняется. Откат — просто снова запустить её.
 

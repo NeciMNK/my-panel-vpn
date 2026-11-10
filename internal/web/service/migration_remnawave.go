@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"reflect"
 	"regexp"
 	"sort"
 	"strconv"
@@ -347,6 +348,9 @@ func buildRemnawavePlan(snap *RemnawaveSnapshot) (*migrationPlan, error) {
 					failed[ai.UUID] = true
 					continue
 				}
+				if paths := certificateFilePaths(ib.StreamSettings); len(paths) > 0 {
+					plan.warnf("inbound %q (profile %q): TLS reads %s from disk; copy them to the same path on the server it moves to", ref.tag, ref.profile, strings.Join(paths, ", "))
+				}
 				base = ib
 				converted[ai.UUID] = ib
 			}
@@ -380,10 +384,17 @@ func buildRemnawavePlan(snap *RemnawaveSnapshot) (*migrationPlan, error) {
 			continue
 		}
 		key := pickHostInbound(h, candidates, nodeAddr)
-		plan.hosts = append(plan.hosts, migrationHost{inboundKey: key, group: remnawaveHostGroup(h, i, plan)})
-		withHost[key] = true
+		group := remnawaveHostGroup(h, i, plan)
+		// Panel hosts add their mask on top of the inbound's; Remnawave's repeat it.
+		if group.FinalMask != "" && sameJSON(group.FinalMask, inboundFinalMask(plan, key)) {
+			group.FinalMask = ""
+		}
+		plan.hosts = append(plan.hosts, migrationHost{inboundKey: key, group: group})
+		if !h.IsDisabled {
+			withHost[key] = true
+		}
 	}
-	// Remnawave lists only hosts in a subscription; an inbound with none stays out of it.
+	// Remnawave lists only enabled hosts; without one this panel would publish the inbound's own address.
 	for i := range plan.inbounds {
 		plan.inbounds[i].inbound.ExcludeFromSub = !withHost[plan.inbounds[i].key]
 	}
@@ -527,8 +538,10 @@ func remnawaveClient(u remnawaveUser, squadInbounds, keysByProfileInbound map[st
 		return migrationClient{}, false, errors.New("empty username")
 	}
 	c := model.Client{
-		Email:   strings.TrimSpace(u.Username),
-		ID:      u.VlessUUID,
+		Email: strings.TrimSpace(u.Username),
+		ID:    u.VlessUUID,
+		// Remnawave authenticates Hysteria users with their VLESS UUID.
+		Auth:    u.VlessUUID,
 		Flow:    "xtls-rprx-vision",
 		SubID:   u.ShortUUID,
 		TotalGB: int64(u.TrafficLimitBytes),
@@ -614,7 +627,7 @@ func remnawaveClient(u remnawaveUser, squadInbounds, keysByProfileInbound map[st
 func inboundFromXrayJSON(raw map[string]any) (*model.Inbound, error) {
 	protocol, _ := raw["protocol"].(string)
 	switch model.Protocol(protocol) {
-	case model.VLESS, model.Trojan, model.Shadowsocks:
+	case model.VLESS, model.Trojan, model.Shadowsocks, model.Hysteria:
 	default:
 		return nil, fmt.Errorf("protocol %q is not supported by the importer", protocol)
 	}
@@ -639,6 +652,10 @@ func inboundFromXrayJSON(raw map[string]any) (*model.Inbound, error) {
 		}
 		if _, ok := settings["network"]; !ok {
 			settings["network"] = "tcp,udp"
+		}
+	case model.Hysteria:
+		if _, ok := settings["version"]; !ok {
+			settings["version"] = 2
 		}
 	}
 
@@ -680,6 +697,48 @@ func inboundFromXrayJSON(raw map[string]any) (*model.Inbound, error) {
 		Tag:            tag,
 		TrafficReset:   "never",
 	}, nil
+}
+
+func inboundFinalMask(plan *migrationPlan, key string) string {
+	for _, in := range plan.inbounds {
+		if in.key == key {
+			var stream struct {
+				FinalMask json.RawMessage `json:"finalmask"`
+			}
+			_ = json.Unmarshal([]byte(in.inbound.StreamSettings), &stream)
+			return string(stream.FinalMask)
+		}
+	}
+	return ""
+}
+
+func sameJSON(a, b string) bool {
+	var x, y any
+	if json.Unmarshal([]byte(a), &x) != nil || json.Unmarshal([]byte(b), &y) != nil {
+		return false
+	}
+	return reflect.DeepEqual(x, y)
+}
+
+func certificateFilePaths(streamSettings string) []string {
+	var stream struct {
+		TLSSettings struct {
+			Certificates []struct {
+				CertificateFile string `json:"certificateFile"`
+				KeyFile         string `json:"keyFile"`
+			} `json:"certificates"`
+		} `json:"tlsSettings"`
+	}
+	_ = json.Unmarshal([]byte(streamSettings), &stream)
+	var paths []string
+	for _, c := range stream.TLSSettings.Certificates {
+		for _, p := range []string{c.CertificateFile, c.KeyFile} {
+			if p = strings.TrimSpace(p); p != "" {
+				paths = append(paths, p)
+			}
+		}
+	}
+	return paths
 }
 
 func xrayPort(v any) (int, error) {
