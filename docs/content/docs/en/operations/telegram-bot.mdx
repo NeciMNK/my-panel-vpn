@@ -82,8 +82,10 @@ code, so a config can be handed to a client who cannot reach Telegram yet.
 Regular users get buttons for their own usage, subscription links, individual
 links, and QR codes.
 
-Inbound and client lists are paged buttons, so they work with inline mode off;
-when it is on in @BotFather (`/setinline`) they also get a search button. **Back**
+Inbound and client lists are paged buttons, ten clients a page, so they work with
+inline mode off. The client list ends with a search button: with inline mode on in
+@BotFather (`/setinline`) it opens inline search, otherwise it asks for part of an
+email and narrows the list until **Clear search**. **Back**
 returns to the previous screen. An admin whose Telegram account is also bound to
 a client gets **My subscription** in the menu, with that client's payment block.
 A bot without a profile photo sends its screens as plain text.
@@ -98,8 +100,10 @@ Set **Settings → Telegram → Payment** to bill clients through the bot:
   The same block is added to the client's expiry/quota warning.
 - **I have paid** asks the client which term it paid for and pages every admin
   with a **✅ email: +N mo** button per subscription. One tap extends the term from
-  its end (or from now if it lapsed) and tells the client. Repeat reports within
-  10 minutes are ignored.
+  its end (or from now if it lapsed) and tells the client. Every admin's copy then
+  shows who confirmed and the new end date, with the button gone, so one report
+  extends once. Repeat reports within 10 minutes are ignored. Reports and
+  confirmations are written to the panel log at INFO.
 - **Pay later**: in the bot's client card an admin marks a client **Trusted**.
   A trusted client whose subscription ends within 15 days can extend it by 15 days
   on credit, at most once every 30 days but with no limit on the total; admins are
