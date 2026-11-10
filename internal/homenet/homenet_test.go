@@ -100,7 +100,7 @@ up evil
 `
 
 func TestRenderOpenVPNKeepsOnlyTheHomeRoutes(t *testing.T) {
-	conf, err := RenderOpenVPN(&Tunnel{Id: 3, OpenVPN: pastedOVPN, Username: "u", Routes: []string{"192.168.1.0/24", "10.0.0.5", "fd00::/64"}}, "/x/auth")
+	conf, err := RenderOpenVPN(&Tunnel{Id: 3, OpenVPN: pastedOVPN, Username: "u", Routes: []string{"192.168.1.0/24", "10.0.0.5", "fd00::/64"}}, "/x")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -115,16 +115,36 @@ up evil
 dev mph3
 dev-type tun
 route-nopull
-script-security 1
+persist-tun
+script-security 2
+up /x/ip-up
 auth-user-pass /x/auth
-route 192.168.1.0 255.255.255.0
-route 10.0.0.5 255.255.255.255
 `
 	if conf != want {
 		t.Fatalf("conf =\n%s\nwant\n%s", conf, want)
 	}
 	if _, err := RenderOpenVPN(&Tunnel{OpenVPN: "client\n"}, ""); err == nil || err.Error() != "openvpn config has no remote line" {
 		t.Fatalf("err = %v", err)
+	}
+}
+
+// Home targets often include the gateway's own LAN; routing them in the main
+// table sent the gateway's traffic to the master into the tunnel and broke it.
+func TestTunnelRoutesStayOutOfTheMainTable(t *testing.T) {
+	got := routeUpScript(&Tunnel{Id: 3, Routes: []string{"192.168.20.0/24", "10.0.0.5", "fd00::/64"}})
+	want := `#!/bin/sh
+sysctl -qw net.ipv4.conf.mph3.rp_filter=2
+ip -4 rule del oif mph3 lookup 28003 2>/dev/null
+ip -4 rule add oif mph3 lookup 28003
+ip -4 route replace 192.168.20.0/24 dev mph3 table 28003
+ip -4 route replace 10.0.0.5/32 dev mph3 table 28003
+ip -6 rule del oif mph3 lookup 28003 2>/dev/null
+ip -6 rule add oif mph3 lookup 28003
+ip -6 route replace fd00::/64 dev mph3 table 28003
+exit 0
+`
+	if got != want {
+		t.Fatalf("ip-up =\n%s\nwant\n%s", got, want)
 	}
 }
 
@@ -135,7 +155,7 @@ func TestL2TPFiles(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := files["/d/ip-up"]; got != "#!/bin/sh\nip route replace 192.168.1.0/24 dev \"$1\"\n" {
+	if got := files["/d/ip-up"]; got != routeUpScript(tun) {
 		t.Fatalf("ip-up = %q", got)
 	}
 	if got := files["/ipsec/x-ui-home-2.secrets"]; got != "%any 1.2.3.4 : PSK \"key\"\n" {
@@ -193,7 +213,12 @@ func TestApplyOpenVPNWritesAndStartsThenTearsDown(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(unitDir, "x-ui-home-4.service")); !os.IsNotExist(err) {
 		t.Fatalf("unit still there: %v", err)
 	}
-	if want := []string{"systemctl disable --now x-ui-home-4", "systemctl daemon-reload"}; !reflect.DeepEqual(cmds, want) {
+	if want := []string{
+		"systemctl disable --now x-ui-home-4",
+		"ip -4 rule del oif mph4 lookup 28004", "ip -4 route flush table 28004",
+		"ip -6 rule del oif mph4 lookup 28004", "ip -6 route flush table 28004",
+		"systemctl daemon-reload",
+	}; !reflect.DeepEqual(cmds, want) {
 		t.Fatalf("teardown commands = %v", cmds)
 	}
 }
