@@ -23,6 +23,7 @@ import {
   MoonOutlined,
   PlusOutlined,
   ReloadOutlined,
+  SafetyCertificateOutlined,
   SafetyOutlined,
   SearchOutlined,
   SettingOutlined,
@@ -403,6 +404,13 @@ export default function CommandPalette() {
         subtitle: t('pages.settings.securitySettings'),
         keywords: ['security', 'password', 'username', '2fa', 'two factor', 'login limit'],
         icon: <SafetyOutlined aria-hidden />,
+      },
+      {
+        path: '/settings#ssl',
+        title: `${t('menu.settings')} · ${t('pages.settings.tlsCerts.menu')}`,
+        subtitle: t('pages.settings.tlsCerts.menu'),
+        keywords: ['ssl', 'tls', 'certificate', 'https', 'cloudflare', 'acme', 'wildcard'],
+        icon: <SafetyCertificateOutlined aria-hidden />,
       },
       {
         path: '/settings#telegram',

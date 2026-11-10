@@ -47,6 +47,8 @@ func run(root, outDir string) error {
 				"InboundFallback",
 				"Host",
 				"SubBalancer",
+				"TlsCertificate",
+				"TlsCertNodeInstall",
 			),
 			AliasAllow: setOf("Protocol"),
 			Overrides: map[string][]walkOverride{
@@ -130,6 +132,10 @@ func run(root, outDir string) error {
 		{
 			Path:        resolveRel(root, "internal/web/service/panel"),
 			StructAllow: setOf("ApiTokenView", "PanelUpdateStatus"),
+		},
+		{
+			Path:        resolveRel(root, "internal/web/service/tlscert"),
+			StructAllow: setOf("TlsCertFiles", "TlsCertInstallRequest", "TlsCertSettings"),
 		},
 		{
 			Path:        resolveRel(root, "internal/web/controller"),

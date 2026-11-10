@@ -1325,6 +1325,41 @@ export const EXAMPLES: Record<string, unknown> = {
     "running": true,
     "username": "xui_bot"
   },
+  "TlsCertFiles": {
+    "certFile": "/etc/x-ui/certs/example.com/fullchain.pem",
+    "keyFile": "/etc/x-ui/certs/example.com/privkey.pem"
+  },
+  "TlsCertInstallRequest": {
+    "certPem": "-----BEGIN CERTIFICATE-----\n...",
+    "keyPem": "-----BEGIN EC PRIVATE KEY-----\n...",
+    "name": "wildcard.example.com"
+  },
+  "TlsCertNodeInstall": {
+    "certFile": "/etc/x-ui/certs/example.com/fullchain.pem",
+    "error": "",
+    "keyFile": "/etc/x-ui/certs/example.com/privkey.pem",
+    "notAfter": 1717000000000
+  },
+  "TlsCertSettings": {
+    "cloudflareTokenSet": true
+  },
+  "TlsCertificate": {
+    "applyToPanel": false,
+    "autoRenew": true,
+    "certFile": "/etc/x-ui/certs/example.com/fullchain.pem",
+    "createdAt": 1710000000000,
+    "domains": [
+      "example.com",
+      "*.example.com"
+    ],
+    "id": 1,
+    "keyFile": "/etc/x-ui/certs/example.com/privkey.pem",
+    "lastError": "",
+    "nodeInstalls": {},
+    "notAfter": 1717000000000,
+    "status": "valid",
+    "updatedAt": 1710000000000
+  },
   "Traffic": {
     "Down": 2097152,
     "IsInbound": true,

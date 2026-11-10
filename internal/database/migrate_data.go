@@ -69,6 +69,7 @@ func migrationModels() []any {
 		&model.ClientSpeed{},
 		&model.ServerCapacity{},
 		&model.MasterMember{},
+		&model.TlsCertificate{},
 	}
 }
 

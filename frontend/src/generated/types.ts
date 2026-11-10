@@ -1176,6 +1176,43 @@ export interface TgBotCapabilities {
   username: string;
 }
 
+export interface TlsCertFiles {
+  certFile: string;
+  keyFile: string;
+}
+
+export interface TlsCertInstallRequest {
+  certPem: string;
+  keyPem: string;
+  name: string;
+}
+
+export interface TlsCertNodeInstall {
+  certFile: string;
+  error: string;
+  keyFile: string;
+  notAfter: number;
+}
+
+export interface TlsCertSettings {
+  cloudflareTokenSet: boolean;
+}
+
+export interface TlsCertificate {
+  applyToPanel: boolean;
+  autoRenew: boolean;
+  certFile: string;
+  createdAt: number;
+  domains: string[];
+  id: number;
+  keyFile: string;
+  lastError: string;
+  nodeInstalls: Record<number, TlsCertNodeInstall>;
+  notAfter: number;
+  status: string;
+  updatedAt: number;
+}
+
 export interface Traffic {
   Down: number;
   IsInbound: boolean;

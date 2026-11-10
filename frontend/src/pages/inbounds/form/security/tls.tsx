@@ -32,6 +32,7 @@ import {
   UTLS_FINGERPRINT,
 } from '@/schemas/primitives';
 import { SockoptStreamSettingsSchema } from '@/schemas/protocols/stream/sockopt';
+import IssuedCertSelect from './IssuedCertSelect';
 
 const { TextArea } = Input;
 
@@ -97,6 +98,7 @@ function CertRow({
       )}
       {useFile ? (
         <>
+          <IssuedCertSelect index={index} />
           <FormField
             name={['streamSettings', 'tlsSettings', 'certificates', index, 'certificateFile']}
             label={t('pages.inbounds.publicKey')}

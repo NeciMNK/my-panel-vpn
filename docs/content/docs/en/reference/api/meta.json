@@ -12,6 +12,7 @@
     "xray-settings",
     "subscription-server",
     "subscription-balancers",
+    "tls-certificates",
     "hosts",
     "nodes",
     "cascades",

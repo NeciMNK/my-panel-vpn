@@ -95,6 +95,7 @@ func allModels() []any {
 		&model.ClientSpeed{},
 		&model.ServerCapacity{},
 		&model.MasterMember{},
+		&model.TlsCertificate{},
 	}
 }
 
