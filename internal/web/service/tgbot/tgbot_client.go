@@ -3,7 +3,6 @@ package tgbot
 import (
 	"errors"
 	"fmt"
-	"html"
 	"net/url"
 	"slices"
 	"strconv"
@@ -43,12 +42,12 @@ func (t *Tgbot) BuildClientDraftMessage(draft *clientDraft) string {
 		}
 	}
 
-	traffic := "♾️ Unlimited(Reset)"
+	traffic := t.I18nBot("tgbot.unlimited")
 	if draft.totalGB > 0 {
 		traffic = common.FormatTraffic(draft.totalGB)
 	}
 
-	ipLimit := "♾️ Unlimited(Reset)"
+	ipLimit := t.I18nBot("tgbot.unlimited")
 	if draft.limitIP > 0 {
 		ipLimit = fmt.Sprint(draft.limitIP)
 	}
@@ -68,16 +67,14 @@ func (t *Tgbot) BuildClientDraftMessage(draft *clientDraft) string {
 		tgID = "—"
 	}
 
-	var b strings.Builder
-	b.WriteString("📝 <b>New client draft</b>\r\n")
-	fmt.Fprintf(&b, "📧 Email: <code>%s</code>\r\n", html.EscapeString(draft.email))
-	fmt.Fprintf(&b, "🔗 Attached: %s\r\n", html.EscapeString(attached))
-	fmt.Fprintf(&b, "📊 Traffic: %s\r\n", traffic)
-	fmt.Fprintf(&b, "📅 Expire: %s\r\n", expiry)
-	fmt.Fprintf(&b, "🔢 IP limit: %s\r\n", ipLimit)
-	fmt.Fprintf(&b, "👤 TG user: %s\r\n", html.EscapeString(tgID))
-	fmt.Fprintf(&b, "💬 Comment: %s\r\n", html.EscapeString(comment))
-	return b.String()
+	return t.I18nBot("tgbot.draft.title") +
+		t.I18nBot("tgbot.draft.email", "Email=="+draft.email) +
+		t.I18nBot("tgbot.draft.attached", "Inbounds=="+attached) +
+		t.I18nBot("tgbot.draft.traffic", "Traffic=="+traffic) +
+		t.I18nBot("tgbot.draft.expire", "Time=="+expiry) +
+		t.I18nBot("tgbot.draft.ipLimit", "Limit=="+ipLimit) +
+		t.I18nBot("tgbot.draft.tgUser", "User=="+tgID) +
+		t.I18nBot("tgbot.draft.comment", "Comment=="+comment)
 }
 
 // describeAttachedInbounds returns a short "remark1, remark2" list for the given
@@ -326,7 +323,7 @@ func (t *Tgbot) clientInfoMsg(
 	output := ""
 	output += t.I18nBot("tgbot.messages.email", "Email=="+traffic.Email)
 	if attachIds, err := t.clientService.GetInboundIdsForEmail(nil, traffic.Email); err == nil && len(attachIds) > 0 {
-		output += fmt.Sprintf("🔗 Inbounds: %s\r\n", html.EscapeString(t.describeAttachedInbounds(attachIds)))
+		output += t.I18nBot("tgbot.messages.attachedInbounds", "Inbounds=="+t.describeAttachedInbounds(attachIds))
 	}
 	if printEnabled {
 		output += t.I18nBot("tgbot.messages.enabled", "Enable=="+enabled)
@@ -421,9 +418,9 @@ func (t *Tgbot) getClientUsage(chatId int64, tgUserID int64, delivery screenDeli
 	output += t.I18nBot("tgbot.messages.refreshedOn", "Time=="+time.Now().Format("2006-01-02 15:04:05"))
 	rows := [][]telego.InlineKeyboardButton{}
 	if len(email) > 0 {
-		rows = t.clientRows(email[0])
+		rows = t.clientRows(chatId, email[0])
 	} else if len(traffics) > 0 {
-		rows = t.clientRows(traffics[0].Email)
+		rows = t.clientRows(chatId, traffics[0].Email)
 	}
 	t.renderScreen(chatId, t.newScreen("client", output, rows...), delivery)
 }

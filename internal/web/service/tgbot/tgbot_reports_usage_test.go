@@ -290,6 +290,7 @@ func TestUsageEmailArgumentDoesNotLeakAnotherClient(t *testing.T) {
 func TestClientUsageDoesNotLoadTheInboundPerClient(t *testing.T) {
 	sent := recordingBotServer(t)
 	dbtest.InitDB(t, filepath.Join(t.TempDir(), "x-ui.db"))
+	localizeWithRealBundle(t)
 	db := database.GetDB()
 
 	const owned = 40

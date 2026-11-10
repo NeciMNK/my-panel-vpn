@@ -2912,7 +2912,6 @@
       "category_clients": "👥 Klienti",
       "category_traffic": "🚦 Prenos",
       "category_maintenance": "⚙️ Údržba",
-      "inlineHint": "\r\n🔍 Zoznam sa otvára cez vyhľadávanie: ťuknite na Hľadať a začnite písať.",
       "subURL": "🔗 Predplatné: <code>{{ .URL }}</code>\r\n",
       "jsonURL": "🧩 JSON: <code>{{ .URL }}</code>\r\n",
       "inviteHint": "Pošlite tento odkaz klientovi: k tomuto klientovi sa priradí prvý účet Telegramu, ktorý ho otvorí.",
@@ -2924,13 +2923,17 @@
       "privateOnly": "🤖 Tento bot funguje len v súkromnom chate. Otvorte ho, prosím, v priamej správe.",
       "paymentReported": "💳 {{ .User }} paid for {{ .Months }} mo ({{ .Total }}): ",
       "paymentConfirmed": "✅ Payment confirmed: {{ .Email }} is active until {{ .Date }}.",
+      "paymentConfirmedBy": "✅ {{ .Email }}: confirmed by {{ .Admin }}, active until {{ .Date }}",
       "graceTaken": "⏳ {{ .User }} deferred payment by {{ .Days }} days for: ",
       "freeRequested": "🆓 {{ .User }} asks for a free subscription ({{ .GB }} GB a month).",
       "freeApproved": "🎉 Your free subscription is ready: {{ .GB }} GB a month. Pay for any term to remove the limit.",
       "freeDeclined": "❌ Your request for a free subscription was declined.",
       "speedLow": "Server {{ .Server }} has {{ .Free }} Mbit/s free per user, below the {{ .Min }} Mbit/s minimum of {{ .Users }}, and no other server has room. Add a server or raise its link speed.",
       "masterLeader": "Master {{ .Master }} now leads the panel cluster.",
-      "masterLeaderPrevious": "It took over from {{ .Previous }}."
+      "masterLeaderPrevious": "It took over from {{ .Previous }}.",
+      "attachedInbounds": "🔗 Inbounds: {{ .Inbounds }}\r\n",
+      "clientSearchPrompt": "🔍 Send part of a client's email to find it.",
+      "clientSearchQuery": "🔍 Search: {{ .Query }}"
     },
     "buttons": {
       "closeKeyboard": "❌ Zavrieť klávesnicu",
@@ -2983,8 +2986,6 @@
       "page": "Strana {{ .Page }} z {{ .Pages }}",
       "searchInbounds": "🔍 Hľadať inbound…",
       "searchClients": "🔍 Hľadať klienta…",
-      "inlineDisabled": "⚠️ Inline režim je vypnutý",
-      "clientCard": "⬅️ Karta klienta",
       "links": "🔗 Odkazy",
       "individualLinks": "🔗 Jednotlivé odkazy",
       "qrCode": "🔳 QR kód",
@@ -3005,7 +3006,9 @@
       "ledgerAddServer": "🖥 Add server cost",
       "ledgerDelete": "🗑 Delete",
       "ledgerFreeGroups": "🆓 Non-paying groups",
-      "nonPaying": "🆓 Does not pay: {{ .State }}"
+      "nonPaying": "🆓 Does not pay: {{ .State }}",
+      "mySubscription": "👤 My subscription",
+      "clearSearch": "✖️ Clear search"
     },
     "answers": {
       "broadcastStarted": "🚀 Hromadné odosielanie sa začalo.",
@@ -3031,7 +3034,6 @@
       "disableSuccess": "✅ {{ .Email }}: Klient bol vypnutý.",
       "askToAddUserId": "Vaša konfigurácia sa nenašla!\r\nPožiadajte správcu, aby do vašich konfigurácií pridal vaše ID konverzácie Telegramu.\r\n\r\nVaše ID konverzácie: <code>{{ .TgUserID }}</code>",
       "chooseClient": "Vyberte klienta vstupu {{ .Inbound }}",
-      "chooseInbound": "Vyberte vstup",
       "qrCodeForClient": "QR kód pre klienta {{ .Email }}:",
       "paymentReported": "✅ The admin has been notified. Your subscription will be extended once the payment is confirmed.",
       "paymentAlreadyReported": "⏳ You have already reported this payment. Please wait for the admin to confirm it.",
@@ -3097,6 +3099,16 @@
       "deleteTitle": "🗑 Tap a row to delete it ({{ .Month }} entries and all servers).",
       "groupsTitle": "🆓 Tap a group to switch it between paying 💰 and non-paying 🆓.",
       "paymentNote": "{{ .Months }} mo"
+    },
+    "draft": {
+      "title": "📝 <b>New client draft</b>\r\n",
+      "email": "📧 Email: <code>{{ .Email }}</code>\r\n",
+      "attached": "🔗 Attached: {{ .Inbounds }}\r\n",
+      "traffic": "📊 Traffic: {{ .Traffic }}\r\n",
+      "expire": "📅 Expire: {{ .Time }}\r\n",
+      "ipLimit": "🔢 IP limit: {{ .Limit }}\r\n",
+      "tgUser": "👤 TG user: {{ .User }}\r\n",
+      "comment": "💬 Comment: {{ .Comment }}\r\n"
     }
   },
   "discord": {

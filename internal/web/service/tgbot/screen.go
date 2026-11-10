@@ -170,18 +170,16 @@ func (t *Tgbot) renderScreen(chatID int64, sc *screen, delivery ...screenDeliver
 	t.replaceScreen(chatID, sc)
 }
 
-// attachArt pins the screen's picture (avatar, else the always-available black
-// tile), so a screen is always a photo message and edits can go through media.
+// attachArt gives the screen the bot's avatar when there is one; without it the
+// screen is a plain text message, never an empty picture above the text.
 func (t *Tgbot) attachArt(sc *screen) {
 	// A stale cache is refreshed off the render path, so a picture uploaded to
 	// @BotFather shows up without a panel restart and no screen waits on it.
 	t.ensureScreenArt()
-	sc.hasPhoto = true
+	sc.photo, sc.hasPhoto = "", false
 	if id, ok := artFileID(sc.kind); ok {
-		sc.photo = id
-		return
+		sc.photo, sc.hasPhoto = id, true
 	}
-	sc.photo = ""
 }
 
 // screens keeps one call site for the store, so a test can swap it.
@@ -190,27 +188,24 @@ func (t *Tgbot) screens() *screenStore { return screens }
 // editScreen edits the tracked message into the new screen. false means the
 // caller must replace it: the message is gone, too old, or of another type.
 func (t *Tgbot) editScreen(chatID int64, prev *screen, next *screen) bool {
+	// An edit cannot add a picture to a text message or remove one from a photo.
+	if next.hasPhoto != prev.hasPhoto {
+		return false
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	var err error
-	switch {
-	case next.hasPhoto || next.attachment != nil:
-		_, err = requestScreenPhoto(next, func(photo telego.InputFile) (*telego.Message, error) {
-			return liveBot().EditMessageMedia(ctx, &telego.EditMessageMediaParams{
-				ChatID: tu.ID(chatID), MessageID: prev.msgID,
-				Media:       &telego.InputMediaPhoto{Type: "photo", Media: photo, Caption: next.text, ParseMode: "HTML"},
-				ReplyMarkup: next.markup,
-			})
-		})
-	case prev.hasPhoto:
-		// A photo message cannot become a text one: drop the picture and let
-		// its caption carry the screen.
-		_, err = liveBot().EditMessageCaption(ctx, &telego.EditMessageCaptionParams{
+	if next.hasPhoto {
+		_, err = liveBot().EditMessageMedia(ctx, &telego.EditMessageMediaParams{
 			ChatID: tu.ID(chatID), MessageID: prev.msgID,
-			Caption: next.text, ParseMode: "HTML", ReplyMarkup: next.markup,
+			Media:       &telego.InputMediaPhoto{Type: "photo", Media: screenPhoto(next), Caption: next.text, ParseMode: "HTML"},
+			ReplyMarkup: next.markup,
 		})
-	default:
+		if err != nil && artRejected(next, err) {
+			return false
+		}
+	} else {
 		_, err = liveBot().EditMessageText(ctx, &telego.EditMessageTextParams{
 			ChatID:      tu.ID(chatID),
 			MessageID:   prev.msgID,
@@ -233,20 +228,23 @@ func (t *Tgbot) replaceScreen(chatID int64, sc *screen) int {
 	defer cancel()
 
 	prev, hadPrev := t.screens().get(chatID)
-	var sent *telego.Message
-	var err error
-	switch {
-	case sc.hasPhoto || sc.attachment != nil:
-		sent, err = requestScreenPhoto(sc, func(photo telego.InputFile) (*telego.Message, error) {
-			return liveBot().SendPhoto(ctx, &telego.SendPhotoParams{
-				ChatID: tu.ID(chatID), MessageThreadID: adminTopic(chatID), Photo: photo,
-				Caption: sc.text, ParseMode: "HTML", ReplyMarkup: sc.markup,
-			})
-		})
-	default:
-		sent, err = liveBot().SendMessage(ctx, &telego.SendMessageParams{
+	sendText := func() (*telego.Message, error) {
+		return liveBot().SendMessage(ctx, &telego.SendMessageParams{
 			ChatID: tu.ID(chatID), MessageThreadID: adminTopic(chatID), Text: sc.text, ParseMode: "HTML", ReplyMarkup: sc.markup,
 		})
+	}
+	var sent *telego.Message
+	var err error
+	if sc.hasPhoto {
+		sent, err = liveBot().SendPhoto(ctx, &telego.SendPhotoParams{
+			ChatID: tu.ID(chatID), MessageThreadID: adminTopic(chatID), Photo: screenPhoto(sc),
+			Caption: sc.text, ParseMode: "HTML", ReplyMarkup: sc.markup,
+		})
+		if err != nil && artRejected(sc, err) {
+			sent, err = sendText()
+		}
+	} else {
+		sent, err = sendText()
 	}
 	if err != nil {
 		logger.Warning("Failed to send a screen:", err)
@@ -258,53 +256,30 @@ func (t *Tgbot) replaceScreen(chatID int64, sc *screen) int {
 		})
 	}
 	sc.msgID = sent.MessageID
-	// Telegram hands back the file_id of the uploaded tile: remembering it keeps
-	// every later edit a cheap media edit instead of another upload.
-	if sc.hasPhoto && sc.photo == "" && len(sent.Photo) > 0 {
-		sc.photo = sent.Photo[len(sent.Photo)-1].FileID
-		cacheArtFileID(sc.kind, sc.photo)
-	}
 	t.screens().put(chatID, sc)
 	return sent.MessageID
 }
 
-// Only a rejected cached decoration gets one upload retry; QR pictures remain intact.
-// The cache is invalidated only after the same caption and keyboard succeed without that id.
-func requestScreenPhoto(sc *screen, request func(telego.InputFile) (*telego.Message, error)) (*telego.Message, error) {
-	var photo telego.InputFile
-	switch {
-	case sc.hasPhoto && sc.photo != "":
-		photo = tu.FileFromID(sc.photo)
-	case sc.attachment != nil:
-		photo = *sc.attachment
-	default:
-		var ok bool
-		photo, ok = artUpload(sc.kind)
-		if !ok {
-			return nil, errors.New("screen artwork is unavailable")
-		}
+// screenPhoto is the picture a photo screen carries: its own QR sheet, else the
+// avatar by file_id.
+func screenPhoto(sc *screen) telego.InputFile {
+	if sc.attachment != nil {
+		return *sc.attachment
 	}
-	sent, err := request(photo)
+	return tu.FileFromID(sc.photo)
+}
+
+// artRejected turns a screen whose avatar Telegram refused (400) into a text
+// screen and drops that file_id; a QR or any other failure is left as it is.
+func artRejected(sc *screen, err error) bool {
 	var apiErr *telegoapi.Error
-	if err == nil || sc.photo == "" || sc.qrPicture != nil || sc.attachment != nil ||
-		!errors.As(err, &apiErr) || apiErr.ErrorCode != 400 || isTelegramNotModifiedError(err) {
-		return sent, err
-	}
-	upload, ok := artUpload(sc.kind)
-	if !ok {
-		return sent, err
-	}
-	sent, err = request(upload)
-	if err != nil {
-		return sent, err
+	if sc.attachment != nil || sc.photo == "" || !errors.As(err, &apiErr) ||
+		apiErr.ErrorCode != 400 || isTelegramNotModifiedError(err) {
+		return false
 	}
 	rejectArtFileID(sc.photo)
-	sc.photo = ""
-	if sent != nil && len(sent.Photo) > 0 {
-		sc.photo = sent.Photo[len(sent.Photo)-1].FileID
-		cacheArtFileID(sc.kind, sc.photo)
-	}
-	return sent, nil
+	sc.photo, sc.hasPhoto = "", false
+	return true
 }
 
 // ensureBackRow guarantees every screen can be left (a screen with only its own
@@ -348,10 +323,27 @@ func hasWayOut(rows [][]telego.InlineKeyboardButton) bool {
 // ensureWayOut appends the home row to a screen that offers no exit. This is
 // the one place screens are built, so no new screen can forget it.
 func (t *Tgbot) ensureWayOut(rows [][]telego.InlineKeyboardButton) [][]telego.InlineKeyboardButton {
-	if hasWayOut(rows) {
+	if hasWayOut(rows) || t.hasBackButton(rows) {
 		return rows
 	}
 	return append(append([][]telego.InlineKeyboardButton{}, rows...), t.backRow())
+}
+
+// hasBackButton spots a backTo row, whose parent is any screen and so cannot be
+// listed among the way-out callbacks.
+func (t *Tgbot) hasBackButton(rows [][]telego.InlineKeyboardButton) bool {
+	label := t.I18nBot("tgbot.buttons.back")
+	if label == "" {
+		return false
+	}
+	for _, row := range rows {
+		for _, btn := range row {
+			if btn.Text == label && btn.CallbackData != "" {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // breadcrumb names the screen's place in the tree, so a user who was away can
