@@ -19,8 +19,8 @@ import (
 	tu "github.com/mymmrac/telego/telegoutil"
 )
 
-// The bot's lists are browsed in inline mode, which must be enabled by hand in
-// @BotFather; when off, screens show a hint rather than a silent dead button.
+// Lists are paged buttons; inline mode (a manual @BotFather switch) only adds a
+// search launcher on top of them when it is on.
 
 // The launcher carries its own intent as the query text (empty = all inbounds,
 // "cl" = every client, "cl <id>" = one inbound's), so nothing is kept server-side.
@@ -96,11 +96,11 @@ func (t *Tgbot) refreshInlineCapability() {
 	recordInlineCapability(me.SupportsInlineQueries)
 }
 
-// launchRow is the one way into a list: a launcher that opens inline mode in
-// this chat, or the hint that says why there is none.
-func (t *Tgbot) launchRow(query string, labelKey string) []telego.InlineKeyboardButton {
+// searchRow is the inline search launcher, offered only while inline mode is on:
+// the paged list works without it, so a switched-off mode costs nothing.
+func (t *Tgbot) searchRow(query string, labelKey string) []telego.InlineKeyboardButton {
 	if !t.inlineSupported() {
-		return tu.InlineKeyboardRow(t.btn("tgbot.buttons.inlineDisabled", "inline_help"))
+		return nil
 	}
 	// Telegram prefills and returns this token as the query, so it is both intent
 	// and filter prefix; not localized because a translated marker could not parse.
@@ -453,7 +453,7 @@ func (t *Tgbot) handleListMarker(message *telego.Message) bool {
 		if err != nil {
 			return true
 		}
-		t.screenInboundClients(message.Chat.ID, id)
+		t.screenClientList(message.Chat.ID, id, 0)
 	case "add":
 		id, err := strconv.Atoi(value)
 		if err != nil {
@@ -501,54 +501,6 @@ func splitListMarker(text string) (action, value string, ok bool) {
 		}
 	}
 	return "", "", false
-}
-
-// screenInboundClients draws one inbound's clients, listed by the inline query.
-func (t *Tgbot) screenInboundClients(chatID int64, inboundID int) {
-	inbound, err := t.inboundService.GetInbound(inboundID)
-	if err != nil {
-		t.sendNotice(chatID, t.I18nBot("tgbot.answers.getInboundsFailed"))
-		return
-	}
-	// The clients are browsed in inline mode, never as a callback-button grid:
-	// a big inbound would otherwise fill the screen with one button per client.
-	rows := [][]telego.InlineKeyboardButton{
-		t.launchRow(scopeQuery(inlineScopeClients, strconv.Itoa(inboundID)), "tgbot.buttons.searchClients"),
-		t.backRow(),
-	}
-	t.renderScreen(chatID, t.newScreen("clients", t.inboundSummaryText(inbound), rows...))
-}
-
-// screenAllClients is the panel-wide client browser. There is no inbound step:
-// the list is every client, and a tap opens the client's own screen.
-func (t *Tgbot) screenAllClients(chatID int64) {
-	body := t.I18nBot("tgbot.messages.clientsCount", "Count=="+strconv.Itoa(t.clientCount()))
-	body += t.I18nBot("tgbot.messages.inlineHint")
-	rows := [][]telego.InlineKeyboardButton{
-		t.launchRow(scopeQuery(inlineScopeClients, ""), "tgbot.buttons.searchClients"),
-		t.backRow(),
-	}
-	t.renderScreen(chatID, t.newScreen("clients", body, rows...))
-}
-
-// clientCount is how many clients the panel holds, for the browser's header.
-func (t *Tgbot) clientCount() int {
-	inbounds, err := t.inboundService.GetAllInbounds()
-	if err != nil {
-		logger.Warning("Cannot count clients for the browser:", err)
-		return 0
-	}
-	seen := map[string]bool{}
-	for _, ib := range inbounds {
-		clients, err := t.inboundService.GetClients(ib)
-		if err != nil {
-			continue
-		}
-		for _, client := range clients {
-			seen[client.Email] = true
-		}
-	}
-	return len(seen)
 }
 
 // inboundSummaryText is one inbound's header line: remark, protocol, port.

@@ -27,6 +27,11 @@ func qrPNG(content string, size int) ([]byte, error) {
 // The client card and its screens (limits, expiry, IP log, TG binding, links,
 // QR) all redraw the same tracked message, so none leaves the previous behind.
 
+// backToCard is the Back of every screen under an admin's client card.
+func (t *Tgbot) backToCard(email string) []telego.InlineKeyboardButton {
+	return t.backTo(t.encodeQuery(cbClientOpen + " " + email))
+}
+
 // clientScreenBody is the shared header of every per-client screen: a user who
 // tapped through four levels still sees which client they are on.
 func (t *Tgbot) clientScreenBody(email, title string) string {
@@ -50,8 +55,7 @@ func (t *Tgbot) screenClientIps(chatID int64, email string) {
 	rows := [][]telego.InlineKeyboardButton{
 		tu.InlineKeyboardRow(t.btn("tgbot.buttons.refresh", t.encodeQuery("ips_refresh "+email))),
 		tu.InlineKeyboardRow(t.btn("tgbot.buttons.clearIPs", t.encodeQuery("clear_ips "+email))),
-		tu.InlineKeyboardRow(t.btn("tgbot.buttons.clientCard", t.encodeQuery("client_get_usage "+email))),
-		t.backRow(),
+		t.backToCard(email),
 	}
 	t.renderScreen(chatID, t.newScreen("client", body, rows...))
 }
@@ -110,8 +114,7 @@ func (t *Tgbot) screenClientTG(chatID int64, email string, withPicker bool) {
 	rows = append(rows,
 		tu.InlineKeyboardRow(t.btn("tgbot.buttons.refresh", t.encodeQuery("tgid_refresh "+email))),
 		tu.InlineKeyboardRow(t.btn("tgbot.buttons.removeTGUser", t.encodeQuery("tgid_remove "+email))),
-		tu.InlineKeyboardRow(t.btn("tgbot.buttons.clientCard", t.encodeQuery("client_get_usage "+email))),
-		t.backRow(),
+		t.backToCard(email),
 	)
 	t.renderScreen(chatID, t.newScreen("client", body, rows...))
 	if withPicker {
@@ -177,12 +180,12 @@ func (t *Tgbot) screenClientLinks(chatID int64, email string) {
 		tu.InlineKeyboardRow(t.btn("tgbot.buttons.individualLinks", t.encodeQuery("client_individual_links "+email))),
 		tu.InlineKeyboardRow(t.btn("tgbot.buttons.qrCode", t.encodeQuery("client_qr_links "+email))),
 	}
-	// The client card is admin-only; a client's own usage is already above.
+	// The client card is admin-only; a client's own links sit under its home.
 	if own == nil {
-		rows = append(rows, tu.InlineKeyboardRow(
-			t.btn("tgbot.buttons.clientCard", t.encodeQuery("client_get_usage "+email))))
+		rows = append(rows, t.backToCard(email))
+	} else {
+		rows = append(rows, t.backRow())
 	}
-	rows = append(rows, t.backRow())
 	t.renderScreen(chatID, t.newScreen("links", body, rows...))
 }
 
@@ -204,13 +207,13 @@ func (t *Tgbot) screenIndividualLinks(chatID int64, email string) {
 	for _, link := range links {
 		body.WriteString("<code>" + html.EscapeString(link) + "</code>\n")
 	}
-	t.renderScreen(chatID, t.newScreen("links", body.String(), t.individualLinksRows()...))
+	t.renderScreen(chatID, t.newScreen("links", body.String(), t.individualLinksRows(email)...))
 }
 
 // individualLinksRows is the individual-links screen's keyboard: exactly one
-// control, the shared back row, since a second "Links" button was a duplicate.
-func (t *Tgbot) individualLinksRows() [][]telego.InlineKeyboardButton {
-	return [][]telego.InlineKeyboardButton{t.backRow()}
+// control, Back to the links, since a second "Links" button was a duplicate.
+func (t *Tgbot) individualLinksRows(email string) [][]telego.InlineKeyboardButton {
+	return [][]telego.InlineKeyboardButton{t.backTo(t.encodeQuery("client_sub_links " + email))}
 }
 
 // screenClientQR renders the subscription QR as the screen picture and leaves
@@ -225,7 +228,7 @@ func (t *Tgbot) screenClientQR(chatID int64, email string) {
 	body += t.I18nBot("tgbot.messages.subURL", "URL=="+subURL)
 	rows := [][]telego.InlineKeyboardButton{
 		tu.InlineKeyboardRow(t.btn("tgbot.buttons.individualLinks", t.encodeQuery("client_individual_links "+email))),
-		t.backRow(),
+		t.backTo(t.encodeQuery("client_sub_links " + email)),
 	}
 	// One picture carrying every code the bot once sent as separate documents;
 	// tiles carry no text (they are scanned), so the caption legend numbers them.
@@ -253,7 +256,7 @@ func (t *Tgbot) renderPickerOnClient(chatID int64, email string, picker [][]tele
 		return
 	}
 	rows := append([][]telego.InlineKeyboardButton{}, picker...)
-	rows = append(rows, t.backRow())
+	rows = append(rows, t.backToCard(email))
 	body := t.clientScreenBody(email, t.clientInfoMsg(traffic, true, true, true, true, true, false))
 	t.renderScreen(chatID, t.newScreen("client", body, rows...))
 }
@@ -343,8 +346,7 @@ func (t *Tgbot) screenInviteLink(chatID int64, email string) {
 	body += "<code>" + html.EscapeString(link) + "</code>\n\n"
 	body += t.I18nBot("tgbot.messages.inviteHint")
 	rows := [][]telego.InlineKeyboardButton{
-		tu.InlineKeyboardRow(t.btn("tgbot.buttons.clientCard", t.encodeQuery("client_get_usage "+email))),
-		t.backRow(),
+		t.backToCard(email),
 	}
 	t.renderScreen(chatID, t.newScreen("client", body, rows...))
 }

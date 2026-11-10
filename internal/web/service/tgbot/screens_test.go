@@ -1106,12 +1106,12 @@ func TestClientCanReachTheHideCallback(t *testing.T) {
 func TestIndividualLinksScreenHasNoDuplicateLinksButton(t *testing.T) {
 	// The ownership tests' harness seeds a client whose subscription resolves, which the links need; the
 	// keyboard is read directly because drawing the full screen needs a subscription the DB harness lacks.
-	rows := (&Tgbot{}).individualLinksRows()
+	rows := (&Tgbot{}).individualLinksRows("one@x")
 	if len(rows) != 1 || len(rows[0]) != 1 {
 		t.Fatalf("the individual-links screen has %d row(s), want exactly the back row", len(rows))
 	}
-	if got := rows[0][0].CallbackData; got != cbHome {
-		t.Errorf("the only control is %q, want the back row %q", got, cbHome)
+	if got := rows[0][0].CallbackData; got != "client_sub_links one@x" {
+		t.Errorf("the only control is %q, want Back to the links", got)
 	}
 }
 

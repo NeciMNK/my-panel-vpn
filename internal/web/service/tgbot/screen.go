@@ -348,10 +348,27 @@ func hasWayOut(rows [][]telego.InlineKeyboardButton) bool {
 // ensureWayOut appends the home row to a screen that offers no exit. This is
 // the one place screens are built, so no new screen can forget it.
 func (t *Tgbot) ensureWayOut(rows [][]telego.InlineKeyboardButton) [][]telego.InlineKeyboardButton {
-	if hasWayOut(rows) {
+	if hasWayOut(rows) || t.hasBackButton(rows) {
 		return rows
 	}
 	return append(append([][]telego.InlineKeyboardButton{}, rows...), t.backRow())
+}
+
+// hasBackButton spots a backTo row, whose parent is any screen and so cannot be
+// listed among the way-out callbacks.
+func (t *Tgbot) hasBackButton(rows [][]telego.InlineKeyboardButton) bool {
+	label := t.I18nBot("tgbot.buttons.back")
+	if label == "" {
+		return false
+	}
+	for _, row := range rows {
+		for _, btn := range row {
+			if btn.Text == label && btn.CallbackData != "" {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // breadcrumb names the screen's place in the tree, so a user who was away can

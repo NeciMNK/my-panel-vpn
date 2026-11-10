@@ -418,9 +418,9 @@ func (t *Tgbot) getClientUsage(chatId int64, tgUserID int64, delivery screenDeli
 	output += t.I18nBot("tgbot.messages.refreshedOn", "Time=="+time.Now().Format("2006-01-02 15:04:05"))
 	rows := [][]telego.InlineKeyboardButton{}
 	if len(email) > 0 {
-		rows = t.clientRows(email[0])
+		rows = t.clientRows(chatId, email[0])
 	} else if len(traffics) > 0 {
-		rows = t.clientRows(traffics[0].Email)
+		rows = t.clientRows(chatId, traffics[0].Email)
 	}
 	t.renderScreen(chatId, t.newScreen("client", output, rows...), delivery)
 }

@@ -15,35 +15,6 @@ import (
 	tu "github.com/mymmrac/telego/telegoutil"
 )
 
-// getInboundUsages retrieves and formats inbound usage information.
-func (t *Tgbot) getInboundUsages() string {
-	var info strings.Builder
-	inbounds, err := t.inboundService.GetAllInbounds()
-	if err != nil {
-		logger.Warning("GetAllInbounds run failed:", err)
-		info.WriteString(t.I18nBot("tgbot.answers.getInboundsFailed"))
-		return info.String()
-	}
-	for _, inbound := range inbounds {
-		info.WriteString(t.I18nBot("tgbot.messages.inbound", "Remark=="+inbound.Remark))
-		info.WriteString(t.I18nBot("tgbot.messages.port", "Port=="+strconv.Itoa(inbound.Port)))
-		info.WriteString(t.I18nBot("tgbot.messages.traffic", "Total=="+common.FormatTraffic((inbound.Up+inbound.Down)), "Upload=="+common.FormatTraffic(inbound.Up), "Download=="+common.FormatTraffic(inbound.Down)))
-
-		clients, listErr := t.clientService.ListForInbound(nil, inbound.Id)
-		if listErr == nil {
-			info.WriteString(t.I18nBot("tgbot.messages.clientsCount", "Count=="+strconv.Itoa(len(clients))))
-		}
-
-		if inbound.ExpiryTime == 0 {
-			info.WriteString(t.I18nBot("tgbot.messages.expire", "Time=="+t.I18nBot("tgbot.unlimited")))
-		} else {
-			info.WriteString(t.I18nBot("tgbot.messages.expire", "Time=="+time.Unix((inbound.ExpiryTime/1000), 0).Format("2006-01-02 15:04:05")))
-		}
-		info.WriteString("\r\n")
-	}
-	return info.String()
-}
-
 // addClientExcludedProtocols are the protocols with no per-client model: Tunnel
 // has no clients, Mixed/HTTP authenticate at the inbound level, not per-client.
 var addClientExcludedProtocols = map[model.Protocol]bool{
