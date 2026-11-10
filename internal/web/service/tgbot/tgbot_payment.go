@@ -276,6 +276,10 @@ func (t *Tgbot) reportClientPayment(callbackQuery *telego.CallbackQuery, monthsT
 	emails := make([]string, 0, len(traffics))
 	rows := make([][]telego.InlineKeyboardButton, 0, len(traffics)+1)
 	for _, traffic := range traffics {
+		if err := t.clientService.SetPendingPayment(t.billingFor(traffic.Email).ClientId, months); err != nil {
+			logger.Warning("reportClientPayment: saving the pending report failed:", err)
+			continue
+		}
 		emails = append(emails, html.EscapeString(traffic.Email))
 		rows = append(rows, tu.InlineKeyboardRow(t.btn2(
 			t.I18nBot("tgbot.buttons.confirmPayment", "Email=="+traffic.Email, "Months=="+monthsText),
@@ -319,6 +323,11 @@ func (t *Tgbot) confirmPayment(callbackQuery *telego.CallbackQuery, email, month
 		t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
 		return
 	}
+	claimed, err := t.clientService.ClaimPendingPayment(billing.ClientId, months)
+	if err != nil || !claimed {
+		t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.paymentAlreadyConfirmed", "Email=="+email))
+		return
+	}
 	expiry := paidExpiry(traffic.ExpiryTime, billing, months*monthDays, time.Now().UnixMilli())
 	if expiry != traffic.ExpiryTime {
 		needRestart, err := t.clientService.ResetClientExpiryTimeByEmail(&t.inboundService, email, expiry)
@@ -327,6 +336,7 @@ func (t *Tgbot) confirmPayment(callbackQuery *telego.CallbackQuery, email, month
 		}
 		if err != nil {
 			logger.Warning("confirmPayment: expiry update failed:", err)
+			t.restorePendingPayment(billing.ClientId, months)
 			t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
 			return
 		}
@@ -358,6 +368,13 @@ func (t *Tgbot) confirmPayment(callbackQuery *telego.CallbackQuery, email, month
 	}
 	t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.paymentConfirmed", "Email=="+email))
 	t.searchClientScreen(chatID, email)
+}
+
+// restorePendingPayment re-arms a claimed report whose term was not applied, so an admin can retry it.
+func (t *Tgbot) restorePendingPayment(clientID, months int) {
+	if err := t.clientService.SetPendingPayment(clientID, months); err != nil {
+		logger.Warning("confirmPayment: restoring the pending report failed:", err)
+	}
 }
 
 func (t *Tgbot) clientTgID(email string) int64 {

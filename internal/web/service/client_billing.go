@@ -35,3 +35,21 @@ func (s *ClientService) SaveBilling(billing *model.ClientBilling) error {
 		DoUpdates: clause.AssignmentColumns([]string{"trusted", "free_plan", "grace_days", "last_grace_at", "non_paying"}),
 	}).Create(billing).Error
 }
+
+// SetPendingPayment records the term a client reports paying; SaveBilling never
+// touches it, so only ClaimPendingPayment clears it.
+func (s *ClientService) SetPendingPayment(clientID, months int) error {
+	return database.GetDB().Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "client_id"}},
+		DoUpdates: clause.AssignmentColumns([]string{"pending_months"}),
+	}).Create(&model.ClientBilling{ClientId: clientID, PendingMonths: months}).Error
+}
+
+// ClaimPendingPayment clears a pending report for months and says whether this
+// caller cleared it, so concurrent or repeated confirms apply the payment once.
+func (s *ClientService) ClaimPendingPayment(clientID, months int) (bool, error) {
+	res := database.GetDB().Model(&model.ClientBilling{}).
+		Where("client_id = ? AND pending_months = ?", clientID, months).
+		Update("pending_months", 0)
+	return res.RowsAffected == 1, res.Error
+}

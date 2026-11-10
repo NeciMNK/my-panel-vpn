@@ -2811,6 +2811,7 @@
       "qrCodeForClient": "QR-код для клієнта {{ .Email }}:",
       "paymentReported": "✅ Адміністратора повідомлено. Підписку продовжать після підтвердження оплати.",
       "paymentAlreadyReported": "⏳ Ви вже повідомили про оплату. Дочекайтеся підтвердження адміністратора.",
+      "paymentAlreadyConfirmed": "✅ The payment of {{ .Email }} is already confirmed.",
       "paymentConfirmed": "✅ Оплату {{ .Email }} підтверджено",
       "graceGranted": "⏳ Продовжено на {{ .Days }} днів. Сплатіть до {{ .Date }}.",
       "graceUnavailable": "Відстрочка зараз недоступна.",

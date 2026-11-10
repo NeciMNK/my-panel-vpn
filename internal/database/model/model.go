@@ -1154,6 +1154,8 @@ type ClientBilling struct {
 	LastGraceAt int64 `json:"lastGraceAt" gorm:"column:last_grace_at;default:0"`
 	// NonPaying keeps the client (e.g. the admin) out of the ledger's expected income.
 	NonPaying bool `json:"nonPaying" gorm:"column:non_paying;default:false"`
+	// PendingMonths is the term the client last reported paying; a confirm consumes it once.
+	PendingMonths int `json:"pendingMonths" gorm:"column:pending_months;default:0"`
 }
 
 // LedgerServer is a recurring monthly server cost, charged to every month from

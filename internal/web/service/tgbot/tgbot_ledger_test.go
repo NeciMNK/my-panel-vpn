@@ -64,6 +64,8 @@ func TestConfirmPaymentBooksIncome(t *testing.T) {
 	seedSettings(t, map[string]string{"tgPaymentPrice": "300", "tgPaymentDiscounts": "3:10"})
 	seedBilledClient(t, 5757, "payer@x")
 
+	resetThrottles(t)
+	tap(tb, 5757, "client_paid 3", false)
 	tap(tb, 9001, "pay_ok payer@x 3", true)
 
 	report := ledgerReport(t, currentLedgerMonth())
