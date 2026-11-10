@@ -595,4 +595,5 @@ func (t *Tgbot) resetDraft(draft *clientDraft) {
 	draft.subID = t.randomLowerAndNum(16)
 	draft.comment = ""
 	draft.reset = 0
+	draft.freePlan = false
 }

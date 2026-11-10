@@ -530,11 +530,32 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgEnabledEvents": {
         "type": "string"
       },
+      "tgFreePlanEnable": {
+        "type": "boolean"
+      },
       "tgLang": {
         "type": "string"
       },
       "tgMemory": {
         "maximum": 100,
+        "minimum": 0,
+        "type": "integer"
+      },
+      "tgPaymentCurrency": {
+        "example": "RUB",
+        "type": "string"
+      },
+      "tgPaymentDetails": {
+        "example": "Card 2200 0000 0000 0000",
+        "type": "string"
+      },
+      "tgPaymentDiscounts": {
+        "example": "3:10, 6:15, 12:20",
+        "type": "string"
+      },
+      "tgPaymentPrice": {
+        "description": "Monthly price, multi-month discounts and payment details shown to clients in the bot.",
+        "example": 300,
         "minimum": 0,
         "type": "integer"
       },
@@ -749,8 +770,13 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgBotToken",
       "tgCpu",
       "tgEnabledEvents",
+      "tgFreePlanEnable",
       "tgLang",
       "tgMemory",
+      "tgPaymentCurrency",
+      "tgPaymentDetails",
+      "tgPaymentDiscounts",
+      "tgPaymentPrice",
       "tgRunTime",
       "timeLocation",
       "trafficDiff",
@@ -1321,11 +1347,32 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgEnabledEvents": {
         "type": "string"
       },
+      "tgFreePlanEnable": {
+        "type": "boolean"
+      },
       "tgLang": {
         "type": "string"
       },
       "tgMemory": {
         "maximum": 100,
+        "minimum": 0,
+        "type": "integer"
+      },
+      "tgPaymentCurrency": {
+        "example": "RUB",
+        "type": "string"
+      },
+      "tgPaymentDetails": {
+        "example": "Card 2200 0000 0000 0000",
+        "type": "string"
+      },
+      "tgPaymentDiscounts": {
+        "example": "3:10, 6:15, 12:20",
+        "type": "string"
+      },
+      "tgPaymentPrice": {
+        "description": "Monthly price, multi-month discounts and payment details shown to clients in the bot.",
+        "example": 300,
         "minimum": 0,
         "type": "integer"
       },
@@ -1548,8 +1595,13 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgBotToken",
       "tgCpu",
       "tgEnabledEvents",
+      "tgFreePlanEnable",
       "tgLang",
       "tgMemory",
+      "tgPaymentCurrency",
+      "tgPaymentDetails",
+      "tgPaymentDiscounts",
+      "tgPaymentPrice",
       "tgRunTime",
       "timeLocation",
       "trafficDiff",

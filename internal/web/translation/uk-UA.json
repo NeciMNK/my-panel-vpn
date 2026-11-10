@@ -1989,6 +1989,16 @@
       "subHostSortInbound": "Порядок вхідних підключень (типово)",
       "subHostSortHosts": "Порядок хостів",
       "subHostSortModeDesc": "Використовується порядок зі сторінки хостів для всіх вхідних підключень. Це визначає порядок видачі сервером; клієнтські застосунки можуть сортувати вузли самостійно.",
+      "tgPayment": "Оплата",
+      "tgPaymentDetails": "Куди платити",
+      "tgPaymentDetailsDesc": "Номер картки, телефон для переказу або посилання на оплату. Клієнт бачить це в боті поруч із датою закінчення підписки й може повідомити вам, що сплатив.",
+      "tgPaymentPrice": "Ціна за місяць",
+      "tgPaymentPriceDesc": "Вартість одного місяця. Довші терміни пропонуються зі знижками нижче. 0 приховує ціни; якщо реквізити теж порожні, блок оплати клієнтам не показується.",
+      "tgPaymentCurrency": "Валюта",
+      "tgPaymentDiscounts": "Знижки за довший термін",
+      "tgPaymentDiscountsDesc": "місяці:відсоток через кому, наприклад 3:10, 6:15, 12:20. Кожна пара — термін, який клієнт може сплатити.",
+      "tgFreePlan": "Безкоштовний тариф",
+      "tgFreePlanDesc": "Дозволити незнайомим користувачам Telegram запросити безкоштовну підписку (10 ГБ на місяць). Кожен запит схвалює адміністратор у боті; оплата будь-якого терміну знімає ліміт.",
       "panelProxy": {
         "setup": "Через мій VPN",
         "title": "Запити панелі через проксі",
@@ -2835,6 +2845,12 @@
       "qrLegendLink": "{{ .Code }}. Посилання для застосунку {{ .App }}",
       "backupFailed": "Не вдалося прочитати базу даних; резервну копію не надіслано.",
       "privateOnly": "🤖 Бот працює лише в особистих повідомленнях. Відкрий його в особистому чаті.",
+      "paymentReported": "💳 {{ .User }} сплатив {{ .Months }} міс ({{ .Total }}): ",
+      "paymentConfirmed": "✅ Оплату підтверджено: {{ .Email }} активна до {{ .Date }}.",
+      "graceTaken": "⏳ {{ .User }} відклав оплату на {{ .Days }} днів: ",
+      "freeRequested": "🆓 {{ .User }} просить безкоштовну підписку ({{ .GB }} ГБ на місяць).",
+      "freeApproved": "🎉 Безкоштовна підписка готова: {{ .GB }} ГБ на місяць. Сплатіть будь-який термін, щоб зняти ліміт.",
+      "freeDeclined": "❌ Запит на безкоштовну підписку відхилено.",
       "speedLow": "Server {{ .Server }} has {{ .Free }} Mbit/s free per user, below the {{ .Min }} Mbit/s minimum of {{ .Users }}, and no other server has room. Add a server or raise its link speed.",
       "masterLeader": "Master {{ .Master }} now leads the panel cluster.",
       "masterLeaderPrevious": "It took over from {{ .Previous }}."
@@ -2897,7 +2913,15 @@
       "qrCode": "🔳 QR code",
       "broadcast": "📢 Розсилка",
       "attachInbound": "Прив’язати інбаунд ({{ .Count }})",
-      "attachDone": "✅ Готово"
+      "attachDone": "✅ Готово",
+      "iPaid": "✅ Я сплатив",
+      "planOption": "{{ .Months }} міс",
+      "payLater": "⏳ Сплачу пізніше (до {{ .Days }} днів)",
+      "confirmPayment": "✅ {{ .Email }}: +{{ .Months }} міс",
+      "trusted": "⭐ Довірений (відстрочка): {{ .State }}",
+      "requestFree": "🆓 Запросити безкоштовну підписку ({{ .GB }} ГБ/міс)",
+      "approve": "✅ Схвалити",
+      "decline": "❌ Відхилити"
     },
     "answers": {
       "broadcastStarted": "🚀 Розсилку запущено.",
@@ -2924,7 +2948,15 @@
       "askToAddUserId": "Вашу конфігурацію не знайдено!\r\nБудь ласка, попросіть свого адміністратора використовувати ваш ідентифікатор Telegram у вашій конфігурації.\r\n\r\nВаш ідентифікатор користувача: <code>{{ .TgUserID }}</code>",
       "chooseClient": "Виберіть клієнта для Вхідного {{ .Inbound }}",
       "chooseInbound": "Виберіть Вхідний",
-      "qrCodeForClient": "QR-код для клієнта {{ .Email }}:"
+      "qrCodeForClient": "QR-код для клієнта {{ .Email }}:",
+      "paymentReported": "✅ Адміністратора повідомлено. Підписку продовжать після підтвердження оплати.",
+      "paymentAlreadyReported": "⏳ Ви вже повідомили про оплату. Дочекайтеся підтвердження адміністратора.",
+      "paymentAlreadyConfirmed": "✅ The payment of {{ .Email }} is already confirmed.",
+      "paymentConfirmed": "✅ Оплату {{ .Email }} підтверджено",
+      "graceGranted": "⏳ Продовжено на {{ .Days }} днів. Сплатіть до {{ .Date }}.",
+      "graceUnavailable": "Відстрочка зараз недоступна.",
+      "freeRequested": "✅ Запит надіслано. Адміністратор його розгляне.",
+      "freeAlreadyRequested": "⏳ Ви вже надіслали запит. Будь ласка, зачекайте."
     },
     "screens": {
       "panel": "Panel",
@@ -2941,7 +2973,8 @@
       "onlines": "Online",
       "deplete": "Running out",
       "commands": "Commands",
-      "broadcast": "Broadcast"
+      "broadcast": "Broadcast",
+      "pay": "Оплата"
     },
     "inline": {
       "noneTitle": "Nothing found",
@@ -2955,6 +2988,18 @@
     "noValue": "—",
     "notices": {
       "repeat": "\r\n\r\n🔁 repeated {{ .Count }}× · last {{ .Time }}"
+    },
+    "payment": {
+      "title": "\r\n💳 <b>Оплата</b>\r\n",
+      "dueOn": "📅 Сплатити до: {{ .Date }}\r\n",
+      "overdue": "⛔ Підписка закінчилася {{ .Date }}: сплатіть зараз\r\n",
+      "details": "🏦 Куди платити:\r\n{{ .Details }}\r\n",
+      "deferredUntil": "⏳ Оплату відкладено: сплатіть до {{ .Date }}\r\n",
+      "freePlan": "🆓 Безкоштовний тариф: {{ .GB }} ГБ на місяць. Сплатіть будь-який термін, щоб зняти ліміт.\r\n",
+      "plansTitle": "💰 Вартість:\r\n",
+      "plan": "• {{ .Months }} міс — {{ .Total }}\r\n",
+      "planDiscounted": "• {{ .Months }} міс — {{ .Total }} (−{{ .Percent }}%)\r\n",
+      "choosePlan": "💳 За який термін ви сплатили?"
     }
   },
   "discord": {

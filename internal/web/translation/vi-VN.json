@@ -1989,6 +1989,16 @@
       "subHostSortInbound": "Thứ tự kết nối vào (mặc định)",
       "subHostSortHosts": "Thứ tự máy chủ",
       "subHostSortModeDesc": "Theo thứ tự trên trang Máy chủ giữa các kết nối vào. Thiết lập này quyết định thứ tự do máy chủ xuất ra; ứng dụng khách có thể tự sắp xếp lại.",
+      "tgPayment": "Payment",
+      "tgPaymentDetails": "Where to pay",
+      "tgPaymentDetailsDesc": "Card number, phone for transfers or a payment link. Clients see it in the bot next to the date their subscription ends, and can tell you they have paid.",
+      "tgPaymentPrice": "Monthly price",
+      "tgPaymentPriceDesc": "Price of one month. Longer terms are offered with the discounts below. 0 hides prices; leave the payment details empty too to hide payment from clients.",
+      "tgPaymentCurrency": "Currency",
+      "tgPaymentDiscounts": "Discounts for longer terms",
+      "tgPaymentDiscountsDesc": "months:percent, comma-separated, e.g. 3:10, 6:15, 12:20. Each becomes a term clients can pay for.",
+      "tgFreePlan": "Free plan",
+      "tgFreePlanDesc": "Let unknown Telegram users ask for a free subscription (10 GB a month). Every request must be approved by an admin in the bot; paying for any term removes the limit.",
       "panelProxy": {
         "setup": "Through my VPN",
         "title": "Route the panel through a proxy",
@@ -2835,6 +2845,12 @@
       "qrLegendLink": "{{ .Code }}. Liên kết ứng dụng {{ .App }}",
       "backupFailed": "Không đọc được cơ sở dữ liệu; không có bản sao lưu nào được gửi.",
       "privateOnly": "🤖 Bot này chỉ hoạt động trong trò chuyện riêng. Hãy mở nó trong tin nhắn trực tiếp.",
+      "paymentReported": "💳 {{ .User }} paid for {{ .Months }} mo ({{ .Total }}): ",
+      "paymentConfirmed": "✅ Payment confirmed: {{ .Email }} is active until {{ .Date }}.",
+      "graceTaken": "⏳ {{ .User }} deferred payment by {{ .Days }} days for: ",
+      "freeRequested": "🆓 {{ .User }} asks for a free subscription ({{ .GB }} GB a month).",
+      "freeApproved": "🎉 Your free subscription is ready: {{ .GB }} GB a month. Pay for any term to remove the limit.",
+      "freeDeclined": "❌ Your request for a free subscription was declined.",
       "speedLow": "Server {{ .Server }} has {{ .Free }} Mbit/s free per user, below the {{ .Min }} Mbit/s minimum of {{ .Users }}, and no other server has room. Add a server or raise its link speed.",
       "masterLeader": "Master {{ .Master }} now leads the panel cluster.",
       "masterLeaderPrevious": "It took over from {{ .Previous }}."
@@ -2897,7 +2913,15 @@
       "qrCode": "🔳 QR code",
       "broadcast": "📢 Phát tin",
       "attachInbound": "Đính kèm inbound ({{ .Count }})",
-      "attachDone": "✅ Xong"
+      "attachDone": "✅ Xong",
+      "iPaid": "✅ I have paid",
+      "planOption": "{{ .Months }} mo",
+      "payLater": "⏳ Pay later (up to {{ .Days }} days)",
+      "confirmPayment": "✅ {{ .Email }}: +{{ .Months }} mo",
+      "trusted": "⭐ Trusted (pay later): {{ .State }}",
+      "requestFree": "🆓 Request a free subscription ({{ .GB }} GB/month)",
+      "approve": "✅ Approve",
+      "decline": "❌ Decline"
     },
     "answers": {
       "broadcastStarted": "🚀 Đã bắt đầu phát tin.",
@@ -2924,7 +2948,15 @@
       "askToAddUserId": "Cấu hình của bạn không được tìm thấy!\r\nVui lòng yêu cầu Quản trị viên sử dụng ID người dùng telegram của bạn trong cấu hình của bạn.\r\n\r\nID người dùng của bạn: <code>{{ .TgUserID }}</code>",
       "chooseClient": "Chọn một Khách hàng cho Inbound {{ .Inbound }}",
       "chooseInbound": "Chọn một Inbound",
-      "qrCodeForClient": "Mã QR cho khách hàng {{ .Email }}:"
+      "qrCodeForClient": "Mã QR cho khách hàng {{ .Email }}:",
+      "paymentReported": "✅ The admin has been notified. Your subscription will be extended once the payment is confirmed.",
+      "paymentAlreadyReported": "⏳ You have already reported this payment. Please wait for the admin to confirm it.",
+      "paymentAlreadyConfirmed": "✅ The payment of {{ .Email }} is already confirmed.",
+      "paymentConfirmed": "✅ Payment confirmed for {{ .Email }}",
+      "graceGranted": "⏳ Extended by {{ .Days }} days. Please pay before {{ .Date }}.",
+      "graceUnavailable": "Deferred payment is not available right now.",
+      "freeRequested": "✅ Request sent. The admin will review it.",
+      "freeAlreadyRequested": "⏳ You have already sent a request. Please wait."
     },
     "screens": {
       "panel": "Panel",
@@ -2941,7 +2973,8 @@
       "onlines": "Online",
       "deplete": "Running out",
       "commands": "Commands",
-      "broadcast": "Broadcast"
+      "broadcast": "Broadcast",
+      "pay": "Payment"
     },
     "inline": {
       "noneTitle": "Nothing found",
@@ -2955,6 +2988,18 @@
     "noValue": "—",
     "notices": {
       "repeat": "\r\n\r\n🔁 repeated {{ .Count }}× · last {{ .Time }}"
+    },
+    "payment": {
+      "title": "\r\n💳 <b>Payment</b>\r\n",
+      "dueOn": "📅 Pay by: {{ .Date }}\r\n",
+      "overdue": "⛔ Your subscription expired on {{ .Date }}: payment is due now\r\n",
+      "details": "🏦 Where to pay:\r\n{{ .Details }}\r\n",
+      "deferredUntil": "⏳ Payment deferred: pay before {{ .Date }}\r\n",
+      "freePlan": "🆓 Free plan: {{ .GB }} GB a month. Pay for any term to remove the limit.\r\n",
+      "plansTitle": "💰 Price:\r\n",
+      "plan": "• {{ .Months }} mo — {{ .Total }}\r\n",
+      "planDiscounted": "• {{ .Months }} mo — {{ .Total }} (−{{ .Percent }}%)\r\n",
+      "choosePlan": "💳 Which term did you pay for?"
     }
   },
   "discord": {

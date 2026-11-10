@@ -175,8 +175,13 @@ export interface AllSetting {
   tgBotToken: string;
   tgCpu: number;
   tgEnabledEvents: string;
+  tgFreePlanEnable: boolean;
   tgLang: string;
   tgMemory: number;
+  tgPaymentCurrency: string;
+  tgPaymentDetails: string;
+  tgPaymentDiscounts: string;
+  tgPaymentPrice: number;
   tgRunTime: string;
   timeLocation: string;
   trafficDiff: number;
@@ -366,8 +371,13 @@ export interface AllSettingView {
   tgBotToken: string;
   tgCpu: number;
   tgEnabledEvents: string;
+  tgFreePlanEnable: boolean;
   tgLang: string;
   tgMemory: number;
+  tgPaymentCurrency: string;
+  tgPaymentDetails: string;
+  tgPaymentDiscounts: string;
+  tgPaymentPrice: number;
   tgRunTime: string;
   timeLocation: string;
   trafficDiff: number;

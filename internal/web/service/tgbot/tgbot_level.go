@@ -73,6 +73,10 @@ func (t *Tgbot) gateCommand(message *telego.Message) (isAdmin bool, ok bool) {
 // no keyboard of ours, so any callback data from one is forged or stale.
 func (t *Tgbot) gateCallback(query *telego.CallbackQuery) (isAdmin bool, ok bool) {
 	level := t.levelOf(query.From.ID)
+	if level == levelStranger && query.Data == cbFreeRequest {
+		t.requestFreePlan(query)
+		return false, false
+	}
 	if level == levelStranger {
 		t.sendCallbackAnswerTgBot(query.ID, "")
 		return false, false

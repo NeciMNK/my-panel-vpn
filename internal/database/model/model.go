@@ -1143,6 +1143,21 @@ type ClientHwid struct {
 
 func (ClientHwid) TableName() string { return "client_hwids" }
 
+// ClientBilling is the Telegram bot's billing state for one client record. It is
+// master-only bookkeeping: nodes never receive it and Xray never reads it.
+type ClientBilling struct {
+	Id       int  `json:"id" gorm:"primaryKey;autoIncrement"`
+	ClientId int  `json:"clientId" gorm:"uniqueIndex;column:client_id"`
+	Trusted  bool `json:"trusted" gorm:"default:false"`
+	FreePlan bool `json:"freePlan" gorm:"column:free_plan;default:false"`
+	// GraceDays were added to the expiry on credit and add up; the next confirmed payment repays them.
+	GraceDays int `json:"graceDays" gorm:"column:grace_days;default:0"`
+	// LastGraceAt (unix ms) spaces deferrals: one per graceCooldownDays, any number in total.
+	LastGraceAt int64 `json:"lastGraceAt" gorm:"column:last_grace_at;default:0"`
+	// PendingMonths is the term the client last reported paying; a confirm consumes it once.
+	PendingMonths int `json:"pendingMonths" gorm:"column:pending_months;default:0"`
+}
+
 // ClientExternalLink is a per-client entry surfaced in the client's
 // subscription. Two kinds:
 //   - "link": a single third-party share link (vless://, vmess://, trojan://,

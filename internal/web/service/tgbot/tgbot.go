@@ -95,6 +95,8 @@ type clientDraft struct {
 	subID              string
 	comment            string
 	reset              int
+	// freePlan marks a draft opened by approving a free-plan request.
+	freePlan bool
 }
 
 // chatUser names the admin a wizard belongs to. A private chat's ids are equal;
