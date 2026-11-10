@@ -19,6 +19,11 @@ export const keys = {
     root: () => ['sub-balancers'] as const,
     list: () => ['sub-balancers', 'list'] as const,
   },
+  tlsCerts: {
+    root: () => ['tls-certs'] as const,
+    list: () => ['tls-certs', 'list'] as const,
+    settings: () => ['tls-certs', 'settings'] as const,
+  },
   settings: {
     root: () => ['settings'] as const,
     all: () => ['settings', 'all'] as const,

@@ -1164,6 +1164,48 @@ export const TgBotCapabilitiesSchema = z.object({
 });
 export type TgBotCapabilities = z.infer<typeof TgBotCapabilitiesSchema>;
 
+export const TlsCertFilesSchema = z.object({
+  certFile: z.string(),
+  keyFile: z.string(),
+});
+export type TlsCertFiles = z.infer<typeof TlsCertFilesSchema>;
+
+export const TlsCertInstallRequestSchema = z.object({
+  certPem: z.string(),
+  keyPem: z.string(),
+  name: z.string(),
+});
+export type TlsCertInstallRequest = z.infer<typeof TlsCertInstallRequestSchema>;
+
+export const TlsCertNodeInstallSchema = z.object({
+  certFile: z.string(),
+  error: z.string(),
+  keyFile: z.string(),
+  notAfter: z.number().int(),
+});
+export type TlsCertNodeInstall = z.infer<typeof TlsCertNodeInstallSchema>;
+
+export const TlsCertSettingsSchema = z.object({
+  cloudflareTokenSet: z.boolean(),
+});
+export type TlsCertSettings = z.infer<typeof TlsCertSettingsSchema>;
+
+export const TlsCertificateSchema = z.object({
+  applyToPanel: z.boolean(),
+  autoRenew: z.boolean(),
+  certFile: z.string(),
+  createdAt: z.number().int(),
+  domains: z.array(z.string()),
+  id: z.number().int(),
+  keyFile: z.string(),
+  lastError: z.string(),
+  nodeInstalls: z.record(z.number().int(), z.lazy(() => TlsCertNodeInstallSchema)),
+  notAfter: z.number().int(),
+  status: z.string(),
+  updatedAt: z.number().int(),
+});
+export type TlsCertificate = z.infer<typeof TlsCertificateSchema>;
+
 export const TrafficSchema = z.object({
   Down: z.number().int(),
   IsInbound: z.boolean(),

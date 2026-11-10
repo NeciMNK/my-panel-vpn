@@ -164,6 +164,12 @@ func GetDBFolderPath() string {
 	return "/etc/x-ui"
 }
 
+// GetCertFolderPath is where certificates issued by the panel are stored, one
+// subfolder per certificate.
+func GetCertFolderPath() string {
+	return filepath.Join(GetDBFolderPath(), "certs")
+}
+
 // GetDBPath returns the full path to the database file.
 func GetDBPath() string {
 	return fmt.Sprintf("%s/%s.db", GetDBFolderPath(), GetName())

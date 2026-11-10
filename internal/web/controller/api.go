@@ -124,6 +124,7 @@ var nodeSyncScopeAllow = map[string]map[string]struct{}{
 	"/server/clientIps":            {http.MethodGet: {}, http.MethodPost: {}},
 	"/clients/clientIpsByGuid":     {http.MethodPost: {}},
 	"/hosts/list":                  {http.MethodGet: {}},
+	"/certs/install":               {http.MethodPost: {}},
 }
 
 var nodeAdminScopeAllow = map[string]map[string]struct{}{
@@ -232,6 +233,9 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 
 	// Subscription balancers — client-side balancers for the JSON sub output
 	NewSubBalancerController(api)
+
+	// Panel-issued TLS certificates (ACME DNS-01 over Cloudflare)
+	NewTlsCertController(api)
 
 	// Extra routes
 	api.POST("/backuptotgbot", a.BackuptoTgbot)

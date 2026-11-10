@@ -22,6 +22,7 @@ import {
   PushpinFilled,
   PushpinOutlined,
   ReadOutlined,
+  SafetyCertificateOutlined,
   SafetyOutlined,
   SearchOutlined,
   SettingOutlined,
@@ -214,6 +215,11 @@ export default function AppSidebar() {
         key: '/settings#security',
         icon: <SafetyOutlined aria-hidden />,
         label: t('pages.settings.securitySettings'),
+      },
+      {
+        key: '/settings#ssl',
+        icon: <SafetyCertificateOutlined aria-hidden />,
+        label: t('pages.settings.tlsCerts.menu'),
       },
       {
         key: '/settings#telegram',

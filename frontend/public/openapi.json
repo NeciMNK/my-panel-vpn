@@ -4849,6 +4849,166 @@
         ],
         "type": "object"
       },
+      "TlsCertFiles": {
+        "description": "TlsCertFiles is where a certificate pair was written.",
+        "properties": {
+          "certFile": {
+            "example": "/etc/x-ui/certs/example.com/fullchain.pem",
+            "type": "string"
+          },
+          "keyFile": {
+            "example": "/etc/x-ui/certs/example.com/privkey.pem",
+            "type": "string"
+          }
+        },
+        "required": [
+          "certFile",
+          "keyFile"
+        ],
+        "type": "object"
+      },
+      "TlsCertInstallRequest": {
+        "description": "TlsCertInstallRequest is the body a master sends a node to store a pair.",
+        "properties": {
+          "certPem": {
+            "example": "-----BEGIN CERTIFICATE-----\n...",
+            "type": "string"
+          },
+          "keyPem": {
+            "example": "-----BEGIN EC PRIVATE KEY-----\n...",
+            "type": "string"
+          },
+          "name": {
+            "example": "wildcard.example.com",
+            "type": "string"
+          }
+        },
+        "required": [
+          "certPem",
+          "keyPem",
+          "name"
+        ],
+        "type": "object"
+      },
+      "TlsCertNodeInstall": {
+        "description": "TlsCertNodeInstall is one node's copy of a TlsCertificate. NotAfter equal to\nthe certificate's means the node holds the current version.",
+        "properties": {
+          "certFile": {
+            "example": "/etc/x-ui/certs/example.com/fullchain.pem",
+            "type": "string"
+          },
+          "error": {
+            "type": "string"
+          },
+          "keyFile": {
+            "example": "/etc/x-ui/certs/example.com/privkey.pem",
+            "type": "string"
+          },
+          "notAfter": {
+            "example": 1717000000000,
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "certFile",
+          "error",
+          "keyFile",
+          "notAfter"
+        ],
+        "type": "object"
+      },
+      "TlsCertSettings": {
+        "description": "TlsCertSettings reports whether issuance can run, never the token itself.",
+        "properties": {
+          "cloudflareTokenSet": {
+            "example": true,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "cloudflareTokenSet"
+        ],
+        "type": "object"
+      },
+      "TlsCertificate": {
+        "description": "TlsCertificate is an ACME certificate the panel issued over Cloudflare DNS-01\nand keeps renewed; NodeInstalls records where each node stored its copy.",
+        "properties": {
+          "applyToPanel": {
+            "example": false,
+            "type": "boolean"
+          },
+          "autoRenew": {
+            "example": true,
+            "type": "boolean"
+          },
+          "certFile": {
+            "example": "/etc/x-ui/certs/example.com/fullchain.pem",
+            "type": "string"
+          },
+          "createdAt": {
+            "example": 1710000000000,
+            "format": "int64",
+            "type": "integer"
+          },
+          "domains": {
+            "example": [
+              "example.com",
+              "*.example.com"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "keyFile": {
+            "example": "/etc/x-ui/certs/example.com/privkey.pem",
+            "type": "string"
+          },
+          "lastError": {
+            "type": "string"
+          },
+          "nodeInstalls": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/TlsCertNodeInstall"
+            },
+            "type": "object"
+          },
+          "notAfter": {
+            "example": 1717000000000,
+            "format": "int64",
+            "type": "integer"
+          },
+          "status": {
+            "example": "valid",
+            "type": "string"
+          },
+          "updatedAt": {
+            "example": 1710000000000,
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "applyToPanel",
+          "autoRenew",
+          "certFile",
+          "createdAt",
+          "domains",
+          "id",
+          "keyFile",
+          "lastError",
+          "nodeInstalls",
+          "notAfter",
+          "status",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
       "Traffic": {
         "description": "Traffic represents network traffic statistics for Xray connections.\nIt tracks upload and download bytes for inbound or outbound traffic.",
         "properties": {
@@ -5062,6 +5222,10 @@
     {
       "name": "Subscription Balancers",
       "description": "Client-side balancers for the JSON subscription: each enabled balancer is emitted as one extra config document whose members are the proxy outbounds of the selected inbounds (routing.balancers + burstObservatory). Managed in Settings → Sub Balancers."
+    },
+    {
+      "name": "TLS Certificates",
+      "description": "Let's Encrypt certificates issued by the panel over the ACME DNS-01 challenge, solved through the Cloudflare API (wildcards supported). Files land in the panel's certs folder, renew automatically 30 days before expiry, can be applied to the panel itself, and are copied to every enabled node. Managed in Settings → SSL."
     },
     {
       "name": "Subscription Server",
@@ -15940,6 +16104,502 @@
                     "sortOrder": 1,
                     "strategy": "random",
                     "updatedAt": 1710000000000
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/certs/list": {
+      "get": {
+        "tags": [
+          "TLS Certificates"
+        ],
+        "summary": "List issued certificates with their status (pending, valid, error), file paths, expiry and per-node copies.",
+        "operationId": "get_panel_api_certs_list",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TlsCertificate"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "applyToPanel": false,
+                      "autoRenew": true,
+                      "certFile": "/etc/x-ui/certs/example.com/fullchain.pem",
+                      "createdAt": 1710000000000,
+                      "domains": [
+                        "example.com",
+                        "*.example.com"
+                      ],
+                      "id": 1,
+                      "keyFile": "/etc/x-ui/certs/example.com/privkey.pem",
+                      "lastError": "",
+                      "nodeInstalls": {},
+                      "notAfter": 1717000000000,
+                      "status": "valid",
+                      "updatedAt": 1710000000000
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/certs/settings": {
+      "get": {
+        "tags": [
+          "TLS Certificates"
+        ],
+        "summary": "Report whether a Cloudflare API token is stored. The token itself is never returned.",
+        "operationId": "get_panel_api_certs_settings",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/TlsCertSettings"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "cloudflareTokenSet": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "TLS Certificates"
+        ],
+        "summary": "Store the Cloudflare API token used for DNS-01 (needs Zone:Read and DNS:Edit on the zones). An empty value clears it.",
+        "operationId": "post_panel_api_certs_settings",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cloudflareToken": {
+                    "type": "string",
+                    "description": "Cloudflare API token."
+                  }
+                },
+                "required": [
+                  "cloudflareToken"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/TlsCertSettings"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "cloudflareTokenSet": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/certs/issue": {
+      "post": {
+        "tags": [
+          "TLS Certificates"
+        ],
+        "summary": "Start issuing a certificate. Returns the pending record at once; issuance (DNS propagation included) finishes in the background, so poll the list.",
+        "operationId": "post_panel_api_certs_issue",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "domains": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Names to cover, repeated key; e.g. example.com and *.example.com."
+                  },
+                  "autoRenew": {
+                    "type": "boolean",
+                    "description": "Renew automatically 30 days before expiry."
+                  },
+                  "applyToPanel": {
+                    "type": "boolean",
+                    "description": "Serve the panel over this certificate once issued (restarts the panel when the paths change)."
+                  }
+                },
+                "required": [
+                  "domains"
+                ]
+              },
+              "encoding": {
+                "domains": {
+                  "style": "form",
+                  "explode": true
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/TlsCertificate"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "applyToPanel": false,
+                    "autoRenew": true,
+                    "certFile": "/etc/x-ui/certs/example.com/fullchain.pem",
+                    "createdAt": 1710000000000,
+                    "domains": [
+                      "example.com",
+                      "*.example.com"
+                    ],
+                    "id": 1,
+                    "keyFile": "/etc/x-ui/certs/example.com/privkey.pem",
+                    "lastError": "",
+                    "nodeInstalls": {},
+                    "notAfter": 1717000000000,
+                    "status": "valid",
+                    "updatedAt": 1710000000000
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/certs/renew/{id}": {
+      "post": {
+        "tags": [
+          "TLS Certificates"
+        ],
+        "summary": "Re-issue a certificate now, in the background.",
+        "operationId": "post_panel_api_certs_renew_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Certificate id.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/TlsCertificate"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "applyToPanel": false,
+                    "autoRenew": true,
+                    "certFile": "/etc/x-ui/certs/example.com/fullchain.pem",
+                    "createdAt": 1710000000000,
+                    "domains": [
+                      "example.com",
+                      "*.example.com"
+                    ],
+                    "id": 1,
+                    "keyFile": "/etc/x-ui/certs/example.com/privkey.pem",
+                    "lastError": "",
+                    "nodeInstalls": {},
+                    "notAfter": 1717000000000,
+                    "status": "valid",
+                    "updatedAt": 1710000000000
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/certs/update/{id}": {
+      "post": {
+        "tags": [
+          "TLS Certificates"
+        ],
+        "summary": "Turn automatic renewal on or off.",
+        "operationId": "post_panel_api_certs_update_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Certificate id.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "autoRenew": {
+                    "type": "boolean",
+                    "description": "Renew automatically."
+                  }
+                },
+                "required": [
+                  "autoRenew"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/TlsCertificate"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "applyToPanel": false,
+                    "autoRenew": true,
+                    "certFile": "/etc/x-ui/certs/example.com/fullchain.pem",
+                    "createdAt": 1710000000000,
+                    "domains": [
+                      "example.com",
+                      "*.example.com"
+                    ],
+                    "id": 1,
+                    "keyFile": "/etc/x-ui/certs/example.com/privkey.pem",
+                    "lastError": "",
+                    "nodeInstalls": {},
+                    "notAfter": 1717000000000,
+                    "status": "valid",
+                    "updatedAt": 1710000000000
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/certs/del/{id}": {
+      "post": {
+        "tags": [
+          "TLS Certificates"
+        ],
+        "summary": "Delete a certificate and its files. Refused while the panel, the subscription server or an inbound still points at them.",
+        "operationId": "post_panel_api_certs_del_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Certificate id.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": ""
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/certs/install": {
+      "post": {
+        "tags": [
+          "TLS Certificates"
+        ],
+        "summary": "Node side of certificate distribution: the master posts a pair it issued and the node stores it in its own certs folder, returning the paths it wrote. Allowed for node-sync tokens.",
+        "operationId": "post_panel_api_certs_install",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Folder name, e.g. wildcard.example.com."
+                  },
+                  "certPem": {
+                    "type": "string",
+                    "description": "PEM certificate chain."
+                  },
+                  "keyPem": {
+                    "type": "string",
+                    "description": "PEM private key."
+                  }
+                },
+                "required": [
+                  "name",
+                  "certPem",
+                  "keyPem"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/TlsCertFiles"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "certFile": "/etc/x-ui/certs/example.com/fullchain.pem",
+                    "keyFile": "/etc/x-ui/certs/example.com/privkey.pem"
                   }
                 }
               }

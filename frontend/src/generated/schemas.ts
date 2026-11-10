@@ -4823,6 +4823,166 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "TlsCertFiles": {
+    "description": "TlsCertFiles is where a certificate pair was written.",
+    "properties": {
+      "certFile": {
+        "example": "/etc/x-ui/certs/example.com/fullchain.pem",
+        "type": "string"
+      },
+      "keyFile": {
+        "example": "/etc/x-ui/certs/example.com/privkey.pem",
+        "type": "string"
+      }
+    },
+    "required": [
+      "certFile",
+      "keyFile"
+    ],
+    "type": "object"
+  },
+  "TlsCertInstallRequest": {
+    "description": "TlsCertInstallRequest is the body a master sends a node to store a pair.",
+    "properties": {
+      "certPem": {
+        "example": "-----BEGIN CERTIFICATE-----\n...",
+        "type": "string"
+      },
+      "keyPem": {
+        "example": "-----BEGIN EC PRIVATE KEY-----\n...",
+        "type": "string"
+      },
+      "name": {
+        "example": "wildcard.example.com",
+        "type": "string"
+      }
+    },
+    "required": [
+      "certPem",
+      "keyPem",
+      "name"
+    ],
+    "type": "object"
+  },
+  "TlsCertNodeInstall": {
+    "description": "TlsCertNodeInstall is one node's copy of a TlsCertificate. NotAfter equal to\nthe certificate's means the node holds the current version.",
+    "properties": {
+      "certFile": {
+        "example": "/etc/x-ui/certs/example.com/fullchain.pem",
+        "type": "string"
+      },
+      "error": {
+        "type": "string"
+      },
+      "keyFile": {
+        "example": "/etc/x-ui/certs/example.com/privkey.pem",
+        "type": "string"
+      },
+      "notAfter": {
+        "example": 1717000000000,
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "certFile",
+      "error",
+      "keyFile",
+      "notAfter"
+    ],
+    "type": "object"
+  },
+  "TlsCertSettings": {
+    "description": "TlsCertSettings reports whether issuance can run, never the token itself.",
+    "properties": {
+      "cloudflareTokenSet": {
+        "example": true,
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "cloudflareTokenSet"
+    ],
+    "type": "object"
+  },
+  "TlsCertificate": {
+    "description": "TlsCertificate is an ACME certificate the panel issued over Cloudflare DNS-01\nand keeps renewed; NodeInstalls records where each node stored its copy.",
+    "properties": {
+      "applyToPanel": {
+        "example": false,
+        "type": "boolean"
+      },
+      "autoRenew": {
+        "example": true,
+        "type": "boolean"
+      },
+      "certFile": {
+        "example": "/etc/x-ui/certs/example.com/fullchain.pem",
+        "type": "string"
+      },
+      "createdAt": {
+        "example": 1710000000000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "domains": {
+        "example": [
+          "example.com",
+          "*.example.com"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "keyFile": {
+        "example": "/etc/x-ui/certs/example.com/privkey.pem",
+        "type": "string"
+      },
+      "lastError": {
+        "type": "string"
+      },
+      "nodeInstalls": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/TlsCertNodeInstall"
+        },
+        "type": "object"
+      },
+      "notAfter": {
+        "example": 1717000000000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "status": {
+        "example": "valid",
+        "type": "string"
+      },
+      "updatedAt": {
+        "example": 1710000000000,
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "applyToPanel",
+      "autoRenew",
+      "certFile",
+      "createdAt",
+      "domains",
+      "id",
+      "keyFile",
+      "lastError",
+      "nodeInstalls",
+      "notAfter",
+      "status",
+      "updatedAt"
+    ],
+    "type": "object"
+  },
   "Traffic": {
     "description": "Traffic represents network traffic statistics for Xray connections.\nIt tracks upload and download bytes for inbound or outbound traffic.",
     "properties": {

@@ -2765,6 +2765,116 @@ export const sections: readonly Section[] = [
   },
 
   {
+    id: 'tls-certs',
+    title: 'TLS Certificates',
+    description:
+      "Let's Encrypt certificates issued by the panel over the ACME DNS-01 challenge, solved through the Cloudflare API (wildcards supported). Files land in the panel's certs folder, renew automatically 30 days before expiry, can be applied to the panel itself, and are copied to every enabled node. Managed in Settings → SSL.",
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/certs/list',
+        summary:
+          'List issued certificates with their status (pending, valid, error), file paths, expiry and per-node copies.',
+        responseSchema: 'TlsCertificate',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/certs/settings',
+        summary:
+          'Report whether a Cloudflare API token is stored. The token itself is never returned.',
+        responseSchema: 'TlsCertSettings',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/certs/settings',
+        summary:
+          'Store the Cloudflare API token used for DNS-01 (needs Zone:Read and DNS:Edit on the zones). An empty value clears it.',
+        params: [
+          {
+            name: 'cloudflareToken',
+            in: 'body (form)',
+            type: 'string',
+            desc: 'Cloudflare API token.',
+          },
+        ],
+        responseSchema: 'TlsCertSettings',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/certs/issue',
+        summary:
+          'Start issuing a certificate. Returns the pending record at once; issuance (DNS propagation included) finishes in the background, so poll the list.',
+        params: [
+          {
+            name: 'domains',
+            in: 'body (form)',
+            type: 'string[]',
+            desc: 'Names to cover, repeated key; e.g. example.com and *.example.com.',
+          },
+          {
+            name: 'autoRenew',
+            in: 'body (form)',
+            type: 'boolean',
+            optional: true,
+            desc: 'Renew automatically 30 days before expiry.',
+          },
+          {
+            name: 'applyToPanel',
+            in: 'body (form)',
+            type: 'boolean',
+            optional: true,
+            desc: 'Serve the panel over this certificate once issued (restarts the panel when the paths change).',
+          },
+        ],
+        responseSchema: 'TlsCertificate',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/certs/renew/:id',
+        summary: 'Re-issue a certificate now, in the background.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Certificate id.' }],
+        responseSchema: 'TlsCertificate',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/certs/update/:id',
+        summary: 'Turn automatic renewal on or off.',
+        params: [
+          { name: 'id', in: 'path', type: 'integer', desc: 'Certificate id.' },
+          { name: 'autoRenew', in: 'body (form)', type: 'boolean', desc: 'Renew automatically.' },
+        ],
+        responseSchema: 'TlsCertificate',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/certs/del/:id',
+        summary:
+          'Delete a certificate and its files. Refused while the panel, the subscription server or an inbound still points at them.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Certificate id.' }],
+        response: '{\n  "success": true,\n  "obj": ""\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/certs/install',
+        summary:
+          'Node side of certificate distribution: the master posts a pair it issued and the node stores it in its own certs folder, returning the paths it wrote. Allowed for node-sync tokens.',
+        params: [
+          {
+            name: 'name',
+            in: 'body (json)',
+            type: 'string',
+            desc: 'Folder name, e.g. wildcard.example.com.',
+          },
+          { name: 'certPem', in: 'body (json)', type: 'string', desc: 'PEM certificate chain.' },
+          { name: 'keyPem', in: 'body (json)', type: 'string', desc: 'PEM private key.' },
+        ],
+        responseSchema: 'TlsCertFiles',
+      },
+    ],
+  },
+
+  {
     id: 'subscription',
     title: 'Subscription Server',
     description:
