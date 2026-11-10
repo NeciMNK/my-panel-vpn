@@ -2931,7 +2931,9 @@
       "speedLow": "Server {{ .Server }} has {{ .Free }} Mbit/s free per user, below the {{ .Min }} Mbit/s minimum of {{ .Users }}, and no other server has room. Add a server or raise its link speed.",
       "masterLeader": "Master {{ .Master }} now leads the panel cluster.",
       "masterLeaderPrevious": "It took over from {{ .Previous }}.",
-      "attachedInbounds": "🔗 Підключення: {{ .Inbounds }}\r\n"
+      "attachedInbounds": "🔗 Підключення: {{ .Inbounds }}\r\n",
+      "clientSearchPrompt": "🔍 Надішліть частину email клієнта, щоб знайти його.",
+      "clientSearchQuery": "🔍 Пошук: {{ .Query }}"
     },
     "buttons": {
       "closeKeyboard": "❌ Закрити клавіатуру",
@@ -3005,7 +3007,8 @@
       "ledgerDelete": "🗑 Delete",
       "ledgerFreeGroups": "🆓 Non-paying groups",
       "nonPaying": "🆓 Does not pay: {{ .State }}",
-      "mySubscription": "👤 Моя підписка"
+      "mySubscription": "👤 Моя підписка",
+      "clearSearch": "✖️ Скинути пошук"
     },
     "answers": {
       "broadcastStarted": "🚀 Розсилку запущено.",

@@ -163,6 +163,10 @@ func (t *Tgbot) OnReceive() {
 					t.handleLedgerInput(&message, actor, kind, month)
 					return nil
 				}
+				if inboundID, ok := parseClientSearchState(userState); ok {
+					t.handleClientSearchInput(&message, actor, inboundID)
+					return nil
+				}
 				// Only a wizard step touches the draft, so only it takes the lock.
 				draft := addClientDrafts.forActor(actor)
 				draft.Lock()
@@ -949,7 +953,7 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 					return
 				}
 				t.answerSilent(callbackQuery.ID)
-				t.screenClientList(chatId, inboundIdInt, 0)
+				t.openClientList(chatId, inboundIdInt)
 			case cbClientListPage:
 				inboundID, errInbound := strconv.Atoi(dataArray[1])
 				page := 0
@@ -962,6 +966,18 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 				}
 				t.answerSilent(callbackQuery.ID)
 				t.screenClientList(chatId, inboundID, page)
+			case cbClientSearch, cbClientSearchDrop:
+				inboundID, errInbound := strconv.Atoi(dataArray[1])
+				if errInbound != nil {
+					t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
+					return
+				}
+				t.answerSilent(callbackQuery.ID)
+				if dataArray[0] == cbClientSearch {
+					t.promptClientSearch(chatId, callbackActor(callbackQuery), inboundID)
+				} else {
+					t.openClientList(chatId, inboundID)
+				}
 			case cbInboundListPage:
 				page, _ := strconv.Atoi(dataArray[1])
 				t.answerSilent(callbackQuery.ID)
@@ -1062,7 +1078,7 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 		t.screenInboundList(chatId, 0)
 	case "cli":
 		t.answerSilent(callbackQuery.ID)
-		t.screenClientList(chatId, 0, 0)
+		t.openClientList(chatId, 0)
 	case "onl", "onlines", "onlines_refresh":
 		t.answerSilent(callbackQuery.ID)
 		t.screenOnlines(chatId)

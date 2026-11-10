@@ -453,7 +453,7 @@ func (t *Tgbot) handleListMarker(message *telego.Message) bool {
 		if err != nil {
 			return true
 		}
-		t.screenClientList(message.Chat.ID, id, 0)
+		t.openClientList(message.Chat.ID, id)
 	case "add":
 		id, err := strconv.Atoi(value)
 		if err != nil {

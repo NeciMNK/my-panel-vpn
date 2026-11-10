@@ -22,6 +22,8 @@ func newNavigationBot(t *testing.T) *Tgbot {
 	setTestAdmins(t, navAdmin)
 	screens.reset()
 	t.Cleanup(screens.reset)
+	clientListFilters.Delete(navAdmin)
+	t.Cleanup(func() { clientListFilters.Delete(navAdmin) })
 	return tb
 }
 
@@ -213,5 +215,57 @@ func TestAdminWithoutOwnClientGetsNoSubscriptionButton(t *testing.T) {
 	tap(tb, navAdmin, cbHome, true)
 	if buttonFor(t, tb, navAdmin, cbMySubscription) {
 		t.Error("an admin bound to no client is offered its own subscription")
+	}
+}
+
+func clientButtons(t *testing.T, tb *Tgbot) []string {
+	t.Helper()
+	var out []string
+	for _, btn := range screenButtons(t, tb, navAdmin) {
+		if email, ok := strings.CutPrefix(btn.CallbackData, cbClientOpen+" "); ok {
+			out = append(out, email)
+		}
+	}
+	return out
+}
+
+// Asked for: ten clients a page and the search button at the very bottom, and
+// with inline mode off a typed search must still narrow the list.
+func TestClientListSearchSitsAtTheBottomAndWorksWithoutInline(t *testing.T) {
+	tb := newNavigationBot(t)
+	inlineCapability.recordForTest(false)
+	t.Cleanup(func() { inlineCapability.recordForTest(false) })
+	seedReportClients(t, "search", append(manyEmails("page", 12), "zeta-only@x"))
+
+	tap(tb, navAdmin, cbClients, true)
+	if got := clientButtons(t, tb); len(got) != 10 {
+		t.Errorf("first page lists %d clients, want 10", len(got))
+	}
+	buttons := screenButtons(t, tb, navAdmin)
+	search := cbClientSearch + " 0"
+	if n := len(buttons); n < 2 || buttons[n-2].CallbackData != search || buttons[n-1].Text != tb.I18nBot("tgbot.buttons.back") {
+		t.Fatalf("bottom of the list is %v, want search %q then Back", buttons[max(len(buttons)-2, 0):], search)
+	}
+
+	tap(tb, navAdmin, search, true)
+	state, ok := userStateMgr.get(chatUser{chatID: navAdmin, userID: navAdmin})
+	if !ok {
+		t.Fatal("search did not wait for typed text")
+	}
+	inboundID, _ := parseClientSearchState(state)
+	tb.handleClientSearchInput(&telego.Message{Chat: telego.Chat{ID: navAdmin}, From: &telego.User{ID: navAdmin}, Text: "ZETA"},
+		chatUser{chatID: navAdmin, userID: navAdmin}, inboundID)
+	if got := clientButtons(t, tb); len(got) != 1 || got[0] != "zeta-only@x" {
+		t.Errorf("search for ZETA lists %q, want only zeta-only@x", got)
+	}
+
+	tap(tb, navAdmin, "client_open zeta-only@x", true)
+	tap(tb, navAdmin, backTargets(t, tb, navAdmin)[0], true)
+	if got := clientButtons(t, tb); len(got) != 1 {
+		t.Errorf("Back from a found client lists %q, want the search result kept", got)
+	}
+	tap(tb, navAdmin, cbClientSearchDrop+" 0", true)
+	if got := clientButtons(t, tb); len(got) != 10 {
+		t.Errorf("after clearing the search the page lists %d clients, want 10", len(got))
 	}
 }

@@ -2931,7 +2931,9 @@
       "speedLow": "Server {{ .Server }} has {{ .Free }} Mbit/s free per user, below the {{ .Min }} Mbit/s minimum of {{ .Users }}, and no other server has room. Add a server or raise its link speed.",
       "masterLeader": "Master {{ .Master }} now leads the panel cluster.",
       "masterLeaderPrevious": "It took over from {{ .Previous }}.",
-      "attachedInbounds": "🔗 Inbounds: {{ .Inbounds }}\r\n"
+      "attachedInbounds": "🔗 Inbounds: {{ .Inbounds }}\r\n",
+      "clientSearchPrompt": "🔍 Send part of a client's email to find it.",
+      "clientSearchQuery": "🔍 Search: {{ .Query }}"
     },
     "buttons": {
       "closeKeyboard": "❌ 关闭键盘",
@@ -3005,7 +3007,8 @@
       "ledgerDelete": "🗑 Delete",
       "ledgerFreeGroups": "🆓 Non-paying groups",
       "nonPaying": "🆓 Does not pay: {{ .State }}",
-      "mySubscription": "👤 My subscription"
+      "mySubscription": "👤 My subscription",
+      "clearSearch": "✖️ Clear search"
     },
     "answers": {
       "broadcastStarted": "🚀 群发已开始。",
