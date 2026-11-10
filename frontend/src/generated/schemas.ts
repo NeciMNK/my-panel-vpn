@@ -1937,6 +1937,62 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "ClientBillingView": {
+    "description": "ClientBillingView is one client's payment state for the API.",
+    "properties": {
+      "currency": {
+        "example": "RUB",
+        "type": "string"
+      },
+      "email": {
+        "example": "alice",
+        "type": "string"
+      },
+      "expiryTime": {
+        "example": 1767225600000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "freePlan": {
+        "example": false,
+        "type": "boolean"
+      },
+      "graceDays": {
+        "example": 0,
+        "type": "integer"
+      },
+      "nonPaying": {
+        "example": false,
+        "type": "boolean"
+      },
+      "pendingMonths": {
+        "example": 0,
+        "type": "integer"
+      },
+      "plans": {
+        "items": {
+          "$ref": "#/components/schemas/PaymentPlanPrice"
+        },
+        "type": "array"
+      },
+      "trusted": {
+        "example": false,
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "currency",
+      "email",
+      "expiryTime",
+      "freePlan",
+      "graceDays",
+      "nonPaying",
+      "pendingMonths",
+      "plans",
+      "trusted"
+    ],
+    "type": "object"
+  },
   "ClientInbound": {
     "properties": {
       "clientId": {
@@ -4433,6 +4489,63 @@ export const SCHEMAS: Record<string, unknown> = {
       "finishedAt",
       "runId",
       "state"
+    ],
+    "type": "object"
+  },
+  "PaymentPlanPrice": {
+    "description": "PaymentPlanPrice is one payable term with its total in the payment currency (0 without a price).",
+    "properties": {
+      "discountPercent": {
+        "example": 10,
+        "type": "integer"
+      },
+      "months": {
+        "example": 3,
+        "type": "integer"
+      },
+      "total": {
+        "example": 810,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "discountPercent",
+      "months",
+      "total"
+    ],
+    "type": "object"
+  },
+  "PaymentResult": {
+    "description": "PaymentResult is what one applied payment changed.",
+    "properties": {
+      "amount": {
+        "example": 810,
+        "type": "integer"
+      },
+      "currency": {
+        "example": "RUB",
+        "type": "string"
+      },
+      "email": {
+        "example": "alice",
+        "type": "string"
+      },
+      "expiryTime": {
+        "example": 1774915200000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "months": {
+        "example": 3,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "amount",
+      "currency",
+      "email",
+      "expiryTime",
+      "months"
     ],
     "type": "object"
   },

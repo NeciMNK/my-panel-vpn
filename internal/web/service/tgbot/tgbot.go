@@ -248,6 +248,7 @@ type Tgbot struct {
 	serverService  service.ServerService
 	xrayService    service.XrayService
 	ledgerService  service.LedgerService
+	billingService service.BillingService
 	lastStatus     *service.Status
 }
 

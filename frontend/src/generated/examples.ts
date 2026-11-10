@@ -464,6 +464,23 @@ export const EXAMPLES: Record<string, unknown> = {
     "trafficResetDay": 1,
     "updated_at": 0
   },
+  "ClientBillingView": {
+    "currency": "RUB",
+    "email": "alice",
+    "expiryTime": 1767225600000,
+    "freePlan": false,
+    "graceDays": 0,
+    "nonPaying": false,
+    "pendingMonths": 0,
+    "plans": [
+      {
+        "discountPercent": 10,
+        "months": 3,
+        "total": 810
+      }
+    ],
+    "trusted": false
+  },
   "ClientInbound": {
     "clientId": 0,
     "createdAt": 0,
@@ -1118,6 +1135,18 @@ export const EXAMPLES: Record<string, unknown> = {
     "finishedAt": 1735689612,
     "runId": "1735689600123456789",
     "state": "success"
+  },
+  "PaymentPlanPrice": {
+    "discountPercent": 10,
+    "months": 3,
+    "total": 810
+  },
+  "PaymentResult": {
+    "amount": 810,
+    "currency": "RUB",
+    "email": "alice",
+    "expiryTime": 1774915200000,
+    "months": 3
   },
   "PeerActivity": {
     "allowedIPs": "10.8.1.2/32",

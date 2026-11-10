@@ -460,6 +460,18 @@ export interface Client {
   updated_at?: number;
 }
 
+export interface ClientBillingView {
+  currency: string;
+  email: string;
+  expiryTime: number;
+  freePlan: boolean;
+  graceDays: number;
+  nonPaying: boolean;
+  pendingMonths: number;
+  plans: PaymentPlanPrice[];
+  trusted: boolean;
+}
+
 export interface ClientInbound {
   clientId: number;
   createdAt: number;
@@ -1001,6 +1013,20 @@ export interface PanelUpdateStatus {
   finishedAt: number;
   runId: string;
   state: string;
+}
+
+export interface PaymentPlanPrice {
+  discountPercent: number;
+  months: number;
+  total: number;
+}
+
+export interface PaymentResult {
+  amount: number;
+  currency: string;
+  email: string;
+  expiryTime: number;
+  months: number;
 }
 
 export interface PeerActivity {

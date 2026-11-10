@@ -118,6 +118,9 @@ func run(root, outDir string) error {
 				"HwidSlotStatus",
 				"LedgerReport",
 				"LedgerNonPaying",
+				"ClientBillingView",
+				"PaymentPlanPrice",
+				"PaymentResult",
 			),
 		},
 		{

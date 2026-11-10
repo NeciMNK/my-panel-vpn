@@ -1942,6 +1942,31 @@ export const sections: readonly Section[] = [
   },
 
   {
+    id: 'billing',
+    title: 'Billing',
+    description:
+      "Client payments for outside systems such as a payment provider's webhook or a shop. A payment applied here does exactly what the admin's confirm in the Telegram bot does: it extends the term, lifts a free plan's quota, repays credit days and books the income in the ledger. Prices come from the Telegram payment settings. All endpoints under /panel/api/billing.",
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/billing/client',
+        summary:
+          "One client's payment state: expiry, trusted/free-plan/non-paying marks, credit days, a pending bot report, and every payable term with its price.",
+        params: [{ name: 'email', in: 'query', type: 'string', desc: "The client's email." }],
+        responseSchema: 'ClientBillingView',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/billing/pay',
+        summary:
+          'Apply a payment for 1-36 months. A running term is extended from its end, a lapsed one restarts from now. Any payment the client reported in the bot is settled, so a later confirm there cannot apply it twice. note defaults to "<months> mo" in the ledger.',
+        body: '{\n  "email": "alice",\n  "months": 3,\n  "note": "YooKassa 2c4f"\n}',
+        responseSchema: 'PaymentResult',
+      },
+    ],
+  },
+
+  {
     id: 'hosts',
     title: 'Hosts',
     description:
