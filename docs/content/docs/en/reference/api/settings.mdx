@@ -57,6 +57,26 @@ _openapi:
         channel.
       url: '#test-discord-bot-connection-by-sending-a-test-embed-to-the-configured-channel'
     - depth: 2
+      title: 'Return the quick panel proxy: its mode (client, link, subscription or
+        empty when off), its source and the panelproxy-* outbounds it builds
+        now.'
+      url: '#return-the-quick-panel-proxy-its-mode-client-link-subscription-or-empty-when-off-its-source-and-the-panelproxy--outbounds-it-builds-now'
+    - depth: 2
+      title: Route the panel's own requests (Telegram, update checks, subscription
+        fetches) through a leastPing balancer over outbounds built from a panel
+        client's node inbounds, a share link or socks5/http proxy URL, or an
+        outbound subscription. An empty mode turns it off. Applies the Xray
+        config right away.
+      url: '#route-the-panels-own-requests-telegram-update-checks-subscription-fetches-through-a-leastping-balancer-over-outbounds-built-from-a-panel-clients-node-inbounds-a-share-link-or-socks5http-proxy-url-or-an-outbound-subscription-an-empty-mode-turns-it-off-applies-the-xray-config-right-away'
+    - depth: 2
+      title: Reach Telegram and an IP echo service the way the panel makes its own
+        requests, reporting whether the proxy was used and the exit IP.
+      url: '#reach-telegram-and-an-ip-echo-service-the-way-the-panel-makes-its-own-requests-reporting-whether-the-proxy-was-used-and-the-exit-ip'
+    - depth: 2
+      title: List the enabled clients that own an enabled inbound on a node, the
+        candidates for client mode.
+      url: '#list-the-enabled-clients-that-own-an-enabled-inbound-on-a-node-the-candidates-for-client-mode'
+    - depth: 2
       title: Return the built-in default Xray JSON config template that ships with
         this panel version.
       url: '#return-the-built-in-default-xray-json-config-template-that-ships-with-this-panel-version'
@@ -100,6 +120,22 @@ _openapi:
       - content: Test Discord bot connection by sending a test embed to the configured
           channel.
         id: test-discord-bot-connection-by-sending-a-test-embed-to-the-configured-channel
+      - content: 'Return the quick panel proxy: its mode (client, link, subscription or
+          empty when off), its source and the panelproxy-* outbounds it builds
+          now.'
+        id: return-the-quick-panel-proxy-its-mode-client-link-subscription-or-empty-when-off-its-source-and-the-panelproxy--outbounds-it-builds-now
+      - content: Route the panel's own requests (Telegram, update checks, subscription
+          fetches) through a leastPing balancer over outbounds built from a
+          panel client's node inbounds, a share link or socks5/http proxy URL,
+          or an outbound subscription. An empty mode turns it off. Applies the
+          Xray config right away.
+        id: route-the-panels-own-requests-telegram-update-checks-subscription-fetches-through-a-leastping-balancer-over-outbounds-built-from-a-panel-clients-node-inbounds-a-share-link-or-socks5http-proxy-url-or-an-outbound-subscription-an-empty-mode-turns-it-off-applies-the-xray-config-right-away
+      - content: Reach Telegram and an IP echo service the way the panel makes its own
+          requests, reporting whether the proxy was used and the exit IP.
+        id: reach-telegram-and-an-ip-echo-service-the-way-the-panel-makes-its-own-requests-reporting-whether-the-proxy-was-used-and-the-exit-ip
+      - content: List the enabled clients that own an enabled inbound on a node, the
+          candidates for client mode.
+        id: list-the-enabled-clients-that-own-an-enabled-inbound-on-a-node-the-candidates-for-client-mode
       - content: Return the built-in default Xray JSON config template that ships with
           this panel version.
         id: return-the-built-in-default-xray-json-config-template-that-ships-with-this-panel-version
@@ -113,7 +149,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/setting/all","method":"post"},{"path":"/panel/api/setting/defaultSettings","method":"post"},{"path":"/panel/api/setting/factoryDefaults","method":"post"},{"path":"/panel/api/setting/update","method":"post"},{"path":"/panel/api/setting/validateRegex","method":"post"},{"path":"/panel/api/setting/updateUser","method":"post"},{"path":"/panel/api/setting/restartPanel","method":"post"},{"path":"/panel/api/setting/testSmtp","method":"post"},{"path":"/panel/api/setting/testTgBot","method":"post"},{"path":"/panel/api/setting/tgBotCapabilities","method":"post"},{"path":"/panel/api/setting/testDiscord","method":"post"},{"path":"/panel/api/setting/getDefaultJsonConfig","method":"get"}]} showTitle />
+      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/setting/all","method":"post"},{"path":"/panel/api/setting/defaultSettings","method":"post"},{"path":"/panel/api/setting/factoryDefaults","method":"post"},{"path":"/panel/api/setting/update","method":"post"},{"path":"/panel/api/setting/validateRegex","method":"post"},{"path":"/panel/api/setting/updateUser","method":"post"},{"path":"/panel/api/setting/restartPanel","method":"post"},{"path":"/panel/api/setting/testSmtp","method":"post"},{"path":"/panel/api/setting/testTgBot","method":"post"},{"path":"/panel/api/setting/tgBotCapabilities","method":"post"},{"path":"/panel/api/setting/testDiscord","method":"post"},{"path":"/panel/api/setting/panelProxy","method":"post"},{"path":"/panel/api/setting/panelProxy/set","method":"post"},{"path":"/panel/api/setting/panelProxy/check","method":"post"},{"path":"/panel/api/setting/panelProxy/clients","method":"post"},{"path":"/panel/api/setting/getDefaultJsonConfig","method":"get"}]} showTitle />
     </>
   );
 }

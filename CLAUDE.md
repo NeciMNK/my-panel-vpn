@@ -31,9 +31,9 @@ file locations when it can answer in one hop.
   built into `internal/web/dist/` (gitignored) and embedded via `embed.FS`.
 
 ## Repo map
-- `main.go` — entry point + `x-ui` CLI (run, migrate, migrate-db, encrypt-tokens, setting, cert).
+- `main.go` — entry point + `x-ui` CLI (run, migrate, migrate-db, encrypt-tokens, cluster, setting, cert).
 - `internal/config/` — env parsing (XUI_DEBUG, XUI_LOG_LEVEL, XUI_LOG_FOLDER,
-  XUI_BIN_FOLDER, XUI_SKIP_HSTS, XUI_PORT, XUI_DB_*).
+  XUI_BIN_FOLDER, XUI_SKIP_HSTS, XUI_PORT, XUI_DB_*, XUI_MASTER_*).
 - `internal/database/` + `internal/database/model/` — GORM schema (~24 models;
   Inbound, Client, Setting, User are the core), inbound Protocol enum,
   AutoMigrate + hand-written migrations in `db.go`.

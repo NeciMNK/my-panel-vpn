@@ -24,6 +24,13 @@ func run(root, outDir string) error {
 		{
 			Path: resolveRel(root, "internal/database/model"),
 			StructAllow: setOf(
+				"Cascade",
+				"CascadeLink",
+				"HomeNetwork",
+				"HomeAccessRule",
+				"WarpSwitch",
+				"ClientSpeed",
+				"ServerCapacity",
 				"User",
 				"Inbound",
 				"FallbackParentInfo",
@@ -40,6 +47,8 @@ func run(root, outDir string) error {
 				"InboundFallback",
 				"Host",
 				"SubBalancer",
+				"TlsCertificate",
+				"TlsCertNodeInstall",
 			),
 			AliasAllow: setOf("Protocol"),
 			Overrides: map[string][]walkOverride{
@@ -95,6 +104,9 @@ func run(root, outDir string) error {
 			Path: resolveRel(root, "internal/web/service"),
 			StructAllow: setOf(
 				"InboundOption",
+				"SpeedOverview",
+				"MasterStatus",
+				"ServerFreeSpeed",
 				"HappLinkResult",
 				"ClientSlim",
 				"ClientRenewalPreviewRequest",
@@ -108,17 +120,24 @@ func run(root, outDir string) error {
 				"MLKEM768Response",
 				"NodeMutationRequest",
 				"NodeView",
+				"NodeJoinTokenView",
 				"ProbeResultUI",
 				"RealityScanResult",
 				"GeodataTokenIssue",
 				"AmneziaWGLogs",
 				"PeerActivity",
 				"HwidSlotStatus",
+				"PanelProxyStatus",
+				"PanelProxyCheck",
 			),
 		},
 		{
 			Path:        resolveRel(root, "internal/web/service/panel"),
-			StructAllow: setOf("ApiTokenView", "PanelUpdateStatus", "Sponsor", "SponsorList"),
+			StructAllow: setOf("ApiTokenView", "PanelUpdateStatus"),
+		},
+		{
+			Path:        resolveRel(root, "internal/web/service/tlscert"),
+			StructAllow: setOf("TlsCertFiles", "TlsCertInstallRequest", "TlsCertSettings"),
 		},
 		{
 			Path:        resolveRel(root, "internal/web/controller"),

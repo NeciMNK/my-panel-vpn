@@ -133,7 +133,6 @@
     "outbounds": "Вихідні",
     "apiDocs": "Документація API",
     "donate": "Підтримати",
-    "sponsors": "Спонсори",
     "hosts": "Хости",
     "docs": "Документація",
     "openMenu": "Відкрити меню",
@@ -1225,7 +1224,132 @@
       "pinnedCertPlaceholder": "SHA-256 у base64 або hex",
       "fetchPin": "Отримати",
       "pinFetched": "Поточний сертифікат вузла отримано",
-      "pinFetchFailed": "Не вдалося отримати сертифікат"
+      "pinFetchFailed": "Не вдалося отримати сертифікат",
+      "join": {
+        "button": "Додати однією командою",
+        "title": "Додати ноду однією командою",
+        "desc": "Виконайте команду на новому сервері від root. Вона завантажить збірку цієї панелі, налаштує ноду з випадковим портом, шляхом і сертифікатом і сама зареєструє її тут.",
+        "regenerate": "Нова команда",
+        "insecure": "У майстра самопідписаний сертифікат",
+        "hint": "Команда одноразова і діє до {{time}}. Сервер має бути архітектури {{arch}}, як майстер."
+      },
+      "cascade": {
+        "title": "Каскади",
+        "add": "Створити каскад",
+        "edit": "Змінити каскад",
+        "name": "Назва",
+        "route": "Вхід → вихід",
+        "state": "Стан",
+        "enable": "Увімкнено",
+        "entry": "Вхідний сервер",
+        "exits": "Вихідні сервери",
+        "strategy": "Як обирати вихід",
+        "inbounds": "Лише ці inbound'и входу",
+        "inboundsHint": "Порожньо = весь трафік вхідного сервера йде через каскад.",
+        "desc": "Користувачі підключаються до вхідного сервера, а в інтернет виходять через вихідний. Звʼязку між серверами панель створить сама. Кілька виходів = балансування.",
+        "deleteConfirm": "Видалити каскад і його службові inbound'и?",
+        "toasts": {
+          "saved": "Каскад збережено",
+          "deleted": "Каскад видалено"
+        },
+        "exitMode": "Виходи",
+        "exitModeServers": "Вибрані сервери",
+        "exitModeCountry": "Усі сервери країни",
+        "country": "Країна виходу",
+        "countryHint": "Трафік іде на найшвидший сервер цієї країни. Нові ноди країни додаються самі."
+      },
+      "country": "Країна",
+      "countryHint": "Дволітерний код країни (DE, NL, FI). Ноди однієї країни разом потрапляють у каскади «за країною».",
+      "countryInvalid": "Потрібен дволітерний код країни, наприклад DE",
+      "home": {
+        "title": "Home networks",
+        "add": "New home network",
+        "edit": "Edit home network",
+        "name": "Name",
+        "network": "Network",
+        "rules": "Who can reach what",
+        "state": "State",
+        "enable": "Enabled",
+        "desc": "One server keeps a tunnel to your home; users of every other server reach it through that server. Only the addresses below are routed home, and only the users in the rules may use them.",
+        "kind": "Connection to home",
+        "kinds": {
+          "wireguard": "WireGuard",
+          "openvpn": "OpenVPN",
+          "l2tp": "L2TP/IPsec"
+        },
+        "gateway": "Server that holds the tunnel",
+        "gatewayHint": "OpenVPN and L2TP clients are installed on this server automatically (Debian/Ubuntu).",
+        "config": "Config file",
+        "configHintWg": "Paste the WireGuard config exported by the home router: [Interface] and one [Peer].",
+        "configHintOvpn": "Paste the .ovpn file. Its routes and scripts are ignored: only the addresses below go through the tunnel.",
+        "server": "L2TP server address",
+        "username": "Username",
+        "password": "Password",
+        "psk": "IPsec pre-shared key (empty = L2TP without IPsec)",
+        "subnets": "Home subnets",
+        "subnetsHint": "For example 192.168.1.0/24. Press Enter after each one.",
+        "hosts": "Single home addresses",
+        "hostsHint": "For example 192.168.1.10 for a NAS or a camera.",
+        "rulesHint": "A rule lets the listed users and client groups reach some addresses of this network. Everyone else is blocked from all of them.",
+        "ruleUsers": "Users",
+        "ruleGroups": "Client groups",
+        "ruleTargets": "Addresses",
+        "ruleTargetsAll": "Empty = the whole network.",
+        "addRule": "Add rule",
+        "deleteConfirm": "Delete the home network, stop its tunnel and remove its rules from every server?",
+        "toasts": {
+          "saved": "Home network saved",
+          "deleted": "Home network deleted"
+        }
+      },
+      "warp": {
+        "title": "WARP",
+        "server": "Server",
+        "mode": "WARP",
+        "domains": "Sites through WARP",
+        "modes": {
+          "off": "Off",
+          "all": "All traffic",
+          "domains": "Only these sites"
+        },
+        "desc": "One switch per server. The first time it is turned on the server registers its own WARP account. Sites: domains, geosite: or regexp: entries. WARP only takes traffic that no cascade, home network or other rule claimed.",
+        "toasts": {
+          "saved": "WARP switch saved"
+        }
+      },
+      "speed": {
+        "title": "Speed limits",
+        "desc": "Max caps a user's speed on every server they use. Min is the speed a server must still have free for the user: when a server drops below it, new connections go to another server of the cascade, and if no server has room the admin gets a Telegram alert. Set each server's link speed so free speed can be measured.",
+        "server": "Server",
+        "capacity": "Link speed, Mbit/s",
+        "load": "Load",
+        "loadValue": "{used} Mbit/s used, {online} online, {free} Mbit/s free per user",
+        "user": "User",
+        "min": "Min, Mbit/s",
+        "max": "Max, Mbit/s",
+        "toasts": {
+          "saved": "Speed limits saved"
+        }
+      },
+      "masters": {
+        "title": "Masters",
+        "desc": "Masters that share this panel's database. The best-ranked running master leads: it syncs nodes, resets traffic, keeps cascade pins and runs the bots. When it goes down the next one takes over within about half a minute, and it takes the lead back 30 seconds after it returns.",
+        "name": "Master",
+        "priority": "Priority",
+        "address": "Address",
+        "state": "State",
+        "lastSeen": "Last heartbeat",
+        "states": {
+          "leader": "Leader",
+          "follower": "Standby",
+          "down": "Down"
+        },
+        "self": "this panel",
+        "forget": "Forget",
+        "toasts": {
+          "forgotten": "Master removed from the list"
+        }
+      }
     },
     "settings": {
       "defaultTag": "Типово",
@@ -1864,7 +1988,69 @@
       "subHostSortMode": "Порядок вузлів підписки",
       "subHostSortInbound": "Порядок вхідних підключень (типово)",
       "subHostSortHosts": "Порядок хостів",
-      "subHostSortModeDesc": "Використовується порядок зі сторінки хостів для всіх вхідних підключень. Це визначає порядок видачі сервером; клієнтські застосунки можуть сортувати вузли самостійно."
+      "subHostSortModeDesc": "Використовується порядок зі сторінки хостів для всіх вхідних підключень. Це визначає порядок видачі сервером; клієнтські застосунки можуть сортувати вузли самостійно.",
+      "panelProxy": {
+        "setup": "Через мій VPN",
+        "title": "Запити панелі через проксі",
+        "desc": "Власні запити панелі (Telegram, перевірка оновлень, завантаження підписок) йдуть через вибрані виходи, а не через мережу цього сервера. Якщо виходів кілька, використовується той, що найшвидше дістається до Telegram.",
+        "modeClient": "Мій клієнт",
+        "modeLink": "Посилання або проксі",
+        "modeSubscription": "Підписка",
+        "clientPh": "Клієнт з підключеннями на інших серверах",
+        "noClients": "Жоден клієнт не має підключення на іншому сервері. Спершу додайте вузол і підключення на ньому.",
+        "linkPh": "vless://…, socks5://user:pass@host:1080 або http://host:8080",
+        "subscriptionPh": "https://… посилання на підписку",
+        "enable": "Увімкнути",
+        "disable": "Вимкнути",
+        "check": "Перевірити",
+        "active": "Через проксі, виходів: {count}",
+        "broken": "Проксі налаштовано, але робочого виходу немає: {error}",
+        "checkOk": "Telegram відповів за {ms} мс, IP виходу {ip}",
+        "checkDirect": "Міст проксі не запущено, панель підключилася напряму.",
+        "checkFail": "Telegram недоступний: {error}",
+        "overrides": "Увімкнено швидкий проксі, він замінює цей вибір."
+      },
+      "tlsCerts": {
+        "menu": "SSL certificates",
+        "title": "SSL certificates",
+        "desc": "Free Let's Encrypt certificates issued through Cloudflare DNS, so wildcards work and no port has to be open. They renew automatically 30 days before expiry and are copied to every node.",
+        "cfToken": "Cloudflare API token",
+        "cfTokenDesc": "Cloudflare → My Profile → API Tokens → Create Token → \"Edit zone DNS\" template (Zone:Read + DNS:Edit) for your zones.",
+        "cfTokenSet": "Token saved",
+        "cfTokenNotSet": "No token saved",
+        "saveToken": "Save token",
+        "issue": "Issue certificate",
+        "domains": "Domains",
+        "domainsDesc": "One per line or comma-separated. *.example.com covers subdomains; add example.com as well for the bare domain.",
+        "autoRenew": "Auto-renew",
+        "applyToPanel": "Use for the panel",
+        "applyToPanelDesc": "Once issued, the panel switches to this certificate and restarts.",
+        "status": "Status",
+        "statusPending": "Issuing…",
+        "statusValid": "Valid",
+        "statusError": "Error",
+        "expires": "Expires",
+        "files": "Files",
+        "nodes": "Nodes",
+        "nodeCurrent": "up to date",
+        "nodeOutdated": "outdated",
+        "renew": "Renew now",
+        "deleteConfirm": "Delete this certificate and its files?",
+        "pendingHint": "Issuing takes 1–3 minutes while the DNS record propagates.",
+        "empty": "No certificates yet",
+        "inboundPick": "Issued certificate",
+        "inboundNotOnNode": "This certificate has not been copied to the inbound's node yet",
+        "toasts": {
+          "saveToken": "Could not save the Cloudflare token",
+          "issue": "Could not start issuing the certificate",
+          "renew": "Could not renew the certificate",
+          "update": "Could not update the certificate",
+          "delete": "Could not delete the certificate",
+          "install": "Could not install the certificate"
+        }
+      },
+      "eventSpeedLow": "Speed below user minimum",
+      "eventMasterLeader": "Another master took over"
     },
     "xray": {
       "save": "Зберегти",
@@ -2520,15 +2706,6 @@
         "badVlessRoute": "Введіть одне число від 0 до 65535"
       },
       "dragToReorder": "Перетягніть, щоб змінити порядок {name}"
-    },
-    "sponsors": {
-      "title": "Спонсори",
-      "intro": "Компанії, що підтримують розробку 3X-UI. Спонсорські посилання відкриваються в новій вкладці.",
-      "become": "Стати спонсором",
-      "tag": "Спонсор",
-      "visit": "Перейти",
-      "yourBrand": "Тут може бути ваш бренд",
-      "yourBrandText": "Покажіть свою компанію тисячам адміністраторів серверів, які щодня відкривають 3X-UI."
     }
   },
   "tgbot": {
@@ -2657,7 +2834,10 @@
       "qrLegendJSON": "{{ .Code }}. JSON-підписка",
       "qrLegendLink": "{{ .Code }}. Посилання для застосунку {{ .App }}",
       "backupFailed": "Не вдалося прочитати базу даних; резервну копію не надіслано.",
-      "privateOnly": "🤖 Бот працює лише в особистих повідомленнях. Відкрий його в особистому чаті."
+      "privateOnly": "🤖 Бот працює лише в особистих повідомленнях. Відкрий його в особистому чаті.",
+      "speedLow": "Server {{ .Server }} has {{ .Free }} Mbit/s free per user, below the {{ .Min }} Mbit/s minimum of {{ .Users }}, and no other server has room. Add a server or raise its link speed.",
+      "masterLeader": "Master {{ .Master }} now leads the panel cluster.",
+      "masterLeaderPrevious": "It took over from {{ .Previous }}."
     },
     "buttons": {
       "closeKeyboard": "❌ Закрити клавіатуру",

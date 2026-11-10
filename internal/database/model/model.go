@@ -858,6 +858,8 @@ type Node struct {
 	InboundSyncMode     string   `json:"inboundSyncMode" form:"inboundSyncMode" gorm:"column:inbound_sync_mode;default:all" validate:"omitempty,oneof=all selected"`
 	InboundTags         []string `json:"inboundTags" form:"inboundTags" gorm:"serializer:json;column:inbound_tags"`
 	OutboundTag         string   `json:"outboundTag" form:"outboundTag" gorm:"column:outbound_tag"`
+	// Country is the ISO 3166-1 alpha-2 code country cascades group exits by.
+	Country string `json:"country" form:"country" gorm:"column:country" example:"DE"`
 
 	// Guid is the remote panel's stable self-identifier (its panelGuid),
 	// learned from each heartbeat. It is the globally stable node identity used
@@ -1749,3 +1751,35 @@ func MergeClientRecord(existing *ClientRecord, incoming *ClientRecord) []ClientM
 	}
 	return conflicts
 }
+
+// TlsCertificate is an ACME certificate the panel issued over Cloudflare DNS-01
+// and keeps renewed; NodeInstalls records where each node stored its copy.
+type TlsCertificate struct {
+	Id           int                        `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
+	Domains      []string                   `json:"domains" gorm:"serializer:json;type:text" example:"[\"example.com\",\"*.example.com\"]"`
+	Status       string                     `json:"status" example:"valid"`
+	CertFile     string                     `json:"certFile" example:"/etc/x-ui/certs/example.com/fullchain.pem"`
+	KeyFile      string                     `json:"keyFile" example:"/etc/x-ui/certs/example.com/privkey.pem"`
+	NotAfter     int64                      `json:"notAfter" example:"1717000000000"`
+	AutoRenew    bool                       `json:"autoRenew" example:"true"`
+	ApplyToPanel bool                       `json:"applyToPanel" example:"false"`
+	LastError    string                     `json:"lastError" gorm:"type:text" example:""`
+	NodeInstalls map[int]TlsCertNodeInstall `json:"nodeInstalls" gorm:"serializer:json;type:text"`
+	CreatedAt    int64                      `json:"createdAt" gorm:"autoCreateTime:milli" example:"1710000000000"`
+	UpdatedAt    int64                      `json:"updatedAt" gorm:"autoUpdateTime:milli" example:"1710000000000"`
+}
+
+// TlsCertNodeInstall is one node's copy of a TlsCertificate. NotAfter equal to
+// the certificate's means the node holds the current version.
+type TlsCertNodeInstall struct {
+	CertFile string `json:"certFile" example:"/etc/x-ui/certs/example.com/fullchain.pem"`
+	KeyFile  string `json:"keyFile" example:"/etc/x-ui/certs/example.com/privkey.pem"`
+	NotAfter int64  `json:"notAfter" example:"1717000000000"`
+	Error    string `json:"error" example:""`
+}
+
+const (
+	TlsCertStatusPending = "pending"
+	TlsCertStatusValid   = "valid"
+	TlsCertStatusError   = "error"
+)

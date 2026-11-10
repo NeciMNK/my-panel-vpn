@@ -49,6 +49,13 @@ _openapi:
         panel. The node's response is returned unchanged.
       url: '#proxy-a-write-to-the-nodes-xray-settings-api-panelapixraypath-on-the-node-eg-update-warpreg-or-balanceroverride-so-outbounds-routing-balancers-and-warp-of-every-node-are-edited-from-the-central-panel-the-nodes-response-is-returned-unchanged'
     - depth: 2
+      title: Mint a one-time join token (valid for one hour) for the "add node with
+        one command" installer. The installer downloads this panel's own build
+        from <base>/node-join/bundle (so the node must share this panel's CPU
+        architecture, reported as arch) and registers itself at
+        <base>/node-join/register, pinned to its self-signed certificate.
+      url: '#mint-a-one-time-join-token-valid-for-one-hour-for-the-add-node-with-one-command-installer-the-installer-downloads-this-panels-own-build-from-basenode-joinbundle-so-the-node-must-share-this-panels-cpu-architecture-reported-as-arch-and-registers-itself-at-basenode-joinregister-pinned-to-its-self-signed-certificate'
+    - depth: 2
       title: Register a new remote node. Provide its URL, write-only apiToken, and
         optional remark / allowPrivateAddress flag. Responses expose hasApiToken
         only.
@@ -127,6 +134,12 @@ _openapi:
           routing, balancers and WARP of every node are edited from the central
           panel. The node's response is returned unchanged.
         id: proxy-a-write-to-the-nodes-xray-settings-api-panelapixraypath-on-the-node-eg-update-warpreg-or-balanceroverride-so-outbounds-routing-balancers-and-warp-of-every-node-are-edited-from-the-central-panel-the-nodes-response-is-returned-unchanged
+      - content: Mint a one-time join token (valid for one hour) for the "add node with
+          one command" installer. The installer downloads this panel's own build
+          from <base>/node-join/bundle (so the node must share this panel's CPU
+          architecture, reported as arch) and registers itself at
+          <base>/node-join/register, pinned to its self-signed certificate.
+        id: mint-a-one-time-join-token-valid-for-one-hour-for-the-add-node-with-one-command-installer-the-installer-downloads-this-panels-own-build-from-basenode-joinbundle-so-the-node-must-share-this-panels-cpu-architecture-reported-as-arch-and-registers-itself-at-basenode-joinregister-pinned-to-its-self-signed-certificate
       - content: Register a new remote node. Provide its URL, write-only apiToken, and
           optional remark / allowPrivateAddress flag. Responses expose
           hasApiToken only.
@@ -171,7 +184,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/nodes/list","method":"get"},{"path":"/panel/api/nodes/mtls/ca","method":"post"},{"path":"/panel/api/nodes/mtls/trustCA","method":"post"},{"path":"/panel/api/nodes/mtls/reloadClient","method":"post"},{"path":"/panel/api/nodes/get/{id}","method":"get"},{"path":"/panel/api/nodes/webCert/{id}","method":"get"},{"path":"/panel/api/nodes/{id}/xray/*path","method":"get"},{"path":"/panel/api/nodes/{id}/xray/*path","method":"post"},{"path":"/panel/api/nodes/add","method":"post"},{"path":"/panel/api/nodes/update/{id}","method":"post"},{"path":"/panel/api/nodes/del/{id}","method":"post"},{"path":"/panel/api/nodes/setEnable/{id}","method":"post"},{"path":"/panel/api/nodes/test","method":"post"},{"path":"/panel/api/nodes/certFingerprint","method":"post"},{"path":"/panel/api/nodes/inbounds","method":"post"},{"path":"/panel/api/nodes/probe/{id}","method":"post"},{"path":"/panel/api/nodes/updatePanel","method":"post"},{"path":"/panel/api/nodes/history/{id}/{metric}/{bucket}","method":"get"}]} showTitle />
+      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/nodes/list","method":"get"},{"path":"/panel/api/nodes/mtls/ca","method":"post"},{"path":"/panel/api/nodes/mtls/trustCA","method":"post"},{"path":"/panel/api/nodes/mtls/reloadClient","method":"post"},{"path":"/panel/api/nodes/get/{id}","method":"get"},{"path":"/panel/api/nodes/webCert/{id}","method":"get"},{"path":"/panel/api/nodes/{id}/xray/*path","method":"get"},{"path":"/panel/api/nodes/{id}/xray/*path","method":"post"},{"path":"/panel/api/nodes/joinToken","method":"post"},{"path":"/panel/api/nodes/add","method":"post"},{"path":"/panel/api/nodes/update/{id}","method":"post"},{"path":"/panel/api/nodes/del/{id}","method":"post"},{"path":"/panel/api/nodes/setEnable/{id}","method":"post"},{"path":"/panel/api/nodes/test","method":"post"},{"path":"/panel/api/nodes/certFingerprint","method":"post"},{"path":"/panel/api/nodes/inbounds","method":"post"},{"path":"/panel/api/nodes/probe/{id}","method":"post"},{"path":"/panel/api/nodes/updatePanel","method":"post"},{"path":"/panel/api/nodes/history/{id}/{metric}/{bucket}","method":"get"}]} showTitle />
     </>
   );
 }

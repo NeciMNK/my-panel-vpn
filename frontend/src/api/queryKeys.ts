@@ -1,5 +1,4 @@
 export const keys = {
-  sponsors: () => ['sponsors'] as const,
   server: {
     status: () => ['server', 'status'] as const,
     fail2banStatus: () => ['server', 'fail2banStatus'] as const,
@@ -18,6 +17,11 @@ export const keys = {
   subBalancers: {
     root: () => ['sub-balancers'] as const,
     list: () => ['sub-balancers', 'list'] as const,
+  },
+  tlsCerts: {
+    root: () => ['tls-certs'] as const,
+    list: () => ['tls-certs', 'list'] as const,
+    settings: () => ['tls-certs', 'settings'] as const,
   },
   settings: {
     root: () => ['settings'] as const,

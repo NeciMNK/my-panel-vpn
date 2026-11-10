@@ -124,6 +124,7 @@ var nodeSyncScopeAllow = map[string]map[string]struct{}{
 	"/server/clientIps":            {http.MethodGet: {}, http.MethodPost: {}},
 	"/clients/clientIpsByGuid":     {http.MethodPost: {}},
 	"/hosts/list":                  {http.MethodGet: {}},
+	"/certs/install":               {http.MethodPost: {}},
 }
 
 // nodeXrayScopeAllow lets a master manage a node's Xray template (outbounds,
@@ -143,6 +144,9 @@ var nodeXrayScopeAllow = map[string]map[string]struct{}{
 	"/xray/balancerStatus":            {http.MethodPost: {}},
 	"/xray/balancerOverride":          {http.MethodPost: {}},
 	"/xray/routeTest":                 {http.MethodPost: {}},
+	"/xray/homeTunnel":                {http.MethodPost: {}},
+	"/xray/homeTunnel/:id":            {http.MethodGet: {}},
+	"/xray/speedPlan":                 {http.MethodPost: {}},
 	"/xray/geodata/files":             {http.MethodGet: {}},
 	"/xray/geodata/categories":        {http.MethodGet: {}},
 	"/xray/geodata/entries":           {http.MethodGet: {}},
@@ -249,6 +253,12 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	nodes := api.Group("/nodes")
 	a.nodeController = NewNodeController(nodes)
 
+	NewCascadeController(api.Group("/cascades"))
+	NewHomeNetworkController(api.Group("/homeNetworks"))
+	NewWarpSwitchController(api.Group("/warpSwitch"))
+	NewSpeedController(api.Group("/speed"))
+	NewMasterClusterController(api.Group("/masters"))
+
 	// Hosts API — per-inbound override endpoints for subscription links
 	hosts := api.Group("/hosts")
 	a.hostController = NewHostController(hosts)
@@ -261,6 +271,9 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 
 	// Subscription balancers — client-side balancers for the JSON sub output
 	NewSubBalancerController(api)
+
+	// Panel-issued TLS certificates (ACME DNS-01 over Cloudflare)
+	NewTlsCertController(api)
 
 	// Extra routes
 	api.POST("/backuptotgbot", a.BackuptoTgbot)
