@@ -1432,7 +1432,7 @@
       "telegramProxy": "Proxy SOCKS",
       "telegramProxyDesc": "Si necesita el proxy Socks5 para conectarse a Telegram. Ajuste su configuración según la guía.",
       "telegramVpnFallback": "A través de mi VPN si Telegram está bloqueado",
-      "telegramVpnFallbackDesc": "Si este servidor no alcanza Telegram directamente, el panel crea su propio cliente panel-tech en el grupo тех en tus nodos y conecta el bot a través de él. Se ignora si hay un proxy SOCKS, servidor API o salida del panel.",
+      "telegramVpnFallbackDesc": "Si este servidor no alcanza Telegram directamente, el panel crea su propio cliente panel-tech en el grupo тех en tus nodos y conecta el bot a través de él. Se ignora si hay un proxy SOCKS, servidor API o salida del panel. Solo ayuda si al menos un nodo alcanza Telegram: los nodos tras el mismo filtro no sirven.",
       "telegramAPIServer": "Servidor API de Telegram",
       "telegramAPIServerDesc": "El servidor API de Telegram a utilizar. Déjelo en blanco para utilizar el servidor predeterminado.",
       "telegramChatId": "IDs de Chat de Telegram para Administradores",
