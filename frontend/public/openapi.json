@@ -5048,6 +5048,10 @@
       "description": "Operations that interact with the configured Telegram bot."
     },
     {
+      "name": "Migration",
+      "description": "Import inbounds, clients and hosts from Remnawave or another 3x-ui, keeping client UUIDs, passwords, subscription ids, ports and Reality keys."
+    },
+    {
       "name": "Settings",
       "description": "Panel configuration and user credentials. All endpoints live under /panel/api/setting and require a logged-in session or Bearer token."
     },
@@ -13357,6 +13361,151 @@
         ],
         "summary": "Send a fresh DB backup to every Telegram chat configured as an admin recipient. No body, no params.",
         "operationId": "post_panel_api_backuptotgbot",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/migration/preview": {
+      "post": {
+        "tags": [
+          "Migration"
+        ],
+        "summary": "Read the source panel and report what an import would create: source servers with a suggested target, inbounds with port conflicts, client counts, the source subscription address and warnings. Changes nothing.",
+        "operationId": "post_panel_api_migration_preview",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "type": "string",
+                    "enum": [
+                      "remnawave",
+                      "3x-ui"
+                    ],
+                    "description": "Panel to import from."
+                  },
+                  "url": {
+                    "type": "string",
+                    "description": "Remnawave panel URL, e.g. https://panel.example.com. Not used with a file."
+                  },
+                  "token": {
+                    "type": "string",
+                    "description": "Remnawave API token (Remnawave Settings → API Tokens)."
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Remnawave snapshot JSON instead of url/token, or the x-ui.db of a 3x-ui panel."
+                  },
+                  "targets": {
+                    "type": "string",
+                    "description": "JSON object mapping each source server key to \"local\", \"node:<id>\" or \"skip\". Omitted servers use the suggestion."
+                  }
+                },
+                "required": [
+                  "source"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/migration/apply": {
+      "post": {
+        "tags": [
+          "Migration"
+        ],
+        "summary": "Import the source panel. Inbounds are created on the chosen targets, then clients (existing emails are skipped) and hosts. Returns per-item errors.",
+        "operationId": "post_panel_api_migration_apply",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "type": "string",
+                    "enum": [
+                      "remnawave",
+                      "3x-ui"
+                    ],
+                    "description": "Panel to import from."
+                  },
+                  "url": {
+                    "type": "string",
+                    "description": "Remnawave panel URL, e.g. https://panel.example.com. Not used with a file."
+                  },
+                  "token": {
+                    "type": "string",
+                    "description": "Remnawave API token (Remnawave Settings → API Tokens)."
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Remnawave snapshot JSON instead of url/token, or the x-ui.db of a 3x-ui panel."
+                  },
+                  "targets": {
+                    "type": "string",
+                    "description": "JSON object mapping each source server key to \"local\", \"node:<id>\" or \"skip\". Omitted servers use the suggestion."
+                  },
+                  "applySub": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Also take over the source subscription paths and public URI so old links keep working. Restarts the panel when they change."
+                  }
+                },
+                "required": [
+                  "source"
+                ]
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful response",

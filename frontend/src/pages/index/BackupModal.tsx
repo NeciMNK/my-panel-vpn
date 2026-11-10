@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Checkbox, Modal } from 'antd';
-import { DownloadOutlined, UploadOutlined } from '@ant-design/icons';
+import { DownloadOutlined, SwapOutlined, UploadOutlined } from '@ant-design/icons';
 
 import { HttpUtil, PromiseUtil } from '@/utils';
 import './BackupModal.css';
+
+const MigrateModal = lazy(() => import('./MigrateModal'));
 
 interface BusyEvent {
   busy: boolean;
@@ -27,6 +29,7 @@ export default function BackupModal({
   const { t } = useTranslation();
   const isPostgres = window.X_UI_DB_TYPE === 'postgres';
   const [keepHostSettings, setKeepHostSettings] = useState(true);
+  const [migrateOpen, setMigrateOpen] = useState(false);
 
   function exportDb() {
     window.location.href = (window.X_UI_BASE_PATH || '') + 'panel/api/server/getDb';
@@ -68,74 +71,96 @@ export default function BackupModal({
   }
 
   return (
-    <Modal open={open} title={t('pages.index.backupTitle')} footer={null} onCancel={onClose}>
-      {isPostgres && (
-        <div className="backup-description" style={{ marginBottom: 16 }}>
-          {t('pages.index.backupPostgresNote')}
-        </div>
-      )}
-      <div className="backup-list">
-        <div className="backup-item">
-          <div className="backup-meta">
-            <div className="backup-title">{t('pages.index.exportDatabase')}</div>
-            <div className="backup-description">
-              {isPostgres
-                ? t('pages.index.exportDatabasePgDesc')
-                : t('pages.index.exportDatabaseDesc')}
-            </div>
-          </div>
-          <Button
-            type="primary"
-            aria-label={t('pages.index.exportDatabase')}
-            onClick={exportDb}
-            icon={<DownloadOutlined aria-hidden />}
-          />
-        </div>
-
+    <>
+      <Modal open={open} title={t('pages.index.backupTitle')} footer={null} onCancel={onClose}>
         {isPostgres && (
+          <div className="backup-description" style={{ marginBottom: 16 }}>
+            {t('pages.index.backupPostgresNote')}
+          </div>
+        )}
+        <div className="backup-list">
           <div className="backup-item">
             <div className="backup-meta">
-              <div className="backup-title">{t('pages.index.migrationDownload')}</div>
-              <div className="backup-description">{t('pages.index.migrationDownloadPgDesc')}</div>
+              <div className="backup-title">{t('pages.index.exportDatabase')}</div>
+              <div className="backup-description">
+                {isPostgres
+                  ? t('pages.index.exportDatabasePgDesc')
+                  : t('pages.index.exportDatabaseDesc')}
+              </div>
             </div>
             <Button
               type="primary"
-              aria-label={t('pages.index.migrationDownload')}
-              onClick={exportMigration}
+              aria-label={t('pages.index.exportDatabase')}
+              onClick={exportDb}
               icon={<DownloadOutlined aria-hidden />}
             />
           </div>
-        )}
 
-        <div className="backup-item">
-          <div className="backup-meta">
-            <div className="backup-title">{t('pages.index.importDatabase')}</div>
-            <div className="backup-description">
-              {isPostgres
-                ? t('pages.index.importDatabasePgDesc')
-                : t('pages.index.importDatabaseDesc')}
+          {isPostgres && (
+            <div className="backup-item">
+              <div className="backup-meta">
+                <div className="backup-title">{t('pages.index.migrationDownload')}</div>
+                <div className="backup-description">{t('pages.index.migrationDownloadPgDesc')}</div>
+              </div>
+              <Button
+                type="primary"
+                aria-label={t('pages.index.migrationDownload')}
+                onClick={exportMigration}
+                icon={<DownloadOutlined aria-hidden />}
+              />
+            </div>
+          )}
+
+          <div className="backup-item">
+            <div className="backup-meta">
+              <div className="backup-title">{t('pages.index.importDatabase')}</div>
+              <div className="backup-description">
+                {isPostgres
+                  ? t('pages.index.importDatabasePgDesc')
+                  : t('pages.index.importDatabaseDesc')}
+              </div>
+            </div>
+            <Button
+              type="primary"
+              aria-label={t('pages.index.importDatabase')}
+              onClick={importDb}
+              icon={<UploadOutlined aria-hidden />}
+            />
+          </div>
+
+          <div className="backup-item">
+            <div className="backup-meta">
+              <Checkbox
+                checked={keepHostSettings}
+                onChange={(e) => setKeepHostSettings(e.target.checked)}
+              >
+                {t('pages.index.importKeepHostSettings')}
+              </Checkbox>
+              <div className="backup-description">
+                {t('pages.index.importKeepHostSettingsDesc')}
+              </div>
             </div>
           </div>
-          <Button
-            type="primary"
-            aria-label={t('pages.index.importDatabase')}
-            onClick={importDb}
-            icon={<UploadOutlined aria-hidden />}
-          />
-        </div>
 
-        <div className="backup-item">
-          <div className="backup-meta">
-            <Checkbox
-              checked={keepHostSettings}
-              onChange={(e) => setKeepHostSettings(e.target.checked)}
-            >
-              {t('pages.index.importKeepHostSettings')}
-            </Checkbox>
-            <div className="backup-description">{t('pages.index.importKeepHostSettingsDesc')}</div>
+          <div className="backup-item">
+            <div className="backup-meta">
+              <div className="backup-title">{t('pages.index.migrate.title')}</div>
+              <div className="backup-description">{t('pages.index.migrate.desc')}</div>
+            </div>
+            <Button
+              type="primary"
+              aria-label={t('pages.index.migrate.title')}
+              onClick={() => setMigrateOpen(true)}
+              icon={<SwapOutlined aria-hidden />}
+            />
           </div>
         </div>
-      </div>
-    </Modal>
+      </Modal>
+      {migrateOpen && (
+        <Suspense fallback={null}>
+          <MigrateModal open={migrateOpen} onClose={() => setMigrateOpen(false)} />
+        </Suspense>
+      )}
+    </>
   );
 }

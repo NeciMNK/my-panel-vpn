@@ -1999,6 +1999,109 @@ export const sections: readonly Section[] = [
   },
 
   {
+    id: 'migration',
+    title: 'Migration',
+    description:
+      'Import inbounds, clients and hosts from Remnawave or another 3x-ui, keeping client UUIDs, passwords, subscription ids, ports and Reality keys.',
+    endpoints: [
+      {
+        method: 'POST',
+        path: '/panel/api/migration/preview',
+        summary:
+          'Read the source panel and report what an import would create: source servers with a suggested target, inbounds with port conflicts, client counts, the source subscription address and warnings. Changes nothing.',
+        params: [
+          {
+            name: 'source',
+            in: 'body (multipart)',
+            type: 'string',
+            desc: 'Panel to import from.',
+            enum: ['remnawave', '3x-ui'],
+          },
+          {
+            name: 'url',
+            in: 'body (multipart)',
+            type: 'string',
+            desc: 'Remnawave panel URL, e.g. https://panel.example.com. Not used with a file.',
+            optional: true,
+          },
+          {
+            name: 'token',
+            in: 'body (multipart)',
+            type: 'string',
+            desc: 'Remnawave API token (Remnawave Settings → API Tokens).',
+            optional: true,
+          },
+          {
+            name: 'file',
+            in: 'body (multipart)',
+            type: 'file',
+            desc: 'Remnawave snapshot JSON instead of url/token, or the x-ui.db of a 3x-ui panel.',
+            optional: true,
+          },
+          {
+            name: 'targets',
+            in: 'body (multipart)',
+            type: 'string',
+            desc: 'JSON object mapping each source server key to "local", "node:<id>" or "skip". Omitted servers use the suggestion.',
+            optional: true,
+          },
+        ],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/migration/apply',
+        summary:
+          'Import the source panel. Inbounds are created on the chosen targets, then clients (existing emails are skipped) and hosts. Returns per-item errors.',
+        params: [
+          {
+            name: 'source',
+            in: 'body (multipart)',
+            type: 'string',
+            desc: 'Panel to import from.',
+            enum: ['remnawave', '3x-ui'],
+          },
+          {
+            name: 'url',
+            in: 'body (multipart)',
+            type: 'string',
+            desc: 'Remnawave panel URL, e.g. https://panel.example.com. Not used with a file.',
+            optional: true,
+          },
+          {
+            name: 'token',
+            in: 'body (multipart)',
+            type: 'string',
+            desc: 'Remnawave API token (Remnawave Settings → API Tokens).',
+            optional: true,
+          },
+          {
+            name: 'file',
+            in: 'body (multipart)',
+            type: 'file',
+            desc: 'Remnawave snapshot JSON instead of url/token, or the x-ui.db of a 3x-ui panel.',
+            optional: true,
+          },
+          {
+            name: 'targets',
+            in: 'body (multipart)',
+            type: 'string',
+            desc: 'JSON object mapping each source server key to "local", "node:<id>" or "skip". Omitted servers use the suggestion.',
+            optional: true,
+          },
+          {
+            name: 'applySub',
+            in: 'body (multipart)',
+            type: 'boolean',
+            desc: 'Also take over the source subscription paths and public URI so old links keep working. Restarts the panel when they change.',
+            optional: true,
+            defaultValue: false,
+          },
+        ],
+      },
+    ],
+  },
+
+  {
     id: 'settings',
     title: 'Settings',
     description:

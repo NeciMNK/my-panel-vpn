@@ -233,6 +233,9 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	// Subscription balancers — client-side balancers for the JSON sub output
 	NewSubBalancerController(api)
 
+	// Import of another panel (Remnawave, 3x-ui) keeping users' configs
+	NewMigrationController(api.Group("/migration"))
+
 	// Extra routes
 	api.POST("/backuptotgbot", a.BackuptoTgbot)
 }
