@@ -15,6 +15,10 @@ export const keys = {
     byInbound: (inboundId: number) => ['hosts', 'byInbound', inboundId] as const,
     tags: () => ['hosts', 'tags'] as const,
   },
+  ledger: {
+    root: () => ['ledger'] as const,
+    report: (month: string) => ['ledger', 'report', month] as const,
+  },
   subBalancers: {
     root: () => ['sub-balancers'] as const,
     list: () => ['sub-balancers', 'list'] as const,

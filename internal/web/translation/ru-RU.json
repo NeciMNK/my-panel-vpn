@@ -128,7 +128,8 @@
     "openMenu": "Открыть меню",
     "pinSidebar": "Закрепить боковую панель",
     "unpinSidebar": "Открепить боковую панель",
-    "subFormats": "Форматы подписки"
+    "subFormats": "Форматы подписки",
+    "ledger": "Финансы"
   },
   "pages": {
     "login": {
@@ -2526,6 +2527,51 @@
       "visit": "Перейти",
       "yourBrand": "Здесь может быть ваш бренд",
       "yourBrandText": "Покажите свою компанию тысячам администраторов серверов, которые каждый день открывают 3X-UI."
+    },
+    "ledger": {
+      "income": "Доход",
+      "expense": "Расход",
+      "expenses": "Расходы",
+      "balance": "Прибыль / убыток",
+      "expected": "Ожидается от {count} платящих",
+      "servers": "Серверы (в месяц)",
+      "serverName": "Сервер",
+      "monthlyCost": "В месяц",
+      "period": "Период",
+      "ongoing": "сейчас",
+      "notThisMonth": "не в этом месяце",
+      "startMonth": "Первый месяц (ГГГГ-ММ)",
+      "endMonth": "Последний месяц (ГГГГ-ММ)",
+      "endMonthHint": "Оставьте пустым, пока сервер оплачивается.",
+      "serverTitle": "Расход на сервер",
+      "entries": "Оплаты и разовые расходы",
+      "addIncome": "+ Доход",
+      "addExpense": "+ Расход",
+      "entryTitle": "Запись",
+      "kind": "Тип",
+      "amount": "Сумма",
+      "client": "Клиент",
+      "note": "Заметка",
+      "month": "Месяц (ГГГГ-ММ)",
+      "confirmDelete": "Удалить строку?",
+      "prevMonth": "Предыдущий месяц",
+      "nextMonth": "Следующий месяц",
+      "nonPaying": "Кто не платит",
+      "freeGroups": "Группы, которые не платят (например, семья)",
+      "markClient": "Отметить клиента как неплатящего (например, админ)",
+      "markPaying": "Снова платит",
+      "reason": "Причина",
+      "reasonClient": "отмечен неплатящим",
+      "reasonGroup": "группа",
+      "reasonFreePlan": "бесплатный тариф",
+      "errName": "Введите название",
+      "errAmount": "Введите целую сумму больше нуля",
+      "errMonth": "Формат ГГГГ-ММ",
+      "errRange": "Последний месяц раньше первого",
+      "toasts": {
+        "deleted": "Удалено",
+        "saved": "Сохранено"
+      }
     }
   },
   "tgbot": {
@@ -2728,7 +2774,14 @@
       "trusted": "⭐ Доверенный (отсрочка): {{ .State }}",
       "requestFree": "🆓 Запросить бесплатную подписку ({{ .GB }} ГБ/мес)",
       "approve": "✅ Одобрить",
-      "decline": "❌ Отклонить"
+      "decline": "❌ Отклонить",
+      "ledger": "💰 Финансы",
+      "ledgerAddIncome": "➕ Доход",
+      "ledgerAddExpense": "➖ Расход",
+      "ledgerAddServer": "🖥 Добавить сервер",
+      "ledgerDelete": "🗑 Удалить",
+      "ledgerFreeGroups": "🆓 Неплатящие группы",
+      "nonPaying": "🆓 Не платит: {{ .State }}"
     },
     "answers": {
       "broadcastStarted": "🚀 Рассылка запущена.",
@@ -2806,6 +2859,19 @@
       "plan": "• {{ .Months }} мес — {{ .Total }}\r\n",
       "planDiscounted": "• {{ .Months }} мес — {{ .Total }} (−{{ .Percent }}%)\r\n",
       "choosePlan": "💳 За какой срок вы оплатили?"
+    },
+    "ledger": {
+      "summary": "💰 <b>Финансы за {{ .Month }}</b>\r\n\r\n➕ Доход: {{ .Income }}\r\n➖ Расходы: {{ .Expenses }} (серверы {{ .Servers }})\r\n{{ .Sign }} <b>Итог: {{ .Balance }}</b>\r\n👥 Платящих: {{ .Paying }}, ожидается {{ .Expected }}\r\n",
+      "serversTitle": "\r\n🖥 <b>Серверы</b>\r\n",
+      "entriesTitle": "\r\n📒 <b>Записи</b>\r\n",
+      "nonPayingTitle": "\r\n🆓 Не платят: ",
+      "prompt_server": "🖥 Пришлите сервер и сколько он стоит в месяц, например\r\n<code>Hetzner DE 500</code>\r\nЕсли сервер оплачивается раньше {{ .Month }}, добавьте первый месяц: <code>Hetzner DE 500 2026-09</code>",
+      "prompt_income": "➕ Пришлите сумму, полученную в {{ .Month }}, можно с клиентом и заметкой, например\r\n<code>300 alice за ноябрь</code>",
+      "prompt_expense": "➖ Пришлите разовый расход за {{ .Month }} и заметку, например\r\n<code>150 домен</code>",
+      "badInput": "⚠️ Не сохранено: {{ .Error }}. Попробуйте ещё раз или нажмите «Отмена».",
+      "deleteTitle": "🗑 Нажмите строку, чтобы удалить (записи за {{ .Month }} и все серверы).",
+      "groupsTitle": "🆓 Нажмите группу, чтобы переключить: платит 💰 / не платит 🆓.",
+      "paymentNote": "{{ .Months }} мес"
     }
   },
   "discord": {

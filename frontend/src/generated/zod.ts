@@ -860,6 +860,51 @@ export const InboundTrafficSummarySchema = z.object({
 });
 export type InboundTrafficSummary = z.infer<typeof InboundTrafficSummarySchema>;
 
+export const LedgerEntrySchema = z.object({
+  amount: z.number().int(),
+  createdAt: z.number().int(),
+  email: z.string(),
+  id: z.number().int(),
+  kind: z.string(),
+  month: z.string(),
+  note: z.string(),
+});
+export type LedgerEntry = z.infer<typeof LedgerEntrySchema>;
+
+export const LedgerNonPayingSchema = z.object({
+  email: z.string(),
+  group: z.string(),
+  reason: z.string(),
+});
+export type LedgerNonPaying = z.infer<typeof LedgerNonPayingSchema>;
+
+export const LedgerReportSchema = z.object({
+  balance: z.number().int(),
+  currency: z.string(),
+  entries: z.array(z.lazy(() => LedgerEntrySchema)),
+  expectedIncome: z.number().int(),
+  expenses: z.number().int(),
+  freeGroups: z.array(z.string()),
+  income: z.number().int(),
+  month: z.string(),
+  nonPaying: z.array(z.lazy(() => LedgerNonPayingSchema)),
+  otherExpenses: z.number().int(),
+  payingClients: z.number().int(),
+  price: z.number().int(),
+  serverCosts: z.number().int(),
+  servers: z.array(z.lazy(() => LedgerServerSchema)),
+});
+export type LedgerReport = z.infer<typeof LedgerReportSchema>;
+
+export const LedgerServerSchema = z.object({
+  endMonth: z.string(),
+  id: z.number().int(),
+  monthlyCost: z.number().int(),
+  name: z.string(),
+  startMonth: z.string(),
+});
+export type LedgerServer = z.infer<typeof LedgerServerSchema>;
+
 export const LogEntrySchema = z.object({
   DateTime: z.string(),
   Email: z.string(),

@@ -343,6 +343,9 @@ func (s *ClientService) replaceGroupValue(oldName, newName string) (int, error) 
 			return 0, err
 		}
 	}
+	if err := moveLedgerFreeGroup(db, oldName, newName); err != nil {
+		return 0, err
+	}
 	var records []model.ClientRecord
 	if err := db.Where("group_name = ?", oldName).Find(&records).Error; err != nil {
 		return 0, err

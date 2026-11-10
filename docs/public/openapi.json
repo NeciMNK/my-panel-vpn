@@ -3567,6 +3567,191 @@
         ],
         "type": "object"
       },
+      "LedgerEntry": {
+        "description": "LedgerEntry is one received payment (income) or one-off cost (expense) booked to a month.",
+        "properties": {
+          "amount": {
+            "example": 300,
+            "type": "integer"
+          },
+          "createdAt": {
+            "example": 1762761600000,
+            "format": "int64",
+            "type": "integer"
+          },
+          "email": {
+            "example": "alice",
+            "type": "string"
+          },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "kind": {
+            "example": "income",
+            "type": "string"
+          },
+          "month": {
+            "example": "2026-11",
+            "type": "string"
+          },
+          "note": {
+            "example": "1 mo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "amount",
+          "createdAt",
+          "email",
+          "id",
+          "kind",
+          "month",
+          "note"
+        ],
+        "type": "object"
+      },
+      "LedgerNonPaying": {
+        "description": "LedgerNonPaying is a client kept out of the expected income, with the reason.",
+        "properties": {
+          "email": {
+            "example": "admin",
+            "type": "string"
+          },
+          "group": {
+            "example": "family",
+            "type": "string"
+          },
+          "reason": {
+            "example": "group",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "group",
+          "reason"
+        ],
+        "type": "object"
+      },
+      "LedgerReport": {
+        "description": "LedgerReport is one month of the book. Money is in whole units of Currency.",
+        "properties": {
+          "balance": {
+            "example": 900,
+            "type": "integer"
+          },
+          "currency": {
+            "example": "RUB",
+            "type": "string"
+          },
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/LedgerEntry"
+            },
+            "type": "array"
+          },
+          "expectedIncome": {
+            "example": 3000,
+            "type": "integer"
+          },
+          "expenses": {
+            "example": 1500,
+            "type": "integer"
+          },
+          "freeGroups": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "income": {
+            "example": 2400,
+            "type": "integer"
+          },
+          "month": {
+            "example": "2026-11",
+            "type": "string"
+          },
+          "nonPaying": {
+            "items": {
+              "$ref": "#/components/schemas/LedgerNonPaying"
+            },
+            "type": "array"
+          },
+          "otherExpenses": {
+            "example": 0,
+            "type": "integer"
+          },
+          "payingClients": {
+            "example": 10,
+            "type": "integer"
+          },
+          "price": {
+            "example": 300,
+            "type": "integer"
+          },
+          "serverCosts": {
+            "example": 1500,
+            "type": "integer"
+          },
+          "servers": {
+            "items": {
+              "$ref": "#/components/schemas/LedgerServer"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "balance",
+          "currency",
+          "entries",
+          "expectedIncome",
+          "expenses",
+          "freeGroups",
+          "income",
+          "month",
+          "nonPaying",
+          "otherExpenses",
+          "payingClients",
+          "price",
+          "serverCosts",
+          "servers"
+        ],
+        "type": "object"
+      },
+      "LedgerServer": {
+        "description": "LedgerServer is a recurring monthly server cost, charged to every month from\nStartMonth through EndMonth (YYYY-MM; empty EndMonth means still running).",
+        "properties": {
+          "endMonth": {
+            "type": "string"
+          },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "monthlyCost": {
+            "example": 500,
+            "type": "integer"
+          },
+          "name": {
+            "example": "Hetzner DE",
+            "type": "string"
+          },
+          "startMonth": {
+            "example": "2026-11",
+            "type": "string"
+          }
+        },
+        "required": [
+          "endMonth",
+          "id",
+          "monthlyCost",
+          "name",
+          "startMonth"
+        ],
+        "type": "object"
+      },
       "LogEntry": {
         "properties": {
           "DateTime": {
@@ -5090,6 +5275,10 @@
     {
       "name": "Nodes",
       "description": "Manage remote 3x-ui panels acting as nodes for a central panel. All endpoints under /panel/api/nodes."
+    },
+    {
+      "name": "Ledger",
+      "description": "Profit/loss book for selling VPN access: recurring monthly server costs, booked income and one-off expenses, and the clients and groups that never pay. Money is in whole units of the Telegram payment currency. All endpoints under /panel/api/ledger."
     },
     {
       "name": "Hosts",
@@ -12360,6 +12549,344 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/ledger/report": {
+      "get": {
+        "tags": [
+          "Ledger"
+        ],
+        "summary": "One month of the ledger: income, server and other expenses, the resulting balance, the expected income from paying clients, the non-paying clients with their reason, every server and the month's entries.",
+        "operationId": "get_panel_api_ledger_report",
+        "parameters": [
+          {
+            "name": "month",
+            "in": "query",
+            "required": false,
+            "description": "Month as YYYY-MM; defaults to the current month.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/LedgerReport"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "balance": 900,
+                    "currency": "RUB",
+                    "entries": [
+                      {
+                        "amount": 300,
+                        "createdAt": 1762761600000,
+                        "email": "alice",
+                        "id": 1,
+                        "kind": "income",
+                        "month": "2026-11",
+                        "note": "1 mo"
+                      }
+                    ],
+                    "expectedIncome": 3000,
+                    "expenses": 1500,
+                    "freeGroups": [
+                      ""
+                    ],
+                    "income": 2400,
+                    "month": "2026-11",
+                    "nonPaying": [
+                      {
+                        "email": "admin",
+                        "group": "family",
+                        "reason": "group"
+                      }
+                    ],
+                    "otherExpenses": 0,
+                    "payingClients": 10,
+                    "price": 300,
+                    "serverCosts": 1500,
+                    "servers": [
+                      {
+                        "endMonth": "",
+                        "id": 1,
+                        "monthlyCost": 500,
+                        "name": "Hetzner DE",
+                        "startMonth": "2026-11"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/ledger/servers/save": {
+      "post": {
+        "tags": [
+          "Ledger"
+        ],
+        "summary": "Create (id 0) or update a recurring server cost. It is charged to every month from startMonth through endMonth; an empty endMonth means the server is still paid for.",
+        "operationId": "post_panel_api_ledger_servers_save",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "id": 0,
+                "name": "Hetzner DE",
+                "monthlyCost": 500,
+                "startMonth": "2026-11",
+                "endMonth": ""
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/LedgerServer"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "endMonth": "",
+                    "id": 1,
+                    "monthlyCost": 500,
+                    "name": "Hetzner DE",
+                    "startMonth": "2026-11"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/ledger/servers/delete": {
+      "post": {
+        "tags": [
+          "Ledger"
+        ],
+        "summary": "Delete a server cost from every month.",
+        "operationId": "post_panel_api_ledger_servers_delete",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "id": 1
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/ledger/entries/add": {
+      "post": {
+        "tags": [
+          "Ledger"
+        ],
+        "summary": "Book an income (a payment received) or a one-off expense to a month. Confirmed Telegram payments are booked automatically.",
+        "operationId": "post_panel_api_ledger_entries_add",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "month": "2026-11",
+                "kind": "income",
+                "amount": 300,
+                "email": "alice",
+                "note": "1 mo"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/LedgerEntry"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "amount": 300,
+                    "createdAt": 1762761600000,
+                    "email": "alice",
+                    "id": 1,
+                    "kind": "income",
+                    "month": "2026-11",
+                    "note": "1 mo"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/ledger/entries/delete": {
+      "post": {
+        "tags": [
+          "Ledger"
+        ],
+        "summary": "Delete a ledger entry.",
+        "operationId": "post_panel_api_ledger_entries_delete",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "id": 1
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/ledger/nonPaying": {
+      "post": {
+        "tags": [
+          "Ledger"
+        ],
+        "summary": "Mark one client (by email, e.g. the admin) or a whole client group (e.g. family) as non-paying, or clear the mark. Non-paying clients are left out of the expected income.",
+        "operationId": "post_panel_api_ledger_nonPaying",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "group": "family",
+                "nonPaying": true
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful response",

@@ -1882,6 +1882,66 @@ export const sections: readonly Section[] = [
   },
 
   {
+    id: 'ledger',
+    title: 'Ledger',
+    description:
+      'Profit/loss book for selling VPN access: recurring monthly server costs, booked income and one-off expenses, and the clients and groups that never pay. Money is in whole units of the Telegram payment currency. All endpoints under /panel/api/ledger.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/ledger/report',
+        summary:
+          "One month of the ledger: income, server and other expenses, the resulting balance, the expected income from paying clients, the non-paying clients with their reason, every server and the month's entries.",
+        params: [
+          {
+            name: 'month',
+            in: 'query',
+            type: 'string',
+            optional: true,
+            desc: 'Month as YYYY-MM; defaults to the current month.',
+          },
+        ],
+        responseSchema: 'LedgerReport',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/ledger/servers/save',
+        summary:
+          'Create (id 0) or update a recurring server cost. It is charged to every month from startMonth through endMonth; an empty endMonth means the server is still paid for.',
+        body: '{\n  "id": 0,\n  "name": "Hetzner DE",\n  "monthlyCost": 500,\n  "startMonth": "2026-11",\n  "endMonth": ""\n}',
+        responseSchema: 'LedgerServer',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/ledger/servers/delete',
+        summary: 'Delete a server cost from every month.',
+        body: '{\n  "id": 1\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/ledger/entries/add',
+        summary:
+          'Book an income (a payment received) or a one-off expense to a month. Confirmed Telegram payments are booked automatically.',
+        body: '{\n  "month": "2026-11",\n  "kind": "income",\n  "amount": 300,\n  "email": "alice",\n  "note": "1 mo"\n}',
+        responseSchema: 'LedgerEntry',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/ledger/entries/delete',
+        summary: 'Delete a ledger entry.',
+        body: '{\n  "id": 1\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/ledger/nonPaying',
+        summary:
+          'Mark one client (by email, e.g. the admin) or a whole client group (e.g. family) as non-paying, or clear the mark. Non-paying clients are left out of the expected income.',
+        body: '{\n  "group": "family",\n  "nonPaying": true\n}',
+      },
+    ],
+  },
+
+  {
     id: 'hosts',
     title: 'Hosts',
     description:

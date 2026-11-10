@@ -159,6 +159,10 @@ func (t *Tgbot) OnReceive() {
 					t.handleBroadcastInput(&message, actor)
 					return nil
 				}
+				if kind, month, ok := parseLedgerState(userState); ok {
+					t.handleLedgerInput(&message, actor, kind, month)
+					return nil
+				}
 				// Only a wizard step touches the draft, so only it takes the lock.
 				draft := addClientDrafts.forActor(actor)
 				draft.Lock()
@@ -437,6 +441,30 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 				t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
 			case "trust":
 				t.toggleTrusted(callbackQuery, email)
+			case "nonpay":
+				t.toggleNonPaying(callbackQuery, email)
+			case "ledger":
+				t.answerSilent(callbackQuery.ID)
+				t.screenLedger(chatId, dataArray[1])
+			case "ledger_add":
+				if len(dataArray) == 3 {
+					t.answerSilent(callbackQuery.ID)
+					t.promptLedgerInput(chatId, actor, dataArray[1], dataArray[2])
+				}
+			case "ledger_del":
+				t.answerSilent(callbackQuery.ID)
+				t.screenLedgerDelete(chatId, dataArray[1])
+			case "ledger_rm":
+				if len(dataArray) == 4 {
+					t.deleteLedgerRow(callbackQuery, dataArray[1], dataArray[2], dataArray[3])
+				}
+			case "ledger_groups":
+				t.answerSilent(callbackQuery.ID)
+				t.screenLedgerGroups(chatId, dataArray[1])
+			case "ledger_grp":
+				if len(dataArray) >= 3 {
+					t.toggleLedgerGroup(callbackQuery, dataArray[1], strings.Join(dataArray[2:], " "))
+				}
 			case "free_ok":
 				if !t.approveFreePlan(chatId, actor, dataArray[1]) {
 					t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
@@ -1044,6 +1072,9 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 		t.screenCommands(chatId, isAdmin)
 	case "addc", "add_client":
 		t.screenAddClientStart(chatId, callbackQuery.From.ID)
+	case cbLedger:
+		t.answerSilent(callbackQuery.ID)
+		t.screenLedger(chatId, currentLedgerMonth())
 	case cbBroadcast:
 		// The broadcast flow already existed behind /broadcast; the button is
 		// the discoverable way in. It owns its own messages, so no screen here.
