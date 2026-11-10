@@ -424,6 +424,47 @@ export const EXAMPLES: Record<string, unknown> = {
     "code": "tools",
     "detail": "awg"
   },
+  "Cascade": {
+    "createdAt": 0,
+    "enable": true,
+    "entryInboundTags": [
+      ""
+    ],
+    "entryNodeId": 1,
+    "exitCountry": "DE",
+    "exitNodeIds": [
+      0
+    ],
+    "id": 1,
+    "lastError": "",
+    "links": [
+      {
+        "address": "",
+        "clientId": "",
+        "email": "",
+        "inboundId": 0,
+        "nodeId": 0,
+        "port": 0,
+        "publicKey": "",
+        "serverName": "",
+        "shortId": ""
+      }
+    ],
+    "name": "RU → DE",
+    "strategy": "leastPing",
+    "updatedAt": 0
+  },
+  "CascadeLink": {
+    "address": "",
+    "clientId": "",
+    "email": "",
+    "inboundId": 0,
+    "nodeId": 0,
+    "port": 0,
+    "publicKey": "",
+    "serverName": "",
+    "shortId": ""
+  },
   "Client": {
     "adTag": "0123456789abcdef0123456789abcdef",
     "allowedIPs": [
@@ -603,6 +644,12 @@ export const EXAMPLES: Record<string, unknown> = {
     "traffic": null,
     "updatedAt": 1735100000000
   },
+  "ClientSpeed": {
+    "email": "anna",
+    "id": 1,
+    "maxMbps": 100,
+    "minMbps": 20
+  },
   "ClientTraffic": {
     "down": 2097152,
     "email": "user1",
@@ -696,6 +743,56 @@ export const EXAMPLES: Record<string, unknown> = {
   "HistoryOfSeeders": {
     "id": 0,
     "seederName": ""
+  },
+  "HomeAccessRule": {
+    "emails": [
+      ""
+    ],
+    "groups": [
+      ""
+    ],
+    "targets": [
+      ""
+    ]
+  },
+  "HomeNetwork": {
+    "config": "",
+    "createdAt": 0,
+    "enable": true,
+    "errors": {},
+    "gatewayNodeId": 0,
+    "hosts": [
+      ""
+    ],
+    "id": 1,
+    "kind": "wireguard",
+    "link": null,
+    "name": "Home",
+    "password": "",
+    "psk": "",
+    "rules": [
+      {
+        "emails": [
+          ""
+        ],
+        "groups": [
+          ""
+        ],
+        "targets": [
+          ""
+        ]
+      }
+    ],
+    "server": "203.0.113.7",
+    "servers": [
+      0
+    ],
+    "subnets": [
+      ""
+    ],
+    "tunnelState": "active",
+    "updatedAt": 0,
+    "username": ""
   },
   "Host": {
     "address": "cdn.example.com",
@@ -920,6 +1017,15 @@ export const EXAMPLES: Record<string, unknown> = {
     "client": "mlkem768-client",
     "seed": "mlkem768-seed"
   },
+  "MasterStatus": {
+    "alive": true,
+    "lastSeen": 1762736400,
+    "leader": true,
+    "name": "master-1",
+    "priority": 1,
+    "self": true,
+    "url": "https://panel-1.example.com:2053"
+  },
   "Msg": {
     "msg": "",
     "obj": null,
@@ -936,6 +1042,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "clientCount": 27,
     "configDirty": false,
     "configDirtyAt": 0,
+    "country": "DE",
     "cpuPct": 23.5,
     "createdAt": 1700000000,
     "depletedCount": 1,
@@ -975,12 +1082,18 @@ export const EXAMPLES: Record<string, unknown> = {
     "xrayState": "",
     "xrayVersion": "25.10.31"
   },
+  "NodeJoinTokenView": {
+    "arch": "amd64",
+    "expiresAt": 1700003600,
+    "token": "m3Yx0QmRZ2bq0l5w2b3h1C9rYx0QmRZ2bq0l5w2b3h0"
+  },
   "NodeMutationRequest": {
     "address": "",
     "allowPrivateAddress": false,
     "apiToken": null,
     "basePath": "",
     "clearApiToken": false,
+    "country": "",
     "enable": false,
     "id": 0,
     "inboundSyncMode": "all",
@@ -1003,6 +1116,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "clientCount": 25,
     "configDirty": false,
     "configDirtyAt": 0,
+    "country": "DE",
     "cpuPct": 12.5,
     "createdAt": 1700000000,
     "depletedCount": 1,
@@ -1049,6 +1163,22 @@ export const EXAMPLES: Record<string, unknown> = {
     "tag": "",
     "total": 0,
     "up": 0
+  },
+  "PanelProxyCheck": {
+    "error": "",
+    "exitIp": "203.0.113.7",
+    "telegram": true,
+    "telegramMs": 184,
+    "viaProxy": true
+  },
+  "PanelProxyStatus": {
+    "active": true,
+    "error": "",
+    "mode": "client",
+    "outbounds": [
+      "panelproxy-de-frankfurt"
+    ],
+    "source": "alice"
   },
   "PanelUpdateStatus": {
     "exitCode": 0,
@@ -1118,6 +1248,18 @@ export const EXAMPLES: Record<string, unknown> = {
     "tlsVersion": "1.3",
     "x25519": true
   },
+  "ServerCapacity": {
+    "capacityMbps": 1000,
+    "id": 1,
+    "nodeId": 0
+  },
+  "ServerFreeSpeed": {
+    "capacityMbps": 1000,
+    "freePerUserMbps": 44.5,
+    "nodeId": 0,
+    "online": 12,
+    "usedMbps": 420.5
+  },
   "ServerSettings": {
     "contentPaddingAddition": "",
     "disableCookies": false,
@@ -1163,36 +1305,29 @@ export const EXAMPLES: Record<string, unknown> = {
     "key": "",
     "value": ""
   },
-  "Sponsor": {
-    "enable": true,
-    "from": "2026-10-01T00:00:00Z",
-    "id": "acme-2026-10",
-    "link": "https://acme.example/?utm_source=3x-ui",
-    "logo": "/sponsors/logo/acme.png",
-    "name": "Acme VPS",
-    "slots": [
-      ""
-    ],
-    "text": {},
-    "title": {},
-    "until": "2026-11-01T00:00:00Z"
-  },
-  "SponsorList": {
-    "contact": "https://t.me/example",
-    "sponsors": [
+  "SpeedOverview": {
+    "clients": [
       {
-        "enable": true,
-        "from": "2026-10-01T00:00:00Z",
-        "id": "acme-2026-10",
-        "link": "https://acme.example/?utm_source=3x-ui",
-        "logo": "/sponsors/logo/acme.png",
-        "name": "Acme VPS",
-        "slots": [
-          ""
-        ],
-        "text": {},
-        "title": {},
-        "until": "2026-11-01T00:00:00Z"
+        "email": "anna",
+        "id": 1,
+        "maxMbps": 100,
+        "minMbps": 20
+      }
+    ],
+    "load": [
+      {
+        "capacityMbps": 1000,
+        "freePerUserMbps": 44.5,
+        "nodeId": 0,
+        "online": 12,
+        "usedMbps": 420.5
+      }
+    ],
+    "servers": [
+      {
+        "capacityMbps": 1000,
+        "id": 1,
+        "nodeId": 0
       }
     ]
   },
@@ -1215,6 +1350,41 @@ export const EXAMPLES: Record<string, unknown> = {
     "inlineEnabled": true,
     "running": true,
     "username": "xui_bot"
+  },
+  "TlsCertFiles": {
+    "certFile": "/etc/x-ui/certs/example.com/fullchain.pem",
+    "keyFile": "/etc/x-ui/certs/example.com/privkey.pem"
+  },
+  "TlsCertInstallRequest": {
+    "certPem": "-----BEGIN CERTIFICATE-----\n...",
+    "keyPem": "-----BEGIN EC PRIVATE KEY-----\n...",
+    "name": "wildcard.example.com"
+  },
+  "TlsCertNodeInstall": {
+    "certFile": "/etc/x-ui/certs/example.com/fullchain.pem",
+    "error": "",
+    "keyFile": "/etc/x-ui/certs/example.com/privkey.pem",
+    "notAfter": 1717000000000
+  },
+  "TlsCertSettings": {
+    "cloudflareTokenSet": true
+  },
+  "TlsCertificate": {
+    "applyToPanel": false,
+    "autoRenew": true,
+    "certFile": "/etc/x-ui/certs/example.com/fullchain.pem",
+    "createdAt": 1710000000000,
+    "domains": [
+      "example.com",
+      "*.example.com"
+    ],
+    "id": 1,
+    "keyFile": "/etc/x-ui/certs/example.com/privkey.pem",
+    "lastError": "",
+    "nodeInstalls": {},
+    "notAfter": 1717000000000,
+    "status": "valid",
+    "updatedAt": 1710000000000
   },
   "Traffic": {
     "Down": 2097152,
@@ -1247,5 +1417,15 @@ export const EXAMPLES: Record<string, unknown> = {
     "id": 0,
     "password": "",
     "username": ""
+  },
+  "WarpSwitch": {
+    "domains": [
+      ""
+    ],
+    "id": 1,
+    "lastError": "",
+    "mode": "domains",
+    "nodeId": 0,
+    "updatedAt": 0
   }
 };

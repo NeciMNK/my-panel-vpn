@@ -67,60 +67,104 @@ describe('detectPlatform', () => {
   it.each([
     [
       'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/128.0 Mobile Safari/537.36',
+      0,
       'android',
     ],
     [
       'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148',
+      5,
+      'ios',
+    ],
+    // iPadOS Safari asks for the desktop site and reports itself as a Mac; only touch gives it away.
+    [
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/17.5 Safari/605.1.15',
+      5,
       'ios',
     ],
     [
       'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/17.5 Safari/605.1.15',
-      'ios',
+      0,
+      'macos',
     ],
     [
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/128.0 Safari/537.36',
-      'android',
+      0,
+      'windows',
     ],
-    ['Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/128.0 Safari/537.36', 'android'],
-  ])('%s -> %s', (ua, want) => {
-    expect(detectPlatform(ua)).toBe(want);
+    ['Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/128.0 Safari/537.36', 0, 'linux'],
+    ['Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 Chrome/128.0', 0, 'linux'],
+    ['', 0, 'android'],
+  ] as const)('%s (touch %i) -> %s', (ua, touch, want) => {
+    expect(detectPlatform(ua, touch)).toBe(want);
   });
 });
 
 describe('buildSubApps', () => {
   const subUrl = 'https://sub.example.com/sub/abc';
+  const subClashUrl = 'https://sub.example.com/clash/abc';
   const encSub = encodeURIComponent(subUrl);
-  const sub = { subUrl, sId: 'abc', subTitle: 'Nova Net' };
+  const sub = { subUrl, subClashUrl, sId: 'abc', subTitle: 'Nova Net' };
+  const imports = (list: { name: string; importUrl: string }[]) =>
+    list.map(({ name, importUrl }) => [name, importUrl]);
 
-  it('offers Android and iOS app lists only', () => {
-    expect(Object.keys(buildSubApps(sub))).toEqual(['android', 'ios']);
+  it('offers a list for every platform the page can detect', () => {
+    expect(Object.keys(buildSubApps(sub))).toEqual(['ios', 'android', 'windows', 'macos', 'linux']);
   });
 
   it('gives every Android app a one-tap import link', () => {
-    expect(buildSubApps(sub).android).toEqual([
-      { name: 'V2Box', url: `v2box://install-sub?url=${encSub}&name=abc` },
-      { name: 'V2RayNG', url: `v2rayng://install-config?url=${encSub}` },
-      { name: 'Sing-box', url: `sing-box://import-remote-profile?url=${encSub}#Nova%20Net` },
-      { name: 'V2RayTun', url: `v2raytun://import/${subUrl}` },
-      { name: 'Happ', url: `happ://add/${subUrl}` },
-      { name: 'Incy', url: `incy://add/${subUrl}` },
+    expect(imports(buildSubApps(sub).android)).toEqual([
+      ['Happ', `happ://add/${subUrl}`],
+      ['V2RayTun', `v2raytun://import/${subUrl}`],
+      ['V2RayNG', `v2rayng://install-config?url=${encSub}`],
+      ['Hiddify', `hiddify://import/${subUrl}#Nova%20Net`],
+      ['Sing-box', `sing-box://import-remote-profile?url=${encSub}#Nova%20Net`],
+      ['V2Box', `v2box://install-sub?url=${encSub}&name=abc`],
     ]);
   });
 
   it('gives every iOS app a one-tap import link', () => {
     const rocket = Buffer.from(`${subUrl}?flag=shadowrocket`).toString('base64');
-    expect(buildSubApps(sub).ios).toEqual([
-      { name: 'Shadowrocket', url: `shadowrocket://add/sub://${rocket}?remark=Nova%20Net` },
-      { name: 'V2Box', url: `v2box://install-sub?url=${encSub}&name=abc` },
-      { name: 'Streisand', url: `streisand://import/${encSub}` },
-      { name: 'V2RayTun', url: `v2raytun://import/${subUrl}` },
-      { name: 'Happ', url: `happ://add/${subUrl}` },
-      { name: 'Incy', url: `incy://add/${subUrl}` },
+    expect(imports(buildSubApps(sub).ios)).toEqual([
+      ['Happ', `happ://add/${subUrl}`],
+      ['Streisand', `streisand://import/${encSub}`],
+      ['V2RayTun', `v2raytun://import/${subUrl}`],
+      ['V2Box', `v2box://install-sub?url=${encSub}&name=abc`],
+      ['Shadowrocket', `shadowrocket://add/sub://${rocket}?remark=Nova%20Net`],
+      ['Incy', `incy://add/${subUrl}`],
     ]);
   });
 
-  it('names the sing-box profile after the subscription id when there is no title', () => {
-    expect(buildSubApps({ ...sub, subTitle: '' }).android[2].url).toBe(
+  it('imports the Clash subscription into Clash Verge and leaves v2rayN to the clipboard', () => {
+    expect(imports(buildSubApps(sub).windows)).toEqual([
+      ['Happ', `happ://add/${subUrl}`],
+      ['Hiddify', `hiddify://import/${subUrl}#Nova%20Net`],
+      [
+        'Clash Verge',
+        `clash://install-config?url=${encodeURIComponent(subClashUrl)}&name=Nova%20Net`,
+      ],
+      ['v2rayN', ''],
+    ]);
+  });
+
+  it('drops Clash Verge everywhere when the Clash subscription is disabled', () => {
+    const apps = buildSubApps({ ...sub, subClashUrl: '' });
+    const names = Object.values(apps).flatMap((list) => list.map((app) => app.name));
+    expect(names).not.toContain('Clash Verge');
+    expect(apps.linux.map((app) => app.name)).toEqual(['Happ', 'Hiddify', 'v2rayN']);
+  });
+
+  it('names where each install link leads', () => {
+    const { ios, android, windows } = buildSubApps(sub);
+    expect([ios[0], android[0], windows[0]].map((app) => [app.installUrl, app.store])).toEqual([
+      ['https://apps.apple.com/app/id6504287215', 'App Store'],
+      ['https://play.google.com/store/apps/details?id=com.happproxy', 'Google Play'],
+      ['https://github.com/Happ-proxy/happ-desktop/releases/latest', 'GitHub'],
+    ]);
+  });
+
+  it('names the profile after the subscription id when there is no title', () => {
+    const android = buildSubApps({ ...sub, subTitle: '' }).android;
+    expect(android.find((app) => app.name === 'Sing-box')?.importUrl).toBe(
       `sing-box://import-remote-profile?url=${encSub}#abc`,
     );
   });
@@ -128,7 +172,7 @@ describe('buildSubApps', () => {
   it('appends flag=shadowrocket with & when the subscription URL already has a query', () => {
     const withQuery = { ...sub, subUrl: `${subUrl}?token=1` };
     const rocket = Buffer.from(`${subUrl}?token=1&flag=shadowrocket`).toString('base64');
-    expect(buildSubApps(withQuery).ios[0].url).toBe(
+    expect(buildSubApps(withQuery).ios.find((app) => app.name === 'Shadowrocket')?.importUrl).toBe(
       `shadowrocket://add/sub://${rocket}?remark=Nova%20Net`,
     );
   });

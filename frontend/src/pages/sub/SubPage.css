@@ -408,8 +408,90 @@ a.sub-row-title:hover {
 .sub-apps {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: stretch;
   gap: 16px;
+}
+
+.sub-platforms {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.sub-platforms > .ant-segmented {
+  max-width: 100%;
+}
+
+.sub-app-option {
+  width: 100%;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.sub-app-option.is-selected {
+  background: var(--ant-color-primary-bg);
+  border-color: var(--ant-color-primary);
+  box-shadow: 0 0 0 1px var(--ant-color-primary);
+}
+
+.sub-steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: sub-step;
+}
+
+.sub-step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding-block-end: 20px;
+  padding-inline-start: 44px;
+  counter-increment: sub-step;
+}
+
+.sub-step::before {
+  content: counter(sub-step);
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--ant-color-primary);
+  color: var(--ant-color-white);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.sub-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  inset-inline-start: 13px;
+  top: 34px;
+  bottom: 6px;
+  width: 2px;
+  background: var(--ant-color-border-secondary);
+}
+
+.sub-step-title {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 28px;
+  color: var(--ant-color-text);
+}
+
+.sub-step-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .sub-app-grid {
@@ -523,6 +605,10 @@ a.sub-row-title:hover {
 
   .sub-app-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sub-platforms .ant-segmented-group {
+    flex-wrap: wrap;
   }
 
   .sub-tabs .ant-tabs-tab-icon {

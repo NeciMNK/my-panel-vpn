@@ -17,6 +17,10 @@ import {
   Spin,
 } from 'antd';
 
+import { useQueryClient } from '@tanstack/react-query';
+
+import { keys } from '@/api/queryKeys';
+import { setXrayTargetNode, useXrayTargetNode } from '@/api/xrayTarget';
 import { useTheme } from '@/hooks/useTheme';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useXraySetting } from '@/hooks/useXraySetting';
@@ -37,13 +41,14 @@ import {
 } from './balancers/balancer-loopback';
 import { DnsTab } from './dns';
 import { WarpModal, NordModal, PiaModal } from './overrides';
+import XrayTargetSelect from './XrayTargetSelect';
 import './XrayPage.css';
 
 const SECTION_SLUGS = ['basic', 'routing', 'outbound', 'balancer', 'dns', 'advanced'];
 
 type AdvKey = 'xraySetting' | 'inboundSettings' | 'outboundSettings' | 'routingRuleSettings';
 
-export default function XrayPage() {
+function XrayPageContent() {
   const { t } = useTranslation();
   const { isDark, isUltra, antdThemeConfig } = useTheme();
   const { isMobile } = useMediaQuery();
@@ -318,6 +323,7 @@ export default function XrayPage() {
 
         <Layout className="content-shell">
           <Layout.Content id="content-layout" className="content-area">
+            <XrayTargetSelect />
             <Spin
               aria-live="off"
               spinning={spinning || !fetched}
@@ -392,4 +398,19 @@ export default function XrayPage() {
       </Layout>
     </ConfigProvider>
   );
+}
+
+// Remounting per target node drops the previous node's unsaved template edits
+// instead of saving them onto the newly selected node.
+export default function XrayPage() {
+  const nodeId = useXrayTargetNode();
+  const queryClient = useQueryClient();
+  useEffect(
+    () => () => {
+      setXrayTargetNode(null);
+      queryClient.removeQueries({ queryKey: keys.xray.root() });
+    },
+    [queryClient],
+  );
+  return <XrayPageContent key={nodeId ?? 'local'} />;
 }

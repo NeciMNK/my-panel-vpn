@@ -7,6 +7,7 @@ describe('APP_ICONS', () => {
   it('has an icon for every app the subscription page offers on every platform', () => {
     const apps = buildSubApps({
       subUrl: 'https://sub.example.com/sub/abc',
+      subClashUrl: 'https://sub.example.com/clash/abc',
       sId: 'abc',
       subTitle: '',
     });
@@ -18,6 +19,7 @@ describe('APP_ICONS', () => {
   it('carries no icon for an app the page no longer offers', () => {
     const apps = buildSubApps({
       subUrl: 'https://sub.example.com/sub/abc',
+      subClashUrl: 'https://sub.example.com/clash/abc',
       sId: 'abc',
       subTitle: '',
     });

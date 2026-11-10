@@ -47,6 +47,7 @@ import type {
   BalancerStrategySettings,
   BalancerStrategyType,
 } from '@/schemas/routing';
+import { xrayApi } from '@/api/xrayTarget';
 
 // Live state of one balancer inside the running core, as reported by the
 // panel's /xray/balancerStatus endpoint (RoutingService.GetBalancerInfo).
@@ -177,7 +178,7 @@ export default function BalancersTab({
     setLiveLoading(true);
     try {
       const msg = await HttpUtil.post(
-        '/panel/api/xray/balancerStatus',
+        xrayApi('/balancerStatus'),
         { tags: liveTags },
         { silent: true },
       );
@@ -201,7 +202,7 @@ export default function BalancersTab({
   }, [refreshLive]);
 
   async function setOverride(tag: string, target: string) {
-    const msg = await HttpUtil.post('/panel/api/xray/balancerOverride', { tag, target });
+    const msg = await HttpUtil.post(xrayApi('/balancerOverride'), { tag, target });
     if (msg?.success) await refreshLive();
   }
 

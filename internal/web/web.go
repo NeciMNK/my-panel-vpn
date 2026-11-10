@@ -265,6 +265,7 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 	s.index = controller.NewIndexController(g)
 	s.panel = controller.NewXUIController(g)
 	s.api = controller.NewAPIController(g)
+	controller.NewNodeJoinController(g)
 
 	// Initialize WebSocket hub
 	s.wsHub = websocket.NewHub()
@@ -312,7 +313,12 @@ const (
 	cadenceOutboundSub   = "@every 5m"
 	cadenceReapOrphans   = "@every 5m"
 	cadenceRemoteRouting = "@every 5m"
+	cadenceCascadeSticky = "@every 15s"
+	cadenceHomeNetwork   = "@every 1m"
+	cadenceSpeed         = "@every 30s"
+	cadenceMasterBeat    = "@every 5s"
 	cadenceXrayLogPrune  = "@every 10m"
+	cadenceTlsCertRenew  = "@every 1h"
 	cadenceCheckHash     = "@every 2m"
 	// cpu.Percent samples over a full minute (blocking), so a finer cadence just
 	// stacks overlapping samplers; subscribers rate-limit alerts to 1/min anyway.
@@ -359,14 +365,27 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	// check client ips from log file every 10 sec
 	_, _ = s.cron.AddJob(cadenceClientIPScan, job.NewCheckClientIpJob())
 
-	_, _ = s.cron.AddJob(cadenceNodeHeartbeat, job.NewNodeHeartbeatJob())
+	_, _ = s.cron.AddJob(cadenceNodeHeartbeat, job.LeaderOnly(job.NewNodeHeartbeatJob()))
 
-	_, _ = s.cron.AddJob(cadenceNodeTraffic, job.NewNodeTrafficSyncJob())
+	_, _ = s.cron.AddJob(cadenceNodeTraffic, job.LeaderOnly(job.NewNodeTrafficSyncJob()))
 
 	// Outbound subscription auto-refresh (respects per-sub updateInterval)
-	_, _ = s.cron.AddJob(cadenceOutboundSub, job.NewOutboundSubscriptionJob())
+	_, _ = s.cron.AddJob(cadenceOutboundSub, job.LeaderOnly(job.NewOutboundSubscriptionJob()))
 
+	_, _ = s.cron.AddJob(cadenceReapOrphans, job.LeaderOnly(job.NewReapSyncOrphansJob()))
+
+	_, _ = s.cron.AddJob(cadenceCascadeSticky, job.LeaderOnly(job.NewCascadeStickyJob()))
+	_, _ = s.cron.AddJob(cadenceHomeNetwork, job.LeaderOnly(job.NewHomeNetworkJob()))
+	_, _ = s.cron.AddJob(cadenceSpeed, job.LeaderOnly(job.NewSpeedJob()))
+	if service.ClusterEnabled() {
+		clusterJob := job.NewMasterClusterJob(func(bool) {
+			s.reloadTgbot()
+			s.reloadDiscord()
+		})
+		_, _ = s.cron.AddJob(cadenceMasterBeat, clusterJob)
+	}
 	_, _ = s.cron.AddJob(cadenceReapOrphans, job.NewReapSyncOrphansJob())
+	_, _ = s.cron.AddJob(cadenceTlsCertRenew, job.LeaderOnly(job.NewTlsCertRenewJob()))
 
 	// Warm permanent routing URLs immediately and refresh them outside the
 	// latency-sensitive subscription request path.
@@ -377,23 +396,23 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	// check client ips from log file every day
 	_, _ = s.cron.AddJob("@daily", job.NewClearLogsJob())
 	_, _ = s.cron.AddJob(cadenceXrayLogPrune, job.NewPruneXrayLogsJob())
-	_, _ = s.cron.AddJob("@hourly", job.NewWarpIpJob())
+	_, _ = s.cron.AddJob("@hourly", job.LeaderOnly(job.NewWarpIpJob()))
 
 	// Inbound traffic reset jobs
 	// Run every hour
-	_, _ = s.cron.AddJob("@hourly", job.NewPeriodicTrafficResetJob("hourly", loc))
+	_, _ = s.cron.AddJob("@hourly", job.LeaderOnly(job.NewPeriodicTrafficResetJob("hourly", loc)))
 	// Run once a day, midnight
-	_, _ = s.cron.AddJob("@daily", job.NewPeriodicTrafficResetJob("daily", loc))
+	_, _ = s.cron.AddJob("@daily", job.LeaderOnly(job.NewPeriodicTrafficResetJob("daily", loc)))
 	// Run once a week, midnight between Sat/Sun
-	_, _ = s.cron.AddJob("@weekly", job.NewPeriodicTrafficResetJob("weekly", loc))
+	_, _ = s.cron.AddJob("@weekly", job.LeaderOnly(job.NewPeriodicTrafficResetJob("weekly", loc)))
 	// Check monthly reset days at midnight
-	_, _ = s.cron.AddJob("@daily", job.NewPeriodicTrafficResetJob("monthly", loc))
+	_, _ = s.cron.AddJob("@daily", job.LeaderOnly(job.NewPeriodicTrafficResetJob("monthly", loc)))
 
 	// LDAP sync scheduling
 	if ldapEnabled, _ := s.settingService.GetLdapEnable(); ldapEnabled {
 		runtime, _ := s.settingService.GetLdapSyncCron()
 		// job has zero-value services with method receivers that read settings on demand
-		scheduleSettingJob(s.cron, "LDAP sync", runtime, "@every 1m", job.NewLdapSyncJob())
+		scheduleSettingJob(s.cron, "LDAP sync", runtime, "@every 1m", job.LeaderOnly(job.NewLdapSyncJob()))
 	}
 
 	// Telegram-bot–dependent jobs: periodic stats report + callback-hash cleanup.
@@ -403,7 +422,7 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 		if err != nil {
 			logger.Warningf("Telegram notify: failed to load runtime: %v", err)
 		}
-		scheduleSettingJob(s.cron, "Telegram notify", runtime, "@daily", job.NewStatsNotifyJob())
+		scheduleSettingJob(s.cron, "Telegram notify", runtime, "@daily", job.LeaderOnly(job.NewStatsNotifyJob()))
 
 		// check for Telegram bot callback query hash storage reset
 		_, _ = s.cron.AddJob(cadenceCheckHash, job.NewCheckHashStorageJob())
@@ -416,7 +435,7 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 		if err != nil {
 			logger.Warningf("Discord notify: failed to load runtime: %v", err)
 		}
-		s.discordNotifyEntryID = scheduleSettingJob(s.cron, "Discord notify", runtime, "@daily", job.NewDiscordNotifyJob(s.discordService))
+		s.discordNotifyEntryID = scheduleSettingJob(s.cron, "Discord notify", runtime, "@daily", job.LeaderOnly(job.NewDiscordNotifyJob(s.discordService)))
 	}
 
 	// CPU monitor publishes cpu.high events; register it whenever any notifier
@@ -608,10 +627,10 @@ func (s *Server) start(restartXray bool, startTgBot bool) (err error) {
 	}
 	listener = network.NewLimitListener(listener, network.MaxPanelConns, network.MaxPanelConnsPerSource)
 	if certFile != "" || keyFile != "" {
-		cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+		reloader, err := network.NewCertReloader(certFile, keyFile)
 		if err == nil {
 			c := &tls.Config{
-				Certificates: []tls.Certificate{cert},
+				GetCertificate: reloader.GetCertificate,
 			}
 			// Opt-in node mTLS: when a trust CA is configured, request and verify
 			// client certs (VerifyClientCertIfGiven keeps browsers working). With
@@ -686,28 +705,7 @@ func (s *Server) start(restartXray bool, startTgBot bool) (err error) {
 	s.discordGateway = discord.NewGatewayClient(s.discordService, s.settingService, serverService, inboundService, &s.xrayService)
 
 	// Wire reload discord callback for settings updates
-	controller.SetReloadDiscordFunc(func() {
-		if s.discordNotifyEntryID != 0 {
-			s.cron.Remove(s.discordNotifyEntryID)
-			s.discordNotifyEntryID = 0
-		}
-		enabled, err := s.settingService.GetDiscordBotEnable()
-		if err != nil || !enabled {
-			if s.discordGateway != nil && s.discordGateway.IsRunning() {
-				s.discordGateway.Stop()
-			}
-			return
-		}
-		runtime, err := s.settingService.GetDiscordRunTime()
-		if err != nil {
-			logger.Warningf("Discord notify: failed to load runtime: %v", err)
-		}
-		s.discordNotifyEntryID = scheduleSettingJob(s.cron, "Discord notify", runtime, "@daily", job.NewDiscordNotifyJob(s.discordService))
-
-		if s.discordGateway != nil && !s.discordGateway.IsRunning() {
-			_ = s.discordGateway.Start(s.ctx)
-		}
-	})
+	controller.SetReloadDiscordFunc(s.reloadDiscord)
 
 	// Wire Telegram test function to controller
 	controller.SetTestTgFunc(func() error {
@@ -734,46 +732,69 @@ func (s *Server) start(restartXray bool, startTgBot bool) (err error) {
 		}, nil
 	})
 
-	controller.SetReloadTgbotFunc(func() {
-		enabled, err := s.settingService.GetTgbotEnabled()
-		if err != nil || !enabled {
-			if s.tgbotService.IsRunning() {
-				s.tgbotService.Stop()
-			}
-			if s.bus != nil {
-				s.bus.Unsubscribe("tg-notifier")
-			}
-			return
-		}
-		// Start() stops any previous receiver first, so it is safe whether or not the bot is already running.
-		tgBot := s.tgbotService.NewTgbot()
-		if startErr := tgBot.Start(i18nFS); startErr != nil {
-			logger.Warning("reload Telegram bot failed:", startErr)
-			return
-		}
-		if s.bus != nil {
-			s.bus.Subscribe("tg-notifier", s.tgbotService.HandleEvent)
-		}
-	})
+	controller.SetReloadTgbotFunc(s.reloadTgbot)
 
+	service.InitClusterRole()
 	s.startTask(restartXray, loc)
 
 	if startTgBot {
-		isTgbotenabled, err := s.settingService.GetTgbotEnabled()
-		if (err == nil) && isTgbotenabled {
-			tgBot := s.tgbotService.NewTgbot()
-			_ = tgBot.Start(i18nFS)
-			// Subscribe Telegram notifications for event bus
-			s.bus.Subscribe("tg-notifier", s.tgbotService.HandleEvent)
-		}
+		s.reloadTgbot()
 	}
-
 	isDiscordEnabled, err := s.settingService.GetDiscordBotEnable()
-	if (err == nil) && isDiscordEnabled && s.discordGateway != nil {
+	if (err == nil) && isDiscordEnabled && s.discordGateway != nil && service.IsClusterLeader() {
 		_ = s.discordGateway.Start(s.ctx)
 	}
 
 	return nil
+}
+
+// reloadDiscord brings the Discord bot and its report in line with the
+// settings; in a master cluster only the leader runs them.
+func (s *Server) reloadDiscord() {
+	if s.discordNotifyEntryID != 0 {
+		s.cron.Remove(s.discordNotifyEntryID)
+		s.discordNotifyEntryID = 0
+	}
+	enabled, err := s.settingService.GetDiscordBotEnable()
+	if err != nil || !enabled || !service.IsClusterLeader() {
+		if s.discordGateway != nil && s.discordGateway.IsRunning() {
+			s.discordGateway.Stop()
+		}
+		return
+	}
+	runtime, err := s.settingService.GetDiscordRunTime()
+	if err != nil {
+		logger.Warningf("Discord notify: failed to load runtime: %v", err)
+	}
+	s.discordNotifyEntryID = scheduleSettingJob(s.cron, "Discord notify", runtime, "@daily", job.LeaderOnly(job.NewDiscordNotifyJob(s.discordService)))
+
+	if s.discordGateway != nil && !s.discordGateway.IsRunning() {
+		_ = s.discordGateway.Start(s.ctx)
+	}
+}
+
+// reloadTgbot starts or stops the Telegram bot to match the settings; two
+// masters polling one bot token would fight over its updates.
+func (s *Server) reloadTgbot() {
+	enabled, err := s.settingService.GetTgbotEnabled()
+	if err != nil || !enabled || !service.IsClusterLeader() {
+		if s.tgbotService.IsRunning() {
+			s.tgbotService.Stop()
+		}
+		if s.bus != nil {
+			s.bus.Unsubscribe("tg-notifier")
+		}
+		return
+	}
+	// Start() stops any previous receiver first, so it is safe whether or not the bot is already running.
+	tgBot := s.tgbotService.NewTgbot()
+	if startErr := tgBot.Start(i18nFS); startErr != nil {
+		logger.Warning("reload Telegram bot failed:", startErr)
+		return
+	}
+	if s.bus != nil {
+		s.bus.Subscribe("tg-notifier", s.tgbotService.HandleEvent)
+	}
 }
 
 // Stop gracefully shuts down the web server, stops Xray, cron jobs, and Telegram bot.

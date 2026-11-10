@@ -19,6 +19,8 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { catTabLabel } from './catTabLabel';
 import { sanitizePath } from './uriPath';
 import SecretInput from './SecretInput';
+import PanelProxyControl from './PanelProxyControl';
+import type { PanelProxyStatus } from '@/generated/zod';
 
 interface ApiMsg<T = unknown> {
   success?: boolean;
@@ -38,6 +40,7 @@ export default function GeneralTab({ allSetting, updateSetting }: GeneralTabProp
   const [inboundOptions, setInboundOptions] = useState<{ label: string; value: string }[]>([]);
   const [outboundTagList, setOutboundTagList] = useState<string[]>([]);
   const [balancerTagList, setBalancerTagList] = useState<string[]>([]);
+  const [panelProxy, setPanelProxy] = useState<PanelProxyStatus | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -301,12 +304,18 @@ export default function GeneralTab({ allSetting, updateSetting }: GeneralTabProp
                 title={t('pages.settings.panelOutbound')}
                 description={t('pages.settings.panelOutboundDesc')}
               >
+                <PanelProxyControl onStatus={setPanelProxy} />
                 <Select
-                  style={{ width: '100%' }}
+                  style={{ width: '100%', marginTop: 8 }}
                   allowClear
                   showSearch
+                  disabled={!!panelProxy?.mode}
                   value={allSetting.panelOutbound || undefined}
-                  placeholder={t('pages.settings.panelOutboundPh')}
+                  placeholder={
+                    panelProxy?.mode
+                      ? t('pages.settings.panelProxy.overrides')
+                      : t('pages.settings.panelOutboundPh')
+                  }
                   options={outboundOptions}
                   onChange={(v) =>
                     updateSetting({ panelOutbound: (v as string | undefined) || '' })

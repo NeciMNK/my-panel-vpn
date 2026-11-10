@@ -31,3 +31,17 @@ export function useClientOptions(enabled = true) {
         .sort((a, b) => a.localeCompare(b)),
   });
 }
+
+// Client groups in use, for pickers that grant something to a whole group.
+export function useClientGroupOptions(enabled = true) {
+  return useQuery({
+    queryKey: keys.clients.all(),
+    queryFn: fetchClients,
+    enabled,
+    staleTime: 30_000,
+    select: (clients) =>
+      [...new Set(clients.map((client) => (client.group ?? '').trim()).filter(Boolean))].sort(
+        (a, b) => a.localeCompare(b),
+      ),
+  });
+}
