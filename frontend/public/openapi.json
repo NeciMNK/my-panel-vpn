@@ -4196,6 +4196,76 @@
         ],
         "type": "object"
       },
+      "PanelProxyCheck": {
+        "description": "PanelProxyCheck is one live request made the way the panel makes its own.",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "exitIp": {
+            "example": "203.0.113.7",
+            "type": "string"
+          },
+          "telegram": {
+            "example": true,
+            "type": "boolean"
+          },
+          "telegramMs": {
+            "example": 184,
+            "format": "int64",
+            "type": "integer"
+          },
+          "viaProxy": {
+            "example": true,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "error",
+          "exitIp",
+          "telegram",
+          "telegramMs",
+          "viaProxy"
+        ],
+        "type": "object"
+      },
+      "PanelProxyStatus": {
+        "description": "PanelProxyStatus is the quick panel proxy as stored, plus the outbounds it builds now.",
+        "properties": {
+          "active": {
+            "example": true,
+            "type": "boolean"
+          },
+          "error": {
+            "type": "string"
+          },
+          "mode": {
+            "example": "client",
+            "type": "string"
+          },
+          "outbounds": {
+            "example": [
+              "panelproxy-de-frankfurt"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "source": {
+            "example": "alice",
+            "type": "string"
+          }
+        },
+        "required": [
+          "active",
+          "error",
+          "mode",
+          "outbounds",
+          "source"
+        ],
+        "type": "object"
+      },
       "PanelUpdateStatus": {
         "description": "PanelUpdateStatus reports the outcome of the most recently launched panel\nself-update. RunID lets the caller confirm this status belongs to the\nupdate it started rather than a stale result left over from an earlier\nrun; State is one of \"pending\", \"success\", or \"failed\". RunID is a decimal\nstring, not a JSON number: it's a formatted UnixNano timestamp, and\nJavaScript's number type can't represent that precisely (it exceeds\nNumber.MAX_SAFE_INTEGER), which would let two different runs round to the\nsame value on the wire and defeat the whole point of this field.",
         "properties": {
@@ -13794,6 +13864,200 @@
                 "example": {
                   "success": true,
                   "msg": "Test notification sent successfully"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/setting/panelProxy": {
+      "post": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Return the quick panel proxy: its mode (client, link, subscription or empty when off), its source and the panelproxy-* outbounds it builds now.",
+        "operationId": "post_panel_api_setting_panelProxy",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/PanelProxyStatus"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "active": true,
+                    "error": "",
+                    "mode": "client",
+                    "outbounds": [
+                      "panelproxy-de-frankfurt"
+                    ],
+                    "source": "alice"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/setting/panelProxy/set": {
+      "post": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Route the panel's own requests (Telegram, update checks, subscription fetches) through a leastPing balancer over outbounds built from a panel client's node inbounds, a share link or socks5/http proxy URL, or an outbound subscription. An empty mode turns it off. Applies the Xray config right away.",
+        "operationId": "post_panel_api_setting_panelProxy_set",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "mode": {
+                    "type": "string",
+                    "description": "client, link, subscription, or empty to turn the proxy off."
+                  },
+                  "source": {
+                    "type": "string",
+                    "description": "Client email, share link / proxy URL, or subscription URL."
+                  }
+                },
+                "required": [
+                  "mode",
+                  "source"
+                ]
+              },
+              "example": {
+                "mode": "client",
+                "source": "alice"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/PanelProxyStatus"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "active": true,
+                    "error": "",
+                    "mode": "client",
+                    "outbounds": [
+                      "panelproxy-de-frankfurt"
+                    ],
+                    "source": "alice"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/setting/panelProxy/check": {
+      "post": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Reach Telegram and an IP echo service the way the panel makes its own requests, reporting whether the proxy was used and the exit IP.",
+        "operationId": "post_panel_api_setting_panelProxy_check",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/PanelProxyCheck"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "error": "",
+                    "exitIp": "203.0.113.7",
+                    "telegram": true,
+                    "telegramMs": 184,
+                    "viaProxy": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/setting/panelProxy/clients": {
+      "post": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "List the enabled clients that own an enabled inbound on a node, the candidates for client mode.",
+        "operationId": "post_panel_api_setting_panelProxy_clients",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    "alice"
+                  ]
                 }
               }
             }

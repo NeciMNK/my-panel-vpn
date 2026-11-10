@@ -1040,6 +1040,22 @@ export const EXAMPLES: Record<string, unknown> = {
     "total": 0,
     "up": 0
   },
+  "PanelProxyCheck": {
+    "error": "",
+    "exitIp": "203.0.113.7",
+    "telegram": true,
+    "telegramMs": 184,
+    "viaProxy": true
+  },
+  "PanelProxyStatus": {
+    "active": true,
+    "error": "",
+    "mode": "client",
+    "outbounds": [
+      "panelproxy-de-frankfurt"
+    ],
+    "source": "alice"
+  },
   "PanelUpdateStatus": {
     "exitCode": 0,
     "finishedAt": 1735689612,

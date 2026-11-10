@@ -4170,6 +4170,76 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "PanelProxyCheck": {
+    "description": "PanelProxyCheck is one live request made the way the panel makes its own.",
+    "properties": {
+      "error": {
+        "type": "string"
+      },
+      "exitIp": {
+        "example": "203.0.113.7",
+        "type": "string"
+      },
+      "telegram": {
+        "example": true,
+        "type": "boolean"
+      },
+      "telegramMs": {
+        "example": 184,
+        "format": "int64",
+        "type": "integer"
+      },
+      "viaProxy": {
+        "example": true,
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "error",
+      "exitIp",
+      "telegram",
+      "telegramMs",
+      "viaProxy"
+    ],
+    "type": "object"
+  },
+  "PanelProxyStatus": {
+    "description": "PanelProxyStatus is the quick panel proxy as stored, plus the outbounds it builds now.",
+    "properties": {
+      "active": {
+        "example": true,
+        "type": "boolean"
+      },
+      "error": {
+        "type": "string"
+      },
+      "mode": {
+        "example": "client",
+        "type": "string"
+      },
+      "outbounds": {
+        "example": [
+          "panelproxy-de-frankfurt"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "source": {
+        "example": "alice",
+        "type": "string"
+      }
+    },
+    "required": [
+      "active",
+      "error",
+      "mode",
+      "outbounds",
+      "source"
+    ],
+    "type": "object"
+  },
   "PanelUpdateStatus": {
     "description": "PanelUpdateStatus reports the outcome of the most recently launched panel\nself-update. RunID lets the caller confirm this status belongs to the\nupdate it started rather than a stale result left over from an earlier\nrun; State is one of \"pending\", \"success\", or \"failed\". RunID is a decimal\nstring, not a JSON number: it's a formatted UnixNano timestamp, and\nJavaScript's number type can't represent that precisely (it exceeds\nNumber.MAX_SAFE_INTEGER), which would let two different runs round to the\nsame value on the wire and defeat the whole point of this field.",
     "properties": {

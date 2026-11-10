@@ -1853,7 +1853,28 @@
       "subHostSortMode": "Thứ tự nút đăng ký",
       "subHostSortInbound": "Thứ tự kết nối vào (mặc định)",
       "subHostSortHosts": "Thứ tự máy chủ",
-      "subHostSortModeDesc": "Theo thứ tự trên trang Máy chủ giữa các kết nối vào. Thiết lập này quyết định thứ tự do máy chủ xuất ra; ứng dụng khách có thể tự sắp xếp lại."
+      "subHostSortModeDesc": "Theo thứ tự trên trang Máy chủ giữa các kết nối vào. Thiết lập này quyết định thứ tự do máy chủ xuất ra; ứng dụng khách có thể tự sắp xếp lại.",
+      "panelProxy": {
+        "setup": "Through my VPN",
+        "title": "Route the panel through a proxy",
+        "desc": "The panel's own requests (Telegram, update checks, subscription fetches) leave through the chosen exits instead of this server's network. When there are several exits, the one that reaches Telegram fastest is used.",
+        "modeClient": "My client",
+        "modeLink": "Link or proxy",
+        "modeSubscription": "Subscription",
+        "clientPh": "A client with inbounds on other servers",
+        "noClients": "No client has an inbound on another server yet. Add a node and an inbound on it first.",
+        "linkPh": "vless://…, socks5://user:pass@host:1080 or http://host:8080",
+        "subscriptionPh": "https://… subscription URL",
+        "enable": "Enable",
+        "disable": "Turn off",
+        "check": "Check",
+        "active": "Via proxy, exits: {count}",
+        "broken": "Proxy is set up but has no working exit: {error}",
+        "checkOk": "Telegram answered in {ms} ms, exit IP {ip}",
+        "checkDirect": "The proxy bridge is not running, so the panel connected directly.",
+        "checkFail": "Telegram is not reachable: {error}",
+        "overrides": "The quick proxy is on and replaces this choice."
+      }
     },
     "xray": {
       "importRules": "Nhập quy tắc",

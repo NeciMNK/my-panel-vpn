@@ -476,7 +476,10 @@ func (s *XrayService) GetXrayConfig() (*xray.Config, error) {
 
 	// Wire the panel's own HTTP traffic through the configured outbound, after
 	// the subscription merge so subscription outbound tags are valid targets.
-	if egressTag, err := s.settingService.GetPanelOutbound(); err != nil {
+	// The quick panel proxy, once set up, takes over from the hand-picked outbound.
+	if active, extra := (&PanelProxyService{}).generatedOutbounds(); active && injectPanelProxy(xrayConfig, extra) {
+		injectPanelEgress(xrayConfig, PanelProxyBalancerTag)
+	} else if egressTag, err := s.settingService.GetPanelOutbound(); err != nil {
 		logger.Warning("read panelOutbound setting failed:", err)
 	} else if egressTag != "" {
 		injectPanelEgress(xrayConfig, egressTag)

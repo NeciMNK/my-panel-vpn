@@ -1005,6 +1005,24 @@ export const OutboundTrafficsSchema = z.object({
 });
 export type OutboundTraffics = z.infer<typeof OutboundTrafficsSchema>;
 
+export const PanelProxyCheckSchema = z.object({
+  error: z.string(),
+  exitIp: z.string(),
+  telegram: z.boolean(),
+  telegramMs: z.number().int(),
+  viaProxy: z.boolean(),
+});
+export type PanelProxyCheck = z.infer<typeof PanelProxyCheckSchema>;
+
+export const PanelProxyStatusSchema = z.object({
+  active: z.boolean(),
+  error: z.string(),
+  mode: z.string(),
+  outbounds: z.array(z.string()),
+  source: z.string(),
+});
+export type PanelProxyStatus = z.infer<typeof PanelProxyStatusSchema>;
+
 export const PanelUpdateStatusSchema = z.object({
   exitCode: z.number().int(),
   finishedAt: z.number().int(),
