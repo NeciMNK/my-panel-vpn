@@ -339,9 +339,9 @@ func TestConfirmPaymentLiftsFreePlanAndNotifiesClient(t *testing.T) {
 	}
 }
 
-// A trusted client may stay connected up to graceDays on credit, once; an
-// untrusted one is not offered it, and the credit is repaid by the next payment.
-func TestTrustedClientDefersPaymentOnce(t *testing.T) {
+// A trusted client may stay connected graceDays on credit; an untrusted one is
+// not offered it, and the next payment repays the credit.
+func TestTrustedClientDefersPayment(t *testing.T) {
 	tb, calls := newScreenTgbot(t, false)
 	initReportDB(t)
 	localizeWithRealBundle(t)
@@ -374,6 +374,15 @@ func TestTrustedClientDefersPaymentOnce(t *testing.T) {
 		t.Errorf("admin messages = %d, want 1: admins must hear about a deferral", n)
 	}
 
+	// Within the cooldown a second deferral is refused even when the end is near again.
+	setClientExpiry(t, "trusted@x", time.UnixMilli(deferred).Add(-14*24*time.Hour))
+	nearAgain := trafficOf(t, "trusted@x").ExpiryTime
+	tap(tb, 5757, cbClientDefer, false)
+	if got := trafficOf(t, "trusted@x").ExpiryTime; got != nearAgain {
+		t.Fatalf("a second deferral in the same month moved the expiry to %v", time.UnixMilli(got))
+	}
+	setClientExpiry(t, "trusted@x", time.UnixMilli(deferred))
+
 	tap(tb, 9001, "pay_ok trusted@x 1", true)
 	if want := due.Add(monthDays * 24 * time.Hour).UnixMilli(); trafficOf(t, "trusted@x").ExpiryTime != want {
 		t.Errorf("expiry after paying = %v, want %v: the credit was not repaid",
@@ -381,23 +390,48 @@ func TestTrustedClientDefersPaymentOnce(t *testing.T) {
 	}
 }
 
-// Unpaid credit must not be renewed: once the deferred term runs low again,
-// the client has to pay before it may defer a second time.
-func TestDeferralDoesNotStackWhileCreditIsOpen(t *testing.T) {
-	tb, _ := newScreenTgbot(t, false)
-	initReportDB(t)
-	localizeWithRealBundle(t)
-	setTestAdmins(t, 9001)
-	seedBilledClient(t, 5858, "debtor@x")
-	seedPaymentSettings(t, "300", "card")
-	nearEnd := time.Now().Add(3 * 24 * time.Hour).Truncate(time.Second)
-	setClientExpiry(t, "debtor@x", nearEnd)
-	saveBilling(t, &model.ClientBilling{ClientId: billingOf(t, "debtor@x").ClientId, Trusted: true, GraceDays: graceDays})
+// Deferral is limited to once per graceCooldownDays, not by count: a recent one
+// blocks the next, an older one does not, and open credit adds up.
+func TestDeferralOncePerMonth(t *testing.T) {
+	cases := []struct {
+		name      string
+		lastAgo   time.Duration
+		wantGrant bool
+	}{
+		{name: "deferred 10 days ago", lastAgo: 10 * 24 * time.Hour, wantGrant: false},
+		{name: "deferred 31 days ago", lastAgo: 31 * 24 * time.Hour, wantGrant: true},
+	}
+	for i, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			tb, _ := newScreenTgbot(t, false)
+			initReportDB(t)
+			localizeWithRealBundle(t)
+			setTestAdmins(t, 9001)
+			tgID := int64(5858 + i)
+			email := fmt.Sprintf("debtor%d@x", i)
+			seedBilledClient(t, tgID, email)
+			seedPaymentSettings(t, "300", "card")
+			nearEnd := time.Now().Add(3 * 24 * time.Hour).Truncate(time.Second)
+			setClientExpiry(t, email, nearEnd)
+			saveBilling(t, &model.ClientBilling{
+				ClientId: billingOf(t, email).ClientId, Trusted: true, GraceDays: graceDays,
+				LastGraceAt: time.Now().Add(-tc.lastAgo).UnixMilli(),
+			})
 
-	tap(tb, 5858, cbClientDefer, false)
+			tap(tb, tgID, cbClientDefer, false)
 
-	if got := trafficOf(t, "debtor@x").ExpiryTime; got != nearEnd.UnixMilli() {
-		t.Errorf("expiry = %v, want %v: credit was granted on top of open credit", time.UnixMilli(got), nearEnd)
+			got := trafficOf(t, email).ExpiryTime
+			wantExpiry, wantDebt := nearEnd.UnixMilli(), graceDays
+			if tc.wantGrant {
+				wantExpiry, wantDebt = nearEnd.Add(graceDays*24*time.Hour).UnixMilli(), 2*graceDays
+			}
+			if got != wantExpiry {
+				t.Errorf("expiry = %v, want %v", time.UnixMilli(got), time.UnixMilli(wantExpiry))
+			}
+			if debt := billingOf(t, email).GraceDays; debt != wantDebt {
+				t.Errorf("credit = %d days, want %d", debt, wantDebt)
+			}
+		})
 	}
 }
 

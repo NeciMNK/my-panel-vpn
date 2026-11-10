@@ -1148,8 +1148,10 @@ type ClientBilling struct {
 	ClientId int  `json:"clientId" gorm:"uniqueIndex;column:client_id"`
 	Trusted  bool `json:"trusted" gorm:"default:false"`
 	FreePlan bool `json:"freePlan" gorm:"column:free_plan;default:false"`
-	// GraceDays were added to the expiry on credit; the next confirmed payment repays them.
+	// GraceDays were added to the expiry on credit and add up; the next confirmed payment repays them.
 	GraceDays int `json:"graceDays" gorm:"column:grace_days;default:0"`
+	// LastGraceAt (unix ms) spaces deferrals: one per graceCooldownDays, any number in total.
+	LastGraceAt int64 `json:"lastGraceAt" gorm:"column:last_grace_at;default:0"`
 }
 
 // ClientExternalLink is a per-client entry surfaced in the client's

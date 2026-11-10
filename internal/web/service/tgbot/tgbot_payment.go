@@ -24,13 +24,14 @@ const (
 	cbClientDefer = "client_defer"
 	cbFreeRequest = "free_req"
 
-	// graceDays is the longest a trusted client may stay connected before paying.
-	graceDays    = 15
-	freePlanGB   = 10
-	monthDays    = 30
-	dayMillis    = int64(24 * time.Hour / time.Millisecond)
-	paymentDate  = "2006-01-02 15:04"
-	freeEmailMax = 32
+	// graceDays is how far one deferral moves the expiry; at most one per graceCooldownDays.
+	graceDays         = 15
+	graceCooldownDays = 30
+	freePlanGB        = 10
+	monthDays         = 30
+	dayMillis         = int64(24 * time.Hour / time.Millisecond)
+	paymentDate       = "2006-01-02 15:04"
+	freeEmailMax      = 32
 )
 
 var (
@@ -160,8 +161,8 @@ func (t *Tgbot) planLine(info paymentInfo, plan entity.PaymentPlan) string {
 	return t.I18nBot("tgbot.payment.plan", params...)
 }
 
-// deferrable lists the subscriptions a trusted client may still put on credit:
-// ending within graceDays (or already ended) and with no credit outstanding.
+// deferrable lists the subscriptions a trusted client may put on credit now:
+// ending within graceDays (or ended) and not deferred in the last graceCooldownDays.
 func (t *Tgbot) deferrable(traffics []*xray.ClientTraffic) []*xray.ClientTraffic {
 	now := time.Now().UnixMilli()
 	var out []*xray.ClientTraffic
@@ -169,7 +170,8 @@ func (t *Tgbot) deferrable(traffics []*xray.ClientTraffic) []*xray.ClientTraffic
 		if traffic.ExpiryTime <= 0 || traffic.ExpiryTime-now > graceDays*dayMillis {
 			continue
 		}
-		if billing := t.billingFor(traffic.Email); billing.Trusted && billing.GraceDays == 0 {
+		billing := t.billingFor(traffic.Email)
+		if billing.Trusted && now-billing.LastGraceAt >= graceCooldownDays*dayMillis {
 			out = append(out, traffic)
 		}
 	}
@@ -392,7 +394,8 @@ func (t *Tgbot) deferPayment(callbackQuery *telego.CallbackQuery) {
 			continue
 		}
 		billing := t.billingFor(traffic.Email)
-		billing.GraceDays = graceDays
+		billing.GraceDays += graceDays
+		billing.LastGraceAt = now
 		if err := t.clientService.SaveBilling(billing); err != nil {
 			logger.Warning("deferPayment: saving billing failed:", err)
 		}
