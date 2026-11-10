@@ -1431,6 +1431,8 @@
       "telegramTokenDesc": "Token bot Telegram yang diperoleh dari '{'@'}BotFather'.",
       "telegramProxy": "Proxy SOCKS",
       "telegramProxyDesc": "Mengaktifkan proxy SOCKS5 untuk terhubung ke Telegram. (sesuaikan pengaturan sesuai panduan)",
+      "telegramVpnFallback": "Lewat VPN saya jika Telegram diblokir",
+      "telegramVpnFallbackDesc": "Jika server ini tidak bisa menjangkau Telegram langsung, panel membuat klien panel-tech di grup тех pada node dan menghubungkan bot lewat klien itu. Diabaikan bila proxy SOCKS, server API, atau outbound panel diatur.",
       "telegramAPIServer": "Server API Telegram",
       "telegramAPIServerDesc": "Server API Telegram yang akan digunakan. Biarkan kosong untuk menggunakan server default.",
       "telegramChatId": "ID Obrolan Admin",

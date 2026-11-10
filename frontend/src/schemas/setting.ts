@@ -37,6 +37,7 @@ export const AllSettingSchema = z
     tgBotEnable: z.boolean().optional(),
     tgBotToken: z.string().optional(),
     tgBotProxy: z.string().optional(),
+    tgBotVpnFallback: z.boolean().optional(),
     tgBotAPIServer: z.string().optional(),
     tgBotChatId: z.string().optional(),
     tgRunTime: z.string().optional(),

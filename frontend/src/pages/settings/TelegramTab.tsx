@@ -169,6 +169,17 @@ export default function TelegramTab({ allSetting, updateSetting }: TelegramTabPr
                 />
               </SettingListItem>
 
+              <SettingListItem
+                paddings="small"
+                title={t('pages.settings.telegramVpnFallback')}
+                description={t('pages.settings.telegramVpnFallbackDesc')}
+              >
+                <Switch
+                  checked={allSetting.tgBotVpnFallback}
+                  onChange={(v) => updateSetting({ tgBotVpnFallback: v })}
+                />
+              </SettingListItem>
+
               {inlineWarning !== null && (
                 <Alert
                   type="warning"

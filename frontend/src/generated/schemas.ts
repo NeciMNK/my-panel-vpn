@@ -522,6 +522,10 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgBotToken": {
         "type": "string"
       },
+      "tgBotVpnFallback": {
+        "description": "Off keeps the bot on a direct connection even when Telegram is filtered here.",
+        "type": "boolean"
+      },
       "tgCpu": {
         "maximum": 100,
         "minimum": 0,
@@ -768,6 +772,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgBotEnable",
       "tgBotProxy",
       "tgBotToken",
+      "tgBotVpnFallback",
       "tgCpu",
       "tgEnabledEvents",
       "tgFreePlanEnable",
@@ -1339,6 +1344,10 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgBotToken": {
         "type": "string"
       },
+      "tgBotVpnFallback": {
+        "description": "Off keeps the bot on a direct connection even when Telegram is filtered here.",
+        "type": "boolean"
+      },
       "tgCpu": {
         "maximum": 100,
         "minimum": 0,
@@ -1593,6 +1602,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgBotEnable",
       "tgBotProxy",
       "tgBotToken",
+      "tgBotVpnFallback",
       "tgCpu",
       "tgEnabledEvents",
       "tgFreePlanEnable",

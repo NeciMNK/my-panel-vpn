@@ -1431,6 +1431,8 @@
       "telegramTokenDesc": "從 '{'@'}BotFather' 獲取的 Telegram 機器人令牌",
       "telegramProxy": "SOCKS 代理",
       "telegramProxyDesc": "啟用 SOCKS5 代理連線到 Telegram（根據指南調整設定）",
+      "telegramVpnFallback": "Telegram 被封鎖時走我的 VPN",
+      "telegramVpnFallbackDesc": "當本伺服器無法直接連上 Telegram 時，面板會在節點上為自己建立群組 тех 中的用戶端 panel-tech，並讓機器人透過它連線。已設定 SOCKS 代理、API 伺服器或面板出站時不生效。",
       "telegramAPIServer": "Telegram API 伺服器",
       "telegramAPIServerDesc": "要使用的 Telegram API 伺服器。留空以使用預設伺服器。",
       "telegramChatId": "管理員聊天 ID",

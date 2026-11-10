@@ -1431,6 +1431,8 @@
       "telegramTokenDesc": "Bạn phải nhận token từ quản lý bot Telegram {'@'}botfather",
       "telegramProxy": "SOCKS Proxy",
       "telegramProxyDesc": "Nếu bạn cần socks5 proxy để kết nối với Telegram. Điều chỉnh cài đặt của nó theo hướng dẫn.",
+      "telegramVpnFallback": "Qua VPN của tôi nếu Telegram bị chặn",
+      "telegramVpnFallbackDesc": "Nếu máy chủ này không truy cập Telegram trực tiếp được, panel tự tạo client panel-tech trong nhóm тех trên các node và kết nối bot qua đó. Bỏ qua khi đã đặt proxy SOCKS, máy chủ API hoặc outbound của panel.",
       "telegramAPIServer": "Máy chủ API Telegram",
       "telegramAPIServerDesc": "Máy chủ API Telegram để sử dụng. Để trống để sử dụng máy chủ mặc định.",
       "telegramChatId": "Chat ID Telegram của quản trị viên",

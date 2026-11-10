@@ -44,17 +44,19 @@ type AllSetting struct {
 	SubTrafficDepletedTemplate string `json:"subTrafficDepletedTemplate" form:"subTrafficDepletedTemplate"`
 	Datepicker                 string `json:"datepicker" form:"datepicker"`
 
-	TgBotEnable     bool   `json:"tgBotEnable" form:"tgBotEnable"`
-	TgBotToken      string `json:"tgBotToken" form:"tgBotToken"`
-	TgBotProxy      string `json:"tgBotProxy" form:"tgBotProxy"`
-	TgBotAPIServer  string `json:"tgBotAPIServer" form:"tgBotAPIServer"`
-	TgBotChatId     string `json:"tgBotChatId" form:"tgBotChatId"`
-	TgRunTime       string `json:"tgRunTime" form:"tgRunTime"`
-	TgBotBackup     bool   `json:"tgBotBackup" form:"tgBotBackup"`
-	TgCpu           int    `json:"tgCpu" form:"tgCpu" validate:"gte=0,lte=100"`
-	TgMemory        int    `json:"tgMemory" form:"tgMemory" validate:"gte=0,lte=100"`
-	TgLang          string `json:"tgLang" form:"tgLang"`
-	TgEnabledEvents string `json:"tgEnabledEvents" form:"tgEnabledEvents"`
+	TgBotEnable bool   `json:"tgBotEnable" form:"tgBotEnable"`
+	TgBotToken  string `json:"tgBotToken" form:"tgBotToken"`
+	TgBotProxy  string `json:"tgBotProxy" form:"tgBotProxy"`
+	// Off keeps the bot on a direct connection even when Telegram is filtered here.
+	TgBotVpnFallback bool   `json:"tgBotVpnFallback" form:"tgBotVpnFallback"`
+	TgBotAPIServer   string `json:"tgBotAPIServer" form:"tgBotAPIServer"`
+	TgBotChatId      string `json:"tgBotChatId" form:"tgBotChatId"`
+	TgRunTime        string `json:"tgRunTime" form:"tgRunTime"`
+	TgBotBackup      bool   `json:"tgBotBackup" form:"tgBotBackup"`
+	TgCpu            int    `json:"tgCpu" form:"tgCpu" validate:"gte=0,lte=100"`
+	TgMemory         int    `json:"tgMemory" form:"tgMemory" validate:"gte=0,lte=100"`
+	TgLang           string `json:"tgLang" form:"tgLang"`
+	TgEnabledEvents  string `json:"tgEnabledEvents" form:"tgEnabledEvents"`
 	// Monthly price, multi-month discounts and payment details shown to clients in the bot.
 	TgPaymentPrice     int    `json:"tgPaymentPrice" form:"tgPaymentPrice" validate:"gte=0" example:"300"`
 	TgPaymentCurrency  string `json:"tgPaymentCurrency" form:"tgPaymentCurrency" example:"RUB"`
