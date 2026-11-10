@@ -31,7 +31,7 @@ func (t *Tgbot) getInboundUsages() string {
 
 		clients, listErr := t.clientService.ListForInbound(nil, inbound.Id)
 		if listErr == nil {
-			fmt.Fprintf(&info, "👥 Clients: %d\r\n", len(clients))
+			info.WriteString(t.I18nBot("tgbot.messages.clientsCount", "Count=="+strconv.Itoa(len(clients))))
 		}
 
 		if inbound.ExpiryTime == 0 {

@@ -2930,7 +2930,8 @@
       "freeDeclined": "❌ Your request for a free subscription was declined.",
       "speedLow": "Server {{ .Server }} has {{ .Free }} Mbit/s free per user, below the {{ .Min }} Mbit/s minimum of {{ .Users }}, and no other server has room. Add a server or raise its link speed.",
       "masterLeader": "Master {{ .Master }} now leads the panel cluster.",
-      "masterLeaderPrevious": "It took over from {{ .Previous }}."
+      "masterLeaderPrevious": "It took over from {{ .Previous }}.",
+      "attachedInbounds": "🔗 Inbounds: {{ .Inbounds }}\r\n"
     },
     "buttons": {
       "closeKeyboard": "❌ بستن کیبورد",
@@ -3097,6 +3098,16 @@
       "deleteTitle": "🗑 Tap a row to delete it ({{ .Month }} entries and all servers).",
       "groupsTitle": "🆓 Tap a group to switch it between paying 💰 and non-paying 🆓.",
       "paymentNote": "{{ .Months }} mo"
+    },
+    "draft": {
+      "title": "📝 <b>New client draft</b>\r\n",
+      "email": "📧 Email: <code>{{ .Email }}</code>\r\n",
+      "attached": "🔗 Attached: {{ .Inbounds }}\r\n",
+      "traffic": "📊 Traffic: {{ .Traffic }}\r\n",
+      "expire": "📅 Expire: {{ .Time }}\r\n",
+      "ipLimit": "🔢 IP limit: {{ .Limit }}\r\n",
+      "tgUser": "👤 TG user: {{ .User }}\r\n",
+      "comment": "💬 Comment: {{ .Comment }}\r\n"
     }
   },
   "discord": {

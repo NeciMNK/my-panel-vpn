@@ -76,6 +76,7 @@ func lastDraftCard(t *testing.T, texts []string) string {
 // was filled in by another chat's steps.
 func TestAddClientDraftIsPerChat(t *testing.T) {
 	dbtest.InitDB(t, filepath.Join(t.TempDir(), "x-ui.db"))
+	localizeWithRealBundle(t)
 
 	const (
 		chatA = int64(7101)
