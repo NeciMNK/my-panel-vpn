@@ -1,5 +1,9 @@
 # my-panel-vpn
 
+> [!NOTE]
+> **my-panel-vpn** — личный форк [3X-UI](https://github.com/MHSanaei/3x-ui), не официальный релиз 3X-UI.
+> Лицензия GPL-3.0, как у апстрима; авторство, список изменений и сторонние лицензии — в [`NOTICE.md`](NOTICE.md).
+
 Личная панель управления VPN-серверами на базе [3x-ui v3](https://github.com/MHSanaei/3x-ui)
 с подходом [Remnawave](https://github.com/remnawave/panel): один мастер управляет всеми
 серверами (нодами), а пользователи получают одну подписку на всё сразу.
@@ -204,7 +208,7 @@ git merge upstream/main
 
 ## Лицензия и благодарности
 
-Проект распространяется под [GPL-3.0](LICENSE), как и 3x-ui.
+Проект распространяется под [GPL-3.0](LICENSE), как и 3x-ui. Авторство и сторонние лицензии — в [`NOTICE.md`](NOTICE.md).
 
 - [3x-ui](https://github.com/MHSanaei/3x-ui) и [alireza0](https://github.com/alireza0/) —
   основа панели.
