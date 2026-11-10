@@ -1000,6 +1000,69 @@ export const EXAMPLES: Record<string, unknown> = {
     "total": 10737418240,
     "up": 1048576
   },
+  "LedgerEntry": {
+    "amount": 300,
+    "createdAt": 1762761600000,
+    "email": "alice",
+    "id": 1,
+    "kind": "income",
+    "month": "2026-11",
+    "note": "1 mo"
+  },
+  "LedgerNonPaying": {
+    "email": "admin",
+    "group": "family",
+    "reason": "group"
+  },
+  "LedgerReport": {
+    "balance": 900,
+    "currency": "RUB",
+    "entries": [
+      {
+        "amount": 300,
+        "createdAt": 1762761600000,
+        "email": "alice",
+        "id": 1,
+        "kind": "income",
+        "month": "2026-11",
+        "note": "1 mo"
+      }
+    ],
+    "expectedIncome": 3000,
+    "expenses": 1500,
+    "freeGroups": [
+      ""
+    ],
+    "income": 2400,
+    "month": "2026-11",
+    "nonPaying": [
+      {
+        "email": "admin",
+        "group": "family",
+        "reason": "group"
+      }
+    ],
+    "otherExpenses": 0,
+    "payingClients": 10,
+    "price": 300,
+    "serverCosts": 1500,
+    "servers": [
+      {
+        "endMonth": "",
+        "id": 1,
+        "monthlyCost": 500,
+        "name": "Hetzner DE",
+        "startMonth": "2026-11"
+      }
+    ]
+  },
+  "LedgerServer": {
+    "endMonth": "",
+    "id": 1,
+    "monthlyCost": 500,
+    "name": "Hetzner DE",
+    "startMonth": "2026-11"
+  },
   "LogEntry": {
     "DateTime": "2025-01-01T12:00:00Z",
     "Email": "alice@example.com",

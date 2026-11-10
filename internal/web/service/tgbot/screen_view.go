@@ -45,6 +45,7 @@ func (t *Tgbot) homeRows() [][]telego.InlineKeyboardButton {
 			t.btn("tgbot.buttons.catTraffic", cbCatTraffic),
 			t.btn("tgbot.buttons.catMaintenance", cbCatMaintenance),
 		),
+		tu.InlineKeyboardRow(t.btn("tgbot.buttons.ledger", cbLedger)),
 		tu.InlineKeyboardRow(
 			t.btn("tgbot.buttons.refresh", cbHome),
 		),

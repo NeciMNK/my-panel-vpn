@@ -148,6 +148,7 @@ func (t *Tgbot) clientRows(email string) [][]telego.InlineKeyboardButton {
 		),
 		tu.InlineKeyboardRow(t.btn("tgbot.buttons.toggle", t.encodeQuery("toggle_enable "+email))),
 		t.trustedRow(email),
+		t.nonPayingRow(email),
 		t.backRow(),
 	}
 }

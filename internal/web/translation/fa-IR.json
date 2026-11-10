@@ -138,7 +138,8 @@
     "openMenu": "باز کردن منو",
     "pinSidebar": "ثابت کردن نوار کناری",
     "unpinSidebar": "برداشتن تثبیت نوار کناری",
-    "subFormats": "Sub Formats"
+    "subFormats": "Sub Formats",
+    "ledger": "Finance"
   },
   "pages": {
     "login": {
@@ -2716,6 +2717,51 @@
         "badVlessRoute": "یک عدد بین 0 تا 65535 وارد کنید"
       },
       "dragToReorder": "برای تغییر ترتیب {name} بکشید"
+    },
+    "ledger": {
+      "income": "Income",
+      "expense": "Expense",
+      "expenses": "Expenses",
+      "balance": "Profit / loss",
+      "expected": "Expected from {count} paying clients",
+      "servers": "Servers (monthly cost)",
+      "serverName": "Server",
+      "monthlyCost": "Per month",
+      "period": "Period",
+      "ongoing": "now",
+      "notThisMonth": "not this month",
+      "startMonth": "First month (YYYY-MM)",
+      "endMonth": "Last month (YYYY-MM)",
+      "endMonthHint": "Leave empty while the server is still paid for.",
+      "serverTitle": "Server cost",
+      "entries": "Payments and one-off costs",
+      "addIncome": "+ Income",
+      "addExpense": "+ Expense",
+      "entryTitle": "Ledger entry",
+      "kind": "Type",
+      "amount": "Amount",
+      "client": "Client",
+      "note": "Note",
+      "month": "Month (YYYY-MM)",
+      "confirmDelete": "Delete this row?",
+      "prevMonth": "Previous month",
+      "nextMonth": "Next month",
+      "nonPaying": "Who does not pay",
+      "freeGroups": "Groups that do not pay (e.g. family)",
+      "markClient": "Mark a client as non-paying (e.g. admin)",
+      "markPaying": "Paying again",
+      "reason": "Why",
+      "reasonClient": "marked non-paying",
+      "reasonGroup": "group",
+      "reasonFreePlan": "free plan",
+      "errName": "Enter a name",
+      "errAmount": "Enter a positive whole amount",
+      "errMonth": "Use YYYY-MM",
+      "errRange": "The last month is before the first",
+      "toasts": {
+        "deleted": "Deleted",
+        "saved": "Saved"
+      }
     }
   },
   "tgbot": {
@@ -2921,7 +2967,14 @@
       "trusted": "⭐ Trusted (pay later): {{ .State }}",
       "requestFree": "🆓 Request a free subscription ({{ .GB }} GB/month)",
       "approve": "✅ Approve",
-      "decline": "❌ Decline"
+      "decline": "❌ Decline",
+      "ledger": "💰 Finance",
+      "ledgerAddIncome": "➕ Income",
+      "ledgerAddExpense": "➖ Expense",
+      "ledgerAddServer": "🖥 Add server cost",
+      "ledgerDelete": "🗑 Delete",
+      "ledgerFreeGroups": "🆓 Non-paying groups",
+      "nonPaying": "🆓 Does not pay: {{ .State }}"
     },
     "answers": {
       "broadcastStarted": "🚀 ارسال گروهی آغاز شد.",
@@ -3000,6 +3053,19 @@
       "plan": "• {{ .Months }} mo — {{ .Total }}\r\n",
       "planDiscounted": "• {{ .Months }} mo — {{ .Total }} (−{{ .Percent }}%)\r\n",
       "choosePlan": "💳 Which term did you pay for?"
+    },
+    "ledger": {
+      "summary": "💰 <b>Finance for {{ .Month }}</b>\r\n\r\n➕ Income: {{ .Income }}\r\n➖ Expenses: {{ .Expenses }} (servers {{ .Servers }})\r\n{{ .Sign }} <b>Result: {{ .Balance }}</b>\r\n👥 Paying clients: {{ .Paying }}, expected {{ .Expected }}\r\n",
+      "serversTitle": "\r\n🖥 <b>Servers</b>\r\n",
+      "entriesTitle": "\r\n📒 <b>Entries</b>\r\n",
+      "nonPayingTitle": "\r\n🆓 Not paying: ",
+      "prompt_server": "🖥 Send the server and its monthly cost, e.g.\r\n<code>Hetzner DE 500</code>\r\nAdd a first month to start earlier than {{ .Month }}: <code>Hetzner DE 500 2026-09</code>",
+      "prompt_income": "➕ Send the amount received in {{ .Month }}, optionally the client and a note, e.g.\r\n<code>300 alice for November</code>",
+      "prompt_expense": "➖ Send a one-off cost for {{ .Month }} and a note, e.g.\r\n<code>150 domain</code>",
+      "badInput": "⚠️ Not saved: {{ .Error }}. Try again or tap Cancel.",
+      "deleteTitle": "🗑 Tap a row to delete it ({{ .Month }} entries and all servers).",
+      "groupsTitle": "🆓 Tap a group to switch it between paying 💰 and non-paying 🆓.",
+      "paymentNote": "{{ .Months }} mo"
     }
   },
   "discord": {

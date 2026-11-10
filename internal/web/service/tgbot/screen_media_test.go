@@ -168,6 +168,7 @@ func TestStartRecoversWhenTelegramRejectsAvatar(t *testing.T) {
 		&i18n.Message{ID: "tgbot.buttons.catClients", Other: "Clients"},
 		&i18n.Message{ID: "tgbot.buttons.catTraffic", Other: "Traffic"},
 		&i18n.Message{ID: "tgbot.buttons.catMaintenance", Other: "Maintenance"},
+		&i18n.Message{ID: "tgbot.buttons.ledger", Other: "Finance"},
 		&i18n.Message{ID: "tgbot.buttons.refresh", Other: "Refresh"},
 		&i18n.Message{ID: "tgbot.messages.hostname", Other: "Server: {{.Hostname}}"},
 	)
@@ -183,7 +184,7 @@ func TestStartRecoversWhenTelegramRejectsAvatar(t *testing.T) {
 	if requests[0].Caption != requests[1].Caption || !reflect.DeepEqual(requests[0].ReplyMarkup, requests[1].ReplyMarkup) || requests[1].ChatID != 500 {
 		t.Fatalf("fallback changed the menu content or destination: %+v", requests)
 	}
-	if len(requests[1].ReplyMarkup.InlineKeyboard) != 3 || requests[1].ReplyMarkup.InlineKeyboard[0][0].CallbackData != cbCatServer {
+	if len(requests[1].ReplyMarkup.InlineKeyboard) != 4 || requests[1].ReplyMarkup.InlineKeyboard[0][0].CallbackData != cbCatServer {
 		t.Fatalf("fallback did not carry the admin menu: %+v", requests[1].ReplyMarkup)
 	}
 	if screen.photo != "fallback-photo" {

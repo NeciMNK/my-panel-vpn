@@ -871,6 +871,47 @@ export interface InboundTrafficSummary {
   up: number;
 }
 
+export interface LedgerEntry {
+  amount: number;
+  createdAt: number;
+  email: string;
+  id: number;
+  kind: string;
+  month: string;
+  note: string;
+}
+
+export interface LedgerNonPaying {
+  email: string;
+  group: string;
+  reason: string;
+}
+
+export interface LedgerReport {
+  balance: number;
+  currency: string;
+  entries: LedgerEntry[];
+  expectedIncome: number;
+  expenses: number;
+  freeGroups: string[];
+  income: number;
+  month: string;
+  nonPaying: LedgerNonPaying[];
+  otherExpenses: number;
+  payingClients: number;
+  price: number;
+  serverCosts: number;
+  servers: LedgerServer[];
+}
+
+export interface LedgerServer {
+  endMonth: string;
+  id: number;
+  monthlyCost: number;
+  name: string;
+  startMonth: string;
+}
+
 export interface LogEntry {
   DateTime: string;
   Email: string;

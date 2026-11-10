@@ -3830,6 +3830,191 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "LedgerEntry": {
+    "description": "LedgerEntry is one received payment (income) or one-off cost (expense) booked to a month.",
+    "properties": {
+      "amount": {
+        "example": 300,
+        "type": "integer"
+      },
+      "createdAt": {
+        "example": 1762761600000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "email": {
+        "example": "alice",
+        "type": "string"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "kind": {
+        "example": "income",
+        "type": "string"
+      },
+      "month": {
+        "example": "2026-11",
+        "type": "string"
+      },
+      "note": {
+        "example": "1 mo",
+        "type": "string"
+      }
+    },
+    "required": [
+      "amount",
+      "createdAt",
+      "email",
+      "id",
+      "kind",
+      "month",
+      "note"
+    ],
+    "type": "object"
+  },
+  "LedgerNonPaying": {
+    "description": "LedgerNonPaying is a client kept out of the expected income, with the reason.",
+    "properties": {
+      "email": {
+        "example": "admin",
+        "type": "string"
+      },
+      "group": {
+        "example": "family",
+        "type": "string"
+      },
+      "reason": {
+        "example": "group",
+        "type": "string"
+      }
+    },
+    "required": [
+      "email",
+      "group",
+      "reason"
+    ],
+    "type": "object"
+  },
+  "LedgerReport": {
+    "description": "LedgerReport is one month of the book. Money is in whole units of Currency.",
+    "properties": {
+      "balance": {
+        "example": 900,
+        "type": "integer"
+      },
+      "currency": {
+        "example": "RUB",
+        "type": "string"
+      },
+      "entries": {
+        "items": {
+          "$ref": "#/components/schemas/LedgerEntry"
+        },
+        "type": "array"
+      },
+      "expectedIncome": {
+        "example": 3000,
+        "type": "integer"
+      },
+      "expenses": {
+        "example": 1500,
+        "type": "integer"
+      },
+      "freeGroups": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "income": {
+        "example": 2400,
+        "type": "integer"
+      },
+      "month": {
+        "example": "2026-11",
+        "type": "string"
+      },
+      "nonPaying": {
+        "items": {
+          "$ref": "#/components/schemas/LedgerNonPaying"
+        },
+        "type": "array"
+      },
+      "otherExpenses": {
+        "example": 0,
+        "type": "integer"
+      },
+      "payingClients": {
+        "example": 10,
+        "type": "integer"
+      },
+      "price": {
+        "example": 300,
+        "type": "integer"
+      },
+      "serverCosts": {
+        "example": 1500,
+        "type": "integer"
+      },
+      "servers": {
+        "items": {
+          "$ref": "#/components/schemas/LedgerServer"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "balance",
+      "currency",
+      "entries",
+      "expectedIncome",
+      "expenses",
+      "freeGroups",
+      "income",
+      "month",
+      "nonPaying",
+      "otherExpenses",
+      "payingClients",
+      "price",
+      "serverCosts",
+      "servers"
+    ],
+    "type": "object"
+  },
+  "LedgerServer": {
+    "description": "LedgerServer is a recurring monthly server cost, charged to every month from\nStartMonth through EndMonth (YYYY-MM; empty EndMonth means still running).",
+    "properties": {
+      "endMonth": {
+        "type": "string"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "monthlyCost": {
+        "example": 500,
+        "type": "integer"
+      },
+      "name": {
+        "example": "Hetzner DE",
+        "type": "string"
+      },
+      "startMonth": {
+        "example": "2026-11",
+        "type": "string"
+      }
+    },
+    "required": [
+      "endMonth",
+      "id",
+      "monthlyCost",
+      "name",
+      "startMonth"
+    ],
+    "type": "object"
+  },
   "LogEntry": {
     "properties": {
       "DateTime": {

@@ -49,6 +49,8 @@ func run(root, outDir string) error {
 				"SubBalancer",
 				"TlsCertificate",
 				"TlsCertNodeInstall",
+				"LedgerServer",
+				"LedgerEntry",
 			),
 			AliasAllow: setOf("Protocol"),
 			Overrides: map[string][]walkOverride{
@@ -129,6 +131,8 @@ func run(root, outDir string) error {
 				"HwidSlotStatus",
 				"PanelProxyStatus",
 				"PanelProxyCheck",
+				"LedgerReport",
+				"LedgerNonPaying",
 			),
 		},
 		{

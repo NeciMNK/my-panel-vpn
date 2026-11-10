@@ -1154,9 +1154,44 @@ type ClientBilling struct {
 	GraceDays int `json:"graceDays" gorm:"column:grace_days;default:0"`
 	// LastGraceAt (unix ms) spaces deferrals: one per graceCooldownDays, any number in total.
 	LastGraceAt int64 `json:"lastGraceAt" gorm:"column:last_grace_at;default:0"`
+	// NonPaying keeps the client (e.g. the admin) out of the ledger's expected income.
+	NonPaying bool `json:"nonPaying" gorm:"column:non_paying;default:false"`
 	// PendingMonths is the term the client last reported paying; a confirm consumes it once.
 	PendingMonths int `json:"pendingMonths" gorm:"column:pending_months;default:0"`
 }
+
+// LedgerServer is a recurring monthly server cost, charged to every month from
+// StartMonth through EndMonth (YYYY-MM; empty EndMonth means still running).
+type LedgerServer struct {
+	Id          int    `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
+	Name        string `json:"name" gorm:"not null" example:"Hetzner DE"`
+	MonthlyCost int    `json:"monthlyCost" gorm:"column:monthly_cost;not null" example:"500"`
+	StartMonth  string `json:"startMonth" gorm:"column:start_month;not null" example:"2026-11"`
+	EndMonth    string `json:"endMonth" gorm:"column:end_month;default:''" example:""`
+}
+
+func (LedgerServer) TableName() string { return "ledger_servers" }
+
+// LedgerEntry is one received payment (income) or one-off cost (expense) booked to a month.
+type LedgerEntry struct {
+	Id        int    `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
+	Month     string `json:"month" gorm:"not null;index" example:"2026-11"`
+	Kind      string `json:"kind" gorm:"not null" example:"income"`
+	Amount    int    `json:"amount" gorm:"not null" example:"300"`
+	Email     string `json:"email" gorm:"default:''" example:"alice"`
+	Note      string `json:"note" gorm:"default:''" example:"1 mo"`
+	CreatedAt int64  `json:"createdAt" gorm:"autoCreateTime:milli" example:"1762761600000"`
+}
+
+func (LedgerEntry) TableName() string { return "ledger_entries" }
+
+// LedgerFreeGroup marks a client group (e.g. family) whose members never pay.
+type LedgerFreeGroup struct {
+	Id   int    `json:"id" gorm:"primaryKey;autoIncrement"`
+	Name string `json:"name" gorm:"uniqueIndex;not null"`
+}
+
+func (LedgerFreeGroup) TableName() string { return "ledger_free_groups" }
 
 // ClientExternalLink is a per-client entry surfaced in the client's
 // subscription. Two kinds:

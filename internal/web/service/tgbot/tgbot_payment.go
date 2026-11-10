@@ -356,6 +356,7 @@ func (t *Tgbot) confirmPayment(callbackQuery *telego.CallbackQuery, email, month
 	if err := t.clientService.SaveBilling(billing); err != nil {
 		logger.Warning("confirmPayment: saving billing failed:", err)
 	}
+	t.bookPayment(email, months)
 	tgID := t.clientTgID(email)
 	paymentReports.forget(tgID)
 	if tgID != 0 {
