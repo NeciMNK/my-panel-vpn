@@ -62,6 +62,7 @@ import { originalOutboundIndex } from './outbounds-tab-helpers';
 import { useOutboundColumns } from './useOutboundColumns';
 import OutboundCardList from './OutboundCardList';
 import SubscriptionOutbounds from './SubscriptionOutbounds';
+import { xrayApi } from '@/api/xrayTarget';
 
 const defaultOutboundSubscriptionUserAgent = '3x-ui-outbound-sub/1.0';
 
@@ -328,7 +329,7 @@ export default function OutboundsTab({
   async function loadSubs() {
     setSubsLoading(true);
     try {
-      const r = await HttpUtil.get('/panel/api/xray/outbound-subs');
+      const r = await HttpUtil.get(xrayApi('/outbound-subs'));
       if (r?.success) setSubs(Array.isArray(r.obj) ? r.obj : []);
     } catch {
       messageApi.error(t('pages.xray.outboundSub.toastLoadFailed'));
@@ -398,8 +399,8 @@ export default function OutboundsTab({
     try {
       const url =
         editingSubId != null
-          ? `/panel/api/xray/outbound-subs/${editingSubId}`
-          : '/panel/api/xray/outbound-subs';
+          ? xrayApi(`/outbound-subs/${editingSubId}`)
+          : xrayApi('/outbound-subs');
       const r = await HttpUtil.post<OutboundSub>(url, subBody(newSub));
       if (r?.success) {
         messageApi.success(
@@ -432,7 +433,7 @@ export default function OutboundsTab({
     setPreviewData(null);
     try {
       const r = await HttpUtil.post<{ tag?: string; protocol?: string }[]>(
-        '/panel/api/xray/outbound-subs/parse',
+        xrayApi('/outbound-subs/parse'),
         {
           url: newSub.url,
           userAgent: newSub.userAgent,
@@ -456,7 +457,7 @@ export default function OutboundsTab({
     setBusyId(sub.id);
     try {
       const r = await HttpUtil.post(
-        `/panel/api/xray/outbound-subs/${sub.id}`,
+        xrayApi(`/outbound-subs/${sub.id}`),
         subBody({ ...sub, enabled: !sub.enabled }),
       );
       if (r?.success) {
@@ -474,7 +475,7 @@ export default function OutboundsTab({
   async function moveSub(id: number, dir: 'up' | 'down') {
     setBusyId(id);
     try {
-      const r = await HttpUtil.post(`/panel/api/xray/outbound-subs/${id}/move`, { dir });
+      const r = await HttpUtil.post(xrayApi(`/outbound-subs/${id}/move`), { dir });
       if (r?.success) {
         await loadSubs();
         onRefreshXrayData?.();
@@ -488,7 +489,7 @@ export default function OutboundsTab({
   async function refreshOne(id: number) {
     setRefreshingId(id);
     try {
-      const r = await HttpUtil.post(`/panel/api/xray/outbound-subs/${id}/refresh`);
+      const r = await HttpUtil.post(xrayApi(`/outbound-subs/${id}/refresh`));
       if (r?.success) {
         messageApi.success(t('pages.xray.outboundSub.toastRefreshed'));
         await loadSubs();
@@ -508,7 +509,7 @@ export default function OutboundsTab({
     try {
       for (const s of subs) {
         try {
-          await HttpUtil.post(`/panel/api/xray/outbound-subs/${s.id}/refresh`);
+          await HttpUtil.post(xrayApi(`/outbound-subs/${s.id}/refresh`));
         } catch {
           /* continue */
         }
@@ -522,7 +523,7 @@ export default function OutboundsTab({
   }
   async function deleteOne(id: number) {
     try {
-      const r = await HttpUtil.post(`/panel/api/xray/outbound-subs/${id}/del`);
+      const r = await HttpUtil.post(xrayApi(`/outbound-subs/${id}/del`));
       if (r?.success) {
         messageApi.success(t('pages.xray.outboundSub.toastDeleted'));
         await loadSubs();

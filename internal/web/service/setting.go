@@ -62,6 +62,10 @@ var defaultValueMap = map[string]string{
 	"secret":             random.Seq(32),
 	"panelGuid":          uuid.NewString(),
 	"apiToken":           "",
+	// Certificate issuance credentials; kept out of entity.AllSetting so the
+	// token never reaches the settings UI/export.
+	"tlsCloudflareToken": "",
+	"tlsAcmeAccountKey":  "",
 	// Node mTLS material (opt-in). All default empty: the CA + master client
 	// cert are minted lazily on first use, and the node-side trust CA is pasted
 	// in by the operator. Kept out of entity.AllSetting so private keys never
@@ -233,7 +237,7 @@ var defaultValueMap = map[string]string{
 	"ldapDefaultLimitIP":     "0",
 
 	// Event bus — per-subscriber event filtering (empty = all disabled)
-	"tgEnabledEvents":   "login.attempt,cpu.high",
+	"tgEnabledEvents":   "login.attempt,cpu.high,speed.low,master.leader",
 	"smtpEnabledEvents": "login.attempt,cpu.high",
 	"smtpCpu":           "80",
 	"smtpMemory":        "80",
@@ -725,6 +729,22 @@ func (s *SettingService) SetCertFile(webCertFile string) error {
 
 func (s *SettingService) GetCertFile() (string, error) {
 	return s.getString("webCertFile")
+}
+
+func (s *SettingService) GetTlsCloudflareToken() (string, error) {
+	return s.getString("tlsCloudflareToken")
+}
+
+func (s *SettingService) SetTlsCloudflareToken(token string) error {
+	return s.setString("tlsCloudflareToken", token)
+}
+
+func (s *SettingService) GetTlsAcmeAccountKey() (string, error) {
+	return s.getString("tlsAcmeAccountKey")
+}
+
+func (s *SettingService) SetTlsAcmeAccountKey(keyPEM string) error {
+	return s.setString("tlsAcmeAccountKey", keyPEM)
 }
 
 func (s *SettingService) SetKeyFile(webKeyFile string) error {
