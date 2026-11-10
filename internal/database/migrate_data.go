@@ -68,6 +68,7 @@ func migrationModels() []any {
 		&model.WarpSwitch{},
 		&model.ClientSpeed{},
 		&model.ServerCapacity{},
+		&model.MasterMember{},
 	}
 }
 

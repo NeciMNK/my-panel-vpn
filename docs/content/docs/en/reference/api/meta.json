@@ -18,6 +18,7 @@
     "home-networks",
     "warp-switch",
     "speed-limits",
+    "masters",
     "backup",
     "websocket"
   ]

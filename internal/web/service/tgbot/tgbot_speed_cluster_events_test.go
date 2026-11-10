@@ -25,3 +25,24 @@ func TestSpeedLowAlertNamesServerSpeedsAndUsers(t *testing.T) {
 		t.Fatalf("message = %q, want it to end with %q", got, want)
 	}
 }
+
+// A failover alert says who took over and, unless the cluster just started,
+// whom it replaced.
+func TestMasterLeaderAlertNamesTheMasterItReplaced(t *testing.T) {
+	draftLocalizer(t,
+		&i18n.Message{ID: "tgbot.messages.masterLeader", Other: "lead={{ .Master }}"},
+		&i18n.Message{ID: "tgbot.messages.masterLeaderPrevious", Other: "was={{ .Previous }}"},
+	)
+	for _, tc := range []struct{ previous, want string }{
+		{"master-1", "👑 lead=master-2\nwas=master-1"},
+		{"", "👑 lead=master-2"},
+	} {
+		got := (&Tgbot{}).formatEventMessage(eventbus.Event{
+			Type: eventbus.EventMasterLeader, Source: "master-2",
+			Data: &eventbus.MasterLeaderData{Previous: tc.previous},
+		})
+		if !strings.HasSuffix(got, tc.want) {
+			t.Fatalf("previous %q: message = %q, want suffix %q", tc.previous, got, tc.want)
+		}
+	}
+}

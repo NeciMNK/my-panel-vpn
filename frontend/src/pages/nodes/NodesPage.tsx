@@ -38,6 +38,7 @@ import CascadesCard from './CascadesCard';
 import HomeNetworksCard from './HomeNetworksCard';
 import WarpSwitchCard from './WarpSwitchCard';
 import SpeedCard from './SpeedCard';
+import MastersCard from './MastersCard';
 import { setMessageInstance } from '@/utils/messageBus';
 import { HttpUtil } from '@/utils';
 import type { PanelUpdateInfo } from '../index/PanelUpdateModal';
@@ -381,6 +382,10 @@ export default function NodesPage() {
                       onUpdateNode={onUpdateNode}
                       onUpdateSelected={onUpdateSelected}
                     />
+                  </Col>
+
+                  <Col span={24}>
+                    <MastersCard />
                   </Col>
 
                   <Col span={24}>

@@ -940,6 +940,17 @@ export const MLKEM768ResponseSchema = z.object({
 });
 export type MLKEM768Response = z.infer<typeof MLKEM768ResponseSchema>;
 
+export const MasterStatusSchema = z.object({
+  alive: z.boolean(),
+  lastSeen: z.number().int(),
+  leader: z.boolean(),
+  name: z.string(),
+  priority: z.number().int(),
+  self: z.boolean(),
+  url: z.string(),
+});
+export type MasterStatus = z.infer<typeof MasterStatusSchema>;
+
 export const MsgSchema = z.object({
   msg: z.string(),
   obj: z.unknown(),

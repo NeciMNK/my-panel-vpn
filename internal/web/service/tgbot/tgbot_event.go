@@ -154,6 +154,13 @@ func (t *Tgbot) formatEventMessage(e eventbus.Event) string {
 		}
 		return ""
 
+	case eventbus.EventMasterLeader:
+		msg := header + "👑 " + t.I18nBot("tgbot.messages.masterLeader", "Master=="+oneLine(e.Source))
+		if data, ok := e.Data.(*eventbus.MasterLeaderData); ok && data.Previous != "" {
+			msg += "\n" + t.I18nBot("tgbot.messages.masterLeaderPrevious", "Previous=="+oneLine(data.Previous))
+		}
+		return msg
+
 	case eventbus.EventSpeedLow:
 		if data, ok := e.Data.(*eventbus.SpeedLowData); ok {
 			return header + "🐢 " + t.I18nBot("tgbot.messages.speedLow",

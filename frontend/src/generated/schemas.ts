@@ -3855,6 +3855,50 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "MasterStatus": {
+    "description": "MasterStatus is one master as the masters card shows it.",
+    "properties": {
+      "alive": {
+        "example": true,
+        "type": "boolean"
+      },
+      "lastSeen": {
+        "example": 1762736400,
+        "format": "int64",
+        "type": "integer"
+      },
+      "leader": {
+        "example": true,
+        "type": "boolean"
+      },
+      "name": {
+        "example": "master-1",
+        "type": "string"
+      },
+      "priority": {
+        "example": 1,
+        "type": "integer"
+      },
+      "self": {
+        "example": true,
+        "type": "boolean"
+      },
+      "url": {
+        "example": "https://panel-1.example.com:2053",
+        "type": "string"
+      }
+    },
+    "required": [
+      "alive",
+      "lastSeen",
+      "leader",
+      "name",
+      "priority",
+      "self",
+      "url"
+    ],
+    "type": "object"
+  },
   "Msg": {
     "properties": {
       "msg": {

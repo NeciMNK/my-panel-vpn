@@ -881,6 +881,16 @@ export interface MLKEM768Response {
   seed: string;
 }
 
+export interface MasterStatus {
+  alive: boolean;
+  lastSeen: number;
+  leader: boolean;
+  name: string;
+  priority: number;
+  self: boolean;
+  url: string;
+}
+
 export interface Msg {
   msg: string;
   obj: unknown;

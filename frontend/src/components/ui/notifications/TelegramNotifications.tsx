@@ -86,6 +86,7 @@ const GROUPS: NotificationGroupConfig[] = [
         ),
       },
       { key: 'speed.low', label: 'eventSpeedLow', settingKey: '' },
+      { key: 'master.leader', label: 'eventMasterLeader', settingKey: '' },
       {
         key: 'memory.high',
         label: 'eventMemoryHigh',

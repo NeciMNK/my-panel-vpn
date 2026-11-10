@@ -103,6 +103,7 @@ func run(root, outDir string) error {
 			StructAllow: setOf(
 				"InboundOption",
 				"SpeedOverview",
+				"MasterStatus",
 				"ServerFreeSpeed",
 				"HappLinkResult",
 				"ClientSlim",

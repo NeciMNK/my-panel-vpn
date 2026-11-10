@@ -94,6 +94,7 @@ func allModels() []any {
 		&model.WarpSwitch{},
 		&model.ClientSpeed{},
 		&model.ServerCapacity{},
+		&model.MasterMember{},
 	}
 }
 

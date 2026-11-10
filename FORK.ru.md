@@ -104,6 +104,159 @@ Xray каждой ноды. Поэтому этап 1 — фундамент д�
 - Ноды доверяют всем мастерам (общий mTLS CA), адрес панели и подписок
   переключается на лидера (DNS с коротким TTL или плавающий IP).
 
+## Несколько мастеров: как развернуть
+
+Схема на три машины: `m1` (главный мастер), `m2` (запасной мастер) и `w`
+(«свидетель», любая нода или маленький VPS). Кворуму etcd нужно три голоса,
+поэтому свидетель обязателен, иначе при падении одного мастера второй не
+узнает, можно ли ему становиться главным.
+
+### 1. etcd на всех трёх машинах
+
+```bash
+apt install -y etcd-server etcd-client
+```
+
+`/etc/default/etcd` на `m1` (на `m2` и `w` меняются имя и адрес):
+
+```bash
+ETCD_NAME=m1
+ETCD_DATA_DIR=/var/lib/etcd
+ETCD_LISTEN_PEER_URLS=http://10.0.0.1:2380
+ETCD_LISTEN_CLIENT_URLS=http://10.0.0.1:2379,http://127.0.0.1:2379
+ETCD_INITIAL_ADVERTISE_PEER_URLS=http://10.0.0.1:2380
+ETCD_ADVERTISE_CLIENT_URLS=http://10.0.0.1:2379
+ETCD_INITIAL_CLUSTER=m1=http://10.0.0.1:2380,m2=http://10.0.0.2:2380,w=http://10.0.0.3:2380
+ETCD_INITIAL_CLUSTER_STATE=new
+ETCD_INITIAL_CLUSTER_TOKEN=x-ui
+```
+
+Порты 2379/2380 открывать только между этими тремя машинами (WireGuard между
+ними или фаервол по IP).
+
+### 2. PostgreSQL + Patroni на `m1` и `m2`
+
+```bash
+apt install -y postgresql patroni
+systemctl disable --now postgresql   # базой управляет Patroni
+```
+
+`/etc/patroni/config.yml` на `m1` (на `m2`: `name: m2` и адрес `10.0.0.2`):
+
+```yaml
+scope: x-ui
+name: m1
+etcd3:
+  hosts: 10.0.0.1:2379,10.0.0.2:2379,10.0.0.3:2379
+restapi:
+  listen: 10.0.0.1:8008
+  connect_address: 10.0.0.1:8008
+bootstrap:
+  dcs:
+    ttl: 30
+    loop_wait: 10
+    maximum_lag_on_failover: 1048576
+    postgresql:
+      use_pg_rewind: true
+  initdb: [{ encoding: UTF8 }, data-checksums]
+  pg_hba:
+    - host replication replicator 10.0.0.0/24 scram-sha-256
+    - host all all 10.0.0.0/24 scram-sha-256
+    - host all all 127.0.0.1/32 scram-sha-256
+postgresql:
+  listen: 0.0.0.0:5432
+  connect_address: 10.0.0.1:5432
+  data_dir: /var/lib/postgresql/patroni
+  bin_dir: /usr/lib/postgresql/17/bin   # своя версия PostgreSQL
+  authentication:
+    superuser: { username: postgres, password: "<пароль>" }
+    replication: { username: replicator, password: "<пароль>" }
+```
+
+```bash
+systemctl enable --now patroni      # сначала на m1, потом на m2
+patronictl -c /etc/patroni/config.yml list
+```
+
+Базу и пользователя для панели создать один раз на текущем лидере:
+
+```bash
+sudo -u postgres psql -h 10.0.0.1 -c "CREATE USER xui PASSWORD '<пароль>'" -c "CREATE DATABASE xui OWNER xui"
+```
+
+Patroni сам переключает базу на живую машину. Чтобы база вернулась на `m1`
+после его восстановления, выполните `patronictl switchover --leader m2 --candidate m1`
+(автоматический возврат базы Patroni не делает специально, чтобы не было
+лишних переключений; главенство панели возвращается само, см. ниже).
+
+### 3. Панель на `m1` и `m2`
+
+`/etc/default/x-ui` на `m1`:
+
+```bash
+XUI_DB_TYPE=postgres
+XUI_DB_DSN=postgres://xui:<пароль>@10.0.0.1:5432,10.0.0.2:5432/xui?sslmode=disable&target_session_attrs=read-write
+XUI_MASTER_PRIORITY=1
+XUI_MASTER_NAME=m1
+XUI_MASTER_URL=https://10.0.0.1:2053
+```
+
+На `m2` то же самое, но `XUI_MASTER_PRIORITY=2`, `XUI_MASTER_NAME=m2`,
+`XUI_MASTER_URL=https://10.0.0.2:2053`. `target_session_attrs=read-write`
+заставляет панель всегда писать в текущую главную базу.
+
+Как это работает:
+- каждый мастер раз в 5 секунд пишет в общую базу сигнал «я жив» (время берётся
+  с часов базы, поэтому расхождение часов мастеров не мешает);
+- ведущим становится живой мастер с лучшим приоритетом. Если ведущий 20 секунд
+  молчит, ведущим становится следующий. Вернувшийся главный мастер ждёт 30 секунд
+  и забирает главенство обратно;
+- только ведущий синхронизирует ноды, считает трафик нод, сбрасывает трафик по
+  расписанию, держит закрепления каскадов, домашние сети, ограничения скорости,
+  LDAP и запускает Telegram- и Discord-ботов. Остальные мастера работают как
+  горячий резерв: раз в 30 секунд подтягивают общий конфиг Xray;
+- при смене ведущего в Telegram приходит уведомление «Мастер … теперь ведущий»;
+- список мастеров и их состояние видно на странице «Ноды» (карточка «Мастеры»)
+  и командой `x-ui cluster status` (её нужно запускать с переменными из `/etc/default/x-ui`).
+
+Ноды доверяют всем мастерам сами: токены нод и mTLS-сертификат мастера хранятся
+в общей базе.
+
+### 4. Один адрес панели и подписок (keepalived)
+
+Плавающий IP `10.0.0.100` (или публичный, если хостер разрешает) держит тот
+мастер, который сейчас ведущий:
+
+```bash
+apt install -y keepalived
+```
+
+`/etc/keepalived/keepalived.conf` на `m1` (на `m2`: `priority 100`):
+
+```
+vrrp_script xui_leader {
+  script "/usr/local/x-ui/x-ui cluster is-leader"
+  interval 2
+  fall 2
+  rise 2
+}
+vrrp_instance XUI {
+  interface eth0
+  virtual_router_id 51
+  priority 110
+  advert_int 1
+  virtual_ipaddress { 10.0.0.100/24 }
+  track_script {
+    xui_leader weight -50
+  }
+}
+```
+
+`x-ui cluster is-leader` не ходит в базу: он читает файл роли, который панель
+обновляет при каждом сигнале, и отвечает «нет», если файл старше 15 секунд.
+Если плавающий IP невозможен, DNS-запись панели и подписок с TTL 30–60 секунд
+переключается на адрес ведущего мастера вручную или скриптом с той же проверкой.
+
 ## Сборка
 
 ```bash

@@ -64,6 +64,14 @@ type SystemMetricData struct {
 	Threshold int     // configured threshold
 }
 
+// EventMasterLeader fires on the master that just took over leadership.
+const EventMasterLeader EventType = "master.leader"
+
+// MasterLeaderData names the master that led before, empty on a cold start.
+type MasterLeaderData struct {
+	Previous string
+}
+
 // EventSpeedLow fires when a server can no longer give its users their minimum
 // speed and no other server can take new connections instead.
 const EventSpeedLow EventType = "speed.low"

@@ -1823,6 +1823,29 @@ export const sections: readonly Section[] = [
   },
 
   {
+    id: 'masters',
+    title: 'Masters',
+    description:
+      'Several master panels can share one database (XUI_MASTER_PRIORITY, XUI_MASTER_NAME, XUI_MASTER_URL). Each writes a heartbeat every 5s; the best-ranked master that has been up for 30s leads and alone runs node sync, traffic resets, cascade pins and the bots. The list is empty on a single master. All endpoints under /panel/api/masters.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/masters/list',
+        summary: 'Every master that joined, whether it is alive and which one leads.',
+        responseSchema: 'MasterStatus',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/masters/forget',
+        summary:
+          'Remove a master that is down for good from the list. A running master is refused.',
+        body: '{\n  "name": "master-2"\n}',
+      },
+    ],
+  },
+
+  {
     id: 'speed',
     title: 'Speed limits',
     description:

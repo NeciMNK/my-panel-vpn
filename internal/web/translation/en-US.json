@@ -1441,6 +1441,25 @@
         "toasts": {
           "saved": "Speed limits saved"
         }
+      },
+      "masters": {
+        "title": "Masters",
+        "desc": "Masters that share this panel's database. The best-ranked running master leads: it syncs nodes, resets traffic, keeps cascade pins and runs the bots. When it goes down the next one takes over within about half a minute, and it takes the lead back 30 seconds after it returns.",
+        "name": "Master",
+        "priority": "Priority",
+        "address": "Address",
+        "state": "State",
+        "lastSeen": "Last heartbeat",
+        "states": {
+          "leader": "Leader",
+          "follower": "Standby",
+          "down": "Down"
+        },
+        "self": "this panel",
+        "forget": "Forget",
+        "toasts": {
+          "forgotten": "Master removed from the list"
+        }
       }
     },
     "settings": {
@@ -2081,7 +2100,8 @@
       "subHostSortInbound": "Inbound order (default)",
       "subHostSortHosts": "Hosts order",
       "subHostSortModeDesc": "Hosts order follows the Hosts page across inbounds. This controls the order emitted by the server; client apps may apply their own sorting.",
-      "eventSpeedLow": "Speed below user minimum"
+      "eventSpeedLow": "Speed below user minimum",
+      "eventMasterLeader": "Another master took over"
     },
     "xray": {
       "save": "Save",
@@ -2754,7 +2774,9 @@
       "qrLegendLink": "{{ .Code }}. App link {{ .App }}",
       "backupFailed": "Could not read the database; no backup was sent.",
       "privateOnly": "🤖 This bot works in private chat only. Please open it in a direct message.",
-      "speedLow": "Server {{ .Server }} has {{ .Free }} Mbit/s free per user, below the {{ .Min }} Mbit/s minimum of {{ .Users }}, and no other server has room. Add a server or raise its link speed."
+      "speedLow": "Server {{ .Server }} has {{ .Free }} Mbit/s free per user, below the {{ .Min }} Mbit/s minimum of {{ .Users }}, and no other server has room. Add a server or raise its link speed.",
+      "masterLeader": "Master {{ .Master }} now leads the panel cluster.",
+      "masterLeaderPrevious": "It took over from {{ .Previous }}."
     },
     "buttons": {
       "closeKeyboard": "❌ Close Keyboard",

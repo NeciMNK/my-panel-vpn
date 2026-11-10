@@ -3881,6 +3881,50 @@
         ],
         "type": "object"
       },
+      "MasterStatus": {
+        "description": "MasterStatus is one master as the masters card shows it.",
+        "properties": {
+          "alive": {
+            "example": true,
+            "type": "boolean"
+          },
+          "lastSeen": {
+            "example": 1762736400,
+            "format": "int64",
+            "type": "integer"
+          },
+          "leader": {
+            "example": true,
+            "type": "boolean"
+          },
+          "name": {
+            "example": "master-1",
+            "type": "string"
+          },
+          "priority": {
+            "example": 1,
+            "type": "integer"
+          },
+          "self": {
+            "example": true,
+            "type": "boolean"
+          },
+          "url": {
+            "example": "https://panel-1.example.com:2053",
+            "type": "string"
+          }
+        },
+        "required": [
+          "alive",
+          "lastSeen",
+          "leader",
+          "name",
+          "priority",
+          "self",
+          "url"
+        ],
+        "type": "object"
+      },
       "Msg": {
         "properties": {
           "msg": {
@@ -5494,6 +5538,10 @@
     {
       "name": "Home networks",
       "description": "Home LANs behind a WireGuard, OpenVPN or L2TP/IPsec tunnel held by one gateway server (node id 0 = this panel). Every other server reaches the gateway through a hidden VLESS+REALITY link. Users reach only the subnets and IPs their rules allow; everything else in the home network is blocked. All endpoints under /panel/api/homeNetworks."
+    },
+    {
+      "name": "Masters",
+      "description": "Several master panels can share one database (XUI_MASTER_PRIORITY, XUI_MASTER_NAME, XUI_MASTER_URL). Each writes a heartbeat every 5s; the best-ranked master that has been up for 30s leads and alone runs node sync, traffic resets, cascade pins and the bots. The list is empty on a single master. All endpoints under /panel/api/masters."
     },
     {
       "name": "Speed limits",
@@ -12475,6 +12523,98 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/masters/list": {
+      "get": {
+        "tags": [
+          "Masters"
+        ],
+        "summary": "Every master that joined, whether it is alive and which one leads.",
+        "operationId": "get_panel_api_masters_list",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/MasterStatus"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "alive": true,
+                      "lastSeen": 1762736400,
+                      "leader": true,
+                      "name": "master-1",
+                      "priority": 1,
+                      "self": true,
+                      "url": "https://panel-1.example.com:2053"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/masters/forget": {
+      "post": {
+        "tags": [
+          "Masters"
+        ],
+        "summary": "Remove a master that is down for good from the list. A running master is refused.",
+        "operationId": "post_panel_api_masters_forget",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "name": "master-2"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful response",

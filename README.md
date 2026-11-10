@@ -158,6 +158,9 @@ docker run -d --cap-add=NET_ADMIN --cap-add=NET_RAW ... ghcr.io/mhsanaei/3x-ui
 | `XUI_DB_FOLDER` | Directory for the SQLite database file | `/etc/x-ui` |
 | `XUI_DB_MAX_OPEN_CONNS` | Maximum open connections (PostgreSQL pool) | — |
 | `XUI_DB_MAX_IDLE_CONNS` | Maximum idle connections (PostgreSQL pool) | — |
+| `XUI_MASTER_PRIORITY` | Rank of this panel among several masters sharing one PostgreSQL (1 = primary); unset = single master | — |
+| `XUI_MASTER_NAME` | Name of this master in the cluster | hostname |
+| `XUI_MASTER_URL` | Panel address of this master, shown to the other masters | — |
 | `XUI_INIT_WEB_BASE_PATH` | The initial URI path for the web panel | `/` |
 | `XUI_ENABLE_FAIL2BAN` | Enable Fail2ban-based IP-limit enforcement | `true` |
 | `XUI_LOG_LEVEL` | Log verbosity (`debug`, `info`, `warning`, `error`) | `info` |

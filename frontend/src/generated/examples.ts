@@ -1007,6 +1007,15 @@ export const EXAMPLES: Record<string, unknown> = {
     "client": "mlkem768-client",
     "seed": "mlkem768-seed"
   },
+  "MasterStatus": {
+    "alive": true,
+    "lastSeen": 1762736400,
+    "leader": true,
+    "name": "master-1",
+    "priority": 1,
+    "self": true,
+    "url": "https://panel-1.example.com:2053"
+  },
   "Msg": {
     "msg": "",
     "obj": null,
