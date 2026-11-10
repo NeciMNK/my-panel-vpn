@@ -244,7 +244,7 @@ func applyHomeToTemplate(cfg map[string]any, h *model.HomeNetwork, server int, r
 			}
 			appendOutbounds(cfg, wg.Outbound(via, targets))
 		} else {
-			appendOutbounds(cfg, homenet.InterfaceOutbound(via, h.Id))
+			appendOutbounds(cfg, homenet.InterfaceOutbound(via, h.Id, targets))
 		}
 		if h.Link != nil {
 			in := []string{linkInboundTag(p, server)}

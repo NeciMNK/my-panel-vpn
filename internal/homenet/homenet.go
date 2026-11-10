@@ -171,12 +171,17 @@ func (wg *WireGuard) Outbound(tag string, targets []string) map[string]any {
 	return map[string]any{"tag": tag, "protocol": "wireguard", "settings": settings}
 }
 
-// InterfaceOutbound sends traffic out of a system tunnel's interface.
-func InterfaceOutbound(tag string, id int) map[string]any {
+// InterfaceOutbound sends traffic out of a system tunnel's interface. Freedom
+// blocks private IPs for proxied users by default, so the home targets are allowed.
+func InterfaceOutbound(tag string, id int, targets []string) map[string]any {
+	allowed := make([]string, 0, len(targets))
+	for _, t := range targets {
+		allowed = append(allowed, asPrefix(t))
+	}
 	return map[string]any{
 		"tag":            tag,
 		"protocol":       "freedom",
-		"settings":       map[string]any{},
+		"settings":       map[string]any{"finalRules": []any{map[string]any{"action": "allow", "ip": allowed}}},
 		"streamSettings": map[string]any{"sockopt": map[string]any{"interface": IfName(id)}},
 	}
 }
