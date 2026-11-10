@@ -3,6 +3,7 @@
 package shaper
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
@@ -14,6 +15,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 )
 
 // Limit caps every connection from one client IP.
@@ -103,11 +105,16 @@ func burstFor(mbps int) string {
 	return fmt.Sprintf("%dk", kb)
 }
 
+// commandTimeout bounds one tc or ip call, so a wedged netlink never hangs the push.
+const commandTimeout = 10 * time.Second
+
 var (
 	mu        sync.Mutex
 	stateFile = "/run/x-ui-shaper.state"
 	tc        = func(args ...string) error {
-		out, err := exec.Command("tc", args...).CombinedOutput()
+		ctx, cancel := context.WithTimeout(context.Background(), commandTimeout)
+		defer cancel()
+		out, err := exec.CommandContext(ctx, "tc", args...).CombinedOutput()
 		if err != nil {
 			return fmt.Errorf("tc %s: %w: %s", strings.Join(args, " "), err, strings.TrimSpace(string(out)))
 		}
@@ -117,7 +124,9 @@ var (
 )
 
 func defaultInterface() (string, error) {
-	out, err := exec.Command("ip", "-o", "route", "show", "default").Output()
+	ctx, cancel := context.WithTimeout(context.Background(), commandTimeout)
+	defer cancel()
+	out, err := exec.CommandContext(ctx, "ip", "-o", "route", "show", "default").Output()
 	if err != nil {
 		return "", fmt.Errorf("find the default interface: %w", err)
 	}

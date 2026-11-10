@@ -2,6 +2,7 @@ package homenet
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"net/netip"
@@ -181,8 +182,13 @@ var (
 	ipsecFiles = [2]string{"/etc/ipsec.conf", "/etc/ipsec.secrets"}
 )
 
+// commandTimeout bounds one system command; apt installs are the slowest.
+const commandTimeout = 10 * time.Minute
+
 func runCommand(name string, args ...string) error {
-	out, err := exec.Command(name, args...).CombinedOutput()
+	ctx, cancel := context.WithTimeout(context.Background(), commandTimeout)
+	defer cancel()
+	out, err := exec.CommandContext(ctx, name, args...).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("%s %s: %w: %s", name, strings.Join(args, " "), err, strings.TrimSpace(string(out)))
 	}
