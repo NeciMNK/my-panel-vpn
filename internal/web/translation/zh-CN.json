@@ -1432,7 +1432,7 @@
       "telegramProxy": "SOCKS 代理",
       "telegramProxyDesc": "启用 SOCKS5 代理连接到 Telegram（根据指南调整设置）",
       "telegramVpnFallback": "Telegram 被封锁时走我的 VPN",
-      "telegramVpnFallbackDesc": "当本服务器无法直接访问 Telegram 时，面板会在节点上为自己创建分组 тех 中的客户端 panel-tech，并让机器人通过它连接。已设置 SOCKS 代理、API 服务器或面板出站时不生效。",
+      "telegramVpnFallbackDesc": "当本服务器无法直接访问 Telegram 时，面板会在节点上为自己创建分组 тех 中的客户端 panel-tech，并让机器人通过它连接。已设置 SOCKS 代理、API 服务器或面板出站时不生效。 仅当至少一个节点能访问 Telegram 时有效：处于同一封锁之后的节点无济于事。",
       "telegramAPIServer": "Telegram API 服务器",
       "telegramAPIServerDesc": "要使用的 Telegram API 服务器。留空以使用默认服务器。",
       "telegramChatId": "管理员聊天 ID",

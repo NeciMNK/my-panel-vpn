@@ -1432,7 +1432,7 @@
       "telegramProxy": "SOCKS プロキシ",
       "telegramProxyDesc": "SOCKS5プロキシを有効にしてTelegramに接続する（ガイドに従って設定を調整）",
       "telegramVpnFallback": "Telegram がブロックされたら自分の VPN 経由",
-      "telegramVpnFallbackDesc": "このサーバーから Telegram に直接届かない場合、パネルはノード上にグループ тех のクライアント panel-tech を作成し、ボットをそれ経由で接続します。SOCKS プロキシ、API サーバー、パネルのアウトバウンドが設定されている場合は無視されます。",
+      "telegramVpnFallbackDesc": "このサーバーから Telegram に直接届かない場合、パネルはノード上にグループ тех のクライアント panel-tech を作成し、ボットをそれ経由で接続します。SOCKS プロキシ、API サーバー、パネルのアウトバウンドが設定されている場合は無視されます。 少なくとも 1 つのノードが Telegram に届く場合のみ有効です。同じフィルターの背後にあるノードでは役に立ちません。",
       "telegramAPIServer": "Telegram API サーバー",
       "telegramAPIServerDesc": "使用するTelegram APIサーバー。空白の場合はデフォルトサーバーを使用する",
       "telegramChatId": "管理者チャットID",
