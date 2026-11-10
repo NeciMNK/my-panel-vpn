@@ -276,6 +276,8 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 
 	// Panel-issued TLS certificates (ACME DNS-01 over Cloudflare)
 	NewTlsCertController(api)
+	// Import of another panel (Remnawave, 3x-ui) keeping users' configs
+	NewMigrationController(api.Group("/migration"))
 
 	// Extra routes
 	api.POST("/backuptotgbot", a.BackuptoTgbot)

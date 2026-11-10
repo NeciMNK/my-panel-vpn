@@ -5,6 +5,7 @@ export type OnlineAPISupport = number;
 export type ProcessState = string;
 export type Protocol = string;
 export type addrFamily = number;
+export type flexInt = number;
 export type staticEgressResolver = string;
 export type trafficLocalApplyAction = number;
 export type transportBits = number;

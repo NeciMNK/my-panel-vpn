@@ -21,6 +21,7 @@
     "speed-limits",
     "masters",
     "backup",
+    "migration",
     "websocket"
   ]
 }

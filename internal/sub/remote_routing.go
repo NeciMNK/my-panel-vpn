@@ -595,7 +595,7 @@ func (r *remoteRoutingResolver) ensurePersistedLoaded() {
 		return
 	}
 	sqlDB, err := db.DB()
-	if err != nil || sqlDB.Ping() != nil {
+	if err != nil || sqlDB.PingContext(context.Background()) != nil {
 		return
 	}
 	r.loadPersisted()

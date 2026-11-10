@@ -1,0 +1,163 @@
+---
+title: Migrate from Remnawave and 3x-ui
+description: Move users, inbounds and subscriptions from Remnawave or another 3x-ui without users noticing.
+icon: ArrowRightLeft
+---
+
+The panel can take everything from Remnawave or another 3x-ui and keep what is
+already in your users' apps. Old configs and old subscription links keep
+working; nobody has to refresh anything.
+
+## What is kept
+
+| What | Remnawave | 3x-ui |
+| --- | --- | --- |
+| VLESS UUID, Trojan/Shadowsocks password | `vlessUuid`, `trojanPassword`, `ssPassword` | client `id`, `password` |
+| Subscription id (last part of the link) | `shortUuid` | `subId` |
+| Subscription path and address | from `subscriptionUrl`, e.g. `https://sub.example.com/<shortUuid>` | `subPath`, `subJsonPath`, `subClashPath`, `subURI` |
+| Ports, Reality keys, `shortIds`, SNI | from the config profile | from the inbound |
+| Addresses clients connect to | Remnawave hosts → panel hosts | `externalProxy` |
+| Traffic limit and usage, expiry, traffic reset | yes | yes |
+| Telegram ID, description, HWID device limit | yes | yes |
+| Disabled users | stay disabled | stay disabled |
+| Config names in apps | host remarks (`{{HOST}}` template) | this panel's remark template |
+
+Not imported: routing, outbounds and DNS of Remnawave config profiles (set them
+in the Xray template of the panel and nodes), host filters by internal squad,
+external squads, host xhttp extra params, Hysteria inbounds. HWID device lists
+are not imported: the limit is kept and devices register again on their next
+subscription refresh. A Remnawave user with both Trojan and Shadowsocks under
+different passwords gets the Trojan password for Shadowsocks too, so that one
+config updates only after a subscription refresh. The import window lists every
+such case before importing.
+
+The source panel is never modified. To roll back, start it again.
+
+## The import window
+
+**Overview → Backup → Move from another panel.**
+
+1. Pick the source.
+   - **Remnawave**: the panel URL (e.g. `https://panel.example.com`, or
+     `http://127.0.0.1:3000` on the same server) and an API token (Remnawave →
+     Settings → API Tokens). If Remnawave is not reachable from here, upload a
+     snapshot file (below).
+   - **3x-ui**: the old panel's `x-ui.db` (`/etc/x-ui/x-ui.db`).
+2. Press **Check**. You see the source servers and where each goes: this panel,
+   one of its nodes, or nowhere. Nodes are matched by address. Below are the
+   inbounds with port conflicts, the client count and an old subscription link.
+3. Keep **Take over the old subscription paths and address** on so old links
+   resolve here. The panel restarts.
+4. Press **Import**. Clients whose email exists are skipped, so a re-run never
+   duplicates; anything not imported is listed.
+
+## Switching from Remnawave
+
+<Steps>
+<Step>
+### Install this panel's nodes on the Remnawave servers
+
+On every server running `remnanode`, add a node of this panel (**Nodes → Add**,
+one command). Leave remnanode running: the new node has no inbounds yet, so
+ports do not collide.
+</Step>
+<Step>
+### Check the import
+
+Open the import window, enter the Remnawave URL and token, press **Check**.
+Every Remnawave node should be matched to a node here by address; pick it by
+hand otherwise.
+</Step>
+<Step>
+### Stop remnanode and import
+
+On each server stop the old node to free its ports:
+
+```bash
+cd /opt/remnanode && docker compose down
+```
+
+Then press **Import**. The inbounds go to the nodes and Xray takes the same
+ports with the same keys. The outage is the seconds between stop and import.
+</Step>
+<Step>
+### Move the subscription domain
+
+Point the Remnawave subscription domain (e.g. `sub.example.com`) at this
+panel's subscription server: change the DNS record or the nginx/Caddy
+`proxy_pass` to the panel's subscription port (`2096` by default), or run the
+subscription server on `443` with that domain's certificate. The import already
+set the path (`/` for Remnawave). Then stop the Remnawave and
+`subscription-page` containers.
+</Step>
+</Steps>
+
+### Remnawave snapshot file
+
+If Remnawave is not reachable from this server, build a snapshot where it is and
+upload it in the import window:
+
+```bash title="remnawave-snapshot.sh"
+URL=https://panel.example.com
+TOKEN=your_api_token
+get() {
+  curl -fsS -H "Authorization: Bearer $TOKEN" \
+    -H "X-Forwarded-Proto: https" -H "X-Forwarded-For: 127.0.0.1" "$URL$1"
+}
+get '/api/users?start=0&size=1000' > users.json
+get /api/config-profiles > profiles.json
+get /api/internal-squads > squads.json
+get /api/hosts > hosts.json
+get /api/nodes > nodes.json
+jq -n --slurpfile u users.json --slurpfile p profiles.json \
+  --slurpfile s squads.json --slurpfile h hosts.json --slurpfile n nodes.json \
+  '{users: $u[0].response.users, configProfiles: $p[0].response.configProfiles,
+    internalSquads: $s[0].response.internalSquads,
+    hosts: $h[0].response, nodes: $n[0].response}' > remnawave-snapshot.json
+```
+
+With more than 1000 users, repeat the first request with `start=1000`, `2000`…
+and merge the `users` arrays.
+
+## Switching from 3x-ui
+
+### Same server, whole panel
+
+If this panel replaces the old 3x-ui on the same server, restore the whole
+database: **Backup → Restore**, upload `x-ui.db` and **untick** "Keep this
+machine's settings". Users, subscription settings and the panel login all move.
+Stop the old 3x-ui first: `x-ui stop`.
+
+### Into a configured panel or onto a node
+
+If this panel already has its own inbounds and nodes, use the import window with
+the **3x-ui** source: it adds inbounds and clients without erasing anything.
+
+<Steps>
+<Step>
+### Put a node on the old 3x-ui server
+
+If the old 3x-ui does not run on this panel's server, add a node on its server
+and pick it as the target. The node must use a different panel port than the
+old 3x-ui.
+</Step>
+<Step>
+### Stop the old panel and import
+
+```bash
+x-ui stop && systemctl disable x-ui
+```
+
+Upload `x-ui.db`, press **Check**, then **Import**. 3x-ui clients sharing one
+`subId` under different emails become one client with all their inbounds, and
+their traffic is summed.
+</Step>
+<Step>
+### Move the subscription address
+
+"Take over the subscription paths" copies `subPath`, `subJsonPath`,
+`subClashPath` and `subURI`. What remains is that the old links' domain and
+port reach this panel's subscription server: the same port (`2096` by default)
+and certificate in the subscription settings, or DNS / a reverse proxy.
+</Step>
+</Steps>

@@ -6,6 +6,7 @@
     "multi-node",
     "outbounds-routing",
     "backup-restore",
+    "migrate-from-other-panels",
     "telegram-bot",
     "discord-bot",
     "security"
