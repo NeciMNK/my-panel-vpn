@@ -56,8 +56,8 @@ const heroData = {
   datepicker: subData.datepicker || 'gregorian',
 };
 
-const apps = buildSubApps({ subUrl, sId, subTitle });
-const initialPlatform = detectPlatform(navigator.userAgent);
+const apps = buildSubApps({ subUrl, subClashUrl, sId, subTitle });
+const detectedPlatform = detectPlatform(navigator.userAgent, navigator.maxTouchPoints);
 const RTL_LANGUAGES = new Set(['fa-IR', 'ar-EG']);
 
 export default function SubPage() {
@@ -83,12 +83,29 @@ export default function SubPage() {
     [t, messageApi],
   );
 
-  const open = useCallback((url: string) => {
-    if (url) window.open(url, '_blank');
+  // A custom-scheme link opened in a new tab leaves a blank tab behind once the app takes over.
+  const openApp = useCallback((url: string) => {
+    window.location.href = url;
   }, []);
 
   const tabs = useMemo(() => {
     const items: NonNullable<TabsProps['items']> = [];
+    if (subUrl) {
+      items.push({
+        key: 'apps',
+        icon: <AppstoreOutlined aria-hidden />,
+        label: t('subscription.tabApps'),
+        children: (
+          <SubAppsTab
+            apps={apps}
+            detectedPlatform={detectedPlatform}
+            subUrl={subUrl}
+            onImport={openApp}
+            onCopy={copy}
+          />
+        ),
+      });
+    }
     if (subUrl || subJsonUrl || subClashUrl) {
       items.push({
         key: 'subscription',
@@ -102,14 +119,6 @@ export default function SubPage() {
             onCopy={copy}
           />
         ),
-      });
-    }
-    if (subUrl) {
-      items.push({
-        key: 'apps',
-        icon: <AppstoreOutlined aria-hidden />,
-        label: t('subscription.tabApps'),
-        children: <SubAppsTab apps={apps} initialPlatform={initialPlatform} onOpen={open} />,
       });
     }
     if (links.length > 0) {
@@ -126,7 +135,7 @@ export default function SubPage() {
       });
     }
     return items;
-  }, [t, copy, open]);
+  }, [t, copy, openApp]);
 
   const direction = RTL_LANGUAGES.has(lang) ? 'rtl' : 'ltr';
   const pageClass = ['subscription-page', isDark && 'is-dark', isUltra && 'is-ultra']

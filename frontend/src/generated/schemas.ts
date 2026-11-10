@@ -530,11 +530,32 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgEnabledEvents": {
         "type": "string"
       },
+      "tgFreePlanEnable": {
+        "type": "boolean"
+      },
       "tgLang": {
         "type": "string"
       },
       "tgMemory": {
         "maximum": 100,
+        "minimum": 0,
+        "type": "integer"
+      },
+      "tgPaymentCurrency": {
+        "example": "RUB",
+        "type": "string"
+      },
+      "tgPaymentDetails": {
+        "example": "Card 2200 0000 0000 0000",
+        "type": "string"
+      },
+      "tgPaymentDiscounts": {
+        "example": "3:10, 6:15, 12:20",
+        "type": "string"
+      },
+      "tgPaymentPrice": {
+        "description": "Monthly price, multi-month discounts and payment details shown to clients in the bot.",
+        "example": 300,
         "minimum": 0,
         "type": "integer"
       },
@@ -749,8 +770,13 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgBotToken",
       "tgCpu",
       "tgEnabledEvents",
+      "tgFreePlanEnable",
       "tgLang",
       "tgMemory",
+      "tgPaymentCurrency",
+      "tgPaymentDetails",
+      "tgPaymentDiscounts",
+      "tgPaymentPrice",
       "tgRunTime",
       "timeLocation",
       "trafficDiff",
@@ -1321,11 +1347,32 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgEnabledEvents": {
         "type": "string"
       },
+      "tgFreePlanEnable": {
+        "type": "boolean"
+      },
       "tgLang": {
         "type": "string"
       },
       "tgMemory": {
         "maximum": 100,
+        "minimum": 0,
+        "type": "integer"
+      },
+      "tgPaymentCurrency": {
+        "example": "RUB",
+        "type": "string"
+      },
+      "tgPaymentDetails": {
+        "example": "Card 2200 0000 0000 0000",
+        "type": "string"
+      },
+      "tgPaymentDiscounts": {
+        "example": "3:10, 6:15, 12:20",
+        "type": "string"
+      },
+      "tgPaymentPrice": {
+        "description": "Monthly price, multi-month discounts and payment details shown to clients in the bot.",
+        "example": 300,
         "minimum": 0,
         "type": "integer"
       },
@@ -1548,8 +1595,13 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgBotToken",
       "tgCpu",
       "tgEnabledEvents",
+      "tgFreePlanEnable",
       "tgLang",
       "tgMemory",
+      "tgPaymentCurrency",
+      "tgPaymentDetails",
+      "tgPaymentDiscounts",
+      "tgPaymentPrice",
       "tgRunTime",
       "timeLocation",
       "trafficDiff",
@@ -1691,6 +1743,124 @@ export const SCHEMAS: Record<string, unknown> = {
     },
     "required": [
       "code"
+    ],
+    "type": "object"
+  },
+  "Cascade": {
+    "description": "Cascade chains an entry server to one or more exit servers: users connect to\nthe entry, their traffic leaves the internet from an exit. Node id 0 means\nthis panel itself.",
+    "properties": {
+      "createdAt": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "enable": {
+        "example": true,
+        "type": "boolean"
+      },
+      "entryInboundTags": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "entryNodeId": {
+        "example": 1,
+        "type": "integer"
+      },
+      "exitCountry": {
+        "description": "ExitCountry, when set, makes every enabled node of that country an exit.",
+        "example": "DE",
+        "type": "string"
+      },
+      "exitNodeIds": {
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "lastError": {
+        "type": "string"
+      },
+      "links": {
+        "items": {
+          "$ref": "#/components/schemas/CascadeLink"
+        },
+        "type": "array"
+      },
+      "name": {
+        "example": "RU → DE",
+        "type": "string"
+      },
+      "strategy": {
+        "example": "leastPing",
+        "type": "string"
+      },
+      "updatedAt": {
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "createdAt",
+      "enable",
+      "entryInboundTags",
+      "entryNodeId",
+      "exitCountry",
+      "exitNodeIds",
+      "id",
+      "lastError",
+      "links",
+      "name",
+      "strategy",
+      "updatedAt"
+    ],
+    "type": "object"
+  },
+  "CascadeLink": {
+    "description": "CascadeLink is the hidden VLESS+REALITY hop the master provisions on one exit.",
+    "properties": {
+      "address": {
+        "type": "string"
+      },
+      "clientId": {
+        "type": "string"
+      },
+      "email": {
+        "type": "string"
+      },
+      "inboundId": {
+        "type": "integer"
+      },
+      "nodeId": {
+        "type": "integer"
+      },
+      "port": {
+        "type": "integer"
+      },
+      "publicKey": {
+        "type": "string"
+      },
+      "serverName": {
+        "type": "string"
+      },
+      "shortId": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "address",
+      "clientId",
+      "email",
+      "inboundId",
+      "nodeId",
+      "port",
+      "publicKey",
+      "serverName",
+      "shortId"
     ],
     "type": "object"
   },
@@ -2325,6 +2495,34 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "ClientSpeed": {
+    "description": "ClientSpeed is a user's speed contract: MaxMbps caps them (0 = no cap),\nMinMbps is the speed a server must still have free for them (0 = any).",
+    "properties": {
+      "email": {
+        "example": "anna",
+        "type": "string"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "maxMbps": {
+        "example": 100,
+        "type": "integer"
+      },
+      "minMbps": {
+        "example": 20,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "email",
+      "id",
+      "maxMbps",
+      "minMbps"
+    ],
+    "type": "object"
+  },
   "ClientTraffic": {
     "description": "ClientTraffic represents traffic statistics and limits for a specific client.\nIt tracks upload/download usage, expiry times, and online status for inbound clients.",
     "properties": {
@@ -2693,6 +2891,149 @@ export const SCHEMAS: Record<string, unknown> = {
     "required": [
       "id",
       "seederName"
+    ],
+    "type": "object"
+  },
+  "HomeAccessRule": {
+    "description": "HomeAccessRule lets users (by email or client group) reach some targets of\na home network; no targets means the whole network.",
+    "properties": {
+      "emails": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "groups": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "targets": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "emails",
+      "groups",
+      "targets"
+    ],
+    "type": "object"
+  },
+  "HomeNetwork": {
+    "description": "HomeNetwork is a network behind a tunnel (WireGuard, OpenVPN or L2TP/IPsec)\nthat one server holds; users reach only the subnets and IPs their rules allow.",
+    "properties": {
+      "config": {
+        "description": "Config is the pasted wg-quick or .ovpn file.",
+        "type": "string"
+      },
+      "createdAt": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "enable": {
+        "example": true,
+        "type": "boolean"
+      },
+      "errors": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "type": "object"
+      },
+      "gatewayNodeId": {
+        "example": 0,
+        "type": "integer"
+      },
+      "hosts": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "kind": {
+        "example": "wireguard",
+        "type": "string"
+      },
+      "link": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CascadeLink"
+          }
+        ],
+        "nullable": true
+      },
+      "name": {
+        "example": "Home",
+        "type": "string"
+      },
+      "password": {
+        "type": "string"
+      },
+      "psk": {
+        "type": "string"
+      },
+      "rules": {
+        "items": {
+          "$ref": "#/components/schemas/HomeAccessRule"
+        },
+        "type": "array"
+      },
+      "server": {
+        "example": "203.0.113.7",
+        "type": "string"
+      },
+      "servers": {
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      },
+      "subnets": {
+        "description": "Subnets and Hosts are every address of the home network the panel routes.",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "tunnelState": {
+        "example": "active",
+        "type": "string"
+      },
+      "updatedAt": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "username": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "config",
+      "createdAt",
+      "enable",
+      "errors",
+      "gatewayNodeId",
+      "hosts",
+      "id",
+      "kind",
+      "name",
+      "password",
+      "psk",
+      "rules",
+      "server",
+      "servers",
+      "subnets",
+      "tunnelState",
+      "updatedAt",
+      "username"
     ],
     "type": "object"
   },
@@ -3489,6 +3830,191 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "LedgerEntry": {
+    "description": "LedgerEntry is one received payment (income) or one-off cost (expense) booked to a month.",
+    "properties": {
+      "amount": {
+        "example": 300,
+        "type": "integer"
+      },
+      "createdAt": {
+        "example": 1762761600000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "email": {
+        "example": "alice",
+        "type": "string"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "kind": {
+        "example": "income",
+        "type": "string"
+      },
+      "month": {
+        "example": "2026-11",
+        "type": "string"
+      },
+      "note": {
+        "example": "1 mo",
+        "type": "string"
+      }
+    },
+    "required": [
+      "amount",
+      "createdAt",
+      "email",
+      "id",
+      "kind",
+      "month",
+      "note"
+    ],
+    "type": "object"
+  },
+  "LedgerNonPaying": {
+    "description": "LedgerNonPaying is a client kept out of the expected income, with the reason.",
+    "properties": {
+      "email": {
+        "example": "admin",
+        "type": "string"
+      },
+      "group": {
+        "example": "family",
+        "type": "string"
+      },
+      "reason": {
+        "example": "group",
+        "type": "string"
+      }
+    },
+    "required": [
+      "email",
+      "group",
+      "reason"
+    ],
+    "type": "object"
+  },
+  "LedgerReport": {
+    "description": "LedgerReport is one month of the book. Money is in whole units of Currency.",
+    "properties": {
+      "balance": {
+        "example": 900,
+        "type": "integer"
+      },
+      "currency": {
+        "example": "RUB",
+        "type": "string"
+      },
+      "entries": {
+        "items": {
+          "$ref": "#/components/schemas/LedgerEntry"
+        },
+        "type": "array"
+      },
+      "expectedIncome": {
+        "example": 3000,
+        "type": "integer"
+      },
+      "expenses": {
+        "example": 1500,
+        "type": "integer"
+      },
+      "freeGroups": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "income": {
+        "example": 2400,
+        "type": "integer"
+      },
+      "month": {
+        "example": "2026-11",
+        "type": "string"
+      },
+      "nonPaying": {
+        "items": {
+          "$ref": "#/components/schemas/LedgerNonPaying"
+        },
+        "type": "array"
+      },
+      "otherExpenses": {
+        "example": 0,
+        "type": "integer"
+      },
+      "payingClients": {
+        "example": 10,
+        "type": "integer"
+      },
+      "price": {
+        "example": 300,
+        "type": "integer"
+      },
+      "serverCosts": {
+        "example": 1500,
+        "type": "integer"
+      },
+      "servers": {
+        "items": {
+          "$ref": "#/components/schemas/LedgerServer"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "balance",
+      "currency",
+      "entries",
+      "expectedIncome",
+      "expenses",
+      "freeGroups",
+      "income",
+      "month",
+      "nonPaying",
+      "otherExpenses",
+      "payingClients",
+      "price",
+      "serverCosts",
+      "servers"
+    ],
+    "type": "object"
+  },
+  "LedgerServer": {
+    "description": "LedgerServer is a recurring monthly server cost, charged to every month from\nStartMonth through EndMonth (YYYY-MM; empty EndMonth means still running).",
+    "properties": {
+      "endMonth": {
+        "type": "string"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "monthlyCost": {
+        "example": 500,
+        "type": "integer"
+      },
+      "name": {
+        "example": "Hetzner DE",
+        "type": "string"
+      },
+      "startMonth": {
+        "example": "2026-11",
+        "type": "string"
+      }
+    },
+    "required": [
+      "endMonth",
+      "id",
+      "monthlyCost",
+      "name",
+      "startMonth"
+    ],
+    "type": "object"
+  },
   "LogEntry": {
     "properties": {
       "DateTime": {
@@ -3566,6 +4092,50 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "MasterStatus": {
+    "description": "MasterStatus is one master as the masters card shows it.",
+    "properties": {
+      "alive": {
+        "example": true,
+        "type": "boolean"
+      },
+      "lastSeen": {
+        "example": 1762736400,
+        "format": "int64",
+        "type": "integer"
+      },
+      "leader": {
+        "example": true,
+        "type": "boolean"
+      },
+      "name": {
+        "example": "master-1",
+        "type": "string"
+      },
+      "priority": {
+        "example": 1,
+        "type": "integer"
+      },
+      "self": {
+        "example": true,
+        "type": "boolean"
+      },
+      "url": {
+        "example": "https://panel-1.example.com:2053",
+        "type": "string"
+      }
+    },
+    "required": [
+      "alive",
+      "lastSeen",
+      "leader",
+      "name",
+      "priority",
+      "self",
+      "url"
+    ],
+    "type": "object"
+  },
   "Msg": {
     "properties": {
       "msg": {
@@ -3623,6 +4193,11 @@ export const SCHEMAS: Record<string, unknown> = {
       "configDirtyAt": {
         "format": "int64",
         "type": "integer"
+      },
+      "country": {
+        "description": "Country is the ISO 3166-1 alpha-2 code country cascades group exits by.",
+        "example": "DE",
+        "type": "string"
       },
       "cpuPct": {
         "example": 23.5,
@@ -3790,6 +4365,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "clientCount",
       "configDirty",
       "configDirtyAt",
+      "country",
       "cpuPct",
       "createdAt",
       "depletedCount",
@@ -3824,6 +4400,30 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "NodeJoinTokenView": {
+    "description": "NodeJoinTokenView is what the master UI needs to print the install command.",
+    "properties": {
+      "arch": {
+        "example": "amd64",
+        "type": "string"
+      },
+      "expiresAt": {
+        "example": 1700003600,
+        "format": "int64",
+        "type": "integer"
+      },
+      "token": {
+        "example": "m3Yx0QmRZ2bq0l5w2b3h1C9rYx0QmRZ2bq0l5w2b3h0",
+        "type": "string"
+      }
+    },
+    "required": [
+      "arch",
+      "expiresAt",
+      "token"
+    ],
+    "type": "object"
+  },
   "NodeMutationRequest": {
     "description": "NodeMutationRequest is the node write/probe contract. ApiToken is accepted\nonly as input. On update, nil means keep the stored token; replacement and\nclearing are explicit and mutually exclusive.",
     "properties": {
@@ -3842,6 +4442,9 @@ export const SCHEMAS: Record<string, unknown> = {
       },
       "clearApiToken": {
         "type": "boolean"
+      },
+      "country": {
+        "type": "string"
       },
       "enable": {
         "type": "boolean"
@@ -3900,6 +4503,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "address",
       "allowPrivateAddress",
       "basePath",
+      "country",
       "enable",
       "id",
       "inboundSyncMode",
@@ -3945,6 +4549,10 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": 0,
         "format": "int64",
         "type": "integer"
+      },
+      "country": {
+        "example": "DE",
+        "type": "string"
       },
       "cpuPct": {
         "example": 12.5,
@@ -4104,6 +4712,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "clientCount",
       "configDirty",
       "configDirtyAt",
+      "country",
       "cpuPct",
       "createdAt",
       "depletedCount",
@@ -4167,6 +4776,76 @@ export const SCHEMAS: Record<string, unknown> = {
       "tag",
       "total",
       "up"
+    ],
+    "type": "object"
+  },
+  "PanelProxyCheck": {
+    "description": "PanelProxyCheck is one live request made the way the panel makes its own.",
+    "properties": {
+      "error": {
+        "type": "string"
+      },
+      "exitIp": {
+        "example": "203.0.113.7",
+        "type": "string"
+      },
+      "telegram": {
+        "example": true,
+        "type": "boolean"
+      },
+      "telegramMs": {
+        "example": 184,
+        "format": "int64",
+        "type": "integer"
+      },
+      "viaProxy": {
+        "example": true,
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "error",
+      "exitIp",
+      "telegram",
+      "telegramMs",
+      "viaProxy"
+    ],
+    "type": "object"
+  },
+  "PanelProxyStatus": {
+    "description": "PanelProxyStatus is the quick panel proxy as stored, plus the outbounds it builds now.",
+    "properties": {
+      "active": {
+        "example": true,
+        "type": "boolean"
+      },
+      "error": {
+        "type": "string"
+      },
+      "mode": {
+        "example": "client",
+        "type": "string"
+      },
+      "outbounds": {
+        "example": [
+          "panelproxy-de-frankfurt"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "source": {
+        "example": "alice",
+        "type": "string"
+      }
+    },
+    "required": [
+      "active",
+      "error",
+      "mode",
+      "outbounds",
+      "source"
     ],
     "type": "object"
   },
@@ -4470,6 +5149,62 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "ServerCapacity": {
+    "description": "ServerCapacity is the link speed of one server (node id 0 = this panel),\nwhich the free speed per user is measured against.",
+    "properties": {
+      "capacityMbps": {
+        "example": 1000,
+        "type": "integer"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "nodeId": {
+        "example": 0,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "capacityMbps",
+      "id",
+      "nodeId"
+    ],
+    "type": "object"
+  },
+  "ServerFreeSpeed": {
+    "description": "ServerFreeSpeed is the live load of a server with a known capacity.",
+    "properties": {
+      "capacityMbps": {
+        "example": 1000,
+        "type": "integer"
+      },
+      "freePerUserMbps": {
+        "example": 44.5,
+        "type": "number"
+      },
+      "nodeId": {
+        "example": 0,
+        "type": "integer"
+      },
+      "online": {
+        "example": 12,
+        "type": "integer"
+      },
+      "usedMbps": {
+        "example": 420.5,
+        "type": "number"
+      }
+    },
+    "required": [
+      "capacityMbps",
+      "freePerUserMbps",
+      "nodeId",
+      "online",
+      "usedMbps"
+    ],
+    "type": "object"
+  },
   "ServerSettings": {
     "description": "ServerSettings is the \"server\" block of an AmneziaWG inbound's Settings\nJSON: the interface-level configuration shared by every client/peer. The\nlisten port is deliberately not duplicated here — it lives on the inbound\nrow itself (Inbound.Port), like every other protocol.",
     "properties": {
@@ -4638,87 +5373,32 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
-  "Sponsor": {
-    "description": "Sponsor is one paid placement published in the repo's sponsors.json.",
+  "SpeedOverview": {
+    "description": "SpeedOverview is everything the speed card shows.",
     "properties": {
-      "enable": {
-        "example": true,
-        "nullable": true,
-        "type": "boolean"
-      },
-      "from": {
-        "example": "2026-10-01T00:00:00Z",
-        "format": "date-time",
-        "nullable": true,
-        "type": "string"
-      },
-      "id": {
-        "example": "acme-2026-10",
-        "type": "string"
-      },
-      "link": {
-        "example": "https://acme.example/?utm_source=3x-ui",
-        "type": "string"
-      },
-      "logo": {
-        "example": "/sponsors/logo/acme.png",
-        "type": "string"
-      },
-      "name": {
-        "example": "Acme VPS",
-        "type": "string"
-      },
-      "slots": {
+      "clients": {
         "items": {
-          "type": "string"
+          "$ref": "#/components/schemas/ClientSpeed"
         },
         "type": "array"
       },
-      "text": {
-        "additionalProperties": {
-          "type": "string"
-        },
-        "type": "object"
-      },
-      "title": {
-        "additionalProperties": {
-          "type": "string"
-        },
-        "type": "object"
-      },
-      "until": {
-        "example": "2026-11-01T00:00:00Z",
-        "format": "date-time",
-        "type": "string"
-      }
-    },
-    "required": [
-      "id",
-      "link",
-      "name",
-      "slots",
-      "text",
-      "title",
-      "until"
-    ],
-    "type": "object"
-  },
-  "SponsorList": {
-    "description": "SponsorList is the active sponsor set plus the contact link for new sponsors.",
-    "properties": {
-      "contact": {
-        "example": "https://t.me/example",
-        "type": "string"
-      },
-      "sponsors": {
+      "load": {
         "items": {
-          "$ref": "#/components/schemas/Sponsor"
+          "$ref": "#/components/schemas/ServerFreeSpeed"
+        },
+        "type": "array"
+      },
+      "servers": {
+        "items": {
+          "$ref": "#/components/schemas/ServerCapacity"
         },
         "type": "array"
       }
     },
     "required": [
-      "sponsors"
+      "clients",
+      "load",
+      "servers"
     ],
     "type": "object"
   },
@@ -4820,6 +5500,166 @@ export const SCHEMAS: Record<string, unknown> = {
       "inlineEnabled",
       "running",
       "username"
+    ],
+    "type": "object"
+  },
+  "TlsCertFiles": {
+    "description": "TlsCertFiles is where a certificate pair was written.",
+    "properties": {
+      "certFile": {
+        "example": "/etc/x-ui/certs/example.com/fullchain.pem",
+        "type": "string"
+      },
+      "keyFile": {
+        "example": "/etc/x-ui/certs/example.com/privkey.pem",
+        "type": "string"
+      }
+    },
+    "required": [
+      "certFile",
+      "keyFile"
+    ],
+    "type": "object"
+  },
+  "TlsCertInstallRequest": {
+    "description": "TlsCertInstallRequest is the body a master sends a node to store a pair.",
+    "properties": {
+      "certPem": {
+        "example": "-----BEGIN CERTIFICATE-----\n...",
+        "type": "string"
+      },
+      "keyPem": {
+        "example": "-----BEGIN EC PRIVATE KEY-----\n...",
+        "type": "string"
+      },
+      "name": {
+        "example": "wildcard.example.com",
+        "type": "string"
+      }
+    },
+    "required": [
+      "certPem",
+      "keyPem",
+      "name"
+    ],
+    "type": "object"
+  },
+  "TlsCertNodeInstall": {
+    "description": "TlsCertNodeInstall is one node's copy of a TlsCertificate. NotAfter equal to\nthe certificate's means the node holds the current version.",
+    "properties": {
+      "certFile": {
+        "example": "/etc/x-ui/certs/example.com/fullchain.pem",
+        "type": "string"
+      },
+      "error": {
+        "type": "string"
+      },
+      "keyFile": {
+        "example": "/etc/x-ui/certs/example.com/privkey.pem",
+        "type": "string"
+      },
+      "notAfter": {
+        "example": 1717000000000,
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "certFile",
+      "error",
+      "keyFile",
+      "notAfter"
+    ],
+    "type": "object"
+  },
+  "TlsCertSettings": {
+    "description": "TlsCertSettings reports whether issuance can run, never the token itself.",
+    "properties": {
+      "cloudflareTokenSet": {
+        "example": true,
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "cloudflareTokenSet"
+    ],
+    "type": "object"
+  },
+  "TlsCertificate": {
+    "description": "TlsCertificate is an ACME certificate the panel issued over Cloudflare DNS-01\nand keeps renewed; NodeInstalls records where each node stored its copy.",
+    "properties": {
+      "applyToPanel": {
+        "example": false,
+        "type": "boolean"
+      },
+      "autoRenew": {
+        "example": true,
+        "type": "boolean"
+      },
+      "certFile": {
+        "example": "/etc/x-ui/certs/example.com/fullchain.pem",
+        "type": "string"
+      },
+      "createdAt": {
+        "example": 1710000000000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "domains": {
+        "example": [
+          "example.com",
+          "*.example.com"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "keyFile": {
+        "example": "/etc/x-ui/certs/example.com/privkey.pem",
+        "type": "string"
+      },
+      "lastError": {
+        "type": "string"
+      },
+      "nodeInstalls": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/TlsCertNodeInstall"
+        },
+        "type": "object"
+      },
+      "notAfter": {
+        "example": 1717000000000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "status": {
+        "example": "valid",
+        "type": "string"
+      },
+      "updatedAt": {
+        "example": 1710000000000,
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "applyToPanel",
+      "autoRenew",
+      "certFile",
+      "createdAt",
+      "domains",
+      "id",
+      "keyFile",
+      "lastError",
+      "nodeInstalls",
+      "notAfter",
+      "status",
+      "updatedAt"
     ],
     "type": "object"
   },
@@ -4947,6 +5787,45 @@ export const SCHEMAS: Record<string, unknown> = {
       "id",
       "password",
       "username"
+    ],
+    "type": "object"
+  },
+  "WarpSwitch": {
+    "description": "WarpSwitch is one server's WARP switch: off, all traffic, or only the listed\nsites (domains, geosite: and regexp: entries). Node id 0 is this panel.",
+    "properties": {
+      "domains": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "lastError": {
+        "type": "string"
+      },
+      "mode": {
+        "example": "domains",
+        "type": "string"
+      },
+      "nodeId": {
+        "example": 0,
+        "type": "integer"
+      },
+      "updatedAt": {
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "domains",
+      "id",
+      "lastError",
+      "mode",
+      "nodeId",
+      "updatedAt"
     ],
     "type": "object"
   }

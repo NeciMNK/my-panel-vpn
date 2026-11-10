@@ -35,6 +35,11 @@ export class AllSetting {
   tgCpu = 80;
   tgMemory = 80;
   tgLang = 'en-US';
+  tgPaymentPrice = 0;
+  tgPaymentCurrency = '';
+  tgPaymentDiscounts = '';
+  tgPaymentDetails = '';
+  tgFreePlanEnable = false;
   twoFactorEnable = false;
   twoFactorToken = '';
   xrayTemplateConfig = '';
@@ -161,7 +166,7 @@ export class AllSetting {
   ldapDefaultTotalGB = 0;
   ldapDefaultExpiryDays = 0;
   ldapDefaultLimitIP = 0;
-  tgEnabledEvents = 'login.attempt,cpu.high';
+  tgEnabledEvents = 'login.attempt,cpu.high,speed.low,master.leader';
   smtpEnable = false;
   smtpHost = '';
   smtpPort = 587;

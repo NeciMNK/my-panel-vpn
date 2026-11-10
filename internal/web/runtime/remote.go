@@ -760,6 +760,24 @@ func (r *Remote) GetWebCertFiles(ctx context.Context) (*WebCertFiles, error) {
 	return &files, nil
 }
 
+// InstallTlsCert stores a certificate pair the master issued under name in the
+// node's own certificate folder and returns the paths the node wrote.
+func (r *Remote) InstallTlsCert(ctx context.Context, name string, certPEM, keyPEM []byte) (certFile, keyFile string, err error) {
+	body := map[string]string{"name": name, "certPem": string(certPEM), "keyPem": string(keyPEM)}
+	env, err := r.do(ctx, http.MethodPost, "panel/api/certs/install", body)
+	if err != nil {
+		return "", "", err
+	}
+	var files struct {
+		CertFile string `json:"certFile"`
+		KeyFile  string `json:"keyFile"`
+	}
+	if err := json.Unmarshal(env.Obj, &files); err != nil {
+		return "", "", fmt.Errorf("decode installed cert files: %w", err)
+	}
+	return files.CertFile, files.KeyFile, nil
+}
+
 // GetDescendants fetches the node's read-only summaries of the nodes IT
 // manages, so this panel can surface them as transitive sub-nodes in a chained
 // topology (#4983). Best-effort: an old-build node without the endpoint returns

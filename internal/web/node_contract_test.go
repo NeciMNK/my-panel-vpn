@@ -2,9 +2,18 @@ package web
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
+	"fmt"
+	"math/big"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strconv"
@@ -15,6 +24,7 @@ import (
 
 	"github.com/robfig/cron/v3"
 
+	"github.com/mhsanaei/3x-ui/v3/internal/config"
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/dbtest"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
@@ -301,6 +311,38 @@ func TestMasterNodeContract(t *testing.T) {
 					_, err := master.ListRemoteTags(ctx)
 					return err
 				}, nil},
+				{"ProxyXray reads and writes the node's Xray template", []string{"ProxyXray"}, func() error {
+					resp, err := master.ProxyXray(ctx, http.MethodPost, "/", "", "", nil)
+					if err != nil {
+						return err
+					}
+					if resp.Status != http.StatusOK || !strings.Contains(string(resp.Body), `"success":true`) {
+						return fmt.Errorf("xray read: HTTP %d %s", resp.Status, resp.Body)
+					}
+					resp, err = master.ProxyXray(ctx, http.MethodGet, "/getOutboundsTraffic", "", "", nil)
+					if err != nil {
+						return err
+					}
+					if resp.Status != http.StatusOK {
+						return fmt.Errorf("outbound traffic: HTTP %d", resp.Status)
+					}
+					return nil
+				}, nil},
+				{"InstallTlsCert stores the pushed pair in the node's cert folder", []string{"InstallTlsCert"}, func() error {
+					certPEM, keyPEM := contractCertPair(t)
+					certFile, keyFile, err := master.InstallTlsCert(ctx, "wildcard.example.com", certPEM, keyPEM)
+					if err != nil {
+						return err
+					}
+					wantDir := filepath.Join(config.GetCertFolderPath(), "wildcard.example.com")
+					if certFile != filepath.Join(wantDir, "fullchain.pem") || keyFile != filepath.Join(wantDir, "privkey.pem") {
+						t.Fatalf("node wrote %s, %s; want under %s", certFile, keyFile, wantDir)
+					}
+					if got, rerr := os.ReadFile(certFile); rerr != nil || string(got) != string(certPEM) {
+						t.Fatalf("node cert file = %q, %v; want the pushed chain", got, rerr)
+					}
+					return nil
+				}, nil},
 				{"RestartXray is accepted by the node", []string{"RestartXray"}, func() error {
 					// No core binary here: only the node's own restart failure may come back.
 					if err := master.RestartXray(ctx); err != nil && !strings.Contains(err.Error(), "rebooting the Xray") {
@@ -381,4 +423,26 @@ func assertEveryRemoteCallCovered(t *testing.T, covered map[string]bool) {
 			t.Errorf("runtime.Remote.%s has no cell in TestMasterNodeContract", name)
 		}
 	}
+}
+
+func contractCertPair(t *testing.T) (certPEM, keyPEM []byte) {
+	t.Helper()
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tmpl := &x509.Certificate{
+		SerialNumber: big.NewInt(1), Subject: pkix.Name{CommonName: "*.example.com"},
+		DNSNames: []string{"*.example.com"}, NotBefore: time.Now().Add(-time.Hour), NotAfter: time.Now().Add(time.Hour),
+	}
+	der, err := x509.CreateCertificate(rand.Reader, tmpl, tmpl, &key.PublicKey, key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	keyDER, err := x509.MarshalECPrivateKey(key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}),
+		pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER})
 }

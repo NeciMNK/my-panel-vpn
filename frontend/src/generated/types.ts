@@ -176,8 +176,13 @@ export interface AllSetting {
   tgBotToken: string;
   tgCpu: number;
   tgEnabledEvents: string;
+  tgFreePlanEnable: boolean;
   tgLang: string;
   tgMemory: number;
+  tgPaymentCurrency: string;
+  tgPaymentDetails: string;
+  tgPaymentDiscounts: string;
+  tgPaymentPrice: number;
   tgRunTime: string;
   timeLocation: string;
   trafficDiff: number;
@@ -367,8 +372,13 @@ export interface AllSettingView {
   tgBotToken: string;
   tgCpu: number;
   tgEnabledEvents: string;
+  tgFreePlanEnable: boolean;
   tgLang: string;
   tgMemory: number;
+  tgPaymentCurrency: string;
+  tgPaymentDetails: string;
+  tgPaymentDiscounts: string;
+  tgPaymentPrice: number;
   tgRunTime: string;
   timeLocation: string;
   trafficDiff: number;
@@ -413,6 +423,33 @@ export interface ApiTokenView {
 export interface Blocker {
   code: BlockerCode;
   detail?: string;
+}
+
+export interface Cascade {
+  createdAt: number;
+  enable: boolean;
+  entryInboundTags: string[];
+  entryNodeId: number;
+  exitCountry: string;
+  exitNodeIds: number[];
+  id: number;
+  lastError: string;
+  links: CascadeLink[];
+  name: string;
+  strategy: string;
+  updatedAt: number;
+}
+
+export interface CascadeLink {
+  address: string;
+  clientId: string;
+  email: string;
+  inboundId: number;
+  nodeId: number;
+  port: number;
+  publicKey: string;
+  serverName: string;
+  shortId: string;
 }
 
 export interface Client {
@@ -550,6 +587,13 @@ export interface ClientSlim {
   updatedAt: number;
 }
 
+export interface ClientSpeed {
+  email: string;
+  id: number;
+  maxMbps: number;
+  minMbps: number;
+}
+
 export interface ClientTraffic {
   down: number;
   email: string;
@@ -632,6 +676,34 @@ export interface HappLinkResult {
 export interface HistoryOfSeeders {
   id: number;
   seederName: string;
+}
+
+export interface HomeAccessRule {
+  emails: string[];
+  groups: string[];
+  targets: string[];
+}
+
+export interface HomeNetwork {
+  config: string;
+  createdAt: number;
+  enable: boolean;
+  errors: Record<string, string>;
+  gatewayNodeId: number;
+  hosts: string[];
+  id: number;
+  kind: string;
+  link?: CascadeLink | null;
+  name: string;
+  password: string;
+  psk: string;
+  rules: HomeAccessRule[];
+  server: string;
+  servers: number[];
+  subnets: string[];
+  tunnelState: string;
+  updatedAt: number;
+  username: string;
 }
 
 export interface Host {
@@ -800,6 +872,47 @@ export interface InboundTrafficSummary {
   up: number;
 }
 
+export interface LedgerEntry {
+  amount: number;
+  createdAt: number;
+  email: string;
+  id: number;
+  kind: string;
+  month: string;
+  note: string;
+}
+
+export interface LedgerNonPaying {
+  email: string;
+  group: string;
+  reason: string;
+}
+
+export interface LedgerReport {
+  balance: number;
+  currency: string;
+  entries: LedgerEntry[];
+  expectedIncome: number;
+  expenses: number;
+  freeGroups: string[];
+  income: number;
+  month: string;
+  nonPaying: LedgerNonPaying[];
+  otherExpenses: number;
+  payingClients: number;
+  price: number;
+  serverCosts: number;
+  servers: LedgerServer[];
+}
+
+export interface LedgerServer {
+  endMonth: string;
+  id: number;
+  monthlyCost: number;
+  name: string;
+  startMonth: string;
+}
+
 export interface LogEntry {
   DateTime: string;
   Email: string;
@@ -820,6 +933,16 @@ export interface MLKEM768Response {
   seed: string;
 }
 
+export interface MasterStatus {
+  alive: boolean;
+  lastSeen: number;
+  leader: boolean;
+  name: string;
+  priority: number;
+  self: boolean;
+  url: string;
+}
+
 export interface Msg {
   msg: string;
   obj: unknown;
@@ -838,6 +961,7 @@ export interface Node {
   clientCount: number;
   configDirty: boolean;
   configDirtyAt: number;
+  country: string;
   cpuPct: number;
   createdAt: number;
   depletedCount: number;
@@ -874,12 +998,19 @@ export interface Node {
   xrayVersion: string;
 }
 
+export interface NodeJoinTokenView {
+  arch: string;
+  expiresAt: number;
+  token: string;
+}
+
 export interface NodeMutationRequest {
   address: string;
   allowPrivateAddress: boolean;
   apiToken?: string | null;
   basePath: string;
   clearApiToken?: boolean;
+  country: string;
   enable: boolean;
   id: number;
   inboundSyncMode: string;
@@ -901,6 +1032,7 @@ export interface NodeView {
   clientCount: number;
   configDirty: boolean;
   configDirtyAt: number;
+  country: string;
   cpuPct: number;
   createdAt: number;
   depletedCount: number;
@@ -944,6 +1076,22 @@ export interface OutboundTraffics {
   tag: string;
   total: number;
   up: number;
+}
+
+export interface PanelProxyCheck {
+  error: string;
+  exitIp: string;
+  telegram: boolean;
+  telegramMs: number;
+  viaProxy: boolean;
+}
+
+export interface PanelProxyStatus {
+  active: boolean;
+  error: string;
+  mode: string;
+  outbounds: string[];
+  source: string;
 }
 
 export interface PanelUpdateStatus {
@@ -1010,6 +1158,20 @@ export interface RealityScanResult {
   x25519: boolean;
 }
 
+export interface ServerCapacity {
+  capacityMbps: number;
+  id: number;
+  nodeId: number;
+}
+
+export interface ServerFreeSpeed {
+  capacityMbps: number;
+  freePerUserMbps: number;
+  nodeId: number;
+  online: number;
+  usedMbps: number;
+}
+
 export interface ServerSettings {
   contentPaddingAddition?: string;
   disableCookies: boolean;
@@ -1057,22 +1219,10 @@ export interface Setting {
   value: string;
 }
 
-export interface Sponsor {
-  enable?: boolean | null;
-  from?: string | null;
-  id: string;
-  link: string;
-  logo?: string;
-  name: string;
-  slots: string[];
-  text: Record<string, string>;
-  title: Record<string, string>;
-  until: string;
-}
-
-export interface SponsorList {
-  contact?: string;
-  sponsors: Sponsor[];
+export interface SpeedOverview {
+  clients: ClientSpeed[];
+  load: ServerFreeSpeed[];
+  servers: ServerCapacity[];
 }
 
 export interface SubBalancer {
@@ -1092,6 +1242,43 @@ export interface TgBotCapabilities {
   inlineEnabled: boolean;
   running: boolean;
   username: string;
+}
+
+export interface TlsCertFiles {
+  certFile: string;
+  keyFile: string;
+}
+
+export interface TlsCertInstallRequest {
+  certPem: string;
+  keyPem: string;
+  name: string;
+}
+
+export interface TlsCertNodeInstall {
+  certFile: string;
+  error: string;
+  keyFile: string;
+  notAfter: number;
+}
+
+export interface TlsCertSettings {
+  cloudflareTokenSet: boolean;
+}
+
+export interface TlsCertificate {
+  applyToPanel: boolean;
+  autoRenew: boolean;
+  certFile: string;
+  createdAt: number;
+  domains: string[];
+  id: number;
+  keyFile: string;
+  lastError: string;
+  nodeInstalls: Record<number, TlsCertNodeInstall>;
+  notAfter: number;
+  status: string;
+  updatedAt: number;
 }
 
 export interface Traffic {
@@ -1126,5 +1313,14 @@ export interface User {
   id: number;
   password: string;
   username: string;
+}
+
+export interface WarpSwitch {
+  domains: string[];
+  id: number;
+  lastError: string;
+  mode: string;
+  nodeId: number;
+  updatedAt: number;
 }
 

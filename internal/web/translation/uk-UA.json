@@ -107,7 +107,18 @@
     "support": "Підтримка",
     "qrTitle": "Скануйте. Імпортуйте. Підключайтеся.",
     "qrHint": "Відскануйте в клієнтському застосунку. Нікому не показуйте цей код.",
-    "saveQr": "Зберегти QR"
+    "saveQr": "Зберегти QR",
+    "platformDetected": "Визначено автоматично",
+    "recommended": "Рекомендуємо",
+    "stepInstall": "Встановіть застосунок",
+    "stepInstallHint": "Завантажте {app} і встановіть його на цей пристрій.",
+    "stepAdd": "Додайте підписку",
+    "stepAddHint": "Натисніть кнопку: відкриється {app} та імпортує підписку.",
+    "stepAddCopyHint": "{app} не вміє імпорт натисканням: скопіюйте посилання й додайте його в застосунку з буфера обміну.",
+    "stepConnect": "Підключіться",
+    "stepConnectHint": "Відкрийте {app}, виберіть сервер і ввімкніть підключення.",
+    "addSubscription": "Додати підписку",
+    "copyLink": "Скопіювати посилання"
   },
   "menu": {
     "theme": "Тема",
@@ -122,13 +133,13 @@
     "outbounds": "Вихідні",
     "apiDocs": "Документація API",
     "donate": "Підтримати",
-    "sponsors": "Спонсори",
     "hosts": "Хости",
     "docs": "Документація",
     "openMenu": "Відкрити меню",
     "pinSidebar": "Закріпити бічну панель",
     "unpinSidebar": "Відкріпити бічну панель",
-    "subFormats": "Формати підписки"
+    "subFormats": "Формати підписки",
+    "ledger": "Finance"
   },
   "pages": {
     "login": {
@@ -1243,7 +1254,132 @@
       "pinnedCertPlaceholder": "SHA-256 у base64 або hex",
       "fetchPin": "Отримати",
       "pinFetched": "Поточний сертифікат вузла отримано",
-      "pinFetchFailed": "Не вдалося отримати сертифікат"
+      "pinFetchFailed": "Не вдалося отримати сертифікат",
+      "join": {
+        "button": "Додати однією командою",
+        "title": "Додати ноду однією командою",
+        "desc": "Виконайте команду на новому сервері від root. Вона завантажить збірку цієї панелі, налаштує ноду з випадковим портом, шляхом і сертифікатом і сама зареєструє її тут.",
+        "regenerate": "Нова команда",
+        "insecure": "У майстра самопідписаний сертифікат",
+        "hint": "Команда одноразова і діє до {{time}}. Сервер має бути архітектури {{arch}}, як майстер."
+      },
+      "cascade": {
+        "title": "Каскади",
+        "add": "Створити каскад",
+        "edit": "Змінити каскад",
+        "name": "Назва",
+        "route": "Вхід → вихід",
+        "state": "Стан",
+        "enable": "Увімкнено",
+        "entry": "Вхідний сервер",
+        "exits": "Вихідні сервери",
+        "strategy": "Як обирати вихід",
+        "inbounds": "Лише ці inbound'и входу",
+        "inboundsHint": "Порожньо = весь трафік вхідного сервера йде через каскад.",
+        "desc": "Користувачі підключаються до вхідного сервера, а в інтернет виходять через вихідний. Звʼязку між серверами панель створить сама. Кілька виходів = балансування.",
+        "deleteConfirm": "Видалити каскад і його службові inbound'и?",
+        "toasts": {
+          "saved": "Каскад збережено",
+          "deleted": "Каскад видалено"
+        },
+        "exitMode": "Виходи",
+        "exitModeServers": "Вибрані сервери",
+        "exitModeCountry": "Усі сервери країни",
+        "country": "Країна виходу",
+        "countryHint": "Трафік іде на найшвидший сервер цієї країни. Нові ноди країни додаються самі."
+      },
+      "country": "Країна",
+      "countryHint": "Дволітерний код країни (DE, NL, FI). Ноди однієї країни разом потрапляють у каскади «за країною».",
+      "countryInvalid": "Потрібен дволітерний код країни, наприклад DE",
+      "home": {
+        "title": "Home networks",
+        "add": "New home network",
+        "edit": "Edit home network",
+        "name": "Name",
+        "network": "Network",
+        "rules": "Who can reach what",
+        "state": "State",
+        "enable": "Enabled",
+        "desc": "One server keeps a tunnel to your home; users of every other server reach it through that server. Only the addresses below are routed home, and only the users in the rules may use them.",
+        "kind": "Connection to home",
+        "kinds": {
+          "wireguard": "WireGuard",
+          "openvpn": "OpenVPN",
+          "l2tp": "L2TP/IPsec"
+        },
+        "gateway": "Server that holds the tunnel",
+        "gatewayHint": "OpenVPN and L2TP clients are installed on this server automatically (Debian/Ubuntu).",
+        "config": "Config file",
+        "configHintWg": "Paste the WireGuard config exported by the home router: [Interface] and one [Peer].",
+        "configHintOvpn": "Paste the .ovpn file. Its routes and scripts are ignored: only the addresses below go through the tunnel.",
+        "server": "L2TP server address",
+        "username": "Username",
+        "password": "Password",
+        "psk": "IPsec pre-shared key (empty = L2TP without IPsec)",
+        "subnets": "Home subnets",
+        "subnetsHint": "For example 192.168.1.0/24. Press Enter after each one.",
+        "hosts": "Single home addresses",
+        "hostsHint": "For example 192.168.1.10 for a NAS or a camera.",
+        "rulesHint": "A rule lets the listed users and client groups reach some addresses of this network. Everyone else is blocked from all of them.",
+        "ruleUsers": "Users",
+        "ruleGroups": "Client groups",
+        "ruleTargets": "Addresses",
+        "ruleTargetsAll": "Empty = the whole network.",
+        "addRule": "Add rule",
+        "deleteConfirm": "Delete the home network, stop its tunnel and remove its rules from every server?",
+        "toasts": {
+          "saved": "Home network saved",
+          "deleted": "Home network deleted"
+        }
+      },
+      "warp": {
+        "title": "WARP",
+        "server": "Server",
+        "mode": "WARP",
+        "domains": "Sites through WARP",
+        "modes": {
+          "off": "Off",
+          "all": "All traffic",
+          "domains": "Only these sites"
+        },
+        "desc": "One switch per server. The first time it is turned on the server registers its own WARP account. Sites: domains, geosite: or regexp: entries. WARP only takes traffic that no cascade, home network or other rule claimed.",
+        "toasts": {
+          "saved": "WARP switch saved"
+        }
+      },
+      "speed": {
+        "title": "Speed limits",
+        "desc": "Max caps a user's speed on every server they use. Min is the speed a server must still have free for the user: when a server drops below it, new connections go to another server of the cascade, and if no server has room the admin gets a Telegram alert. Set each server's link speed so free speed can be measured.",
+        "server": "Server",
+        "capacity": "Link speed, Mbit/s",
+        "load": "Load",
+        "loadValue": "{used} Mbit/s used, {online} online, {free} Mbit/s free per user",
+        "user": "User",
+        "min": "Min, Mbit/s",
+        "max": "Max, Mbit/s",
+        "toasts": {
+          "saved": "Speed limits saved"
+        }
+      },
+      "masters": {
+        "title": "Masters",
+        "desc": "Masters that share this panel's database. The best-ranked running master leads: it syncs nodes, resets traffic, keeps cascade pins and runs the bots. When it goes down the next one takes over within about half a minute, and it takes the lead back 30 seconds after it returns.",
+        "name": "Master",
+        "priority": "Priority",
+        "address": "Address",
+        "state": "State",
+        "lastSeen": "Last heartbeat",
+        "states": {
+          "leader": "Leader",
+          "follower": "Standby",
+          "down": "Down"
+        },
+        "self": "this panel",
+        "forget": "Forget",
+        "toasts": {
+          "forgotten": "Master removed from the list"
+        }
+      }
     },
     "settings": {
       "defaultTag": "Типово",
@@ -1882,7 +2018,79 @@
       "subHostSortMode": "Порядок вузлів підписки",
       "subHostSortInbound": "Порядок вхідних підключень (типово)",
       "subHostSortHosts": "Порядок хостів",
-      "subHostSortModeDesc": "Використовується порядок зі сторінки хостів для всіх вхідних підключень. Це визначає порядок видачі сервером; клієнтські застосунки можуть сортувати вузли самостійно."
+      "subHostSortModeDesc": "Використовується порядок зі сторінки хостів для всіх вхідних підключень. Це визначає порядок видачі сервером; клієнтські застосунки можуть сортувати вузли самостійно.",
+      "tgPayment": "Оплата",
+      "tgPaymentDetails": "Куди платити",
+      "tgPaymentDetailsDesc": "Номер картки, телефон для переказу або посилання на оплату. Клієнт бачить це в боті поруч із датою закінчення підписки й може повідомити вам, що сплатив.",
+      "tgPaymentPrice": "Ціна за місяць",
+      "tgPaymentPriceDesc": "Вартість одного місяця. Довші терміни пропонуються зі знижками нижче. 0 приховує ціни; якщо реквізити теж порожні, блок оплати клієнтам не показується.",
+      "tgPaymentCurrency": "Валюта",
+      "tgPaymentDiscounts": "Знижки за довший термін",
+      "tgPaymentDiscountsDesc": "місяці:відсоток через кому, наприклад 3:10, 6:15, 12:20. Кожна пара — термін, який клієнт може сплатити.",
+      "tgFreePlan": "Безкоштовний тариф",
+      "tgFreePlanDesc": "Дозволити незнайомим користувачам Telegram запросити безкоштовну підписку (10 ГБ на місяць). Кожен запит схвалює адміністратор у боті; оплата будь-якого терміну знімає ліміт.",
+      "panelProxy": {
+        "setup": "Через мій VPN",
+        "title": "Запити панелі через проксі",
+        "desc": "Власні запити панелі (Telegram, перевірка оновлень, завантаження підписок) йдуть через вибрані виходи, а не через мережу цього сервера. Якщо виходів кілька, використовується той, що найшвидше дістається до Telegram.",
+        "modeClient": "Мій клієнт",
+        "modeLink": "Посилання або проксі",
+        "modeSubscription": "Підписка",
+        "clientPh": "Клієнт з підключеннями на інших серверах",
+        "noClients": "Жоден клієнт не має підключення на іншому сервері. Спершу додайте вузол і підключення на ньому.",
+        "linkPh": "vless://…, socks5://user:pass@host:1080 або http://host:8080",
+        "subscriptionPh": "https://… посилання на підписку",
+        "enable": "Увімкнути",
+        "disable": "Вимкнути",
+        "check": "Перевірити",
+        "active": "Через проксі, виходів: {count}",
+        "broken": "Проксі налаштовано, але робочого виходу немає: {error}",
+        "checkOk": "Telegram відповів за {ms} мс, IP виходу {ip}",
+        "checkDirect": "Міст проксі не запущено, панель підключилася напряму.",
+        "checkFail": "Telegram недоступний: {error}",
+        "overrides": "Увімкнено швидкий проксі, він замінює цей вибір."
+      },
+      "tlsCerts": {
+        "menu": "SSL certificates",
+        "title": "SSL certificates",
+        "desc": "Free Let's Encrypt certificates issued through Cloudflare DNS, so wildcards work and no port has to be open. They renew automatically 30 days before expiry and are copied to every node.",
+        "cfToken": "Cloudflare API token",
+        "cfTokenDesc": "Cloudflare → My Profile → API Tokens → Create Token → \"Edit zone DNS\" template (Zone:Read + DNS:Edit) for your zones.",
+        "cfTokenSet": "Token saved",
+        "cfTokenNotSet": "No token saved",
+        "saveToken": "Save token",
+        "issue": "Issue certificate",
+        "domains": "Domains",
+        "domainsDesc": "One per line or comma-separated. *.example.com covers subdomains; add example.com as well for the bare domain.",
+        "autoRenew": "Auto-renew",
+        "applyToPanel": "Use for the panel",
+        "applyToPanelDesc": "Once issued, the panel switches to this certificate and restarts.",
+        "status": "Status",
+        "statusPending": "Issuing…",
+        "statusValid": "Valid",
+        "statusError": "Error",
+        "expires": "Expires",
+        "files": "Files",
+        "nodes": "Nodes",
+        "nodeCurrent": "up to date",
+        "nodeOutdated": "outdated",
+        "renew": "Renew now",
+        "deleteConfirm": "Delete this certificate and its files?",
+        "pendingHint": "Issuing takes 1–3 minutes while the DNS record propagates.",
+        "empty": "No certificates yet",
+        "inboundPick": "Issued certificate",
+        "inboundNotOnNode": "This certificate has not been copied to the inbound's node yet",
+        "toasts": {
+          "saveToken": "Could not save the Cloudflare token",
+          "issue": "Could not start issuing the certificate",
+          "renew": "Could not renew the certificate",
+          "update": "Could not update the certificate",
+          "delete": "Could not delete the certificate",
+          "install": "Could not install the certificate"
+        }
+      },
+      "eventSpeedLow": "Speed below user minimum",
+      "eventMasterLeader": "Another master took over"
     },
     "xray": {
       "save": "Зберегти",
@@ -2414,7 +2622,9 @@
       "defaultOutboundDesc": "Трафік без збігу з правилами маршрутизації йде через цей вихідний (перший у списку).",
       "routingScript": "Скрипт маршрутизації",
       "routingScriptDesc": "Шлях до файлу .lua з функцією HandleRoute — абсолютний або відносно теки bin Xray. Скрипт обирає кожен маршрут, а Xray ігнорує всі правила маршрутизації, зокрема правило api панелі: спрямовуйте вхідний api на вихідний api, інакше зупиниться статистика трафіку й застосування змін клієнтів на льоту. Xray не запуститься, якщо файл відсутній або містить помилки.",
-      "routingScriptActive": "У розділі «{section}» задано скрипт маршрутизації, тому Xray ігнорує ці правила."
+      "routingScriptActive": "У розділі «{section}» задано скрипт маршрутизації, тому Xray ігнорує ці правила.",
+      "targetNode": "Сервер",
+      "targetLocal": "Цей сервер (майстер)"
     },
     "hosts": {
       "addHost": "Додати хост",
@@ -2537,14 +2747,50 @@
       },
       "dragToReorder": "Перетягніть, щоб змінити порядок {name}"
     },
-    "sponsors": {
-      "title": "Спонсори",
-      "intro": "Компанії, що підтримують розробку 3X-UI. Спонсорські посилання відкриваються в новій вкладці.",
-      "become": "Стати спонсором",
-      "tag": "Спонсор",
-      "visit": "Перейти",
-      "yourBrand": "Тут може бути ваш бренд",
-      "yourBrandText": "Покажіть свою компанію тисячам адміністраторів серверів, які щодня відкривають 3X-UI."
+    "ledger": {
+      "income": "Income",
+      "expense": "Expense",
+      "expenses": "Expenses",
+      "balance": "Profit / loss",
+      "expected": "Expected from {count} paying clients",
+      "servers": "Servers (monthly cost)",
+      "serverName": "Server",
+      "monthlyCost": "Per month",
+      "period": "Period",
+      "ongoing": "now",
+      "notThisMonth": "not this month",
+      "startMonth": "First month (YYYY-MM)",
+      "endMonth": "Last month (YYYY-MM)",
+      "endMonthHint": "Leave empty while the server is still paid for.",
+      "serverTitle": "Server cost",
+      "entries": "Payments and one-off costs",
+      "addIncome": "+ Income",
+      "addExpense": "+ Expense",
+      "entryTitle": "Ledger entry",
+      "kind": "Type",
+      "amount": "Amount",
+      "client": "Client",
+      "note": "Note",
+      "month": "Month (YYYY-MM)",
+      "confirmDelete": "Delete this row?",
+      "prevMonth": "Previous month",
+      "nextMonth": "Next month",
+      "nonPaying": "Who does not pay",
+      "freeGroups": "Groups that do not pay (e.g. family)",
+      "markClient": "Mark a client as non-paying (e.g. admin)",
+      "markPaying": "Paying again",
+      "reason": "Why",
+      "reasonClient": "marked non-paying",
+      "reasonGroup": "group",
+      "reasonFreePlan": "free plan",
+      "errName": "Enter a name",
+      "errAmount": "Enter a positive whole amount",
+      "errMonth": "Use YYYY-MM",
+      "errRange": "The last month is before the first",
+      "toasts": {
+        "deleted": "Deleted",
+        "saved": "Saved"
+      }
     }
   },
   "tgbot": {
@@ -2673,7 +2919,16 @@
       "qrLegendJSON": "{{ .Code }}. JSON-підписка",
       "qrLegendLink": "{{ .Code }}. Посилання для застосунку {{ .App }}",
       "backupFailed": "Не вдалося прочитати базу даних; резервну копію не надіслано.",
-      "privateOnly": "🤖 Бот працює лише в особистих повідомленнях. Відкрий його в особистому чаті."
+      "privateOnly": "🤖 Бот працює лише в особистих повідомленнях. Відкрий його в особистому чаті.",
+      "paymentReported": "💳 {{ .User }} сплатив {{ .Months }} міс ({{ .Total }}): ",
+      "paymentConfirmed": "✅ Оплату підтверджено: {{ .Email }} активна до {{ .Date }}.",
+      "graceTaken": "⏳ {{ .User }} відклав оплату на {{ .Days }} днів: ",
+      "freeRequested": "🆓 {{ .User }} просить безкоштовну підписку ({{ .GB }} ГБ на місяць).",
+      "freeApproved": "🎉 Безкоштовна підписка готова: {{ .GB }} ГБ на місяць. Сплатіть будь-який термін, щоб зняти ліміт.",
+      "freeDeclined": "❌ Запит на безкоштовну підписку відхилено.",
+      "speedLow": "Server {{ .Server }} has {{ .Free }} Mbit/s free per user, below the {{ .Min }} Mbit/s minimum of {{ .Users }}, and no other server has room. Add a server or raise its link speed.",
+      "masterLeader": "Master {{ .Master }} now leads the panel cluster.",
+      "masterLeaderPrevious": "It took over from {{ .Previous }}."
     },
     "buttons": {
       "closeKeyboard": "❌ Закрити клавіатуру",
@@ -2733,7 +2988,22 @@
       "qrCode": "🔳 QR code",
       "broadcast": "📢 Розсилка",
       "attachInbound": "Прив’язати інбаунд ({{ .Count }})",
-      "attachDone": "✅ Готово"
+      "attachDone": "✅ Готово",
+      "iPaid": "✅ Я сплатив",
+      "planOption": "{{ .Months }} міс",
+      "payLater": "⏳ Сплачу пізніше (до {{ .Days }} днів)",
+      "confirmPayment": "✅ {{ .Email }}: +{{ .Months }} міс",
+      "trusted": "⭐ Довірений (відстрочка): {{ .State }}",
+      "requestFree": "🆓 Запросити безкоштовну підписку ({{ .GB }} ГБ/міс)",
+      "approve": "✅ Схвалити",
+      "decline": "❌ Відхилити",
+      "ledger": "💰 Finance",
+      "ledgerAddIncome": "➕ Income",
+      "ledgerAddExpense": "➖ Expense",
+      "ledgerAddServer": "🖥 Add server cost",
+      "ledgerDelete": "🗑 Delete",
+      "ledgerFreeGroups": "🆓 Non-paying groups",
+      "nonPaying": "🆓 Does not pay: {{ .State }}"
     },
     "answers": {
       "broadcastStarted": "🚀 Розсилку запущено.",
@@ -2760,7 +3030,15 @@
       "askToAddUserId": "Вашу конфігурацію не знайдено!\r\nБудь ласка, попросіть свого адміністратора використовувати ваш ідентифікатор Telegram у вашій конфігурації.\r\n\r\nВаш ідентифікатор користувача: <code>{{ .TgUserID }}</code>",
       "chooseClient": "Виберіть клієнта для Вхідного {{ .Inbound }}",
       "chooseInbound": "Виберіть Вхідний",
-      "qrCodeForClient": "QR-код для клієнта {{ .Email }}:"
+      "qrCodeForClient": "QR-код для клієнта {{ .Email }}:",
+      "paymentReported": "✅ Адміністратора повідомлено. Підписку продовжать після підтвердження оплати.",
+      "paymentAlreadyReported": "⏳ Ви вже повідомили про оплату. Дочекайтеся підтвердження адміністратора.",
+      "paymentAlreadyConfirmed": "✅ The payment of {{ .Email }} is already confirmed.",
+      "paymentConfirmed": "✅ Оплату {{ .Email }} підтверджено",
+      "graceGranted": "⏳ Продовжено на {{ .Days }} днів. Сплатіть до {{ .Date }}.",
+      "graceUnavailable": "Відстрочка зараз недоступна.",
+      "freeRequested": "✅ Запит надіслано. Адміністратор його розгляне.",
+      "freeAlreadyRequested": "⏳ Ви вже надіслали запит. Будь ласка, зачекайте."
     },
     "screens": {
       "panel": "Panel",
@@ -2777,7 +3055,8 @@
       "onlines": "Online",
       "deplete": "Running out",
       "commands": "Commands",
-      "broadcast": "Broadcast"
+      "broadcast": "Broadcast",
+      "pay": "Оплата"
     },
     "inline": {
       "noneTitle": "Nothing found",
@@ -2791,6 +3070,31 @@
     "noValue": "—",
     "notices": {
       "repeat": "\r\n\r\n🔁 repeated {{ .Count }}× · last {{ .Time }}"
+    },
+    "payment": {
+      "title": "\r\n💳 <b>Оплата</b>\r\n",
+      "dueOn": "📅 Сплатити до: {{ .Date }}\r\n",
+      "overdue": "⛔ Підписка закінчилася {{ .Date }}: сплатіть зараз\r\n",
+      "details": "🏦 Куди платити:\r\n{{ .Details }}\r\n",
+      "deferredUntil": "⏳ Оплату відкладено: сплатіть до {{ .Date }}\r\n",
+      "freePlan": "🆓 Безкоштовний тариф: {{ .GB }} ГБ на місяць. Сплатіть будь-який термін, щоб зняти ліміт.\r\n",
+      "plansTitle": "💰 Вартість:\r\n",
+      "plan": "• {{ .Months }} міс — {{ .Total }}\r\n",
+      "planDiscounted": "• {{ .Months }} міс — {{ .Total }} (−{{ .Percent }}%)\r\n",
+      "choosePlan": "💳 За який термін ви сплатили?"
+    },
+    "ledger": {
+      "summary": "💰 <b>Finance for {{ .Month }}</b>\r\n\r\n➕ Income: {{ .Income }}\r\n➖ Expenses: {{ .Expenses }} (servers {{ .Servers }})\r\n{{ .Sign }} <b>Result: {{ .Balance }}</b>\r\n👥 Paying clients: {{ .Paying }}, expected {{ .Expected }}\r\n",
+      "serversTitle": "\r\n🖥 <b>Servers</b>\r\n",
+      "entriesTitle": "\r\n📒 <b>Entries</b>\r\n",
+      "nonPayingTitle": "\r\n🆓 Not paying: ",
+      "prompt_server": "🖥 Send the server and its monthly cost, e.g.\r\n<code>Hetzner DE 500</code>\r\nAdd a first month to start earlier than {{ .Month }}: <code>Hetzner DE 500 2026-09</code>",
+      "prompt_income": "➕ Send the amount received in {{ .Month }}, optionally the client and a note, e.g.\r\n<code>300 alice for November</code>",
+      "prompt_expense": "➖ Send a one-off cost for {{ .Month }} and a note, e.g.\r\n<code>150 domain</code>",
+      "badInput": "⚠️ Not saved: {{ .Error }}. Try again or tap Cancel.",
+      "deleteTitle": "🗑 Tap a row to delete it ({{ .Month }} entries and all servers).",
+      "groupsTitle": "🆓 Tap a group to switch it between paying 💰 and non-paying 🆓.",
+      "paymentNote": "{{ .Months }} mo"
     }
   },
   "discord": {

@@ -55,6 +55,12 @@ type AllSetting struct {
 	TgMemory        int    `json:"tgMemory" form:"tgMemory" validate:"gte=0,lte=100"`
 	TgLang          string `json:"tgLang" form:"tgLang"`
 	TgEnabledEvents string `json:"tgEnabledEvents" form:"tgEnabledEvents"`
+	// Monthly price, multi-month discounts and payment details shown to clients in the bot.
+	TgPaymentPrice     int    `json:"tgPaymentPrice" form:"tgPaymentPrice" validate:"gte=0" example:"300"`
+	TgPaymentCurrency  string `json:"tgPaymentCurrency" form:"tgPaymentCurrency" example:"RUB"`
+	TgPaymentDiscounts string `json:"tgPaymentDiscounts" form:"tgPaymentDiscounts" example:"3:10, 6:15, 12:20"`
+	TgPaymentDetails   string `json:"tgPaymentDetails" form:"tgPaymentDetails" example:"Card 2200 0000 0000 0000"`
+	TgFreePlanEnable   bool   `json:"tgFreePlanEnable" form:"tgFreePlanEnable"`
 
 	SmtpEnable         bool   `json:"smtpEnable" form:"smtpEnable"`
 	SmtpHost           string `json:"smtpHost" form:"smtpHost"`
@@ -275,6 +281,10 @@ func checkIPOrCIDRList(list, message string) error {
 }
 
 func (s *AllSetting) CheckValid() error {
+	if _, err := ParsePaymentPlans(s.TgPaymentDiscounts); err != nil {
+		return err
+	}
+
 	if s.WebListen != "" {
 		ip := net.ParseIP(s.WebListen)
 		if ip == nil {

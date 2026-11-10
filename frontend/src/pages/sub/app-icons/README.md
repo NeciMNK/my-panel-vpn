@@ -2,9 +2,9 @@
 
 ## Line icons — Arcticons (CC BY-SA 4.0)
 
-`happ.svg`, `sing-box.svg`, `v2rayng.svg` and `v2raytun.svg` come from
+`happ.svg`, `hiddify.svg`, `sing-box.svg`, `v2rayng.svg` and `v2raytun.svg` come from
 [Arcticons](https://github.com/Arcticons-Team/Arcticons) by Donnnno and the
-Arcticons contributors (as listed on svgicons.com), licensed under
+Arcticons contributors (as listed on svgicons.com; `hiddify.svg` from the Arcticons repository), licensed under
 [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
 
 Changes from the originals: the stroke colour is `currentColor` so the page can
@@ -17,9 +17,11 @@ files are distributed under CC BY-SA 4.0 as well.
 The remaining files are each app's own icon, downscaled to 96 px, used only to
 identify the app a button opens. They remain the trademarks of their owners.
 
-| File                | Source                                                                    |
-| ------------------- | ------------------------------------------------------------------------- |
-| `shadowrocket.webp` | App Store listing [id932747118](https://apps.apple.com/app/id932747118)   |
-| `streisand.webp`    | App Store listing [id6450534064](https://apps.apple.com/app/id6450534064) |
-| `v2box.webp`        | App Store listing [id6446814690](https://apps.apple.com/app/id6446814690) |
-| `incy.webp`         | App Store listing [id6756943388](https://apps.apple.com/app/id6756943388) |
+| File                | Source                                                                                              |
+| ------------------- | --------------------------------------------------------------------------------------------------- |
+| `shadowrocket.webp` | App Store listing [id932747118](https://apps.apple.com/app/id932747118)                             |
+| `streisand.webp`    | App Store listing [id6450534064](https://apps.apple.com/app/id6450534064)                           |
+| `v2box.webp`        | App Store listing [id6446814690](https://apps.apple.com/app/id6446814690)                           |
+| `incy.webp`         | App Store listing [id6756943388](https://apps.apple.com/app/id6756943388)                           |
+| `clash-verge.webp`  | [clash-verge-rev](https://github.com/clash-verge-rev/clash-verge-rev) `src-tauri/icons/128x128.png` |
+| `v2rayn.webp`       | [v2rayN](https://github.com/2dust/v2rayN) `v2rayN/v2rayN.Desktop/v2rayN.png`                        |

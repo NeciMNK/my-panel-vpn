@@ -76,6 +76,10 @@ func allModels() []any {
 		&model.ClientInbound{},
 		&model.ClientHwid{},
 		&model.ClientExternalLink{},
+		&model.ClientBilling{},
+		&model.LedgerServer{},
+		&model.LedgerEntry{},
+		&model.LedgerFreeGroup{},
 		&model.ClientGroup{},
 		&model.InboundFallback{},
 		&model.Host{},
@@ -87,6 +91,15 @@ func allModels() []any {
 		&model.OutboundSubscription{},
 		&model.SubBalancer{},
 		&model.TuicTrafficReceipt{},
+		&model.NodeJoinToken{},
+		&model.Cascade{},
+		&model.CascadePin{},
+		&model.HomeNetwork{},
+		&model.WarpSwitch{},
+		&model.ClientSpeed{},
+		&model.ServerCapacity{},
+		&model.MasterMember{},
+		&model.TlsCertificate{},
 	}
 }
 

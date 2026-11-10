@@ -196,8 +196,13 @@ export const AllSettingSchema = z.object({
   tgBotToken: z.string(),
   tgCpu: z.number().int().min(0).max(100),
   tgEnabledEvents: z.string(),
+  tgFreePlanEnable: z.boolean(),
   tgLang: z.string(),
   tgMemory: z.number().int().min(0).max(100),
+  tgPaymentCurrency: z.string(),
+  tgPaymentDetails: z.string(),
+  tgPaymentDiscounts: z.string(),
+  tgPaymentPrice: z.number().int().min(0),
   tgRunTime: z.string(),
   timeLocation: z.string(),
   trafficDiff: z.number().int().min(0).max(100),
@@ -388,8 +393,13 @@ export const AllSettingViewSchema = z.object({
   tgBotToken: z.string(),
   tgCpu: z.number().int().min(0).max(100),
   tgEnabledEvents: z.string(),
+  tgFreePlanEnable: z.boolean(),
   tgLang: z.string(),
   tgMemory: z.number().int().min(0).max(100),
+  tgPaymentCurrency: z.string(),
+  tgPaymentDetails: z.string(),
+  tgPaymentDiscounts: z.string(),
+  tgPaymentPrice: z.number().int().min(0),
   tgRunTime: z.string(),
   timeLocation: z.string(),
   trafficDiff: z.number().int().min(0).max(100),
@@ -440,6 +450,35 @@ export const BlockerSchema = z.object({
   detail: z.string().optional(),
 });
 export type Blocker = z.infer<typeof BlockerSchema>;
+
+export const CascadeSchema = z.object({
+  createdAt: z.number().int(),
+  enable: z.boolean(),
+  entryInboundTags: z.array(z.string()),
+  entryNodeId: z.number().int(),
+  exitCountry: z.string(),
+  exitNodeIds: z.array(z.number().int()),
+  id: z.number().int(),
+  lastError: z.string(),
+  links: z.array(z.lazy(() => CascadeLinkSchema)),
+  name: z.string(),
+  strategy: z.string(),
+  updatedAt: z.number().int(),
+});
+export type Cascade = z.infer<typeof CascadeSchema>;
+
+export const CascadeLinkSchema = z.object({
+  address: z.string(),
+  clientId: z.string(),
+  email: z.string(),
+  inboundId: z.number().int(),
+  nodeId: z.number().int(),
+  port: z.number().int(),
+  publicKey: z.string(),
+  serverName: z.string(),
+  shortId: z.string(),
+});
+export type CascadeLink = z.infer<typeof CascadeLinkSchema>;
 
 export const ClientSchema = z.object({
   adTag: z.string().optional(),
@@ -584,6 +623,14 @@ export const ClientSlimSchema = z.object({
 });
 export type ClientSlim = z.infer<typeof ClientSlimSchema>;
 
+export const ClientSpeedSchema = z.object({
+  email: z.string(),
+  id: z.number().int(),
+  maxMbps: z.number().int(),
+  minMbps: z.number().int(),
+});
+export type ClientSpeed = z.infer<typeof ClientSpeedSchema>;
+
 export const ClientTrafficSchema = z.object({
   down: z.number().int(),
   email: z.string(),
@@ -678,6 +725,36 @@ export const HistoryOfSeedersSchema = z.object({
   seederName: z.string(),
 });
 export type HistoryOfSeeders = z.infer<typeof HistoryOfSeedersSchema>;
+
+export const HomeAccessRuleSchema = z.object({
+  emails: z.array(z.string()),
+  groups: z.array(z.string()),
+  targets: z.array(z.string()),
+});
+export type HomeAccessRule = z.infer<typeof HomeAccessRuleSchema>;
+
+export const HomeNetworkSchema = z.object({
+  config: z.string(),
+  createdAt: z.number().int(),
+  enable: z.boolean(),
+  errors: z.record(z.string(), z.string()),
+  gatewayNodeId: z.number().int(),
+  hosts: z.array(z.string()),
+  id: z.number().int(),
+  kind: z.string(),
+  link: z.lazy(() => CascadeLinkSchema).nullable().optional(),
+  name: z.string(),
+  password: z.string(),
+  psk: z.string(),
+  rules: z.array(z.lazy(() => HomeAccessRuleSchema)),
+  server: z.string(),
+  servers: z.array(z.number().int()),
+  subnets: z.array(z.string()),
+  tunnelState: z.string(),
+  updatedAt: z.number().int(),
+  username: z.string(),
+});
+export type HomeNetwork = z.infer<typeof HomeNetworkSchema>;
 
 export const HostSchema = z.object({
   address: z.string(),
@@ -853,6 +930,51 @@ export const InboundTrafficSummarySchema = z.object({
 });
 export type InboundTrafficSummary = z.infer<typeof InboundTrafficSummarySchema>;
 
+export const LedgerEntrySchema = z.object({
+  amount: z.number().int(),
+  createdAt: z.number().int(),
+  email: z.string(),
+  id: z.number().int(),
+  kind: z.string(),
+  month: z.string(),
+  note: z.string(),
+});
+export type LedgerEntry = z.infer<typeof LedgerEntrySchema>;
+
+export const LedgerNonPayingSchema = z.object({
+  email: z.string(),
+  group: z.string(),
+  reason: z.string(),
+});
+export type LedgerNonPaying = z.infer<typeof LedgerNonPayingSchema>;
+
+export const LedgerReportSchema = z.object({
+  balance: z.number().int(),
+  currency: z.string(),
+  entries: z.array(z.lazy(() => LedgerEntrySchema)),
+  expectedIncome: z.number().int(),
+  expenses: z.number().int(),
+  freeGroups: z.array(z.string()),
+  income: z.number().int(),
+  month: z.string(),
+  nonPaying: z.array(z.lazy(() => LedgerNonPayingSchema)),
+  otherExpenses: z.number().int(),
+  payingClients: z.number().int(),
+  price: z.number().int(),
+  serverCosts: z.number().int(),
+  servers: z.array(z.lazy(() => LedgerServerSchema)),
+});
+export type LedgerReport = z.infer<typeof LedgerReportSchema>;
+
+export const LedgerServerSchema = z.object({
+  endMonth: z.string(),
+  id: z.number().int(),
+  monthlyCost: z.number().int(),
+  name: z.string(),
+  startMonth: z.string(),
+});
+export type LedgerServer = z.infer<typeof LedgerServerSchema>;
+
 export const LogEntrySchema = z.object({
   DateTime: z.string(),
   Email: z.string(),
@@ -876,6 +998,17 @@ export const MLKEM768ResponseSchema = z.object({
 });
 export type MLKEM768Response = z.infer<typeof MLKEM768ResponseSchema>;
 
+export const MasterStatusSchema = z.object({
+  alive: z.boolean(),
+  lastSeen: z.number().int(),
+  leader: z.boolean(),
+  name: z.string(),
+  priority: z.number().int(),
+  self: z.boolean(),
+  url: z.string(),
+});
+export type MasterStatus = z.infer<typeof MasterStatusSchema>;
+
 export const MsgSchema = z.object({
   msg: z.string(),
   obj: z.unknown(),
@@ -896,6 +1029,7 @@ export const NodeSchema = z.object({
   clientCount: z.number().int(),
   configDirty: z.boolean(),
   configDirtyAt: z.number().int(),
+  country: z.string(),
   cpuPct: z.number(),
   createdAt: z.number().int(),
   depletedCount: z.number().int(),
@@ -933,12 +1067,20 @@ export const NodeSchema = z.object({
 });
 export type Node = z.infer<typeof NodeSchema>;
 
+export const NodeJoinTokenViewSchema = z.object({
+  arch: z.string(),
+  expiresAt: z.number().int(),
+  token: z.string(),
+});
+export type NodeJoinTokenView = z.infer<typeof NodeJoinTokenViewSchema>;
+
 export const NodeMutationRequestSchema = z.object({
   address: z.string(),
   allowPrivateAddress: z.boolean(),
   apiToken: z.string().nullable().optional(),
   basePath: z.string(),
   clearApiToken: z.boolean().optional(),
+  country: z.string(),
   enable: z.boolean(),
   id: z.number().int(),
   inboundSyncMode: z.enum(['all', 'selected']),
@@ -961,6 +1103,7 @@ export const NodeViewSchema = z.object({
   clientCount: z.number().int(),
   configDirty: z.boolean(),
   configDirtyAt: z.number().int(),
+  country: z.string(),
   cpuPct: z.number(),
   createdAt: z.number().int(),
   depletedCount: z.number().int(),
@@ -1007,6 +1150,24 @@ export const OutboundTrafficsSchema = z.object({
   up: z.number().int(),
 });
 export type OutboundTraffics = z.infer<typeof OutboundTrafficsSchema>;
+
+export const PanelProxyCheckSchema = z.object({
+  error: z.string(),
+  exitIp: z.string(),
+  telegram: z.boolean(),
+  telegramMs: z.number().int(),
+  viaProxy: z.boolean(),
+});
+export type PanelProxyCheck = z.infer<typeof PanelProxyCheckSchema>;
+
+export const PanelProxyStatusSchema = z.object({
+  active: z.boolean(),
+  error: z.string(),
+  mode: z.string(),
+  outbounds: z.array(z.string()),
+  source: z.string(),
+});
+export type PanelProxyStatus = z.infer<typeof PanelProxyStatusSchema>;
 
 export const PanelUpdateStatusSchema = z.object({
   exitCode: z.number().int(),
@@ -1077,6 +1238,22 @@ export const RealityScanResultSchema = z.object({
 });
 export type RealityScanResult = z.infer<typeof RealityScanResultSchema>;
 
+export const ServerCapacitySchema = z.object({
+  capacityMbps: z.number().int(),
+  id: z.number().int(),
+  nodeId: z.number().int(),
+});
+export type ServerCapacity = z.infer<typeof ServerCapacitySchema>;
+
+export const ServerFreeSpeedSchema = z.object({
+  capacityMbps: z.number().int(),
+  freePerUserMbps: z.number(),
+  nodeId: z.number().int(),
+  online: z.number().int(),
+  usedMbps: z.number(),
+});
+export type ServerFreeSpeed = z.infer<typeof ServerFreeSpeedSchema>;
+
 export const ServerSettingsSchema = z.object({
   contentPaddingAddition: z.string().optional(),
   disableCookies: z.boolean(),
@@ -1126,25 +1303,12 @@ export const SettingSchema = z.object({
 });
 export type Setting = z.infer<typeof SettingSchema>;
 
-export const SponsorSchema = z.object({
-  enable: z.boolean().nullable().optional(),
-  from: z.string().nullable().optional(),
-  id: z.string(),
-  link: z.string(),
-  logo: z.string().optional(),
-  name: z.string(),
-  slots: z.array(z.string()),
-  text: z.record(z.string(), z.string()),
-  title: z.record(z.string(), z.string()),
-  until: z.string(),
+export const SpeedOverviewSchema = z.object({
+  clients: z.array(z.lazy(() => ClientSpeedSchema)),
+  load: z.array(z.lazy(() => ServerFreeSpeedSchema)),
+  servers: z.array(z.lazy(() => ServerCapacitySchema)),
 });
-export type Sponsor = z.infer<typeof SponsorSchema>;
-
-export const SponsorListSchema = z.object({
-  contact: z.string().optional(),
-  sponsors: z.array(z.lazy(() => SponsorSchema)),
-});
-export type SponsorList = z.infer<typeof SponsorListSchema>;
+export type SpeedOverview = z.infer<typeof SpeedOverviewSchema>;
 
 export const SubBalancerSchema = z.object({
   createdAt: z.number().int(),
@@ -1166,6 +1330,48 @@ export const TgBotCapabilitiesSchema = z.object({
   username: z.string(),
 });
 export type TgBotCapabilities = z.infer<typeof TgBotCapabilitiesSchema>;
+
+export const TlsCertFilesSchema = z.object({
+  certFile: z.string(),
+  keyFile: z.string(),
+});
+export type TlsCertFiles = z.infer<typeof TlsCertFilesSchema>;
+
+export const TlsCertInstallRequestSchema = z.object({
+  certPem: z.string(),
+  keyPem: z.string(),
+  name: z.string(),
+});
+export type TlsCertInstallRequest = z.infer<typeof TlsCertInstallRequestSchema>;
+
+export const TlsCertNodeInstallSchema = z.object({
+  certFile: z.string(),
+  error: z.string(),
+  keyFile: z.string(),
+  notAfter: z.number().int(),
+});
+export type TlsCertNodeInstall = z.infer<typeof TlsCertNodeInstallSchema>;
+
+export const TlsCertSettingsSchema = z.object({
+  cloudflareTokenSet: z.boolean(),
+});
+export type TlsCertSettings = z.infer<typeof TlsCertSettingsSchema>;
+
+export const TlsCertificateSchema = z.object({
+  applyToPanel: z.boolean(),
+  autoRenew: z.boolean(),
+  certFile: z.string(),
+  createdAt: z.number().int(),
+  domains: z.array(z.string()),
+  id: z.number().int(),
+  keyFile: z.string(),
+  lastError: z.string(),
+  nodeInstalls: z.record(z.number().int(), z.lazy(() => TlsCertNodeInstallSchema)),
+  notAfter: z.number().int(),
+  status: z.string(),
+  updatedAt: z.number().int(),
+});
+export type TlsCertificate = z.infer<typeof TlsCertificateSchema>;
 
 export const TrafficSchema = z.object({
   Down: z.number().int(),
@@ -1204,4 +1410,14 @@ export const UserSchema = z.object({
   username: z.string(),
 });
 export type User = z.infer<typeof UserSchema>;
+
+export const WarpSwitchSchema = z.object({
+  domains: z.array(z.string()),
+  id: z.number().int(),
+  lastError: z.string(),
+  mode: z.string(),
+  nodeId: z.number().int(),
+  updatedAt: z.number().int(),
+});
+export type WarpSwitch = z.infer<typeof WarpSwitchSchema>;
 

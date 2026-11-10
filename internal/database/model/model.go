@@ -858,6 +858,8 @@ type Node struct {
 	InboundSyncMode     string   `json:"inboundSyncMode" form:"inboundSyncMode" gorm:"column:inbound_sync_mode;default:all" validate:"omitempty,oneof=all selected"`
 	InboundTags         []string `json:"inboundTags" form:"inboundTags" gorm:"serializer:json;column:inbound_tags"`
 	OutboundTag         string   `json:"outboundTag" form:"outboundTag" gorm:"column:outbound_tag"`
+	// Country is the ISO 3166-1 alpha-2 code country cascades group exits by.
+	Country string `json:"country" form:"country" gorm:"column:country" example:"DE"`
 
 	// Guid is the remote panel's stable self-identifier (its panelGuid),
 	// learned from each heartbeat. It is the globally stable node identity used
@@ -1140,6 +1142,56 @@ type ClientHwid struct {
 }
 
 func (ClientHwid) TableName() string { return "client_hwids" }
+
+// ClientBilling is the Telegram bot's billing state for one client record. It is
+// master-only bookkeeping: nodes never receive it and Xray never reads it.
+type ClientBilling struct {
+	Id       int  `json:"id" gorm:"primaryKey;autoIncrement"`
+	ClientId int  `json:"clientId" gorm:"uniqueIndex;column:client_id"`
+	Trusted  bool `json:"trusted" gorm:"default:false"`
+	FreePlan bool `json:"freePlan" gorm:"column:free_plan;default:false"`
+	// GraceDays were added to the expiry on credit and add up; the next confirmed payment repays them.
+	GraceDays int `json:"graceDays" gorm:"column:grace_days;default:0"`
+	// LastGraceAt (unix ms) spaces deferrals: one per graceCooldownDays, any number in total.
+	LastGraceAt int64 `json:"lastGraceAt" gorm:"column:last_grace_at;default:0"`
+	// NonPaying keeps the client (e.g. the admin) out of the ledger's expected income.
+	NonPaying bool `json:"nonPaying" gorm:"column:non_paying;default:false"`
+	// PendingMonths is the term the client last reported paying; a confirm consumes it once.
+	PendingMonths int `json:"pendingMonths" gorm:"column:pending_months;default:0"`
+}
+
+// LedgerServer is a recurring monthly server cost, charged to every month from
+// StartMonth through EndMonth (YYYY-MM; empty EndMonth means still running).
+type LedgerServer struct {
+	Id          int    `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
+	Name        string `json:"name" gorm:"not null" example:"Hetzner DE"`
+	MonthlyCost int    `json:"monthlyCost" gorm:"column:monthly_cost;not null" example:"500"`
+	StartMonth  string `json:"startMonth" gorm:"column:start_month;not null" example:"2026-11"`
+	EndMonth    string `json:"endMonth" gorm:"column:end_month;default:''" example:""`
+}
+
+func (LedgerServer) TableName() string { return "ledger_servers" }
+
+// LedgerEntry is one received payment (income) or one-off cost (expense) booked to a month.
+type LedgerEntry struct {
+	Id        int    `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
+	Month     string `json:"month" gorm:"not null;index" example:"2026-11"`
+	Kind      string `json:"kind" gorm:"not null" example:"income"`
+	Amount    int    `json:"amount" gorm:"not null" example:"300"`
+	Email     string `json:"email" gorm:"default:''" example:"alice"`
+	Note      string `json:"note" gorm:"default:''" example:"1 mo"`
+	CreatedAt int64  `json:"createdAt" gorm:"autoCreateTime:milli" example:"1762761600000"`
+}
+
+func (LedgerEntry) TableName() string { return "ledger_entries" }
+
+// LedgerFreeGroup marks a client group (e.g. family) whose members never pay.
+type LedgerFreeGroup struct {
+	Id   int    `json:"id" gorm:"primaryKey;autoIncrement"`
+	Name string `json:"name" gorm:"uniqueIndex;not null"`
+}
+
+func (LedgerFreeGroup) TableName() string { return "ledger_free_groups" }
 
 // ClientExternalLink is a per-client entry surfaced in the client's
 // subscription. Two kinds:
@@ -1749,3 +1801,35 @@ func MergeClientRecord(existing *ClientRecord, incoming *ClientRecord) []ClientM
 	}
 	return conflicts
 }
+
+// TlsCertificate is an ACME certificate the panel issued over Cloudflare DNS-01
+// and keeps renewed; NodeInstalls records where each node stored its copy.
+type TlsCertificate struct {
+	Id           int                        `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
+	Domains      []string                   `json:"domains" gorm:"serializer:json;type:text" example:"[\"example.com\",\"*.example.com\"]"`
+	Status       string                     `json:"status" example:"valid"`
+	CertFile     string                     `json:"certFile" example:"/etc/x-ui/certs/example.com/fullchain.pem"`
+	KeyFile      string                     `json:"keyFile" example:"/etc/x-ui/certs/example.com/privkey.pem"`
+	NotAfter     int64                      `json:"notAfter" example:"1717000000000"`
+	AutoRenew    bool                       `json:"autoRenew" example:"true"`
+	ApplyToPanel bool                       `json:"applyToPanel" example:"false"`
+	LastError    string                     `json:"lastError" gorm:"type:text" example:""`
+	NodeInstalls map[int]TlsCertNodeInstall `json:"nodeInstalls" gorm:"serializer:json;type:text"`
+	CreatedAt    int64                      `json:"createdAt" gorm:"autoCreateTime:milli" example:"1710000000000"`
+	UpdatedAt    int64                      `json:"updatedAt" gorm:"autoUpdateTime:milli" example:"1710000000000"`
+}
+
+// TlsCertNodeInstall is one node's copy of a TlsCertificate. NotAfter equal to
+// the certificate's means the node holds the current version.
+type TlsCertNodeInstall struct {
+	CertFile string `json:"certFile" example:"/etc/x-ui/certs/example.com/fullchain.pem"`
+	KeyFile  string `json:"keyFile" example:"/etc/x-ui/certs/example.com/privkey.pem"`
+	NotAfter int64  `json:"notAfter" example:"1717000000000"`
+	Error    string `json:"error" example:""`
+}
+
+const (
+	TlsCertStatusPending = "pending"
+	TlsCertStatusValid   = "valid"
+	TlsCertStatusError   = "error"
+)

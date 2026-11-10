@@ -124,6 +124,39 @@ var nodeSyncScopeAllow = map[string]map[string]struct{}{
 	"/server/clientIps":            {http.MethodGet: {}, http.MethodPost: {}},
 	"/clients/clientIpsByGuid":     {http.MethodPost: {}},
 	"/hosts/list":                  {http.MethodGet: {}},
+	"/certs/install":               {http.MethodPost: {}},
+}
+
+// nodeXrayScopeAllow lets a master manage a node's Xray template (outbounds,
+// routing, balancers, WARP) through /panel/api/nodes/:id/xray/* on the master.
+var nodeXrayScopeAllow = map[string]map[string]struct{}{
+	"/xray/":                          {http.MethodPost: {}},
+	"/xray/update":                    {http.MethodPost: {}},
+	"/xray/getDefaultJsonConfig":      {http.MethodGet: {}},
+	"/xray/getOutboundsTraffic":       {http.MethodGet: {}},
+	"/xray/getXrayResult":             {http.MethodGet: {}},
+	"/xray/warp/:action":              {http.MethodPost: {}},
+	"/xray/nord/:action":              {http.MethodPost: {}},
+	"/xray/pia/:action":               {http.MethodPost: {}},
+	"/xray/resetOutboundsTraffic":     {http.MethodPost: {}},
+	"/xray/testOutbound":              {http.MethodPost: {}},
+	"/xray/testOutbounds":             {http.MethodPost: {}},
+	"/xray/balancerStatus":            {http.MethodPost: {}},
+	"/xray/balancerOverride":          {http.MethodPost: {}},
+	"/xray/routeTest":                 {http.MethodPost: {}},
+	"/xray/homeTunnel":                {http.MethodPost: {}},
+	"/xray/homeTunnel/:id":            {http.MethodGet: {}},
+	"/xray/speedPlan":                 {http.MethodPost: {}},
+	"/xray/geodata/files":             {http.MethodGet: {}},
+	"/xray/geodata/categories":        {http.MethodGet: {}},
+	"/xray/geodata/entries":           {http.MethodGet: {}},
+	"/xray/geodata/validate":          {http.MethodPost: {}},
+	"/xray/outbound-subs":             {http.MethodGet: {}, http.MethodPost: {}},
+	"/xray/outbound-subs/:id/refresh": {http.MethodPost: {}},
+	"/xray/outbound-subs/:id/move":    {http.MethodPost: {}},
+	"/xray/outbound-subs/:id":         {http.MethodPost: {}},
+	"/xray/outbound-subs/:id/del":     {http.MethodPost: {}},
+	"/xray/outbound-subs/parse":       {http.MethodPost: {}},
 }
 
 var nodeAdminScopeAllow = map[string]map[string]struct{}{
@@ -166,12 +199,12 @@ func (a *APIController) enforceTokenScope(c *gin.Context) {
 			return
 		}
 	case model.ApiScopeNodeSync:
-		if scopeAllows(nodeSyncScopeAllow, rel, c.Request.Method) {
+		if scopeAllows(nodeSyncScopeAllow, rel, c.Request.Method) || scopeAllows(nodeXrayScopeAllow, rel, c.Request.Method) {
 			c.Next()
 			return
 		}
 	case model.ApiScopeNodeAdmin:
-		if scopeAllows(nodeSyncScopeAllow, rel, c.Request.Method) || scopeAllows(nodeAdminScopeAllow, rel, c.Request.Method) {
+		if scopeAllows(nodeSyncScopeAllow, rel, c.Request.Method) || scopeAllows(nodeXrayScopeAllow, rel, c.Request.Method) || scopeAllows(nodeAdminScopeAllow, rel, c.Request.Method) {
 			c.Next()
 			return
 		}
@@ -220,9 +253,17 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	nodes := api.Group("/nodes")
 	a.nodeController = NewNodeController(nodes)
 
+	NewCascadeController(api.Group("/cascades"))
+	NewHomeNetworkController(api.Group("/homeNetworks"))
+	NewWarpSwitchController(api.Group("/warpSwitch"))
+	NewSpeedController(api.Group("/speed"))
+	NewMasterClusterController(api.Group("/masters"))
+
 	// Hosts API — per-inbound override endpoints for subscription links
 	hosts := api.Group("/hosts")
 	a.hostController = NewHostController(hosts)
+
+	NewLedgerController(api.Group("/ledger"))
 
 	// Settings + Xray config management live under the API surface too, so the
 	// same API token drives them. Paths are /panel/api/setting/* and
@@ -233,6 +274,8 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	// Subscription balancers — client-side balancers for the JSON sub output
 	NewSubBalancerController(api)
 
+	// Panel-issued TLS certificates (ACME DNS-01 over Cloudflare)
+	NewTlsCertController(api)
 	// Import of another panel (Remnawave, 3x-ui) keeping users' configs
 	NewMigrationController(api.Group("/migration"))
 

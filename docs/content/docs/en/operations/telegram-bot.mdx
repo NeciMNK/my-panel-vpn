@@ -82,6 +82,41 @@ code, so a config can be handed to a client who cannot reach Telegram yet.
 Regular users get buttons for their own usage, subscription links, individual
 links, and QR codes.
 
+## Client payments
+
+Set **Settings → Telegram → Payment** to bill clients through the bot:
+
+- **Monthly price**, currency and **discounts for longer terms** (`months:percent`,
+  e.g. `3:10, 6:15, 12:20`). The client's screen lists every term with its total,
+  when to pay (the earliest expiry, or "due now" once it has lapsed) and where.
+  The same block is added to the client's expiry/quota warning.
+- **I have paid** asks the client which term it paid for and pages every admin
+  with a **✅ email: +N mo** button per subscription. One tap extends the term from
+  its end (or from now if it lapsed) and tells the client. Repeat reports within
+  10 minutes are ignored.
+- **Pay later**: in the bot's client card an admin marks a client **Trusted**.
+  A trusted client whose subscription ends within 15 days can extend it by 15 days
+  on credit, at most once every 30 days but with no limit on the total; admins are
+  told, and the next confirmed payment repays all the deferred days.
+- **Free plan**: with it on, a Telegram account that is not a client gets a
+  **Request a free subscription** button. Admins approve it in the bot, which
+  opens the add-client wizard prefilled with the user's Telegram ID, 10 GB and a
+  monthly traffic reset; the admin picks the inbounds. Confirming any payment
+  for a free client removes the limit.
+
+With no price and no payment details, clients see no payment block.
+
+## Finance
+
+Admins get **💰 Finance** in the bot menu and a **Finance** page in the panel. It shows whether selling VPN made or lost money in a month.
+
+- **Servers.** Enter a server and its monthly cost, e.g. `Hetzner DE 500`. It is charged every month until you set its last month.
+- **Income.** A payment an admin confirms is booked automatically, as the chosen term's discounted total. Other income and one-off costs are added by hand, e.g. `300 alice for November` or `150 domain`.
+- **Who does not pay.** Mark a client (e.g. yourself as admin) with "🆓 Does not pay" on the client card, and a group (e.g. family) under "Non-paying groups". They and free-plan clients are left out of the expected income.
+- **Result.** Income minus servers and one-off costs, plus what the paying clients should bring at the monthly price.
+
+Money is in whole units of the payment currency. A multi-month payment is booked to the month it arrived.
+
 ## Reports & alerts
 
 - **Periodic report** — on the `tgRunTime` schedule (default `@daily`), the bot
@@ -117,6 +152,10 @@ The warning lead times come from `expireDiff` (days before expiry) and
 | `tgCpu` / `tgMemory` | `80` / `80`          | CPU / memory alert thresholds (percent).       |
 | `tgLang`       | `en-US`                    | Bot language.                                  |
 | `tgEnabledEvents` | `login.attempt,cpu.high`| Which events to deliver.                       |
+| `tgPaymentPrice` / `tgPaymentCurrency` | `0` / _(none)_ | Monthly price and its currency. |
+| `tgPaymentDiscounts` | _(none)_             | Longer terms, `months:percent` pairs.          |
+| `tgPaymentDetails` | _(none)_               | Where to pay: card, phone or a payment link.   |
+| `tgFreePlanEnable` | `false`                | Let strangers request a free 10 GB/month plan. |
 
 <Callout type="warn">
   The bot token controls your bot — keep it secret and only add **trusted** admin
