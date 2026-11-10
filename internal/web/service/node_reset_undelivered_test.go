@@ -342,7 +342,7 @@ func TestNodeResetDeliveryDoesNotHoldTheRequestBehindASilentNode(t *testing.T) {
 		close(stall.release)
 		lock, _ := nodeResetDeliveryLocks.LoadOrStore(node.Id, &sync.Mutex{})
 		lock.(*sync.Mutex).Lock()
-		lock.(*sync.Mutex).Unlock()
+		lock.(*sync.Mutex).Unlock() //nolint:staticcheck // SA2001: taking the lock waits out the stalled delivery.
 	})
 	ib := nodeInbound(t, node.Id, 41912, []model.Client{{Email: "held", ID: "11111111-1111-1111-1111-1111111111ab", Enable: true}})
 	if err := (&InboundService{}).AddClientStat(database.GetDB(), ib.Id, &model.Client{Email: "held", Enable: true}); err != nil {
