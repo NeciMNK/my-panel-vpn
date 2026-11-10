@@ -2332,13 +2332,26 @@ func applyExternalProxyTLSParams(ep map[string]any, params map[string]string, se
 	}
 }
 
-// applyExternalProxyHysteriaParams overrides the cert pin for a single
-// external-proxy entry on a Hysteria link. Hysteria carries the pin as a hex
-// `pinSHA256` (not the `pcs` the URL-param protocols use), so each entry is
-// coerced through hysteriaPinHex like the main pin. sni/fp/alpn are left as
-// the inbound's own — Hysteria external proxies are typically alternate
-// endpoints (port-hop / CDN) fronting the same certificate.
+// applyExternalProxyHysteriaParams carries the hex pinSHA256 for every entry; legacy
+// externalProxy entries front the inbound's certificate, so only Hosts override TLS names.
 func applyExternalProxyHysteriaParams(ep map[string]any, params map[string]string) {
+	if isHostEndpoint(ep) {
+		if sni, ok := externalProxySNI(ep); ok {
+			params["sni"] = sni
+		}
+		if fp, ok := ep["fingerprint"].(string); ok && fp != "" {
+			params["fp"] = fp
+		}
+		if alpn, ok := externalProxyALPN(ep["alpn"]); ok {
+			params["alpn"] = alpn
+		}
+		if vcn, ok := ep["verifyPeerCertByName"].(string); ok && vcn != "" {
+			params["vcn"] = vcn
+		}
+		if ech, ok := ep["echConfigList"].(string); ok && ech != "" {
+			params["ech"] = ech
+		}
+	}
 	if pins, ok := externalProxyPins(ep["pinnedPeerCertSha256"]); ok {
 		hexPins := make([]string, 0, len(pins))
 		for _, p := range pins {

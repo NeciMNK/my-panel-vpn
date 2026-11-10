@@ -232,21 +232,29 @@ func TestRemnawavePreview_SuggestsNodesAndFlagsConflicts(t *testing.T) {
 	}
 }
 
-// Remnawave lists only hosts in a subscription, so an imported inbound that
-// has no host must not add a link of its own.
+// Remnawave lists only enabled hosts in a subscription, so an imported inbound
+// whose hosts are missing or all disabled must not add a link of its own.
 func TestRemnawaveImport_InboundWithoutHostStaysOutOfSub(t *testing.T) {
-	seedSubDB(t)
-	snap := loadRemnawaveSnapshot(t)
-	snap.Hosts = snap.Hosts[:2]
-	targets := map[string]string{rwGermany: service.MigrationTargetLocal, rwNetherlands: service.MigrationTargetSkip}
-	if _, err := (&service.MigrationService{}).ApplyRemnawave(snap, targets, false, 1); err != nil {
-		t.Fatalf("ApplyRemnawave: %v", err)
+	cases := map[string]func(*service.RemnawaveSnapshot){
+		"no host":       func(s *service.RemnawaveSnapshot) { s.Hosts = s.Hosts[:2] },
+		"host disabled": func(s *service.RemnawaveSnapshot) { s.Hosts[2].IsDisabled = true },
 	}
-	links, _, _, _, err := NewSubService("").GetSubs("Zx3pQ9tLmN2kVb7c", "sub.example.com")
-	if err != nil {
-		t.Fatalf("GetSubs: %v", err)
-	}
-	if len(links) != 1 || !strings.HasPrefix(links[0], "vless://") {
-		t.Fatalf("links = %v, want only the Germany Reality host", links)
+	for name, edit := range cases {
+		t.Run(name, func(t *testing.T) {
+			seedSubDB(t)
+			snap := loadRemnawaveSnapshot(t)
+			edit(snap)
+			targets := map[string]string{rwGermany: service.MigrationTargetLocal, rwNetherlands: service.MigrationTargetSkip}
+			if _, err := (&service.MigrationService{}).ApplyRemnawave(snap, targets, false, 1); err != nil {
+				t.Fatalf("ApplyRemnawave: %v", err)
+			}
+			links, _, _, _, err := NewSubService("").GetSubs("Zx3pQ9tLmN2kVb7c", "sub.example.com")
+			if err != nil {
+				t.Fatalf("GetSubs: %v", err)
+			}
+			if len(links) != 1 || !strings.HasPrefix(links[0], "vless://") {
+				t.Fatalf("links = %v, want only the Germany Reality host", links)
+			}
+		})
 	}
 }
