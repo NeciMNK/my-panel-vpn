@@ -2923,6 +2923,7 @@
       "privateOnly": "🤖 Bot này chỉ hoạt động trong trò chuyện riêng. Hãy mở nó trong tin nhắn trực tiếp.",
       "paymentReported": "💳 {{ .User }} paid for {{ .Months }} mo ({{ .Total }}): ",
       "paymentConfirmed": "✅ Payment confirmed: {{ .Email }} is active until {{ .Date }}.",
+      "paymentConfirmedBy": "✅ {{ .Email }}: confirmed by {{ .Admin }}, active until {{ .Date }}",
       "graceTaken": "⏳ {{ .User }} deferred payment by {{ .Days }} days for: ",
       "freeRequested": "🆓 {{ .User }} asks for a free subscription ({{ .GB }} GB a month).",
       "freeApproved": "🎉 Your free subscription is ready: {{ .GB }} GB a month. Pay for any term to remove the limit.",
