@@ -316,6 +316,7 @@ const (
 	cadenceCascadeSticky = "@every 15s"
 	cadenceHomeNetwork   = "@every 1m"
 	cadenceSpeed         = "@every 30s"
+	cadenceShaping       = "@every 5s"
 	cadenceMasterBeat    = "@every 5s"
 	cadenceXrayLogPrune  = "@every 10m"
 	cadenceTlsCertRenew  = "@every 1h"
@@ -377,6 +378,7 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	_, _ = s.cron.AddJob(cadenceCascadeSticky, job.LeaderOnly(job.NewCascadeStickyJob()))
 	_, _ = s.cron.AddJob(cadenceHomeNetwork, job.LeaderOnly(job.NewHomeNetworkJob()))
 	_, _ = s.cron.AddJob(cadenceSpeed, job.LeaderOnly(job.NewSpeedJob()))
+	_, _ = s.cron.AddJob(cadenceShaping, job.LeaderOnly(job.NewShapingJob()))
 	if service.ClusterEnabled() {
 		clusterJob := job.NewMasterClusterJob(func(bool) {
 			s.reloadTgbot()

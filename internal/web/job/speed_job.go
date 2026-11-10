@@ -16,8 +16,8 @@ import (
 // speedAlertEvery keeps one server from paging the admin more than this often.
 const speedAlertEvery = 30 * time.Minute
 
-// SpeedJob measures this panel's throughput, pushes speed caps to every
-// server and alerts when a server can no longer give users their minimum.
+// SpeedJob measures this panel's throughput and alerts when a server can no
+// longer give users their minimum.
 type SpeedJob struct {
 	speed     service.SpeedService
 	nodes     service.NodeService
@@ -35,10 +35,26 @@ func (j *SpeedJob) Run() {
 	}
 	defer j.running.Unlock()
 	j.sampleLocal()
+	j.alert()
+}
+
+// ShapingJob pushes speed caps to every server; it runs often so a capped user's
+// new IP is limited within seconds, and unchanged plans cost no request.
+type ShapingJob struct {
+	speed   service.SpeedService
+	running sync.Mutex
+}
+
+func NewShapingJob() *ShapingJob { return &ShapingJob{} }
+
+func (j *ShapingJob) Run() {
+	if !j.running.TryLock() {
+		return
+	}
+	defer j.running.Unlock()
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 	j.speed.PushShaping(ctx)
-	j.alert()
 }
 
 func (j *SpeedJob) sampleLocal() {
