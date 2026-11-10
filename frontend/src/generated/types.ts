@@ -174,6 +174,7 @@ export interface AllSetting {
   tgBotEnable: boolean;
   tgBotProxy: string;
   tgBotToken: string;
+  tgBotVpnFallback: boolean;
   tgCpu: number;
   tgEnabledEvents: string;
   tgFreePlanEnable: boolean;
@@ -370,6 +371,7 @@ export interface AllSettingView {
   tgBotEnable: boolean;
   tgBotProxy: string;
   tgBotToken: string;
+  tgBotVpnFallback: boolean;
   tgCpu: number;
   tgEnabledEvents: string;
   tgFreePlanEnable: boolean;

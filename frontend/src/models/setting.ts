@@ -29,6 +29,7 @@ export class AllSetting {
   tgBotEnable = false;
   tgBotToken = '';
   tgBotAPIServer = '';
+  tgBotVpnFallback = true;
   tgBotChatId = '';
   tgRunTime = '@daily';
   tgBotBackup = false;

@@ -1431,6 +1431,8 @@
       "telegramTokenDesc": "توكن البوت اللي جبت من '{'@'}BotFather'.",
       "telegramProxy": "وكيل SOCKS",
       "telegramProxyDesc": "يفعل بروكسي SOCKS5 للاتصال بـ Telegram. (اضبط الإعدادات حسب الدليل)",
+      "telegramVpnFallback": "عبر الـ VPN الخاص بي إذا كان Telegram محظورًا",
+      "telegramVpnFallbackDesc": "إذا تعذر على هذا الخادم الوصول إلى Telegram مباشرة، تنشئ اللوحة عميلها panel-tech في المجموعة тех على العقد وتوصل البوت عبره. يُتجاهل عند ضبط وكيل SOCKS أو خادم API أو صادر اللوحة.",
       "telegramAPIServer": "خادم API لتيليجرام",
       "telegramAPIServerDesc": "سيرفر Telegram API المستخدم. سيبه فاضي لاستخدام الافتراضي.",
       "telegramChatId": "ID شات الأدمن",

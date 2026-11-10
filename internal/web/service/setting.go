@@ -95,6 +95,7 @@ var defaultValueMap = map[string]string{
 	"tgBotEnable":                 "false",
 	"tgBotToken":                  "",
 	"tgBotProxy":                  "",
+	"tgBotVpnFallback":            "true",
 	"tgBotAPIServer":              "",
 	"tgBotChatId":                 "",
 	"tgRunTime":                   "@daily",
@@ -680,6 +681,10 @@ func (s *SettingService) GetTgPaymentCurrency() (string, error) {
 
 func (s *SettingService) GetTgPaymentDiscounts() (string, error) {
 	return s.getString("tgPaymentDiscounts")
+}
+
+func (s *SettingService) GetTgBotVpnFallback() (bool, error) {
+	return s.getBool("tgBotVpnFallback")
 }
 
 func (s *SettingService) GetTgFreePlanEnable() (bool, error) {

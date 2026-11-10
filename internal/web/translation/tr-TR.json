@@ -1431,6 +1431,8 @@
       "telegramTokenDesc": "'{'@'}BotFather'dan alınan Telegram bot token.",
       "telegramProxy": "SOCKS Proxy",
       "telegramProxyDesc": "Telegram'a bağlanmak için SOCKS5 proxy'sini etkinleştirir. (ayarları kılavuzda belirtilen şekilde ayarlayın)",
+      "telegramVpnFallback": "Telegram engelliyse VPN'im üzerinden",
+      "telegramVpnFallbackDesc": "Bu sunucu Telegram'a doğrudan ulaşamazsa panel, düğümlerde тех grubunda kendi panel-tech istemcisini oluşturur ve botu onun üzerinden bağlar. SOCKS proxy, API sunucusu veya panel çıkışı ayarlıysa yok sayılır.",
       "telegramAPIServer": "Telegram API Sunucusu",
       "telegramAPIServerDesc": "Kullanılacak Telegram API sunucusu. Varsayılan sunucuyu kullanmak için boş bırakın.",
       "telegramChatId": "Yönetici Sohbet Kimliği",

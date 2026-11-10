@@ -1556,6 +1556,8 @@
       "telegramTokenDesc": "Token Telegram bota získaný od '{'@'}BotFather'.",
       "telegramProxy": "Proxy SOCKS",
       "telegramProxyDesc": "Zapne proxy SOCKS5 na pripojenie k Telegramu. Nastavte ho podľa návodu.",
+      "telegramVpnFallback": "Cez moju VPN, ak je Telegram blokovaný",
+      "telegramVpnFallbackDesc": "Ak tento server nedosiahne Telegram priamo, panel si na uzloch vytvorí klienta panel-tech v skupine тех a pripojí cez neho bota. Ignoruje sa, ak je nastavený SOCKS proxy, API server alebo odchádzajúce spojenie panela.",
       "telegramAPIServer": "Server API Telegramu",
       "telegramAPIServerDesc": "Server API na komunikáciu s Telegramom. Prázdne pole použije predvolený server.",
       "telegramChatId": "ID konverzácie správcu",

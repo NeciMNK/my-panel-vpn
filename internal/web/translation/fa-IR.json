@@ -1435,6 +1435,8 @@
       "telegramTokenDesc": "دریافت کنید {'@'}botfather توکن را می‌توانید از",
       "telegramProxy": "پراکسی SOCKS",
       "telegramProxyDesc": "را برای اتصال به تلگرام فعال می کند SOCKS5 پراکسی",
+      "telegramVpnFallback": "از طریق VPN من اگر Telegram مسدود است",
+      "telegramVpnFallbackDesc": "اگر این سرور مستقیم به Telegram دسترسی نداشته باشد، پنل کلاینت panel-tech را در گروه тех روی نودها می‌سازد و ربات را از طریق آن وصل می‌کند. با تنظیم پراکسی SOCKS، سرور API یا خروجی پنل نادیده گرفته می‌شود.",
       "telegramAPIServer": "سرور API تلگرام",
       "telegramAPIServerDesc": "API سرور تلگرام برای اتصال را تغییر میدهد. برای استفاده از سرور پیش فرض خالی بگذارید",
       "telegramChatId": "آی‌دی چت مدیر",
