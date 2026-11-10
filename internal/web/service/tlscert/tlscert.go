@@ -9,6 +9,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -238,13 +239,16 @@ func (s *Service) Delete(id int) error {
 }
 
 func (s *Service) usedBy(certFile string) (string, error) {
-	for _, get := range []func() (string, error){s.settingService.GetCertFile, s.settingService.GetSubCertFile} {
-		v, err := get()
+	for _, setting := range []struct {
+		user string
+		get  func() (string, error)
+	}{{"the panel", s.settingService.GetCertFile}, {"the subscription server", s.settingService.GetSubCertFile}} {
+		v, err := setting.get()
 		if err != nil {
 			return "", err
 		}
 		if v == certFile {
-			return "the panel", nil
+			return setting.user, nil
 		}
 	}
 	var remarks []string
@@ -316,9 +320,22 @@ func (s *Service) issue(id int) {
 	}
 	logger.Info("Issued TLS certificate for", strings.Join(cert.Domains, ","))
 
+	restart := false
 	if cert.ApplyToPanel {
-		if err := s.applyToPanel(cert); err != nil {
+		changed, err := s.applyToPanel(cert)
+		if err != nil {
 			logger.Warning("TLS certificate not applied to the panel:", err)
+		}
+		restart = changed
+	}
+	if changed, err := s.applyToSub(cert); err != nil {
+		logger.Warning("TLS certificate not applied to the subscription server:", err)
+	} else if changed {
+		restart = true
+	}
+	if restart {
+		if err := restartPanel(); err != nil {
+			logger.Warning("Panel restart after a TLS certificate switch failed:", err)
 		}
 	}
 	s.pushToNodes(cert, certPEM, keyPEM)
@@ -356,43 +373,115 @@ func parseLeaf(certPEM, keyPEM []byte) (*x509.Certificate, error) {
 }
 
 // applyToPanel also moves the sub server when it shared the panel's old pair.
-// Unchanged paths skip the restart: listeners reload renewed files themselves.
-func (s *Service) applyToPanel(cert *model.TlsCertificate) error {
+// Unchanged paths report false: listeners reload renewed files themselves.
+func (s *Service) applyToPanel(cert *model.TlsCertificate) (bool, error) {
 	oldCert, err := s.settingService.GetCertFile()
 	if err != nil {
-		return err
+		return false, err
 	}
 	oldKey, err := s.settingService.GetKeyFile()
 	if err != nil {
-		return err
+		return false, err
 	}
 	if oldCert == cert.CertFile && oldKey == cert.KeyFile {
-		return nil
+		return false, nil
 	}
-	subCert, err := s.settingService.GetSubCertFile()
+	subCert, subKey, err := s.subPair()
 	if err != nil {
-		return err
-	}
-	subKey, err := s.settingService.GetSubKeyFile()
-	if err != nil {
-		return err
+		return false, err
 	}
 	if err := s.settingService.SetCertFile(cert.CertFile); err != nil {
-		return err
+		return false, err
 	}
 	if err := s.settingService.SetKeyFile(cert.KeyFile); err != nil {
-		return err
+		return false, err
 	}
 	if oldCert != "" && subCert == oldCert && subKey == oldKey {
-		if err := s.settingService.SetSubCertFile(cert.CertFile); err != nil {
-			return err
-		}
-		if err := s.settingService.SetSubKeyFile(cert.KeyFile); err != nil {
-			return err
+		if err := s.setSubPair(cert); err != nil {
+			return false, err
 		}
 	}
-	logger.Info("Panel TLS certificate switched to", cert.CertFile, "- restarting the panel")
-	return restartPanel()
+	logger.Info("Panel TLS certificate switched to", cert.CertFile)
+	return true, nil
+}
+
+// applyToSub fills the subscription pair when it is empty or the certificate
+// covers the subscription host; a non-covering cert would break client TLS.
+func (s *Service) applyToSub(cert *model.TlsCertificate) (bool, error) {
+	subCert, subKey, err := s.subPair()
+	if err != nil {
+		return false, err
+	}
+	if subCert == cert.CertFile && subKey == cert.KeyFile {
+		return false, nil
+	}
+	host, err := s.subHost()
+	if err != nil {
+		return false, err
+	}
+	if host != "" {
+		if !covers(cert.Domains, host) {
+			return false, nil
+		}
+	} else if subCert != "" || subKey != "" {
+		return false, nil
+	}
+	if err := s.setSubPair(cert); err != nil {
+		return false, err
+	}
+	logger.Info("Subscription TLS certificate switched to", cert.CertFile)
+	return true, nil
+}
+
+// subHost is the host subscription links point at: subDomain, else subURI's.
+func (s *Service) subHost() (string, error) {
+	domain, err := s.settingService.GetSubDomain()
+	if err != nil {
+		return "", err
+	}
+	if domain = strings.TrimSpace(domain); domain != "" {
+		return strings.ToLower(domain), nil
+	}
+	uri, err := s.settingService.GetSubURI()
+	if err != nil {
+		return "", err
+	}
+	if u, err := url.Parse(strings.TrimSpace(uri)); err == nil {
+		return strings.ToLower(u.Hostname()), nil
+	}
+	return "", nil
+}
+
+// covers matches host against the certificate names; "*." spans one label.
+func covers(domains []string, host string) bool {
+	host = strings.TrimSuffix(host, ".")
+	for _, d := range domains {
+		if d == host {
+			return true
+		}
+		if rest, ok := strings.CutPrefix(d, "*."); ok {
+			if label, parent, found := strings.Cut(host, "."); found && label != "" && parent == rest {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (s *Service) subPair() (string, string, error) {
+	certFile, err := s.settingService.GetSubCertFile()
+	if err != nil {
+		return "", "", err
+	}
+	keyFile, err := s.settingService.GetSubKeyFile()
+	return certFile, keyFile, err
+}
+
+func (s *Service) setSubPair(cert *model.TlsCertificate) error {
+	if err := s.settingService.SetSubCertFile(cert.CertFile); err != nil {
+		return err
+	}
+	return s.settingService.SetSubKeyFile(cert.KeyFile)
 }
 
 // pushToNodes copies the pair to every enabled node and records each outcome.
