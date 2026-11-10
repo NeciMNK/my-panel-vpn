@@ -22,6 +22,7 @@ import {
   PushpinFilled,
   PushpinOutlined,
   ReadOutlined,
+  SafetyCertificateOutlined,
   SafetyOutlined,
   SearchOutlined,
   SettingOutlined,
@@ -42,7 +43,7 @@ const DONATE_URL = 'https://donate.sanaei.dev/';
 // Mac glyph to the Linux and Windows operators who are most of this panel's.
 const SHORTCUT_MODIFIER = /Mac|iPhone|iPad|iPod/.test(navigator.userAgent) ? '⌘' : 'Ctrl';
 const DOCS_URL = 'https://docs.sanaei.dev/';
-const REPO_URL = 'https://github.com/MHSanaei/3x-ui';
+const REPO_URL = 'https://github.com/NeciMNK/my-panel-vpn';
 const LOGOUT_KEY = '__logout__';
 const RAIL_WIDTH = 72;
 const SIDER_WIDTH = 220;
@@ -214,6 +215,11 @@ export default function AppSidebar() {
         key: '/settings#security',
         icon: <SafetyOutlined aria-hidden />,
         label: t('pages.settings.securitySettings'),
+      },
+      {
+        key: '/settings#ssl',
+        icon: <SafetyCertificateOutlined aria-hidden />,
+        label: t('pages.settings.tlsCerts.menu'),
       },
       {
         key: '/settings#telegram',

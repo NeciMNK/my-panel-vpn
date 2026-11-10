@@ -26,6 +26,7 @@ import AppSidebar from '@/layouts/AppSidebar';
 import GeneralTab from './GeneralTab';
 import SecurityTab from './SecurityTab';
 import TelegramTab from './TelegramTab';
+import TlsCertsTab from './TlsCertsTab';
 import EmailTab from './EmailTab';
 import DiscordTab from './DiscordTab';
 import SubscriptionGeneralTab from './SubscriptionGeneralTab';
@@ -40,6 +41,7 @@ interface ApiMsg {
 const tabSlugs = [
   'general',
   'security',
+  'ssl',
   'telegram',
   'email',
   'discord',
@@ -215,6 +217,8 @@ export default function SettingsPage() {
             saveSetting={savePayload}
           />
         );
+      case 'ssl':
+        return <TlsCertsTab />;
       case 'telegram':
         return <TelegramTab allSetting={allSetting} updateSetting={updateSetting} />;
       case 'email':

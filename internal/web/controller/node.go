@@ -28,6 +28,8 @@ func NewNodeController(g *gin.RouterGroup) *NodeController {
 
 func (a *NodeController) initRouter(g *gin.RouterGroup) {
 	g.GET("/list", a.list)
+	g.GET("/:id/xray/*path", a.xrayProxy)
+	g.POST("/:id/xray/*path", a.xrayProxy)
 	g.GET("/get/:id", a.get)
 	g.GET("/webCert/:id", a.webCert)
 
@@ -37,6 +39,7 @@ func (a *NodeController) initRouter(g *gin.RouterGroup) {
 	g.POST("/setEnable/:id", a.setEnable)
 
 	g.POST("/test", a.test)
+	g.POST("/joinToken", a.joinToken)
 	g.POST("/certFingerprint", a.certFingerprint)
 	g.POST("/inbounds", a.inbounds)
 	g.POST("/probe/:id", a.probe)
@@ -164,6 +167,8 @@ func (a *NodeController) add(c *gin.Context) {
 			return
 		}
 	}
+	reconcileCountryCascades()
+	reconcileHomeNetworks()
 	jsonMsgObj(c, I18nWeb(c, "pages.nodes.toasts.add"), view, nil)
 }
 
@@ -201,6 +206,8 @@ func (a *NodeController) update(c *gin.Context) {
 			return
 		}
 	}
+	reconcileCountryCascades()
+	reconcileHomeNetworks()
 	jsonMsg(c, I18nWeb(c, "pages.nodes.toasts.update"), nil)
 }
 
@@ -214,6 +221,8 @@ func (a *NodeController) del(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "pages.nodes.toasts.delete"), err)
 		return
 	}
+	reconcileCountryCascades()
+	reconcileHomeNetworks()
 	jsonMsg(c, I18nWeb(c, "pages.nodes.toasts.delete"), nil)
 }
 
@@ -244,6 +253,8 @@ func (a *NodeController) setEnable(c *gin.Context) {
 			logger.Warning("apply node enable change failed:", err)
 		}
 	}
+	reconcileCountryCascades()
+	reconcileHomeNetworks()
 	jsonMsg(c, I18nWeb(c, "pages.nodes.toasts.update"), nil)
 }
 
@@ -366,4 +377,14 @@ func (a *NodeController) history(c *gin.Context) {
 		return
 	}
 	jsonObj(c, a.nodeService.AggregateNodeMetric(id, metric, bucket, 60), nil)
+}
+
+// reconcileCountryCascades re-resolves "all servers of a country" cascades in
+// the background after a node change, so the admin's request never waits on it.
+func reconcileCountryCascades() {
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		defer cancel()
+		(&service.CascadeService{}).ReconcileCountryCascades(ctx)
+	}()
 }

@@ -23,6 +23,7 @@ import {
   MoonOutlined,
   PlusOutlined,
   ReloadOutlined,
+  SafetyCertificateOutlined,
   SafetyOutlined,
   SearchOutlined,
   SettingOutlined,
@@ -84,7 +85,6 @@ export const PALETTE_KEYWORDS: Record<string, string[]> = {
   '/settings': ['settings', 'config', 'port', 'password', 'ssl', 'telegram'],
   '/xray': ['xray', 'templates', 'balancer', 'dns'],
   '/api-docs': ['api', 'api docs', 'swagger', 'rest api', 'endpoints'],
-  '/sponsors': ['sponsors', 'sponsor', 'partners'],
 };
 
 export default function CommandPalette() {
@@ -405,6 +405,13 @@ export default function CommandPalette() {
         subtitle: t('pages.settings.securitySettings'),
         keywords: ['security', 'password', 'username', '2fa', 'two factor', 'login limit'],
         icon: <SafetyOutlined aria-hidden />,
+      },
+      {
+        path: '/settings#ssl',
+        title: `${t('menu.settings')} · ${t('pages.settings.tlsCerts.menu')}`,
+        subtitle: t('pages.settings.tlsCerts.menu'),
+        keywords: ['ssl', 'tls', 'certificate', 'https', 'cloudflare', 'acme', 'wildcard'],
+        icon: <SafetyCertificateOutlined aria-hidden />,
       },
       {
         path: '/settings#telegram',

@@ -1772,6 +1772,124 @@
         ],
         "type": "object"
       },
+      "Cascade": {
+        "description": "Cascade chains an entry server to one or more exit servers: users connect to\nthe entry, their traffic leaves the internet from an exit. Node id 0 means\nthis panel itself.",
+        "properties": {
+          "createdAt": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "enable": {
+            "example": true,
+            "type": "boolean"
+          },
+          "entryInboundTags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "entryNodeId": {
+            "example": 1,
+            "type": "integer"
+          },
+          "exitCountry": {
+            "description": "ExitCountry, when set, makes every enabled node of that country an exit.",
+            "example": "DE",
+            "type": "string"
+          },
+          "exitNodeIds": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "lastError": {
+            "type": "string"
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/CascadeLink"
+            },
+            "type": "array"
+          },
+          "name": {
+            "example": "RU → DE",
+            "type": "string"
+          },
+          "strategy": {
+            "example": "leastPing",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "createdAt",
+          "enable",
+          "entryInboundTags",
+          "entryNodeId",
+          "exitCountry",
+          "exitNodeIds",
+          "id",
+          "lastError",
+          "links",
+          "name",
+          "strategy",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "CascadeLink": {
+        "description": "CascadeLink is the hidden VLESS+REALITY hop the master provisions on one exit.",
+        "properties": {
+          "address": {
+            "type": "string"
+          },
+          "clientId": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "inboundId": {
+            "type": "integer"
+          },
+          "nodeId": {
+            "type": "integer"
+          },
+          "port": {
+            "type": "integer"
+          },
+          "publicKey": {
+            "type": "string"
+          },
+          "serverName": {
+            "type": "string"
+          },
+          "shortId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "address",
+          "clientId",
+          "email",
+          "inboundId",
+          "nodeId",
+          "port",
+          "publicKey",
+          "serverName",
+          "shortId"
+        ],
+        "type": "object"
+      },
       "Client": {
         "description": "Client represents a client configuration for Xray inbounds with traffic limits and settings.",
         "properties": {
@@ -2403,6 +2521,34 @@
         ],
         "type": "object"
       },
+      "ClientSpeed": {
+        "description": "ClientSpeed is a user's speed contract: MaxMbps caps them (0 = no cap),\nMinMbps is the speed a server must still have free for them (0 = any).",
+        "properties": {
+          "email": {
+            "example": "anna",
+            "type": "string"
+          },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "maxMbps": {
+            "example": 100,
+            "type": "integer"
+          },
+          "minMbps": {
+            "example": 20,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "email",
+          "id",
+          "maxMbps",
+          "minMbps"
+        ],
+        "type": "object"
+      },
       "ClientTraffic": {
         "description": "ClientTraffic represents traffic statistics and limits for a specific client.\nIt tracks upload/download usage, expiry times, and online status for inbound clients.",
         "properties": {
@@ -2771,6 +2917,149 @@
         "required": [
           "id",
           "seederName"
+        ],
+        "type": "object"
+      },
+      "HomeAccessRule": {
+        "description": "HomeAccessRule lets users (by email or client group) reach some targets of\na home network; no targets means the whole network.",
+        "properties": {
+          "emails": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "groups": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "targets": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "emails",
+          "groups",
+          "targets"
+        ],
+        "type": "object"
+      },
+      "HomeNetwork": {
+        "description": "HomeNetwork is a network behind a tunnel (WireGuard, OpenVPN or L2TP/IPsec)\nthat one server holds; users reach only the subnets and IPs their rules allow.",
+        "properties": {
+          "config": {
+            "description": "Config is the pasted wg-quick or .ovpn file.",
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "enable": {
+            "example": true,
+            "type": "boolean"
+          },
+          "errors": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "gatewayNodeId": {
+            "example": 0,
+            "type": "integer"
+          },
+          "hosts": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "kind": {
+            "example": "wireguard",
+            "type": "string"
+          },
+          "link": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CascadeLink"
+              }
+            ],
+            "nullable": true
+          },
+          "name": {
+            "example": "Home",
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "psk": {
+            "type": "string"
+          },
+          "rules": {
+            "items": {
+              "$ref": "#/components/schemas/HomeAccessRule"
+            },
+            "type": "array"
+          },
+          "server": {
+            "example": "203.0.113.7",
+            "type": "string"
+          },
+          "servers": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "subnets": {
+            "description": "Subnets and Hosts are every address of the home network the panel routes.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "tunnelState": {
+            "example": "active",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "username": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "config",
+          "createdAt",
+          "enable",
+          "errors",
+          "gatewayNodeId",
+          "hosts",
+          "id",
+          "kind",
+          "name",
+          "password",
+          "psk",
+          "rules",
+          "server",
+          "servers",
+          "subnets",
+          "tunnelState",
+          "updatedAt",
+          "username"
         ],
         "type": "object"
       },
@@ -3829,6 +4118,50 @@
         ],
         "type": "object"
       },
+      "MasterStatus": {
+        "description": "MasterStatus is one master as the masters card shows it.",
+        "properties": {
+          "alive": {
+            "example": true,
+            "type": "boolean"
+          },
+          "lastSeen": {
+            "example": 1762736400,
+            "format": "int64",
+            "type": "integer"
+          },
+          "leader": {
+            "example": true,
+            "type": "boolean"
+          },
+          "name": {
+            "example": "master-1",
+            "type": "string"
+          },
+          "priority": {
+            "example": 1,
+            "type": "integer"
+          },
+          "self": {
+            "example": true,
+            "type": "boolean"
+          },
+          "url": {
+            "example": "https://panel-1.example.com:2053",
+            "type": "string"
+          }
+        },
+        "required": [
+          "alive",
+          "lastSeen",
+          "leader",
+          "name",
+          "priority",
+          "self",
+          "url"
+        ],
+        "type": "object"
+      },
       "Msg": {
         "properties": {
           "msg": {
@@ -3886,6 +4219,11 @@
           "configDirtyAt": {
             "format": "int64",
             "type": "integer"
+          },
+          "country": {
+            "description": "Country is the ISO 3166-1 alpha-2 code country cascades group exits by.",
+            "example": "DE",
+            "type": "string"
           },
           "cpuPct": {
             "example": 23.5,
@@ -4053,6 +4391,7 @@
           "clientCount",
           "configDirty",
           "configDirtyAt",
+          "country",
           "cpuPct",
           "createdAt",
           "depletedCount",
@@ -4087,6 +4426,30 @@
         ],
         "type": "object"
       },
+      "NodeJoinTokenView": {
+        "description": "NodeJoinTokenView is what the master UI needs to print the install command.",
+        "properties": {
+          "arch": {
+            "example": "amd64",
+            "type": "string"
+          },
+          "expiresAt": {
+            "example": 1700003600,
+            "format": "int64",
+            "type": "integer"
+          },
+          "token": {
+            "example": "m3Yx0QmRZ2bq0l5w2b3h1C9rYx0QmRZ2bq0l5w2b3h0",
+            "type": "string"
+          }
+        },
+        "required": [
+          "arch",
+          "expiresAt",
+          "token"
+        ],
+        "type": "object"
+      },
       "NodeMutationRequest": {
         "description": "NodeMutationRequest is the node write/probe contract. ApiToken is accepted\nonly as input. On update, nil means keep the stored token; replacement and\nclearing are explicit and mutually exclusive.",
         "properties": {
@@ -4105,6 +4468,9 @@
           },
           "clearApiToken": {
             "type": "boolean"
+          },
+          "country": {
+            "type": "string"
           },
           "enable": {
             "type": "boolean"
@@ -4163,6 +4529,7 @@
           "address",
           "allowPrivateAddress",
           "basePath",
+          "country",
           "enable",
           "id",
           "inboundSyncMode",
@@ -4208,6 +4575,10 @@
             "example": 0,
             "format": "int64",
             "type": "integer"
+          },
+          "country": {
+            "example": "DE",
+            "type": "string"
           },
           "cpuPct": {
             "example": 12.5,
@@ -4367,6 +4738,7 @@
           "clientCount",
           "configDirty",
           "configDirtyAt",
+          "country",
           "cpuPct",
           "createdAt",
           "depletedCount",
@@ -4430,6 +4802,76 @@
           "tag",
           "total",
           "up"
+        ],
+        "type": "object"
+      },
+      "PanelProxyCheck": {
+        "description": "PanelProxyCheck is one live request made the way the panel makes its own.",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "exitIp": {
+            "example": "203.0.113.7",
+            "type": "string"
+          },
+          "telegram": {
+            "example": true,
+            "type": "boolean"
+          },
+          "telegramMs": {
+            "example": 184,
+            "format": "int64",
+            "type": "integer"
+          },
+          "viaProxy": {
+            "example": true,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "error",
+          "exitIp",
+          "telegram",
+          "telegramMs",
+          "viaProxy"
+        ],
+        "type": "object"
+      },
+      "PanelProxyStatus": {
+        "description": "PanelProxyStatus is the quick panel proxy as stored, plus the outbounds it builds now.",
+        "properties": {
+          "active": {
+            "example": true,
+            "type": "boolean"
+          },
+          "error": {
+            "type": "string"
+          },
+          "mode": {
+            "example": "client",
+            "type": "string"
+          },
+          "outbounds": {
+            "example": [
+              "panelproxy-de-frankfurt"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "source": {
+            "example": "alice",
+            "type": "string"
+          }
+        },
+        "required": [
+          "active",
+          "error",
+          "mode",
+          "outbounds",
+          "source"
         ],
         "type": "object"
       },
@@ -4733,6 +5175,62 @@
         ],
         "type": "object"
       },
+      "ServerCapacity": {
+        "description": "ServerCapacity is the link speed of one server (node id 0 = this panel),\nwhich the free speed per user is measured against.",
+        "properties": {
+          "capacityMbps": {
+            "example": 1000,
+            "type": "integer"
+          },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "nodeId": {
+            "example": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "capacityMbps",
+          "id",
+          "nodeId"
+        ],
+        "type": "object"
+      },
+      "ServerFreeSpeed": {
+        "description": "ServerFreeSpeed is the live load of a server with a known capacity.",
+        "properties": {
+          "capacityMbps": {
+            "example": 1000,
+            "type": "integer"
+          },
+          "freePerUserMbps": {
+            "example": 44.5,
+            "type": "number"
+          },
+          "nodeId": {
+            "example": 0,
+            "type": "integer"
+          },
+          "online": {
+            "example": 12,
+            "type": "integer"
+          },
+          "usedMbps": {
+            "example": 420.5,
+            "type": "number"
+          }
+        },
+        "required": [
+          "capacityMbps",
+          "freePerUserMbps",
+          "nodeId",
+          "online",
+          "usedMbps"
+        ],
+        "type": "object"
+      },
       "ServerSettings": {
         "description": "ServerSettings is the \"server\" block of an AmneziaWG inbound's Settings\nJSON: the interface-level configuration shared by every client/peer. The\nlisten port is deliberately not duplicated here — it lives on the inbound\nrow itself (Inbound.Port), like every other protocol.",
         "properties": {
@@ -4901,87 +5399,32 @@
         ],
         "type": "object"
       },
-      "Sponsor": {
-        "description": "Sponsor is one paid placement published in the repo's sponsors.json.",
+      "SpeedOverview": {
+        "description": "SpeedOverview is everything the speed card shows.",
         "properties": {
-          "enable": {
-            "example": true,
-            "nullable": true,
-            "type": "boolean"
-          },
-          "from": {
-            "example": "2026-10-01T00:00:00Z",
-            "format": "date-time",
-            "nullable": true,
-            "type": "string"
-          },
-          "id": {
-            "example": "acme-2026-10",
-            "type": "string"
-          },
-          "link": {
-            "example": "https://acme.example/?utm_source=3x-ui",
-            "type": "string"
-          },
-          "logo": {
-            "example": "/sponsors/logo/acme.png",
-            "type": "string"
-          },
-          "name": {
-            "example": "Acme VPS",
-            "type": "string"
-          },
-          "slots": {
+          "clients": {
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/ClientSpeed"
             },
             "type": "array"
           },
-          "text": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "type": "object"
-          },
-          "title": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "type": "object"
-          },
-          "until": {
-            "example": "2026-11-01T00:00:00Z",
-            "format": "date-time",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "link",
-          "name",
-          "slots",
-          "text",
-          "title",
-          "until"
-        ],
-        "type": "object"
-      },
-      "SponsorList": {
-        "description": "SponsorList is the active sponsor set plus the contact link for new sponsors.",
-        "properties": {
-          "contact": {
-            "example": "https://t.me/example",
-            "type": "string"
-          },
-          "sponsors": {
+          "load": {
             "items": {
-              "$ref": "#/components/schemas/Sponsor"
+              "$ref": "#/components/schemas/ServerFreeSpeed"
+            },
+            "type": "array"
+          },
+          "servers": {
+            "items": {
+              "$ref": "#/components/schemas/ServerCapacity"
             },
             "type": "array"
           }
         },
         "required": [
-          "sponsors"
+          "clients",
+          "load",
+          "servers"
         ],
         "type": "object"
       },
@@ -5083,6 +5526,166 @@
           "inlineEnabled",
           "running",
           "username"
+        ],
+        "type": "object"
+      },
+      "TlsCertFiles": {
+        "description": "TlsCertFiles is where a certificate pair was written.",
+        "properties": {
+          "certFile": {
+            "example": "/etc/x-ui/certs/example.com/fullchain.pem",
+            "type": "string"
+          },
+          "keyFile": {
+            "example": "/etc/x-ui/certs/example.com/privkey.pem",
+            "type": "string"
+          }
+        },
+        "required": [
+          "certFile",
+          "keyFile"
+        ],
+        "type": "object"
+      },
+      "TlsCertInstallRequest": {
+        "description": "TlsCertInstallRequest is the body a master sends a node to store a pair.",
+        "properties": {
+          "certPem": {
+            "example": "-----BEGIN CERTIFICATE-----\n...",
+            "type": "string"
+          },
+          "keyPem": {
+            "example": "-----BEGIN EC PRIVATE KEY-----\n...",
+            "type": "string"
+          },
+          "name": {
+            "example": "wildcard.example.com",
+            "type": "string"
+          }
+        },
+        "required": [
+          "certPem",
+          "keyPem",
+          "name"
+        ],
+        "type": "object"
+      },
+      "TlsCertNodeInstall": {
+        "description": "TlsCertNodeInstall is one node's copy of a TlsCertificate. NotAfter equal to\nthe certificate's means the node holds the current version.",
+        "properties": {
+          "certFile": {
+            "example": "/etc/x-ui/certs/example.com/fullchain.pem",
+            "type": "string"
+          },
+          "error": {
+            "type": "string"
+          },
+          "keyFile": {
+            "example": "/etc/x-ui/certs/example.com/privkey.pem",
+            "type": "string"
+          },
+          "notAfter": {
+            "example": 1717000000000,
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "certFile",
+          "error",
+          "keyFile",
+          "notAfter"
+        ],
+        "type": "object"
+      },
+      "TlsCertSettings": {
+        "description": "TlsCertSettings reports whether issuance can run, never the token itself.",
+        "properties": {
+          "cloudflareTokenSet": {
+            "example": true,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "cloudflareTokenSet"
+        ],
+        "type": "object"
+      },
+      "TlsCertificate": {
+        "description": "TlsCertificate is an ACME certificate the panel issued over Cloudflare DNS-01\nand keeps renewed; NodeInstalls records where each node stored its copy.",
+        "properties": {
+          "applyToPanel": {
+            "example": false,
+            "type": "boolean"
+          },
+          "autoRenew": {
+            "example": true,
+            "type": "boolean"
+          },
+          "certFile": {
+            "example": "/etc/x-ui/certs/example.com/fullchain.pem",
+            "type": "string"
+          },
+          "createdAt": {
+            "example": 1710000000000,
+            "format": "int64",
+            "type": "integer"
+          },
+          "domains": {
+            "example": [
+              "example.com",
+              "*.example.com"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "keyFile": {
+            "example": "/etc/x-ui/certs/example.com/privkey.pem",
+            "type": "string"
+          },
+          "lastError": {
+            "type": "string"
+          },
+          "nodeInstalls": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/TlsCertNodeInstall"
+            },
+            "type": "object"
+          },
+          "notAfter": {
+            "example": 1717000000000,
+            "format": "int64",
+            "type": "integer"
+          },
+          "status": {
+            "example": "valid",
+            "type": "string"
+          },
+          "updatedAt": {
+            "example": 1710000000000,
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "applyToPanel",
+          "autoRenew",
+          "certFile",
+          "createdAt",
+          "domains",
+          "id",
+          "keyFile",
+          "lastError",
+          "nodeInstalls",
+          "notAfter",
+          "status",
+          "updatedAt"
         ],
         "type": "object"
       },
@@ -5213,6 +5816,45 @@
         ],
         "type": "object"
       },
+      "WarpSwitch": {
+        "description": "WarpSwitch is one server's WARP switch: off, all traffic, or only the listed\nsites (domains, geosite: and regexp: entries). Node id 0 is this panel.",
+        "properties": {
+          "domains": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "lastError": {
+            "type": "string"
+          },
+          "mode": {
+            "example": "domains",
+            "type": "string"
+          },
+          "nodeId": {
+            "example": 0,
+            "type": "integer"
+          },
+          "updatedAt": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "domains",
+          "id",
+          "lastError",
+          "mode",
+          "nodeId",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
       "WebSocketEnvelope": {
         "type": "object",
         "required": [
@@ -5273,6 +5915,26 @@
       "description": "Manage clients as first-class entities that can be attached to one or more inbounds. A single client row drives the settings.clients entry in every inbound it belongs to. Endpoints live under /panel/api/clients."
     },
     {
+      "name": "Cascades",
+      "description": "Entry → exit server chains. The panel provisions a hidden VLESS+REALITY inbound on every exit and an outbound plus a catch-all routing rule (or a balancer for several exits) on the entry. Node id 0 means this panel. All endpoints under /panel/api/cascades."
+    },
+    {
+      "name": "Home networks",
+      "description": "Home LANs behind a WireGuard, OpenVPN or L2TP/IPsec tunnel held by one gateway server (node id 0 = this panel). Every other server reaches the gateway through a hidden VLESS+REALITY link. Users reach only the subnets and IPs their rules allow; everything else in the home network is blocked. All endpoints under /panel/api/homeNetworks."
+    },
+    {
+      "name": "Masters",
+      "description": "Several master panels can share one database (XUI_MASTER_PRIORITY, XUI_MASTER_NAME, XUI_MASTER_URL). Each writes a heartbeat every 5s; the best-ranked master that has been up for 30s leads and alone runs node sync, traffic resets, cascade pins and the bots. The list is empty on a single master. All endpoints under /panel/api/masters."
+    },
+    {
+      "name": "Speed limits",
+      "description": "Per-user speed contracts. maxMbps is a hard cap enforced with tc on every server the user's IPs were seen on in the last 30 minutes; minMbps is the speed a server must still have free per user, so new cascade users go to an exit with room and the admin gets a speed.low alert when no server has any. Free speed is measured against each server's link speed. All endpoints under /panel/api/speed."
+    },
+    {
+      "name": "WARP switch",
+      "description": "One Cloudflare WARP switch per server (node id 0 = this panel): off, all traffic, or only the listed sites. Turning it on registers the server's WARP account when it has none and adds the stock \"warp\" outbound; the routing rule is always the last one, so cascades, home networks and the admin's own rules decide first. All endpoints under /panel/api/warpSwitch."
+    },
+    {
       "name": "Nodes",
       "description": "Manage remote 3x-ui panels acting as nodes for a central panel. All endpoints under /panel/api/nodes."
     },
@@ -5303,6 +5965,10 @@
     {
       "name": "Subscription Balancers",
       "description": "Client-side balancers for the JSON subscription: each enabled balancer is emitted as one extra config document whose members are the proxy outbounds of the selected inbounds (routing.balancers + burstObservatory). Managed in Settings → Sub Balancers."
+    },
+    {
+      "name": "TLS Certificates",
+      "description": "Let's Encrypt certificates issued by the panel over the ACME DNS-01 challenge, solved through the Cloudflare API (wildcards supported). Files land in the panel's certs folder, renew automatically 30 days before expiry, can be applied to the panel itself, and are copied to every enabled node. Managed in Settings → SSL."
     },
     {
       "name": "Subscription Server",
@@ -5463,60 +6129,6 @@
                 "example": {
                   "success": true,
                   "obj": "csrf-token-string"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/sponsors": {
-      "get": {
-        "tags": [
-          "Authentication"
-        ],
-        "summary": "Public. Active paid sponsor placements read from the project sponsors.json (cached for 1h); entries outside their from/until window are dropped. Logos are proxied by the panel at /sponsors/logo/{name}. Used by the login page and panel sponsor slots.",
-        "operationId": "get_sponsors",
-        "responses": {
-          "200": {
-            "description": "Successful response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "msg": {
-                      "type": "string"
-                    },
-                    "obj": {
-                      "$ref": "#/components/schemas/SponsorList"
-                    }
-                  }
-                },
-                "example": {
-                  "success": true,
-                  "obj": {
-                    "contact": "https://t.me/example",
-                    "sponsors": [
-                      {
-                        "enable": true,
-                        "from": "2026-10-01T00:00:00Z",
-                        "id": "acme-2026-10",
-                        "link": "https://acme.example/?utm_source=3x-ui",
-                        "logo": "/sponsors/logo/acme.png",
-                        "name": "Acme VPS",
-                        "slots": [
-                          ""
-                        ],
-                        "text": {},
-                        "title": {},
-                        "until": "2026-11-01T00:00:00Z"
-                      }
-                    ]
-                  }
                 }
               }
             }
@@ -11630,6 +12242,1002 @@
         }
       }
     },
+    "/panel/api/cascades/list": {
+      "get": {
+        "tags": [
+          "Cascades"
+        ],
+        "summary": "List every cascade with its provisioned links and the last apply error.",
+        "operationId": "get_panel_api_cascades_list",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Cascade"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "createdAt": 0,
+                      "enable": true,
+                      "entryInboundTags": [
+                        ""
+                      ],
+                      "entryNodeId": 1,
+                      "exitCountry": "DE",
+                      "exitNodeIds": [
+                        0
+                      ],
+                      "id": 1,
+                      "lastError": "",
+                      "links": [
+                        {
+                          "address": "",
+                          "clientId": "",
+                          "email": "",
+                          "inboundId": 0,
+                          "nodeId": 0,
+                          "port": 0,
+                          "publicKey": "",
+                          "serverName": "",
+                          "shortId": ""
+                        }
+                      ],
+                      "name": "RU → DE",
+                      "strategy": "leastPing",
+                      "updatedAt": 0
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/cascades/add": {
+      "post": {
+        "tags": [
+          "Cascades"
+        ],
+        "summary": "Create a cascade and apply it: exits get their link inbound, the entry gets the outbound(s) and the routing rule. Empty entryInboundTags chains every inbound of the entry.",
+        "operationId": "post_panel_api_cascades_add",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "name": "RU → DE",
+                "enable": true,
+                "entryNodeId": 1,
+                "exitNodeIds": [
+                  2,
+                  3
+                ],
+                "entryInboundTags": [],
+                "strategy": "leastPing"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/Cascade"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "createdAt": 0,
+                    "enable": true,
+                    "entryInboundTags": [
+                      ""
+                    ],
+                    "entryNodeId": 1,
+                    "exitCountry": "DE",
+                    "exitNodeIds": [
+                      0
+                    ],
+                    "id": 1,
+                    "lastError": "",
+                    "links": [
+                      {
+                        "address": "",
+                        "clientId": "",
+                        "email": "",
+                        "inboundId": 0,
+                        "nodeId": 0,
+                        "port": 0,
+                        "publicKey": "",
+                        "serverName": "",
+                        "shortId": ""
+                      }
+                    ],
+                    "name": "RU → DE",
+                    "strategy": "leastPing",
+                    "updatedAt": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/cascades/update/{id}": {
+      "post": {
+        "tags": [
+          "Cascades"
+        ],
+        "summary": "Change a cascade (entry, exits, chained inbounds, strategy, enable) and re-apply it. Removed exits lose their link inbound; adding an exit adds it to the balancer.",
+        "operationId": "post_panel_api_cascades_update_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Cascade ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "name": "RU → DE",
+                "enable": true,
+                "entryNodeId": 1,
+                "exitNodeIds": [
+                  2,
+                  3
+                ],
+                "entryInboundTags": [],
+                "strategy": "leastPing"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/Cascade"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "createdAt": 0,
+                    "enable": true,
+                    "entryInboundTags": [
+                      ""
+                    ],
+                    "entryNodeId": 1,
+                    "exitCountry": "DE",
+                    "exitNodeIds": [
+                      0
+                    ],
+                    "id": 1,
+                    "lastError": "",
+                    "links": [
+                      {
+                        "address": "",
+                        "clientId": "",
+                        "email": "",
+                        "inboundId": 0,
+                        "nodeId": 0,
+                        "port": 0,
+                        "publicKey": "",
+                        "serverName": "",
+                        "shortId": ""
+                      }
+                    ],
+                    "name": "RU → DE",
+                    "strategy": "leastPing",
+                    "updatedAt": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/cascades/del/{id}": {
+      "post": {
+        "tags": [
+          "Cascades"
+        ],
+        "summary": "Remove a cascade from the entry template and delete its link inbounds on every exit.",
+        "operationId": "post_panel_api_cascades_del_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Cascade ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/homeNetworks/list": {
+      "get": {
+        "tags": [
+          "Home networks"
+        ],
+        "summary": "List every home network with its rules, tunnel state and the last per-server apply errors.",
+        "operationId": "get_panel_api_homeNetworks_list",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/HomeNetwork"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "config": "",
+                      "createdAt": 0,
+                      "enable": true,
+                      "errors": {},
+                      "gatewayNodeId": 0,
+                      "hosts": [
+                        ""
+                      ],
+                      "id": 1,
+                      "kind": "wireguard",
+                      "link": null,
+                      "name": "Home",
+                      "password": "",
+                      "psk": "",
+                      "rules": [
+                        {
+                          "emails": [
+                            ""
+                          ],
+                          "groups": [
+                            ""
+                          ],
+                          "targets": [
+                            ""
+                          ]
+                        }
+                      ],
+                      "server": "203.0.113.7",
+                      "servers": [
+                        0
+                      ],
+                      "subnets": [
+                        ""
+                      ],
+                      "tunnelState": "active",
+                      "updatedAt": 0,
+                      "username": ""
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/homeNetworks/add": {
+      "post": {
+        "tags": [
+          "Home networks"
+        ],
+        "summary": "Create a home network and apply it: the gateway brings the tunnel up, every server gets allow rules per user or client group and a deny rule for the rest of the network. Empty targets in a rule mean the whole network.",
+        "operationId": "post_panel_api_homeNetworks_add",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "name": "Home",
+                "enable": true,
+                "kind": "wireguard",
+                "gatewayNodeId": 0,
+                "config": "[Interface]\nPrivateKey = ...\nAddress = 10.8.0.2/32\n\n[Peer]\nPublicKey = ...\nEndpoint = home.example.net:51820",
+                "subnets": [
+                  "192.168.1.0/24"
+                ],
+                "hosts": [
+                  "192.168.1.10"
+                ],
+                "rules": [
+                  {
+                    "emails": [
+                      "anna"
+                    ],
+                    "groups": [
+                      "family"
+                    ],
+                    "targets": []
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/HomeNetwork"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "config": "",
+                    "createdAt": 0,
+                    "enable": true,
+                    "errors": {},
+                    "gatewayNodeId": 0,
+                    "hosts": [
+                      ""
+                    ],
+                    "id": 1,
+                    "kind": "wireguard",
+                    "link": null,
+                    "name": "Home",
+                    "password": "",
+                    "psk": "",
+                    "rules": [
+                      {
+                        "emails": [
+                          ""
+                        ],
+                        "groups": [
+                          ""
+                        ],
+                        "targets": [
+                          ""
+                        ]
+                      }
+                    ],
+                    "server": "203.0.113.7",
+                    "servers": [
+                      0
+                    ],
+                    "subnets": [
+                      ""
+                    ],
+                    "tunnelState": "active",
+                    "updatedAt": 0,
+                    "username": ""
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/homeNetworks/update/{id}": {
+      "post": {
+        "tags": [
+          "Home networks"
+        ],
+        "summary": "Change a home network (tunnel, gateway, subnets, IPs, access rules) and re-apply it on every server.",
+        "operationId": "post_panel_api_homeNetworks_update_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Home network ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "name": "Home",
+                "enable": true,
+                "kind": "wireguard",
+                "gatewayNodeId": 0,
+                "config": "[Interface]\nPrivateKey = ...\nAddress = 10.8.0.2/32\n\n[Peer]\nPublicKey = ...\nEndpoint = home.example.net:51820",
+                "subnets": [
+                  "192.168.1.0/24"
+                ],
+                "hosts": [
+                  "192.168.1.10"
+                ],
+                "rules": [
+                  {
+                    "emails": [
+                      "anna"
+                    ],
+                    "groups": [
+                      "family"
+                    ],
+                    "targets": []
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/HomeNetwork"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "config": "",
+                    "createdAt": 0,
+                    "enable": true,
+                    "errors": {},
+                    "gatewayNodeId": 0,
+                    "hosts": [
+                      ""
+                    ],
+                    "id": 1,
+                    "kind": "wireguard",
+                    "link": null,
+                    "name": "Home",
+                    "password": "",
+                    "psk": "",
+                    "rules": [
+                      {
+                        "emails": [
+                          ""
+                        ],
+                        "groups": [
+                          ""
+                        ],
+                        "targets": [
+                          ""
+                        ]
+                      }
+                    ],
+                    "server": "203.0.113.7",
+                    "servers": [
+                      0
+                    ],
+                    "subnets": [
+                      ""
+                    ],
+                    "tunnelState": "active",
+                    "updatedAt": 0,
+                    "username": ""
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/homeNetworks/del/{id}": {
+      "post": {
+        "tags": [
+          "Home networks"
+        ],
+        "summary": "Remove the home network from every server, stop its tunnel and delete its link.",
+        "operationId": "post_panel_api_homeNetworks_del_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Home network ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/masters/list": {
+      "get": {
+        "tags": [
+          "Masters"
+        ],
+        "summary": "Every master that joined, whether it is alive and which one leads.",
+        "operationId": "get_panel_api_masters_list",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/MasterStatus"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "alive": true,
+                      "lastSeen": 1762736400,
+                      "leader": true,
+                      "name": "master-1",
+                      "priority": 1,
+                      "self": true,
+                      "url": "https://panel-1.example.com:2053"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/masters/forget": {
+      "post": {
+        "tags": [
+          "Masters"
+        ],
+        "summary": "Remove a master that is down for good from the list. A running master is refused.",
+        "operationId": "post_panel_api_masters_forget",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "name": "master-2"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/speed/overview": {
+      "get": {
+        "tags": [
+          "Speed limits"
+        ],
+        "summary": "User limits, server link speeds, and the live load of every server with a link speed.",
+        "operationId": "get_panel_api_speed_overview",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/SpeedOverview"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "clients": [
+                      {
+                        "email": "anna",
+                        "id": 1,
+                        "maxMbps": 100,
+                        "minMbps": 20
+                      }
+                    ],
+                    "load": [
+                      {
+                        "capacityMbps": 1000,
+                        "freePerUserMbps": 44.5,
+                        "nodeId": 0,
+                        "online": 12,
+                        "usedMbps": 420.5
+                      }
+                    ],
+                    "servers": [
+                      {
+                        "capacityMbps": 1000,
+                        "id": 1,
+                        "nodeId": 0
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/speed/client": {
+      "post": {
+        "tags": [
+          "Speed limits"
+        ],
+        "summary": "Set one user's minimum and maximum speed in Mbit/s; both 0 removes them.",
+        "operationId": "post_panel_api_speed_client",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "email": "anna",
+                "minMbps": 20,
+                "maxMbps": 100
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/speed/capacity": {
+      "post": {
+        "tags": [
+          "Speed limits"
+        ],
+        "summary": "Set one server's link speed in Mbit/s (node id 0 = this panel); 0 removes it.",
+        "operationId": "post_panel_api_speed_capacity",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "nodeId": 0,
+                "capacityMbps": 1000
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/warpSwitch/list": {
+      "get": {
+        "tags": [
+          "WARP switch"
+        ],
+        "summary": "List the switch position of every server that has one.",
+        "operationId": "get_panel_api_warpSwitch_list",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/WarpSwitch"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "domains": [
+                        ""
+                      ],
+                      "id": 1,
+                      "lastError": "",
+                      "mode": "domains",
+                      "nodeId": 0,
+                      "updatedAt": 0
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/warpSwitch/set": {
+      "post": {
+        "tags": [
+          "WARP switch"
+        ],
+        "summary": "Move one server's switch and rewrite its Xray template. Domains accept plain domains, geosite: and regexp: entries.",
+        "operationId": "post_panel_api_warpSwitch_set",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "nodeId": 0,
+                "mode": "domains",
+                "domains": [
+                  "geosite:openai",
+                  "chatgpt.com"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/WarpSwitch"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "domains": [
+                      ""
+                    ],
+                    "id": 1,
+                    "lastError": "",
+                    "mode": "domains",
+                    "nodeId": 0,
+                    "updatedAt": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/panel/api/nodes/list": {
       "get": {
         "tags": [
@@ -11670,6 +13278,7 @@
                       "clientCount": 25,
                       "configDirty": false,
                       "configDirtyAt": 0,
+                      "country": "DE",
                       "cpuPct": 12.5,
                       "createdAt": 1700000000,
                       "depletedCount": 1,
@@ -11874,6 +13483,7 @@
                     "clientCount": 25,
                     "configDirty": false,
                     "configDirtyAt": 0,
+                    "country": "DE",
                     "cpuPct": 12.5,
                     "createdAt": 1700000000,
                     "depletedCount": 1,
@@ -11969,6 +13579,144 @@
         }
       }
     },
+    "/panel/api/nodes/{id}/xray/*path": {
+      "get": {
+        "tags": [
+          "Nodes"
+        ],
+        "summary": "Proxy a read of the node's Xray settings API (/panel/api/xray/*path on the node). Lets the central panel's Xray page show a node's outbounds, routing, balancers, WARP and geodata. The node's response is returned unchanged.",
+        "operationId": "get_panel_api_nodes_id_xray_path",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Node ID.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "required": true,
+            "description": "Path under /panel/api/xray on the node, e.g. getOutboundsTraffic.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Nodes"
+        ],
+        "summary": "Proxy a write to the node's Xray settings API (/panel/api/xray/*path on the node), e.g. update, warp/reg or balancerOverride, so outbounds, routing, balancers and WARP of every node are edited from the central panel. The node's response is returned unchanged.",
+        "operationId": "post_panel_api_nodes_id_xray_path",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Node ID.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "path",
+            "in": "path",
+            "required": true,
+            "description": "Path under /panel/api/xray on the node, e.g. update.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/nodes/joinToken": {
+      "post": {
+        "tags": [
+          "Nodes"
+        ],
+        "summary": "Mint a one-time join token (valid for one hour) for the \"add node with one command\" installer. The installer downloads this panel's own build from <base>/node-join/bundle (so the node must share this panel's CPU architecture, reported as arch) and registers itself at <base>/node-join/register, pinned to its self-signed certificate.",
+        "operationId": "post_panel_api_nodes_joinToken",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/NodeJoinTokenView"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "arch": "amd64",
+                    "expiresAt": 1700003600,
+                    "token": "m3Yx0QmRZ2bq0l5w2b3h1C9rYx0QmRZ2bq0l5w2b3h0"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/panel/api/nodes/add": {
       "post": {
         "tags": [
@@ -12027,6 +13775,7 @@
                     "clientCount": 25,
                     "configDirty": false,
                     "configDirtyAt": 0,
+                    "country": "DE",
                     "cpuPct": 12.5,
                     "createdAt": 1700000000,
                     "depletedCount": 1,
@@ -14380,6 +16129,200 @@
         }
       }
     },
+    "/panel/api/setting/panelProxy": {
+      "post": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Return the quick panel proxy: its mode (client, link, subscription or empty when off), its source and the panelproxy-* outbounds it builds now.",
+        "operationId": "post_panel_api_setting_panelProxy",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/PanelProxyStatus"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "active": true,
+                    "error": "",
+                    "mode": "client",
+                    "outbounds": [
+                      "panelproxy-de-frankfurt"
+                    ],
+                    "source": "alice"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/setting/panelProxy/set": {
+      "post": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Route the panel's own requests (Telegram, update checks, subscription fetches) through a leastPing balancer over outbounds built from a panel client's node inbounds, a share link or socks5/http proxy URL, or an outbound subscription. An empty mode turns it off. Applies the Xray config right away.",
+        "operationId": "post_panel_api_setting_panelProxy_set",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "mode": {
+                    "type": "string",
+                    "description": "client, link, subscription, or empty to turn the proxy off."
+                  },
+                  "source": {
+                    "type": "string",
+                    "description": "Client email, share link / proxy URL, or subscription URL."
+                  }
+                },
+                "required": [
+                  "mode",
+                  "source"
+                ]
+              },
+              "example": {
+                "mode": "client",
+                "source": "alice"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/PanelProxyStatus"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "active": true,
+                    "error": "",
+                    "mode": "client",
+                    "outbounds": [
+                      "panelproxy-de-frankfurt"
+                    ],
+                    "source": "alice"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/setting/panelProxy/check": {
+      "post": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Reach Telegram and an IP echo service the way the panel makes its own requests, reporting whether the proxy was used and the exit IP.",
+        "operationId": "post_panel_api_setting_panelProxy_check",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/PanelProxyCheck"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "error": "",
+                    "exitIp": "203.0.113.7",
+                    "telegram": true,
+                    "telegramMs": 184,
+                    "viaProxy": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/setting/panelProxy/clients": {
+      "post": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "List the enabled clients that own an enabled inbound on a node, the candidates for client mode.",
+        "operationId": "post_panel_api_setting_panelProxy_clients",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    "alice"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/panel/api/setting/getDefaultJsonConfig": {
       "get": {
         "tags": [
@@ -15317,6 +17260,144 @@
                 },
                 "required": [
                   "tag"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/xray/homeTunnel": {
+      "post": {
+        "tags": [
+          "Xray Settings"
+        ],
+        "summary": "On a gateway server: bring a home network's OpenVPN or L2TP/IPsec client up (installing it when missing) or tear it down. Called by the master; answers within 45s even while the client still installs.",
+        "operationId": "post_panel_api_xray_homeTunnel",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "id": 1,
+                "kind": "openvpn",
+                "enable": true,
+                "openvpn": "client\nremote home.example.net 1194\n...",
+                "routes": [
+                  "192.168.1.0/24"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/xray/homeTunnel/{id}": {
+      "get": {
+        "tags": [
+          "Xray Settings"
+        ],
+        "summary": "On a gateway server: whether a home network tunnel runs and its interface is up.",
+        "operationId": "get_panel_api_xray_homeTunnel_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Home network ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/xray/speedPlan": {
+      "post": {
+        "tags": [
+          "Xray Settings"
+        ],
+        "summary": "On any server: enforce per-IP speed caps with tc on the default interface. Called by the master; an unchanged plan is a no-op.",
+        "operationId": "post_panel_api_xray_speedPlan",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "limits": [
+                  {
+                    "ip": "203.0.113.7",
+                    "mbps": 100
+                  }
                 ]
               }
             }
@@ -16527,6 +18608,502 @@
         }
       }
     },
+    "/panel/api/certs/list": {
+      "get": {
+        "tags": [
+          "TLS Certificates"
+        ],
+        "summary": "List issued certificates with their status (pending, valid, error), file paths, expiry and per-node copies.",
+        "operationId": "get_panel_api_certs_list",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TlsCertificate"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "applyToPanel": false,
+                      "autoRenew": true,
+                      "certFile": "/etc/x-ui/certs/example.com/fullchain.pem",
+                      "createdAt": 1710000000000,
+                      "domains": [
+                        "example.com",
+                        "*.example.com"
+                      ],
+                      "id": 1,
+                      "keyFile": "/etc/x-ui/certs/example.com/privkey.pem",
+                      "lastError": "",
+                      "nodeInstalls": {},
+                      "notAfter": 1717000000000,
+                      "status": "valid",
+                      "updatedAt": 1710000000000
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/certs/settings": {
+      "get": {
+        "tags": [
+          "TLS Certificates"
+        ],
+        "summary": "Report whether a Cloudflare API token is stored. The token itself is never returned.",
+        "operationId": "get_panel_api_certs_settings",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/TlsCertSettings"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "cloudflareTokenSet": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "TLS Certificates"
+        ],
+        "summary": "Store the Cloudflare API token used for DNS-01 (needs Zone:Read and DNS:Edit on the zones). An empty value clears it.",
+        "operationId": "post_panel_api_certs_settings",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cloudflareToken": {
+                    "type": "string",
+                    "description": "Cloudflare API token."
+                  }
+                },
+                "required": [
+                  "cloudflareToken"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/TlsCertSettings"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "cloudflareTokenSet": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/certs/issue": {
+      "post": {
+        "tags": [
+          "TLS Certificates"
+        ],
+        "summary": "Start issuing a certificate. Returns the pending record at once; issuance (DNS propagation included) finishes in the background, so poll the list.",
+        "operationId": "post_panel_api_certs_issue",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "domains": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Names to cover, repeated key; e.g. example.com and *.example.com."
+                  },
+                  "autoRenew": {
+                    "type": "boolean",
+                    "description": "Renew automatically 30 days before expiry."
+                  },
+                  "applyToPanel": {
+                    "type": "boolean",
+                    "description": "Serve the panel over this certificate once issued (restarts the panel when the paths change)."
+                  }
+                },
+                "required": [
+                  "domains"
+                ]
+              },
+              "encoding": {
+                "domains": {
+                  "style": "form",
+                  "explode": true
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/TlsCertificate"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "applyToPanel": false,
+                    "autoRenew": true,
+                    "certFile": "/etc/x-ui/certs/example.com/fullchain.pem",
+                    "createdAt": 1710000000000,
+                    "domains": [
+                      "example.com",
+                      "*.example.com"
+                    ],
+                    "id": 1,
+                    "keyFile": "/etc/x-ui/certs/example.com/privkey.pem",
+                    "lastError": "",
+                    "nodeInstalls": {},
+                    "notAfter": 1717000000000,
+                    "status": "valid",
+                    "updatedAt": 1710000000000
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/certs/renew/{id}": {
+      "post": {
+        "tags": [
+          "TLS Certificates"
+        ],
+        "summary": "Re-issue a certificate now, in the background.",
+        "operationId": "post_panel_api_certs_renew_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Certificate id.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/TlsCertificate"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "applyToPanel": false,
+                    "autoRenew": true,
+                    "certFile": "/etc/x-ui/certs/example.com/fullchain.pem",
+                    "createdAt": 1710000000000,
+                    "domains": [
+                      "example.com",
+                      "*.example.com"
+                    ],
+                    "id": 1,
+                    "keyFile": "/etc/x-ui/certs/example.com/privkey.pem",
+                    "lastError": "",
+                    "nodeInstalls": {},
+                    "notAfter": 1717000000000,
+                    "status": "valid",
+                    "updatedAt": 1710000000000
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/certs/update/{id}": {
+      "post": {
+        "tags": [
+          "TLS Certificates"
+        ],
+        "summary": "Turn automatic renewal on or off.",
+        "operationId": "post_panel_api_certs_update_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Certificate id.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "autoRenew": {
+                    "type": "boolean",
+                    "description": "Renew automatically."
+                  }
+                },
+                "required": [
+                  "autoRenew"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/TlsCertificate"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "applyToPanel": false,
+                    "autoRenew": true,
+                    "certFile": "/etc/x-ui/certs/example.com/fullchain.pem",
+                    "createdAt": 1710000000000,
+                    "domains": [
+                      "example.com",
+                      "*.example.com"
+                    ],
+                    "id": 1,
+                    "keyFile": "/etc/x-ui/certs/example.com/privkey.pem",
+                    "lastError": "",
+                    "nodeInstalls": {},
+                    "notAfter": 1717000000000,
+                    "status": "valid",
+                    "updatedAt": 1710000000000
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/certs/del/{id}": {
+      "post": {
+        "tags": [
+          "TLS Certificates"
+        ],
+        "summary": "Delete a certificate and its files. Refused while the panel, the subscription server or an inbound still points at them.",
+        "operationId": "post_panel_api_certs_del_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Certificate id.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": ""
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/certs/install": {
+      "post": {
+        "tags": [
+          "TLS Certificates"
+        ],
+        "summary": "Node side of certificate distribution: the master posts a pair it issued and the node stores it in its own certs folder, returning the paths it wrote. Allowed for node-sync tokens.",
+        "operationId": "post_panel_api_certs_install",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Folder name, e.g. wildcard.example.com."
+                  },
+                  "certPem": {
+                    "type": "string",
+                    "description": "PEM certificate chain."
+                  },
+                  "keyPem": {
+                    "type": "string",
+                    "description": "PEM private key."
+                  }
+                },
+                "required": [
+                  "name",
+                  "certPem",
+                  "keyPem"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/TlsCertFiles"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "certFile": "/etc/x-ui/certs/example.com/fullchain.pem",
+                    "keyFile": "/etc/x-ui/certs/example.com/privkey.pem"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/{subPath}{subid}": {
       "get": {
         "tags": [
@@ -17595,6 +20172,7 @@
                   "clientCount": 25,
                   "configDirty": false,
                   "configDirtyAt": 0,
+                  "country": "DE",
                   "cpuPct": 12.5,
                   "createdAt": 1700000000,
                   "depletedCount": 1,

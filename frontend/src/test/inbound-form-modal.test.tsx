@@ -14,6 +14,10 @@ import {
   chooseSelectOption,
 } from './test-utils';
 
+// These two re-render the whole modal several times; ~1s locally, past 5s on a
+// 2-core GitHub runner under the parallel suite.
+const SLOW_RUNNER_TIMEOUT_MS = 30_000;
+
 const { messageError } = vi.hoisted(() => ({ messageError: vi.fn() }));
 
 vi.mock('antd', async (importOriginal) => {
@@ -202,63 +206,70 @@ describe('InboundFormModal', () => {
     expect(screen.queryByDisplayValue('proxy.example.test')).toBeNull();
   });
 
-  it('keeps the persisted node share strategy through the nodes-loading race (#5375)', async () => {
-    const node = { id: 1, name: 'arm2', enable: true, status: 'online' } as never;
-    const buildInbound = () =>
-      new DBInbound({
-        id: 1,
-        port: 23456,
-        listen: '',
-        protocol: 'vless',
-        remark: 'noded',
-        enable: true,
-        settings: { clients: [] },
-        streamSettings: { network: 'tcp', security: 'none', tcpSettings: {} },
-        sniffing: { enabled: false },
-        nodeId: 1,
-        shareAddrStrategy: 'node',
-      });
-    const flush = async () => {
-      await act(async () => {
-        await new Promise((r) => setTimeout(r, 0));
-      });
-    };
-    const selectedStrategy = () =>
-      within(screen.getByRole('combobox', { name: 'Share address strategy' })).getByRole('option', {
-        selected: true,
-      }).textContent;
-    const modal = (nodes: never[], fetched: boolean) => (
-      <AntdRootConfig>
-        <ThemeProvider>
-          <InboundFormModal
-            open
-            mode="edit"
-            dbInbound={buildInbound()}
-            dbInbounds={[]}
-            availableNodes={nodes}
-            availableNodesFetched={fetched}
-            onClose={() => {}}
-            onSaved={() => {}}
-          />
-        </ThemeProvider>
-      </AntdRootConfig>
-    );
+  it(
+    'keeps the persisted node share strategy through the nodes-loading race (#5375)',
+    { timeout: SLOW_RUNNER_TIMEOUT_MS },
+    async () => {
+      const node = { id: 1, name: 'arm2', enable: true, status: 'online' } as never;
+      const buildInbound = () =>
+        new DBInbound({
+          id: 1,
+          port: 23456,
+          listen: '',
+          protocol: 'vless',
+          remark: 'noded',
+          enable: true,
+          settings: { clients: [] },
+          streamSettings: { network: 'tcp', security: 'none', tcpSettings: {} },
+          sniffing: { enabled: false },
+          nodeId: 1,
+          shareAddrStrategy: 'node',
+        });
+      const flush = async () => {
+        await act(async () => {
+          await new Promise((r) => setTimeout(r, 0));
+        });
+      };
+      const selectedStrategy = () =>
+        within(screen.getByRole('combobox', { name: 'Share address strategy' })).getByRole(
+          'option',
+          {
+            selected: true,
+          },
+        ).textContent;
+      const modal = (nodes: never[], fetched: boolean) => (
+        <AntdRootConfig>
+          <ThemeProvider>
+            <InboundFormModal
+              open
+              mode="edit"
+              dbInbound={buildInbound()}
+              dbInbounds={[]}
+              availableNodes={nodes}
+              availableNodesFetched={fetched}
+              onClose={() => {}}
+              onSaved={() => {}}
+            />
+          </ThemeProvider>
+        </AntdRootConfig>
+      );
 
-    // Baseline: nodes already loaded, so the node option is offered and selected.
-    render(modal([node], true));
-    await flush();
-    expect(selectedStrategy()).toBe('Node address');
-    cleanup();
+      // Baseline: nodes already loaded, so the node option is offered and selected.
+      render(modal([node], true));
+      await flush();
+      expect(selectedStrategy()).toBe('Node address');
+      cleanup();
 
-    // Race: the modal mounts before /nodes/list resolves (empty placeholder),
-    // then nodes arrive. The persisted 'node' strategy must survive the gap and
-    // stay selected once the option reappears — not silently revert to listen.
-    const { rerender } = render(modal([], false));
-    await flush();
-    rerender(modal([node], true));
-    await flush();
-    expect(selectedStrategy()).toBe('Node address');
-  });
+      // Race: the modal mounts before /nodes/list resolves (empty placeholder),
+      // then nodes arrive. The persisted 'node' strategy must survive the gap and
+      // stay selected once the option reappears — not silently revert to listen.
+      const { rerender } = render(modal([], false));
+      await flush();
+      rerender(modal([node], true));
+      await flush();
+      expect(selectedStrategy()).toBe('Node address');
+    },
+  );
 
   it('surfaces a Reality validation error and switches to its tab', async () => {
     const post = vi.mocked(HttpUtil.post);
@@ -278,33 +289,37 @@ describe('InboundFormModal', () => {
     expect(post).not.toHaveBeenCalled();
   });
 
-  it('blocks adding TLS without a certificate and directs the user to Security', async () => {
-    const post = vi.mocked(HttpUtil.post);
-    post.mockClear();
-    messageError.mockClear();
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
-    onTestFinished(() => consoleError.mockRestore());
-    renderModal();
+  it(
+    'blocks adding TLS without a certificate and directs the user to Security',
+    { timeout: SLOW_RUNNER_TIMEOUT_MS },
+    async () => {
+      const post = vi.mocked(HttpUtil.post);
+      post.mockClear();
+      messageError.mockClear();
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+      onTestFinished(() => consoleError.mockRestore());
+      renderModal();
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Security' }));
-    fireEvent.click(screen.getByRole('radio', { name: 'TLS' }));
-    fireEvent.click(screen.getByRole('tab', { name: 'Basics' }));
-    fireEvent.click(primaryButton());
+      fireEvent.click(screen.getByRole('tab', { name: 'Security' }));
+      fireEvent.click(screen.getByRole('radio', { name: 'TLS' }));
+      fireEvent.click(screen.getByRole('tab', { name: 'Basics' }));
+      fireEvent.click(primaryButton());
 
-    await waitFor(() => {
-      expect(screen.getByRole('tab', { name: 'Security' }).getAttribute('aria-selected')).toBe(
-        'true',
-      );
-      expect(messageError).toHaveBeenCalledWith(
-        expect.stringContaining('TLS certificate 1: Import a TLS certificate'),
-      );
-    });
-    expect(consoleError).toHaveBeenCalledWith('[InboundFormModal] schema validation failed:', [
-      'TLS certificate 1: Import a TLS certificate or enter its file path before saving',
-      'TLS certificate 1: Import the TLS private key or enter its file path before saving',
-    ]);
-    expect(post).not.toHaveBeenCalled();
-  });
+      await waitFor(() => {
+        expect(screen.getByRole('tab', { name: 'Security' }).getAttribute('aria-selected')).toBe(
+          'true',
+        );
+        expect(messageError).toHaveBeenCalledWith(
+          expect.stringContaining('TLS certificate 1: Import a TLS certificate'),
+        );
+      });
+      expect(consoleError).toHaveBeenCalledWith('[InboundFormModal] schema validation failed:', [
+        'TLS certificate 1: Import a TLS certificate or enter its file path before saving',
+        'TLS certificate 1: Import the TLS private key or enter its file path before saving',
+      ]);
+      expect(post).not.toHaveBeenCalled();
+    },
+  );
 
   it('submits a valid clone-like Reality inbound', async () => {
     const post = vi.mocked(HttpUtil.post);
