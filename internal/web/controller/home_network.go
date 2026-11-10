@@ -1,9 +1,7 @@
 package controller
 
 import (
-	"context"
 	"strconv"
-	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -88,9 +86,5 @@ func (a *XraySettingController) homeTunnelStatus(c *gin.Context) {
 // reconcileHomeNetworks puts home network rules on servers added or re-enabled
 // since the last apply, in the background like the country cascades.
 func reconcileHomeNetworks() {
-	go func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
-		defer cancel()
-		(&service.HomeNetworkService{}).ReconcileHomeNetworks(ctx)
-	}()
+	runNodeReconcile((&service.HomeNetworkService{}).ReconcileHomeNetworks)
 }

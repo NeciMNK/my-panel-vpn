@@ -171,7 +171,11 @@ if ! printf '%s' "$RESPONSE" | grep -q '"success":true'; then
     die "the master refused the registration: $RESPONSE"
 fi
 
+NODE_HOST="$(printf '%s' "$RESPONSE" | sed -n 's/.*"address":"\([^"]*\)".*/\1/p')"
+[[ -n "$NODE_HOST" ]] || NODE_HOST="$(hostname -I 2>/dev/null | awk '{print $1}')"
+[[ "$NODE_HOST" == *:* ]] && NODE_HOST="[${NODE_HOST}]"
+
 echo
 echo -e "${green}This server is now a node of ${MASTER}.${plain}"
-echo -e "Node panel (for emergencies): https://<this-server>:${PANEL_PORT}${BASE_PATH}"
+echo -e "Node panel (for emergencies): https://${NODE_HOST}:${PANEL_PORT}${BASE_PATH}"
 echo -e "Login: ${yellow}${ADMIN_USER}${plain}  Password: ${yellow}${ADMIN_PASS}${plain}"

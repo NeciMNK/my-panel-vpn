@@ -45,8 +45,8 @@ var ovpnDropped = map[string]bool{
 }
 
 // RenderOpenVPN rewrites a pasted .ovpn to bring up only this home network:
-// fixed interface name, no pushed routes, no scripts, routes to the targets.
-func RenderOpenVPN(t *Tunnel, authFile string) (string, error) {
+// fixed interface name, no pushed routes or pasted scripts, only our ip-up.
+func RenderOpenVPN(t *Tunnel, dir string) (string, error) {
 	var b strings.Builder
 	inBlock := ""
 	remote := false
@@ -82,26 +82,42 @@ func RenderOpenVPN(t *Tunnel, authFile string) (string, error) {
 	if !remote {
 		return "", errors.New("openvpn config has no remote line")
 	}
-	fmt.Fprintf(&b, "dev %s\ndev-type tun\nroute-nopull\nscript-security 1\n", IfName(t.Id))
+	fmt.Fprintf(&b, "dev %s\ndev-type tun\nroute-nopull\npersist-tun\nscript-security 2\nup %s\n",
+		IfName(t.Id), filepath.Join(dir, upScript))
 	if t.Username != "" {
-		fmt.Fprintf(&b, "auth-user-pass %s\n", authFile)
-	}
-	for _, r := range t.Routes {
-		p, err := netip.ParsePrefix(asPrefix(r))
-		if err != nil || !p.Addr().Is4() {
-			continue
-		}
-		fmt.Fprintf(&b, "route %s %s\n", p.Masked().Addr(), prefixMask(p.Bits()))
+		fmt.Fprintf(&b, "auth-user-pass %s\n", filepath.Join(dir, "auth"))
 	}
 	return b.String(), nil
 }
 
-func prefixMask(bits int) string {
-	m := uint32(0)
-	if bits > 0 {
-		m = ^uint32(0) << (32 - bits)
+// upScript routes the home targets in the tunnel's own table, used only by
+// sockets bound to its interface, so the gateway's LAN traffic never enters it.
+const upScript = "ip-up"
+
+// RouteTable is the routing table holding a home network's tunnel routes.
+func RouteTable(id int) int { return 28000 + id }
+
+func routeUpScript(t *Tunnel) string {
+	dev, table := IfName(t.Id), RouteTable(t.Id)
+	var b strings.Builder
+	fmt.Fprintf(&b, "#!/bin/sh\nsysctl -qw net.ipv4.conf.%s.rp_filter=2\n", dev)
+	for _, family := range []string{"-4", "-6"} {
+		var routes []string
+		for _, r := range t.Routes {
+			if p, err := netip.ParsePrefix(asPrefix(r)); err == nil && p.Addr().Is4() == (family == "-4") {
+				routes = append(routes, p.Masked().String())
+			}
+		}
+		if len(routes) == 0 {
+			continue
+		}
+		fmt.Fprintf(&b, "ip %s rule del oif %s lookup %d 2>/dev/null\nip %s rule add oif %s lookup %d\n", family, dev, table, family, dev, table)
+		for _, r := range routes {
+			fmt.Fprintf(&b, "ip %s route replace %s dev %s table %d\n", family, r, dev, table)
+		}
 	}
-	return fmt.Sprintf("%d.%d.%d.%d", m>>24, m>>16&0xff, m>>8&0xff, m&0xff)
+	b.WriteString("exit 0\n")
+	return b.String()
 }
 
 func checkPPPValue(field, v string) error {
@@ -145,13 +161,8 @@ mru 1400
 noccp
 refuse-eap
 ip-up-script %s
-`, IfName(t.Id), t.Username, t.Password, filepath.Join(dir, "ip-up"))
-	var up strings.Builder
-	up.WriteString("#!/bin/sh\n")
-	for _, r := range t.Routes {
-		fmt.Fprintf(&up, "ip route replace %s dev \"$1\"\n", asPrefix(r))
-	}
-	files[filepath.Join(dir, "ip-up")] = up.String()
+`, IfName(t.Id), t.Username, t.Password, filepath.Join(dir, upScript))
+	files[filepath.Join(dir, upScript)] = routeUpScript(t)
 	if t.PSK != "" {
 		files[filepath.Join(ipsecDir, conn+".conf")] = fmt.Sprintf(`conn %s
 	keyexchange=ikev1
@@ -237,7 +248,7 @@ func writeFiles(files map[string]string) error {
 			return err
 		}
 		mode := os.FileMode(0o600)
-		if filepath.Base(path) == "ip-up" {
+		if filepath.Base(path) == upScript {
 			mode = 0o700
 		}
 		if err := os.WriteFile(path, []byte(body), mode); err != nil {
@@ -286,6 +297,11 @@ func Apply(t *Tunnel) error {
 		if t.Kind == KindL2TP {
 			_ = run("ipsec", "down", unit)
 		}
+		table := fmt.Sprint(RouteTable(t.Id))
+		for _, family := range []string{"-4", "-6"} {
+			_ = run("ip", family, "rule", "del", "oif", IfName(t.Id), "lookup", table)
+			_ = run("ip", family, "route", "flush", "table", table)
+		}
 		for _, p := range []string{unitPath, filepath.Join(ipsecDir, unit+".conf"), filepath.Join(ipsecDir, unit+".secrets")} {
 			_ = os.Remove(p)
 		}
@@ -298,14 +314,14 @@ func Apply(t *Tunnel) error {
 		if err := ensurePackages(map[string]string{"openvpn": "openvpn"}); err != nil {
 			return err
 		}
-		auth := filepath.Join(dir, "auth")
-		conf, err := RenderOpenVPN(t, auth)
+		conf, err := RenderOpenVPN(t, dir)
 		if err != nil {
 			return err
 		}
 		files[filepath.Join(dir, "client.conf")] = conf
+		files[filepath.Join(dir, upScript)] = routeUpScript(t)
 		if t.Username != "" {
-			files[auth] = t.Username + "\n" + t.Password + "\n"
+			files[filepath.Join(dir, "auth")] = t.Username + "\n" + t.Password + "\n"
 		}
 	case KindL2TP:
 		bins := map[string]string{"xl2tpd": "xl2tpd", "pppd": "ppp"}

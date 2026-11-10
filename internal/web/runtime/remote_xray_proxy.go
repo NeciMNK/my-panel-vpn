@@ -35,11 +35,12 @@ func (r *Remote) ProxyXray(ctx context.Context, method, subPath, rawQuery, conte
 	if strings.Contains(subPath, "..") {
 		return nil, fmt.Errorf("invalid xray path %q", subPath)
 	}
+	subPath = strings.TrimPrefix(subPath, "/")
 	base, err := r.baseURL()
 	if err != nil {
 		return nil, err
 	}
-	target := base + "panel/api/xray/" + strings.TrimPrefix(subPath, "/")
+	target := base + "panel/api/xray/" + subPath
 	if rawQuery != "" {
 		target += "?" + rawQuery
 	}

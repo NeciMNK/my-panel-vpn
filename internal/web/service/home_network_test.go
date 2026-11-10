@@ -109,7 +109,7 @@ func TestHomeOpenVPNGatewayBindsToTheTunnelInterface(t *testing.T) {
 		t.Fatal(err)
 	}
 	raw, _ := json.Marshal(cfg["outbounds"].([]any)[3])
-	if string(raw) != `{"protocol":"freedom","settings":{},"streamSettings":{"sockopt":{"interface":"mph4"}},"tag":"mp-home-4-tunnel"}` {
+	if string(raw) != `{"protocol":"freedom","settings":{"finalRules":[{"action":"allow","ip":["192.168.1.0/24","10.0.0.5/32"]}]},"streamSettings":{"sockopt":{"interface":"mph4"}},"tag":"mp-home-4-tunnel"}` {
 		t.Fatalf("tunnel outbound = %s", raw)
 	}
 	if got := ruleTags(cfg); !reflect.DeepEqual(got, []string{"->api", "mp-home-4-deny", "->blocked"}) {
