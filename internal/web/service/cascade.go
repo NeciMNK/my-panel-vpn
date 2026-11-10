@@ -287,8 +287,13 @@ func applyCascadeToTemplate(cfg map[string]any, c *model.Cascade, pins []model.C
 }
 
 func cascadeOutbound(cascadeID int, l model.CascadeLink) map[string]any {
+	return linkOutbound(cascadeLinkTag(cascadeID, l.NodeId), l)
+}
+
+// linkOutbound dials a hidden VLESS+REALITY link inbound on another server.
+func linkOutbound(tag string, l model.CascadeLink) map[string]any {
 	return map[string]any{
-		"tag":      cascadeLinkTag(cascadeID, l.NodeId),
+		"tag":      tag,
 		"protocol": "vless",
 		"settings": map[string]any{
 			"vnext": []any{map[string]any{
@@ -345,7 +350,15 @@ func (s *CascadeService) linkAddress(nodeID int, masterAddress string) (string, 
 }
 
 func (s *CascadeService) provisionLink(c *model.Cascade, nodeID, userID int, masterAddress string) (model.CascadeLink, error) {
-	addr, err := s.linkAddress(nodeID, masterAddress)
+	return provisionHiddenLink(cascadePrefix(c.Id), c.Name+" (cascade link)", nodeID, userID, masterAddress)
+}
+
+func linkInboundTag(prefix string, nodeID int) string { return fmt.Sprintf("%sin-n%d", prefix, nodeID) }
+
+// provisionHiddenLink creates a VLESS+REALITY inbound on nodeID that only the
+// panel's own outbounds use; its tag and client email start with prefix.
+func provisionHiddenLink(prefix, remark string, nodeID, userID int, masterAddress string) (model.CascadeLink, error) {
+	addr, err := (&CascadeService{}).linkAddress(nodeID, masterAddress)
 	if err != nil {
 		return model.CascadeLink{}, err
 	}
@@ -359,7 +372,7 @@ func (s *CascadeService) provisionLink(c *model.Cascade, nodeID, userID int, mas
 	}
 	link := model.CascadeLink{
 		NodeId: nodeID, Address: addr, ClientId: uuid.NewString(),
-		Email:      cascadeLinkTag(c.Id, nodeID),
+		Email:      fmt.Sprintf("%sn%d", prefix, nodeID),
 		PublicKey:  pub,
 		ShortId:    hex.EncodeToString(sid),
 		ServerName: cascadeRealityTargets[randomInt(len(cascadeRealityTargets))],
@@ -397,8 +410,8 @@ func (s *CascadeService) provisionLink(c *model.Cascade, nodeID, userID int, mas
 		port := 20000 + randomInt(40000)
 		ib := &model.Inbound{
 			UserId: userID, NodeID: nodeRef, Enable: true, Port: port, Protocol: model.VLESS,
-			Remark:         fmt.Sprintf("%s (cascade link)", c.Name),
-			Tag:            cascadePrefix(c.Id) + fmt.Sprintf("in-n%d", nodeID),
+			Remark:         remark,
+			Tag:            linkInboundTag(prefix, nodeID),
 			Settings:       string(settings),
 			StreamSettings: string(stream),
 			Sniffing:       `{"enabled":false,"destOverride":[]}`,
@@ -418,7 +431,7 @@ func (s *CascadeService) provisionLink(c *model.Cascade, nodeID, userID int, mas
 		link.Port = created.Port
 		return link, nil
 	}
-	return model.CascadeLink{}, fmt.Errorf("no free port for the cascade link: %w", lastErr)
+	return model.CascadeLink{}, fmt.Errorf("no free port for the link: %w", lastErr)
 }
 
 func (s *CascadeService) removeLink(l model.CascadeLink) {

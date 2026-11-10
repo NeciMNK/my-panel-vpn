@@ -1783,6 +1783,46 @@ export const sections: readonly Section[] = [
   },
 
   {
+    id: 'home-networks',
+    title: 'Home networks',
+    description:
+      'Home LANs behind a WireGuard, OpenVPN or L2TP/IPsec tunnel held by one gateway server (node id 0 = this panel). Every other server reaches the gateway through a hidden VLESS+REALITY link. Users reach only the subnets and IPs their rules allow; everything else in the home network is blocked. All endpoints under /panel/api/homeNetworks.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/homeNetworks/list',
+        summary:
+          'List every home network with its rules, tunnel state and the last per-server apply errors.',
+        responseSchema: 'HomeNetwork',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/homeNetworks/add',
+        summary:
+          'Create a home network and apply it: the gateway brings the tunnel up, every server gets allow rules per user or client group and a deny rule for the rest of the network. Empty targets in a rule mean the whole network.',
+        body: '{\n  "name": "Home",\n  "enable": true,\n  "kind": "wireguard",\n  "gatewayNodeId": 0,\n  "config": "[Interface]\\nPrivateKey = ...\\nAddress = 10.8.0.2/32\\n\\n[Peer]\\nPublicKey = ...\\nEndpoint = home.example.net:51820",\n  "subnets": ["192.168.1.0/24"],\n  "hosts": ["192.168.1.10"],\n  "rules": [{ "emails": ["anna"], "groups": ["family"], "targets": [] }]\n}',
+        responseSchema: 'HomeNetwork',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/homeNetworks/update/:id',
+        summary:
+          'Change a home network (tunnel, gateway, subnets, IPs, access rules) and re-apply it on every server.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Home network ID.' }],
+        body: '{\n  "name": "Home",\n  "enable": true,\n  "kind": "wireguard",\n  "gatewayNodeId": 0,\n  "config": "[Interface]\\nPrivateKey = ...\\nAddress = 10.8.0.2/32\\n\\n[Peer]\\nPublicKey = ...\\nEndpoint = home.example.net:51820",\n  "subnets": ["192.168.1.0/24"],\n  "hosts": ["192.168.1.10"],\n  "rules": [{ "emails": ["anna"], "groups": ["family"], "targets": [] }]\n}',
+        responseSchema: 'HomeNetwork',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/homeNetworks/del/:id',
+        summary: 'Remove the home network from every server, stop its tunnel and delete its link.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Home network ID.' }],
+      },
+    ],
+  },
+
+  {
     id: 'nodes',
     title: 'Nodes',
     description:
@@ -2528,6 +2568,19 @@ export const sections: readonly Section[] = [
           },
         ],
         body: 'tag=b1&target=proxy',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/xray/homeTunnel',
+        summary:
+          "On a gateway server: bring a home network's OpenVPN or L2TP/IPsec client up (installing it when missing) or tear it down. Called by the master; answers within 45s even while the client still installs.",
+        body: '{\n  "id": 1,\n  "kind": "openvpn",\n  "enable": true,\n  "openvpn": "client\\nremote home.example.net 1194\\n...",\n  "routes": ["192.168.1.0/24"]\n}',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/xray/homeTunnel/:id',
+        summary: 'On a gateway server: whether a home network tunnel runs and its interface is up.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Home network ID.' }],
       },
       {
         method: 'POST',

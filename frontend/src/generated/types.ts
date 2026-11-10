@@ -660,6 +660,34 @@ export interface HistoryOfSeeders {
   seederName: string;
 }
 
+export interface HomeAccessRule {
+  emails: string[];
+  groups: string[];
+  targets: string[];
+}
+
+export interface HomeNetwork {
+  config: string;
+  createdAt: number;
+  enable: boolean;
+  errors: Record<string, string>;
+  gatewayNodeId: number;
+  hosts: string[];
+  id: number;
+  kind: string;
+  link?: CascadeLink | null;
+  name: string;
+  password: string;
+  psk: string;
+  rules: HomeAccessRule[];
+  server: string;
+  servers: number[];
+  subnets: string[];
+  tunnelState: string;
+  updatedAt: number;
+  username: string;
+}
+
 export interface Host {
   address: string;
   allowInsecure: boolean;

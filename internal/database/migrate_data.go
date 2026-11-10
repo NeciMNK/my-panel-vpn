@@ -64,6 +64,7 @@ func migrationModels() []any {
 		&model.NodeJoinToken{},
 		&model.Cascade{},
 		&model.CascadePin{},
+		&model.HomeNetwork{},
 	}
 }
 

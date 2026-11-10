@@ -14,6 +14,8 @@
     "subscription-balancers",
     "hosts",
     "nodes",
+    "cascades",
+    "home-networks",
     "backup",
     "websocket"
   ]

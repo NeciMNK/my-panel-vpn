@@ -168,6 +168,7 @@ func (a *NodeController) add(c *gin.Context) {
 		}
 	}
 	reconcileCountryCascades()
+	reconcileHomeNetworks()
 	jsonMsgObj(c, I18nWeb(c, "pages.nodes.toasts.add"), view, nil)
 }
 
@@ -206,6 +207,7 @@ func (a *NodeController) update(c *gin.Context) {
 		}
 	}
 	reconcileCountryCascades()
+	reconcileHomeNetworks()
 	jsonMsg(c, I18nWeb(c, "pages.nodes.toasts.update"), nil)
 }
 
@@ -220,6 +222,7 @@ func (a *NodeController) del(c *gin.Context) {
 		return
 	}
 	reconcileCountryCascades()
+	reconcileHomeNetworks()
 	jsonMsg(c, I18nWeb(c, "pages.nodes.toasts.delete"), nil)
 }
 
@@ -251,6 +254,7 @@ func (a *NodeController) setEnable(c *gin.Context) {
 		}
 	}
 	reconcileCountryCascades()
+	reconcileHomeNetworks()
 	jsonMsg(c, I18nWeb(c, "pages.nodes.toasts.update"), nil)
 }
 

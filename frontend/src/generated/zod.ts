@@ -705,6 +705,36 @@ export const HistoryOfSeedersSchema = z.object({
 });
 export type HistoryOfSeeders = z.infer<typeof HistoryOfSeedersSchema>;
 
+export const HomeAccessRuleSchema = z.object({
+  emails: z.array(z.string()),
+  groups: z.array(z.string()),
+  targets: z.array(z.string()),
+});
+export type HomeAccessRule = z.infer<typeof HomeAccessRuleSchema>;
+
+export const HomeNetworkSchema = z.object({
+  config: z.string(),
+  createdAt: z.number().int(),
+  enable: z.boolean(),
+  errors: z.record(z.string(), z.string()),
+  gatewayNodeId: z.number().int(),
+  hosts: z.array(z.string()),
+  id: z.number().int(),
+  kind: z.string(),
+  link: z.lazy(() => CascadeLinkSchema).nullable().optional(),
+  name: z.string(),
+  password: z.string(),
+  psk: z.string(),
+  rules: z.array(z.lazy(() => HomeAccessRuleSchema)),
+  server: z.string(),
+  servers: z.array(z.number().int()),
+  subnets: z.array(z.string()),
+  tunnelState: z.string(),
+  updatedAt: z.number().int(),
+  username: z.string(),
+});
+export type HomeNetwork = z.infer<typeof HomeNetworkSchema>;
+
 export const HostSchema = z.object({
   address: z.string(),
   allowInsecure: z.boolean(),

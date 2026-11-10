@@ -35,6 +35,7 @@ import NodeList from './NodeList';
 import NodeFormModal from './NodeFormModal';
 import NodeJoinModal from './NodeJoinModal';
 import CascadesCard from './CascadesCard';
+import HomeNetworksCard from './HomeNetworksCard';
 import { setMessageInstance } from '@/utils/messageBus';
 import { HttpUtil } from '@/utils';
 import type { PanelUpdateInfo } from '../index/PanelUpdateModal';
@@ -382,6 +383,10 @@ export default function NodesPage() {
 
                   <Col span={24}>
                     <CascadesCard nodes={nodes} />
+                  </Col>
+
+                  <Col span={24}>
+                    <HomeNetworksCard nodes={nodes} />
                   </Col>
                 </Row>
               )}

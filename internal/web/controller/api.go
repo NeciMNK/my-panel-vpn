@@ -143,6 +143,8 @@ var nodeXrayScopeAllow = map[string]map[string]struct{}{
 	"/xray/balancerStatus":            {http.MethodPost: {}},
 	"/xray/balancerOverride":          {http.MethodPost: {}},
 	"/xray/routeTest":                 {http.MethodPost: {}},
+	"/xray/homeTunnel":                {http.MethodPost: {}},
+	"/xray/homeTunnel/:id":            {http.MethodGet: {}},
 	"/xray/geodata/files":             {http.MethodGet: {}},
 	"/xray/geodata/categories":        {http.MethodGet: {}},
 	"/xray/geodata/entries":           {http.MethodGet: {}},
@@ -250,6 +252,7 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	a.nodeController = NewNodeController(nodes)
 
 	NewCascadeController(api.Group("/cascades"))
+	NewHomeNetworkController(api.Group("/homeNetworks"))
 
 	// Hosts API — per-inbound override endpoints for subscription links
 	hosts := api.Group("/hosts")

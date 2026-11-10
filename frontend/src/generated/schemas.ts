@@ -2814,6 +2814,149 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "HomeAccessRule": {
+    "description": "HomeAccessRule lets users (by email or client group) reach some targets of\na home network; no targets means the whole network.",
+    "properties": {
+      "emails": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "groups": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "targets": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "emails",
+      "groups",
+      "targets"
+    ],
+    "type": "object"
+  },
+  "HomeNetwork": {
+    "description": "HomeNetwork is a network behind a tunnel (WireGuard, OpenVPN or L2TP/IPsec)\nthat one server holds; users reach only the subnets and IPs their rules allow.",
+    "properties": {
+      "config": {
+        "description": "Config is the pasted wg-quick or .ovpn file.",
+        "type": "string"
+      },
+      "createdAt": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "enable": {
+        "example": true,
+        "type": "boolean"
+      },
+      "errors": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "type": "object"
+      },
+      "gatewayNodeId": {
+        "example": 0,
+        "type": "integer"
+      },
+      "hosts": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "kind": {
+        "example": "wireguard",
+        "type": "string"
+      },
+      "link": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CascadeLink"
+          }
+        ],
+        "nullable": true
+      },
+      "name": {
+        "example": "Home",
+        "type": "string"
+      },
+      "password": {
+        "type": "string"
+      },
+      "psk": {
+        "type": "string"
+      },
+      "rules": {
+        "items": {
+          "$ref": "#/components/schemas/HomeAccessRule"
+        },
+        "type": "array"
+      },
+      "server": {
+        "example": "203.0.113.7",
+        "type": "string"
+      },
+      "servers": {
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      },
+      "subnets": {
+        "description": "Subnets and Hosts are every address of the home network the panel routes.",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "tunnelState": {
+        "example": "active",
+        "type": "string"
+      },
+      "updatedAt": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "username": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "config",
+      "createdAt",
+      "enable",
+      "errors",
+      "gatewayNodeId",
+      "hosts",
+      "id",
+      "kind",
+      "name",
+      "password",
+      "psk",
+      "rules",
+      "server",
+      "servers",
+      "subnets",
+      "tunnelState",
+      "updatedAt",
+      "username"
+    ],
+    "type": "object"
+  },
   "Host": {
     "properties": {
       "address": {

@@ -728,6 +728,56 @@ export const EXAMPLES: Record<string, unknown> = {
     "id": 0,
     "seederName": ""
   },
+  "HomeAccessRule": {
+    "emails": [
+      ""
+    ],
+    "groups": [
+      ""
+    ],
+    "targets": [
+      ""
+    ]
+  },
+  "HomeNetwork": {
+    "config": "",
+    "createdAt": 0,
+    "enable": true,
+    "errors": {},
+    "gatewayNodeId": 0,
+    "hosts": [
+      ""
+    ],
+    "id": 1,
+    "kind": "wireguard",
+    "link": null,
+    "name": "Home",
+    "password": "",
+    "psk": "",
+    "rules": [
+      {
+        "emails": [
+          ""
+        ],
+        "groups": [
+          ""
+        ],
+        "targets": [
+          ""
+        ]
+      }
+    ],
+    "server": "203.0.113.7",
+    "servers": [
+      0
+    ],
+    "subnets": [
+      ""
+    ],
+    "tunnelState": "active",
+    "updatedAt": 0,
+    "username": ""
+  },
   "Host": {
     "address": "cdn.example.com",
     "allowInsecure": false,

@@ -1250,7 +1250,48 @@
       },
       "country": "Country",
       "countryHint": "Two-letter country code (DE, NL, FI). Nodes of one country together join \"by country\" cascades.",
-      "countryInvalid": "Use a two-letter country code such as DE"
+      "countryInvalid": "Use a two-letter country code such as DE",
+      "home": {
+        "title": "Home networks",
+        "add": "New home network",
+        "edit": "Edit home network",
+        "name": "Name",
+        "network": "Network",
+        "rules": "Who can reach what",
+        "state": "State",
+        "enable": "Enabled",
+        "desc": "One server keeps a tunnel to your home; users of every other server reach it through that server. Only the addresses below are routed home, and only the users in the rules may use them.",
+        "kind": "Connection to home",
+        "kinds": {
+          "wireguard": "WireGuard",
+          "openvpn": "OpenVPN",
+          "l2tp": "L2TP/IPsec"
+        },
+        "gateway": "Server that holds the tunnel",
+        "gatewayHint": "OpenVPN and L2TP clients are installed on this server automatically (Debian/Ubuntu).",
+        "config": "Config file",
+        "configHintWg": "Paste the WireGuard config exported by the home router: [Interface] and one [Peer].",
+        "configHintOvpn": "Paste the .ovpn file. Its routes and scripts are ignored: only the addresses below go through the tunnel.",
+        "server": "L2TP server address",
+        "username": "Username",
+        "password": "Password",
+        "psk": "IPsec pre-shared key (empty = L2TP without IPsec)",
+        "subnets": "Home subnets",
+        "subnetsHint": "For example 192.168.1.0/24. Press Enter after each one.",
+        "hosts": "Single home addresses",
+        "hostsHint": "For example 192.168.1.10 for a NAS or a camera.",
+        "rulesHint": "A rule lets the listed users and client groups reach some addresses of this network. Everyone else is blocked from all of them.",
+        "ruleUsers": "Users",
+        "ruleGroups": "Client groups",
+        "ruleTargets": "Addresses",
+        "ruleTargetsAll": "Empty = the whole network.",
+        "addRule": "Add rule",
+        "deleteConfirm": "Delete the home network, stop its tunnel and remove its rules from every server?",
+        "toasts": {
+          "saved": "Home network saved",
+          "deleted": "Home network deleted"
+        }
+      }
     },
     "settings": {
       "defaultTag": "Padrão",
