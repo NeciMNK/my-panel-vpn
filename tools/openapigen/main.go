@@ -127,6 +127,8 @@ func run(root, outDir string) error {
 				"AmneziaWGLogs",
 				"PeerActivity",
 				"HwidSlotStatus",
+				"PanelProxyStatus",
+				"PanelProxyCheck",
 			),
 		},
 		{

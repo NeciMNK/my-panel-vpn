@@ -42,6 +42,11 @@ type updateSettingForm struct {
 	ClearDiscordBotToken bool   `json:"clearDiscordBotToken" form:"clearDiscordBotToken"`
 }
 
+type panelProxyForm struct {
+	Mode   string `json:"mode" form:"mode"`
+	Source string `json:"source" form:"source"`
+}
+
 type validateRegexForm struct {
 	Regex string `json:"regex" form:"regex"`
 }
@@ -53,6 +58,7 @@ type SettingController struct {
 	panelService    panel.PanelService
 	apiTokenService panel.ApiTokenService
 	xrayService     service.XrayService
+	panelProxy      service.PanelProxyService
 }
 
 // NewSettingController creates a new SettingController and initializes its routes.
@@ -82,6 +88,10 @@ func (a *SettingController) initRouter(g *gin.RouterGroup) {
 	g.POST("/testTgBot", a.testTgBot)
 	g.POST("/tgBotCapabilities", a.tgBotCapabilities)
 	g.POST("/testDiscord", a.testDiscord)
+	g.POST("/panelProxy", a.getPanelProxy)
+	g.POST("/panelProxy/set", a.setPanelProxy)
+	g.POST("/panelProxy/check", a.checkPanelProxy)
+	g.POST("/panelProxy/clients", a.panelProxyClients)
 }
 
 func (a *SettingController) validateRegex(c *gin.Context) {
@@ -190,6 +200,38 @@ func (a *SettingController) updateSetting(c *gin.Context) {
 		}
 	}
 	jsonMsg(c, I18nWeb(c, "pages.settings.toasts.modifySettings"), err)
+}
+
+func (a *SettingController) getPanelProxy(c *gin.Context) {
+	status, err := a.panelProxy.Status()
+	jsonObj(c, status, err)
+}
+
+func (a *SettingController) setPanelProxy(c *gin.Context) {
+	form := &panelProxyForm{}
+	if err := c.ShouldBind(form); err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.settings.toasts.modifySettings"), err)
+		return
+	}
+	if err := a.panelProxy.Set(form.Mode, form.Source); err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.settings.toasts.modifySettings"), err)
+		return
+	}
+	// A new observatory subject cannot be hot-applied, so this may restart Xray once.
+	if err := a.xrayService.RestartXray(false); err != nil {
+		logger.Warning("apply panel proxy change failed:", err)
+	}
+	status, err := a.panelProxy.Status()
+	jsonObj(c, status, err)
+}
+
+func (a *SettingController) panelProxyClients(c *gin.Context) {
+	emails, err := a.panelProxy.ClientCandidates()
+	jsonObj(c, emails, err)
+}
+
+func (a *SettingController) checkPanelProxy(c *gin.Context) {
+	jsonObj(c, a.panelProxy.Check(c.Request.Context()), nil)
 }
 
 // updateUser updates the current user's username and password.

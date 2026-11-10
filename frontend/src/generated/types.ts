@@ -1026,6 +1026,22 @@ export interface OutboundTraffics {
   up: number;
 }
 
+export interface PanelProxyCheck {
+  error: string;
+  exitIp: string;
+  telegram: boolean;
+  telegramMs: number;
+  viaProxy: boolean;
+}
+
+export interface PanelProxyStatus {
+  active: boolean;
+  error: string;
+  mode: string;
+  outbounds: string[];
+  source: string;
+}
+
 export interface PanelUpdateStatus {
   exitCode: number;
   finishedAt: number;

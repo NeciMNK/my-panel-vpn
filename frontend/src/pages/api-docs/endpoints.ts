@@ -2271,6 +2271,49 @@ export const sections: readonly Section[] = [
         response: '{\n  "success": true,\n  "msg": "Test notification sent successfully"\n}',
       },
       {
+        method: 'POST',
+        path: '/panel/api/setting/panelProxy',
+        summary:
+          'Return the quick panel proxy: its mode (client, link, subscription or empty when off), its source and the panelproxy-* outbounds it builds now.',
+        responseSchema: 'PanelProxyStatus',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/setting/panelProxy/set',
+        summary:
+          "Route the panel's own requests (Telegram, update checks, subscription fetches) through a leastPing balancer over outbounds built from a panel client's node inbounds, a share link or socks5/http proxy URL, or an outbound subscription. An empty mode turns it off. Applies the Xray config right away.",
+        params: [
+          {
+            name: 'mode',
+            in: 'body',
+            type: 'string',
+            desc: 'client, link, subscription, or empty to turn the proxy off.',
+          },
+          {
+            name: 'source',
+            in: 'body',
+            type: 'string',
+            desc: 'Client email, share link / proxy URL, or subscription URL.',
+          },
+        ],
+        body: '{\n  "mode": "client",\n  "source": "alice"\n}',
+        responseSchema: 'PanelProxyStatus',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/setting/panelProxy/check',
+        summary:
+          'Reach Telegram and an IP echo service the way the panel makes its own requests, reporting whether the proxy was used and the exit IP.',
+        responseSchema: 'PanelProxyCheck',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/setting/panelProxy/clients',
+        summary:
+          'List the enabled clients that own an enabled inbound on a node, the candidates for client mode.',
+        response: '{\n  "success": true,\n  "obj": ["alice"]\n}',
+      },
+      {
         method: 'GET',
         path: '/panel/api/setting/getDefaultJsonConfig',
         summary:
