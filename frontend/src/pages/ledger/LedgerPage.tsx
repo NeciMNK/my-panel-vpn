@@ -47,11 +47,13 @@ import { parseMsg } from '@/utils/zodValidate';
 import { GroupSummaryListSchema, ClientRecordSchema } from '@/schemas/client';
 import {
   LedgerEntryFormSchema,
+  LedgerPaymentSchema,
   LedgerReportSchema,
   LedgerServerFormSchema,
   type LedgerEntry,
   type LedgerEntryFormValues,
   type LedgerNonPaying,
+  type LedgerPayment,
   type LedgerReport,
   type LedgerServer,
   type LedgerServerFormValues,
@@ -128,6 +130,15 @@ export default function LedgerPage() {
   const [entryOpen, setEntryOpen] = useState(false);
   const entryForm = useForm<LedgerEntryFormValues>();
   const [markEmail, setMarkEmail] = useState<string | undefined>();
+  const paymentForm = useForm<LedgerPayment>();
+  const savedPayment = report?.payment;
+  useEffect(() => {
+    if (savedPayment) paymentForm.reset(savedPayment);
+  }, [savedPayment, paymentForm]);
+
+  function submitPayment(values: LedgerPayment) {
+    post.mutate({ path: 'payment', body: values });
+  }
 
   function openServer(server?: LedgerServer) {
     serverForm.reset(
@@ -414,6 +425,64 @@ export default function LedgerPage() {
                         columns={entryColumns}
                         dataSource={report?.entries ?? []}
                       />
+                    </Card>
+                  </Col>
+                  <Col span={24}>
+                    <Card
+                      size="small"
+                      title={t('pages.ledger.payment')}
+                      extra={
+                        <Button
+                          size="small"
+                          type="primary"
+                          loading={post.isPending}
+                          onClick={paymentForm.handleSubmit(submitPayment)}
+                        >
+                          {t('save')}
+                        </Button>
+                      }
+                    >
+                      <FormProvider {...paymentForm}>
+                        <Form layout="vertical" component="div">
+                          <Row gutter={16}>
+                            <Col xs={14} md={6}>
+                              <FormField
+                                name="price"
+                                label={t('pages.ledger.price')}
+                                tooltip={t('pages.ledger.priceDesc')}
+                                rules={{
+                                  validate: rhfZodValidate(LedgerPaymentSchema.shape.price),
+                                }}
+                              >
+                                <InputNumber min={0} precision={0} style={{ width: '100%' }} />
+                              </FormField>
+                            </Col>
+                            <Col xs={10} md={4}>
+                              <FormField name="currency" label={t('pages.ledger.currency')}>
+                                <Input placeholder="RUB" />
+                              </FormField>
+                            </Col>
+                            <Col xs={24} md={14}>
+                              <FormField
+                                name="discounts"
+                                label={t('pages.ledger.discounts')}
+                                tooltip={t('pages.ledger.discountsDesc')}
+                              >
+                                <Input placeholder="3:10, 6:15, 12:20" />
+                              </FormField>
+                            </Col>
+                            <Col span={24}>
+                              <FormField
+                                name="details"
+                                label={t('pages.ledger.details')}
+                                tooltip={t('pages.ledger.detailsDesc')}
+                              >
+                                <Input.TextArea autoSize={{ minRows: 2, maxRows: 6 }} />
+                              </FormField>
+                            </Col>
+                          </Row>
+                        </Form>
+                      </FormProvider>
                     </Card>
                   </Col>
                   <Col span={24}>

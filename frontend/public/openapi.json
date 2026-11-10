@@ -561,6 +561,7 @@
             "type": "string"
           },
           "tgFreePlanEnable": {
+            "description": "Prices and discounts are edited on the Finance page (LedgerService.SavePayment), not here.",
             "type": "boolean"
           },
           "tgLang": {
@@ -568,24 +569,6 @@
           },
           "tgMemory": {
             "maximum": 100,
-            "minimum": 0,
-            "type": "integer"
-          },
-          "tgPaymentCurrency": {
-            "example": "RUB",
-            "type": "string"
-          },
-          "tgPaymentDetails": {
-            "example": "Card 2200 0000 0000 0000",
-            "type": "string"
-          },
-          "tgPaymentDiscounts": {
-            "example": "3:10, 6:15, 12:20",
-            "type": "string"
-          },
-          "tgPaymentPrice": {
-            "description": "Monthly price, multi-month discounts and payment details shown to clients in the bot.",
-            "example": 300,
             "minimum": 0,
             "type": "integer"
           },
@@ -804,10 +787,6 @@
           "tgFreePlanEnable",
           "tgLang",
           "tgMemory",
-          "tgPaymentCurrency",
-          "tgPaymentDetails",
-          "tgPaymentDiscounts",
-          "tgPaymentPrice",
           "tgRunTime",
           "timeLocation",
           "trafficDiff",
@@ -1383,6 +1362,7 @@
             "type": "string"
           },
           "tgFreePlanEnable": {
+            "description": "Prices and discounts are edited on the Finance page (LedgerService.SavePayment), not here.",
             "type": "boolean"
           },
           "tgLang": {
@@ -1390,24 +1370,6 @@
           },
           "tgMemory": {
             "maximum": 100,
-            "minimum": 0,
-            "type": "integer"
-          },
-          "tgPaymentCurrency": {
-            "example": "RUB",
-            "type": "string"
-          },
-          "tgPaymentDetails": {
-            "example": "Card 2200 0000 0000 0000",
-            "type": "string"
-          },
-          "tgPaymentDiscounts": {
-            "example": "3:10, 6:15, 12:20",
-            "type": "string"
-          },
-          "tgPaymentPrice": {
-            "description": "Monthly price, multi-month discounts and payment details shown to clients in the bot.",
-            "example": 300,
             "minimum": 0,
             "type": "integer"
           },
@@ -1634,10 +1596,6 @@
           "tgFreePlanEnable",
           "tgLang",
           "tgMemory",
-          "tgPaymentCurrency",
-          "tgPaymentDetails",
-          "tgPaymentDiscounts",
-          "tgPaymentPrice",
           "tgRunTime",
           "timeLocation",
           "trafficDiff",
@@ -3989,6 +3947,34 @@
         ],
         "type": "object"
       },
+      "LedgerPayment": {
+        "description": "LedgerPayment is what clients pay: the bot bills by it and the Finance page edits it.",
+        "properties": {
+          "currency": {
+            "example": "RUB",
+            "type": "string"
+          },
+          "details": {
+            "example": "Card 2200 0000 0000 0000",
+            "type": "string"
+          },
+          "discounts": {
+            "example": "3:10, 6:15, 12:20",
+            "type": "string"
+          },
+          "price": {
+            "example": 300,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "currency",
+          "details",
+          "discounts",
+          "price"
+        ],
+        "type": "object"
+      },
       "LedgerReport": {
         "description": "LedgerReport is one month of the book. Money is in whole units of Currency.",
         "properties": {
@@ -4042,6 +4028,9 @@
             "example": 10,
             "type": "integer"
           },
+          "payment": {
+            "$ref": "#/components/schemas/LedgerPayment"
+          },
           "price": {
             "example": 300,
             "type": "integer"
@@ -4069,6 +4058,7 @@
           "nonPaying",
           "otherExpenses",
           "payingClients",
+          "payment",
           "price",
           "serverCosts",
           "servers"
@@ -14521,6 +14511,12 @@
                     ],
                     "otherExpenses": 0,
                     "payingClients": 10,
+                    "payment": {
+                      "currency": "RUB",
+                      "details": "Card 2200 0000 0000 0000",
+                      "discounts": "3:10, 6:15, 12:20",
+                      "price": 300
+                    },
                     "price": 300,
                     "serverCosts": 1500,
                     "servers": [
@@ -14763,6 +14759,52 @@
               "example": {
                 "group": "family",
                 "nonPaying": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/ledger/payment": {
+      "post": {
+        "tags": [
+          "Ledger"
+        ],
+        "summary": "Set what clients pay: the monthly price, the currency, the longer-term discounts (months:percent pairs) and where to pay. The Telegram bot bills by these. A bad discount list is refused and nothing is changed.",
+        "operationId": "post_panel_api_ledger_payment",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "price": 300,
+                "currency": "RUB",
+                "discounts": "3:10, 6:15, 12:20",
+                "details": "Card 2200 0000 0000 0000"
               }
             }
           }

@@ -31,10 +31,22 @@ export const LedgerNonPayingSchema = z.object({
 });
 export type LedgerNonPaying = z.infer<typeof LedgerNonPayingSchema>;
 
+export const LedgerPaymentSchema = z.object({
+  price: z
+    .number({ error: 'pages.ledger.errPrice' })
+    .int('pages.ledger.errPrice')
+    .min(0, 'pages.ledger.errPrice'),
+  currency: z.string(),
+  discounts: z.string(),
+  details: z.string(),
+});
+export type LedgerPayment = z.infer<typeof LedgerPaymentSchema>;
+
 export const LedgerReportSchema = z.object({
   month: z.string(),
   currency: z.string(),
   price: z.number(),
+  payment: LedgerPaymentSchema,
   income: z.number(),
   serverCosts: z.number(),
   otherExpenses: z.number(),

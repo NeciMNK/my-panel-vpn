@@ -170,10 +170,6 @@ export const EXAMPLES: Record<string, unknown> = {
     "tgFreePlanEnable": false,
     "tgLang": "",
     "tgMemory": 0,
-    "tgPaymentCurrency": "RUB",
-    "tgPaymentDetails": "Card 2200 0000 0000 0000",
-    "tgPaymentDiscounts": "3:10, 6:15, 12:20",
-    "tgPaymentPrice": 300,
     "tgRunTime": "",
     "timeLocation": "",
     "trafficDiff": 0,
@@ -366,10 +362,6 @@ export const EXAMPLES: Record<string, unknown> = {
     "tgFreePlanEnable": false,
     "tgLang": "",
     "tgMemory": 0,
-    "tgPaymentCurrency": "RUB",
-    "tgPaymentDetails": "Card 2200 0000 0000 0000",
-    "tgPaymentDiscounts": "3:10, 6:15, 12:20",
-    "tgPaymentPrice": 300,
     "tgRunTime": "",
     "timeLocation": "",
     "trafficDiff": 0,
@@ -1033,6 +1025,12 @@ export const EXAMPLES: Record<string, unknown> = {
     "group": "family",
     "reason": "group"
   },
+  "LedgerPayment": {
+    "currency": "RUB",
+    "details": "Card 2200 0000 0000 0000",
+    "discounts": "3:10, 6:15, 12:20",
+    "price": 300
+  },
   "LedgerReport": {
     "balance": 900,
     "currency": "RUB",
@@ -1063,6 +1061,12 @@ export const EXAMPLES: Record<string, unknown> = {
     ],
     "otherExpenses": 0,
     "payingClients": 10,
+    "payment": {
+      "currency": "RUB",
+      "details": "Card 2200 0000 0000 0000",
+      "discounts": "3:10, 6:15, 12:20",
+      "price": 300
+    },
     "price": 300,
     "serverCosts": 1500,
     "servers": [

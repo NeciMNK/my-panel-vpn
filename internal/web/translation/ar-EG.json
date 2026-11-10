@@ -2022,13 +2022,6 @@
       "subHostSortHosts": "ترتيب المضيفين",
       "subHostSortModeDesc": "يتبع ترتيب المضيفين صفحة المضيفين عبر جميع الاتصالات الواردة. يحدد هذا ترتيب مخرجات الخادم؛ وقد تطبق تطبيقات العميل ترتيبًا آخر.",
       "tgPayment": "Payment",
-      "tgPaymentDetails": "Where to pay",
-      "tgPaymentDetailsDesc": "Card number, phone for transfers or a payment link. Clients see it in the bot next to the date their subscription ends, and can tell you they have paid.",
-      "tgPaymentPrice": "Monthly price",
-      "tgPaymentPriceDesc": "Price of one month. Longer terms are offered with the discounts below. 0 hides prices; leave the payment details empty too to hide payment from clients.",
-      "tgPaymentCurrency": "Currency",
-      "tgPaymentDiscounts": "Discounts for longer terms",
-      "tgPaymentDiscountsDesc": "months:percent, comma-separated, e.g. 3:10, 6:15, 12:20. Each becomes a term clients can pay for.",
       "tgFreePlan": "Free plan",
       "tgFreePlanDesc": "Let unknown Telegram users ask for a free subscription (10 GB a month). Every request must be approved by an admin in the bot; paying for any term removes the limit.",
       "panelProxy": {
@@ -2092,7 +2085,8 @@
         }
       },
       "eventSpeedLow": "Speed below user minimum",
-      "eventMasterLeader": "Another master took over"
+      "eventMasterLeader": "Another master took over",
+      "tgPaymentMoved": "The price, discounts and where to pay are set on the Finance page."
     },
     "xray": {
       "save": "احفظ",
@@ -2792,7 +2786,16 @@
       "toasts": {
         "deleted": "Deleted",
         "saved": "Saved"
-      }
+      },
+      "price": "Monthly price",
+      "priceDesc": "Price of one month. Longer terms are offered with the discounts below. 0 hides prices; leave the payment details empty too to hide payment from clients.",
+      "currency": "Currency",
+      "discounts": "Discounts for longer terms",
+      "discountsDesc": "months:percent, comma-separated, e.g. 3:10, 6:15, 12:20. Each becomes a term clients can pay for.",
+      "details": "Where to pay",
+      "detailsDesc": "Card number, phone for transfers or a payment link. Clients see it in the bot next to the date their subscription ends, and can tell you they have paid.",
+      "payment": "Prices and payment",
+      "errPrice": "Price must be a whole number from 0"
     }
   },
   "tgbot": {

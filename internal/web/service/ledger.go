@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/entity"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -53,6 +55,7 @@ type LedgerReport struct {
 	Month          string               `json:"month" example:"2026-11"`
 	Currency       string               `json:"currency" example:"RUB"`
 	Price          int                  `json:"price" example:"300"`
+	Payment        LedgerPayment        `json:"payment"`
 	Income         int                  `json:"income" example:"2400"`
 	ServerCosts    int                  `json:"serverCosts" example:"1500"`
 	OtherExpenses  int                  `json:"otherExpenses" example:"0"`
@@ -64,6 +67,14 @@ type LedgerReport struct {
 	FreeGroups     []string             `json:"freeGroups"`
 	Servers        []model.LedgerServer `json:"servers"`
 	Entries        []model.LedgerEntry  `json:"entries"`
+}
+
+// LedgerPayment is what clients pay: the bot bills by it and the Finance page edits it.
+type LedgerPayment struct {
+	Price     int    `json:"price" example:"300"`
+	Currency  string `json:"currency" example:"RUB"`
+	Discounts string `json:"discounts" example:"3:10, 6:15, 12:20"`
+	Details   string `json:"details" example:"Card 2200 0000 0000 0000"`
 }
 
 func LedgerMonthOf(t time.Time) string { return t.Format("2006-01") }
@@ -90,9 +101,9 @@ func (s *LedgerService) Report(month string) (*LedgerReport, error) {
 	}
 	db := database.GetDB()
 	report := &LedgerReport{Month: month, NonPaying: []LedgerNonPaying{}, FreeGroups: []string{}}
-	report.Price, _ = s.settingService.GetTgPaymentPrice()
-	currency, _ := s.settingService.GetTgPaymentCurrency()
-	report.Currency = strings.TrimSpace(currency)
+	report.Payment = s.payment()
+	report.Price = report.Payment.Price
+	report.Currency = strings.TrimSpace(report.Payment.Currency)
 
 	if err := db.Order("start_month, id").Find(&report.Servers).Error; err != nil {
 		return nil, err
@@ -244,6 +255,36 @@ func moveLedgerFreeGroup(db *gorm.DB, oldName, newName string) error {
 	}
 	if err := db.Clauses(clause.OnConflict{DoNothing: true}).Create(&model.LedgerFreeGroup{Name: newName}).Error; err != nil {
 		return fmt.Errorf("keep non-paying mark on group %q: %w", newName, err)
+	}
+	return nil
+}
+
+func (s *LedgerService) payment() LedgerPayment {
+	var p LedgerPayment
+	p.Price, _ = s.settingService.GetTgPaymentPrice()
+	p.Currency, _ = s.settingService.GetTgPaymentCurrency()
+	p.Discounts, _ = s.settingService.GetTgPaymentDiscounts()
+	p.Details, _ = s.settingService.GetTgPaymentDetails()
+	return p
+}
+
+// SavePayment validates everything before writing, so a bad discount list changes nothing.
+func (s *LedgerService) SavePayment(p LedgerPayment) error {
+	if p.Price < 0 {
+		return ErrLedgerAmount
+	}
+	if _, err := entity.ParsePaymentPlans(p.Discounts); err != nil {
+		return err
+	}
+	for key, value := range map[string]string{
+		"tgPaymentPrice":     strconv.Itoa(p.Price),
+		"tgPaymentCurrency":  strings.TrimSpace(p.Currency),
+		"tgPaymentDiscounts": strings.TrimSpace(p.Discounts),
+		"tgPaymentDetails":   strings.TrimSpace(p.Details),
+	} {
+		if err := s.settingService.setString(key, value); err != nil {
+			return err
+		}
 	}
 	return nil
 }

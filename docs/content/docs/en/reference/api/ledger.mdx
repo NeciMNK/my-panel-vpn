@@ -35,6 +35,11 @@ _openapi:
         family) as non-paying, or clear the mark. Non-paying clients are left
         out of the expected income.
       url: '#mark-one-client-by-email-eg-the-admin-or-a-whole-client-group-eg-family-as-non-paying-or-clear-the-mark-non-paying-clients-are-left-out-of-the-expected-income'
+    - depth: 2
+      title: 'Set what clients pay: the monthly price, the currency, the longer-term
+        discounts (months:percent pairs) and where to pay. The Telegram bot
+        bills by these. A bad discount list is refused and nothing is changed.'
+      url: '#set-what-clients-pay-the-monthly-price-the-currency-the-longer-term-discounts-monthspercent-pairs-and-where-to-pay-the-telegram-bot-bills-by-these-a-bad-discount-list-is-refused-and-nothing-is-changed'
   structuredData:
     headings:
       - content: "One month of the ledger: income, server and other expenses, the
@@ -57,6 +62,11 @@ _openapi:
           (e.g. family) as non-paying, or clear the mark. Non-paying clients are
           left out of the expected income.
         id: mark-one-client-by-email-eg-the-admin-or-a-whole-client-group-eg-family-as-non-paying-or-clear-the-mark-non-paying-clients-are-left-out-of-the-expected-income
+      - content: 'Set what clients pay: the monthly price, the currency, the longer-term
+          discounts (months:percent pairs) and where to pay. The Telegram bot
+          bills by these. A bad discount list is refused and nothing is
+          changed.'
+        id: set-what-clients-pay-the-monthly-price-the-currency-the-longer-term-discounts-monthspercent-pairs-and-where-to-pay-the-telegram-bot-bills-by-these-a-bad-discount-list-is-refused-and-nothing-is-changed
     contents: []
 ---
 
@@ -67,7 +77,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/ledger/report","method":"get"},{"path":"/panel/api/ledger/servers/save","method":"post"},{"path":"/panel/api/ledger/servers/delete","method":"post"},{"path":"/panel/api/ledger/entries/add","method":"post"},{"path":"/panel/api/ledger/entries/delete","method":"post"},{"path":"/panel/api/ledger/nonPaying","method":"post"}]} showTitle />
+      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/ledger/report","method":"get"},{"path":"/panel/api/ledger/servers/save","method":"post"},{"path":"/panel/api/ledger/servers/delete","method":"post"},{"path":"/panel/api/ledger/entries/add","method":"post"},{"path":"/panel/api/ledger/entries/delete","method":"post"},{"path":"/panel/api/ledger/nonPaying","method":"post"},{"path":"/panel/api/ledger/payment","method":"post"}]} showTitle />
     </>
   );
 }

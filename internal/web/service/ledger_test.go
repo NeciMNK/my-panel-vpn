@@ -166,3 +166,37 @@ func TestLedgerFreeGroupFollowsRenameAndDelete(t *testing.T) {
 		t.Errorf("after delete: free groups %v, paying %d; want [], 1", report.FreeGroups, report.PayingClients)
 	}
 }
+
+// Prices now live on the Finance page: a save must reach what the bot bills by,
+// and a bad discount list must be refused before any of the four values change.
+func TestLedgerSavePayment(t *testing.T) {
+	setupBulkDB(t)
+	ledger := &LedgerService{}
+	want := LedgerPayment{Price: 300, Currency: "RUB", Discounts: "3:10, 6:15", Details: "Card 2200"}
+	if err := ledger.SavePayment(want); err != nil {
+		t.Fatalf("SavePayment: %v", err)
+	}
+	report, err := ledger.Report("2026-11")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.Payment != want {
+		t.Errorf("report payment = %+v, want %+v", report.Payment, want)
+	}
+	if amount, _ := (&BillingService{}).PaymentAmount(3); amount != 810 {
+		t.Errorf("bot bills 3 months at %d, want 810", amount)
+	}
+
+	for _, bad := range []LedgerPayment{
+		{Price: 500, Currency: "USD", Discounts: "3:150"},
+		{Price: -1, Currency: "USD"},
+	} {
+		if err := ledger.SavePayment(bad); err == nil {
+			t.Errorf("SavePayment(%+v) accepted", bad)
+		}
+	}
+	report, _ = ledger.Report("2026-11")
+	if report.Payment != want {
+		t.Errorf("after rejected saves payment = %+v, want %+v unchanged", report.Payment, want)
+	}
+}

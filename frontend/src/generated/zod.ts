@@ -200,10 +200,6 @@ export const AllSettingSchema = z.object({
   tgFreePlanEnable: z.boolean(),
   tgLang: z.string(),
   tgMemory: z.number().int().min(0).max(100),
-  tgPaymentCurrency: z.string(),
-  tgPaymentDetails: z.string(),
-  tgPaymentDiscounts: z.string(),
-  tgPaymentPrice: z.number().int().min(0),
   tgRunTime: z.string(),
   timeLocation: z.string(),
   trafficDiff: z.number().int().min(0).max(100),
@@ -398,10 +394,6 @@ export const AllSettingViewSchema = z.object({
   tgFreePlanEnable: z.boolean(),
   tgLang: z.string(),
   tgMemory: z.number().int().min(0).max(100),
-  tgPaymentCurrency: z.string(),
-  tgPaymentDetails: z.string(),
-  tgPaymentDiscounts: z.string(),
-  tgPaymentPrice: z.number().int().min(0),
   tgRunTime: z.string(),
   timeLocation: z.string(),
   trafficDiff: z.number().int().min(0).max(100),
@@ -963,6 +955,14 @@ export const LedgerNonPayingSchema = z.object({
 });
 export type LedgerNonPaying = z.infer<typeof LedgerNonPayingSchema>;
 
+export const LedgerPaymentSchema = z.object({
+  currency: z.string(),
+  details: z.string(),
+  discounts: z.string(),
+  price: z.number().int(),
+});
+export type LedgerPayment = z.infer<typeof LedgerPaymentSchema>;
+
 export const LedgerReportSchema = z.object({
   balance: z.number().int(),
   currency: z.string(),
@@ -975,6 +975,7 @@ export const LedgerReportSchema = z.object({
   nonPaying: z.array(z.lazy(() => LedgerNonPayingSchema)),
   otherExpenses: z.number().int(),
   payingClients: z.number().int(),
+  payment: z.lazy(() => LedgerPaymentSchema),
   price: z.number().int(),
   serverCosts: z.number().int(),
   servers: z.array(z.lazy(() => LedgerServerSchema)),

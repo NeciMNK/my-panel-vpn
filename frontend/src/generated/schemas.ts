@@ -535,6 +535,7 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "string"
       },
       "tgFreePlanEnable": {
+        "description": "Prices and discounts are edited on the Finance page (LedgerService.SavePayment), not here.",
         "type": "boolean"
       },
       "tgLang": {
@@ -542,24 +543,6 @@ export const SCHEMAS: Record<string, unknown> = {
       },
       "tgMemory": {
         "maximum": 100,
-        "minimum": 0,
-        "type": "integer"
-      },
-      "tgPaymentCurrency": {
-        "example": "RUB",
-        "type": "string"
-      },
-      "tgPaymentDetails": {
-        "example": "Card 2200 0000 0000 0000",
-        "type": "string"
-      },
-      "tgPaymentDiscounts": {
-        "example": "3:10, 6:15, 12:20",
-        "type": "string"
-      },
-      "tgPaymentPrice": {
-        "description": "Monthly price, multi-month discounts and payment details shown to clients in the bot.",
-        "example": 300,
         "minimum": 0,
         "type": "integer"
       },
@@ -778,10 +761,6 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgFreePlanEnable",
       "tgLang",
       "tgMemory",
-      "tgPaymentCurrency",
-      "tgPaymentDetails",
-      "tgPaymentDiscounts",
-      "tgPaymentPrice",
       "tgRunTime",
       "timeLocation",
       "trafficDiff",
@@ -1357,6 +1336,7 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "string"
       },
       "tgFreePlanEnable": {
+        "description": "Prices and discounts are edited on the Finance page (LedgerService.SavePayment), not here.",
         "type": "boolean"
       },
       "tgLang": {
@@ -1364,24 +1344,6 @@ export const SCHEMAS: Record<string, unknown> = {
       },
       "tgMemory": {
         "maximum": 100,
-        "minimum": 0,
-        "type": "integer"
-      },
-      "tgPaymentCurrency": {
-        "example": "RUB",
-        "type": "string"
-      },
-      "tgPaymentDetails": {
-        "example": "Card 2200 0000 0000 0000",
-        "type": "string"
-      },
-      "tgPaymentDiscounts": {
-        "example": "3:10, 6:15, 12:20",
-        "type": "string"
-      },
-      "tgPaymentPrice": {
-        "description": "Monthly price, multi-month discounts and payment details shown to clients in the bot.",
-        "example": 300,
         "minimum": 0,
         "type": "integer"
       },
@@ -1608,10 +1570,6 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgFreePlanEnable",
       "tgLang",
       "tgMemory",
-      "tgPaymentCurrency",
-      "tgPaymentDetails",
-      "tgPaymentDiscounts",
-      "tgPaymentPrice",
       "tgRunTime",
       "timeLocation",
       "trafficDiff",
@@ -3963,6 +3921,34 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "LedgerPayment": {
+    "description": "LedgerPayment is what clients pay: the bot bills by it and the Finance page edits it.",
+    "properties": {
+      "currency": {
+        "example": "RUB",
+        "type": "string"
+      },
+      "details": {
+        "example": "Card 2200 0000 0000 0000",
+        "type": "string"
+      },
+      "discounts": {
+        "example": "3:10, 6:15, 12:20",
+        "type": "string"
+      },
+      "price": {
+        "example": 300,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "currency",
+      "details",
+      "discounts",
+      "price"
+    ],
+    "type": "object"
+  },
   "LedgerReport": {
     "description": "LedgerReport is one month of the book. Money is in whole units of Currency.",
     "properties": {
@@ -4016,6 +4002,9 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": 10,
         "type": "integer"
       },
+      "payment": {
+        "$ref": "#/components/schemas/LedgerPayment"
+      },
       "price": {
         "example": 300,
         "type": "integer"
@@ -4043,6 +4032,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "nonPaying",
       "otherExpenses",
       "payingClients",
+      "payment",
       "price",
       "serverCosts",
       "servers"
