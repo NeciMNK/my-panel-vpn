@@ -2986,6 +2986,32 @@ pg_el_install_pgdg_server() {
     return 1
 }
 
+# A C/POSIX-locale host (Debian LXC) makes a plain CREATE DATABASE SQL_ASCII,
+# which the panel refuses; pin UTF8 and fall back to C collation where C.UTF-8 is missing.
+pg_create_utf8_db() {
+    local pg_db="$1" pg_user="$2"
+    local encoding
+    encoding=$(sudo -u postgres psql -tAc \
+        "SELECT pg_encoding_to_char(encoding) FROM pg_database WHERE datname='${pg_db}'" 2> /dev/null \
+        | tr -d '[:space:]')
+    [[ "${encoding}" == "UTF8" ]] && return 0
+    if [[ -n "${encoding}" ]]; then
+        local tables
+        tables=$(sudo -u postgres psql -d "${pg_db}" -tAc \
+            "SELECT count(*) FROM pg_tables WHERE schemaname NOT IN ('pg_catalog','information_schema')" 2> /dev/null \
+            | tr -d '[:space:]')
+        if [[ "${tables}" != "0" ]]; then
+            echo -e "${red}PostgreSQL database ${pg_db} is ${encoding}, not UTF8, and already holds tables; recreate it with ENCODING 'UTF8'.${plain}" >&2
+            return 1
+        fi
+        echo -e "${yellow}Recreating empty ${encoding} database ${pg_db} as UTF8.${plain}" >&2
+        sudo -u postgres psql -c "DROP DATABASE \"${pg_db}\";" >&2 || return 1
+    fi
+    sudo -u postgres psql -c "CREATE DATABASE \"${pg_db}\" OWNER \"${pg_user}\" ENCODING 'UTF8' TEMPLATE template0 LC_COLLATE 'C.UTF-8' LC_CTYPE 'C.UTF-8';" >&2 \
+        || sudo -u postgres psql -c "CREATE DATABASE \"${pg_db}\" OWNER \"${pg_user}\" ENCODING 'UTF8' TEMPLATE template0 LC_COLLATE 'C' LC_CTYPE 'C';" >&2
+}
+
+
 # Installs a local PostgreSQL server and creates a dedicated xui user/database.
 # Progress goes to stderr; on success the connection DSN is printed to stdout so
 # callers can capture it. Mirrors install_postgres_local() from install.sh, so the
@@ -3070,9 +3096,7 @@ pg_install_local() {
         | grep -q 1 \
         || sudo -u postgres psql -c "CREATE USER \"${pg_user}\" WITH PASSWORD '${pg_pass}';" >&2 || return 1
 
-    sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='${pg_db}'" 2> /dev/null \
-        | grep -q 1 \
-        || sudo -u postgres psql -c "CREATE DATABASE \"${pg_db}\" OWNER \"${pg_user}\";" >&2 || return 1
+    pg_create_utf8_db "${pg_db}" "${pg_user}" || return 1
 
     sudo -u postgres psql -c "ALTER USER \"${pg_user}\" WITH PASSWORD '${pg_pass}';" >&2 || return 1
 

@@ -3393,6 +3393,9 @@ func InitDB(dbPath string) error {
 		if err != nil {
 			return err
 		}
+		if err := requirePostgresUTF8(db); err != nil {
+			return err
+		}
 	default:
 		dir := path.Dir(dbPath)
 		if err = os.MkdirAll(dir, 0o700); err != nil {
@@ -3486,6 +3489,23 @@ func migrateApiTokenScopeAndExpiry() error {
 	}
 	return db.Model(&model.ApiToken{}).Where("scope IS NULL OR TRIM(scope) = ''").
 		Updates(map[string]any{"scope": model.ApiScopeAdmin, "expires_at": 0}).Error
+}
+
+// ErrPostgresNotUTF8 means the panel database was created without UTF8
+// (a C/POSIX-locale host defaults to SQL_ASCII), which pgx refuses to query.
+var ErrPostgresNotUTF8 = errors.New("postgres database encoding is not UTF8")
+
+func requirePostgresUTF8(conn *gorm.DB) error {
+	var encoding string
+	if err := conn.Raw("SHOW server_encoding").Scan(&encoding).Error; err != nil {
+		return fmt.Errorf("read postgres server_encoding: %w", err)
+	}
+	if strings.EqualFold(encoding, "UTF8") {
+		return nil
+	}
+	return fmt.Errorf("%w: database %q is %s; recreate it with "+
+		"CREATE DATABASE ... ENCODING 'UTF8' TEMPLATE template0 LC_COLLATE 'C.UTF-8' LC_CTYPE 'C.UTF-8'",
+		ErrPostgresNotUTF8, conn.Migrator().CurrentDatabase(), encoding)
 }
 
 // openPostgresWithRetry retries the initial PostgreSQL connection with
