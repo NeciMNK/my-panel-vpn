@@ -107,7 +107,18 @@
     "support": "Suporte",
     "qrTitle": "Escaneie. Importe. Conecte.",
     "qrHint": "Escaneie com seu aplicativo cliente. Mantenha este código em sigilo.",
-    "saveQr": "Salvar QR"
+    "saveQr": "Salvar QR",
+    "platformDetected": "Detectado automaticamente",
+    "recommended": "Recomendado",
+    "stepInstall": "Instale o aplicativo",
+    "stepInstallHint": "Baixe o {app} e instale neste dispositivo.",
+    "stepAdd": "Adicione a assinatura",
+    "stepAddHint": "Toque no botão: o {app} abre e importa sua assinatura.",
+    "stepAddCopyHint": "O {app} não importa com um toque: copie o link e adicione-o no app pela área de transferência.",
+    "stepConnect": "Conecte-se",
+    "stepConnectHint": "Abra o {app}, escolha um servidor e ative a conexão.",
+    "addSubscription": "Adicionar assinatura",
+    "copyLink": "Copiar link"
   },
   "menu": {
     "theme": "Tema",

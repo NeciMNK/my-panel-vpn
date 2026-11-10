@@ -107,7 +107,18 @@
     "support": "الدعم",
     "qrTitle": "امسح. استورد. اتصل.",
     "qrHint": "امسح الرمز بتطبيق العميل. لا تشارك هذا الرمز مع أحد.",
-    "saveQr": "حفظ QR"
+    "saveQr": "حفظ QR",
+    "platformDetected": "تم الاكتشاف تلقائيًا",
+    "recommended": "مُوصى به",
+    "stepInstall": "ثبّت التطبيق",
+    "stepInstallHint": "نزّل {app} وثبّته على هذا الجهاز.",
+    "stepAdd": "أضف الاشتراك",
+    "stepAddHint": "اضغط الزر: سيفتح {app} ويستورد اشتراكك.",
+    "stepAddCopyHint": "لا يدعم {app} الاستيراد بلمسة: انسخ الرابط ثم أضفه في التطبيق من الحافظة.",
+    "stepConnect": "اتصل",
+    "stepConnectHint": "افتح {app} واختر خادمًا وشغّل الاتصال.",
+    "addSubscription": "إضافة اشتراك",
+    "copyLink": "نسخ الرابط"
   },
   "menu": {
     "theme": "الثيم",

@@ -107,7 +107,18 @@
     "support": "Destek",
     "qrTitle": "Tara. İçe aktar. Bağlan.",
     "qrHint": "İstemci uygulamanızla tarayın. Bu kodu kimseyle paylaşmayın.",
-    "saveQr": "QR'ı kaydet"
+    "saveQr": "QR'ı kaydet",
+    "platformDetected": "Otomatik algılandı",
+    "recommended": "Önerilen",
+    "stepInstall": "Uygulamayı yükleyin",
+    "stepInstallHint": "{app} uygulamasını indirip bu cihaza yükleyin.",
+    "stepAdd": "Aboneliği ekleyin",
+    "stepAddHint": "Düğmeye dokunun: {app} açılır ve aboneliğinizi içe aktarır.",
+    "stepAddCopyHint": "{app} dokunarak içe aktaramaz: bağlantıyı kopyalayın ve uygulamada panodan ekleyin.",
+    "stepConnect": "Bağlanın",
+    "stepConnectHint": "{app} uygulamasını açın, bir sunucu seçin ve bağlantıyı açın.",
+    "addSubscription": "Abonelik ekle",
+    "copyLink": "Bağlantıyı kopyala"
   },
   "menu": {
     "theme": "Tema",

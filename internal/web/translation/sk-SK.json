@@ -107,7 +107,18 @@
     "support": "Podpora",
     "qrTitle": "Naskenovať. Importovať. Pripojiť sa.",
     "qrHint": "Naskenujte kód v klientskej aplikácii. Nikomu ho nesprístupňujte.",
-    "saveQr": "Uložiť QR kód"
+    "saveQr": "Uložiť QR kód",
+    "platformDetected": "Zistené automaticky",
+    "recommended": "Odporúčané",
+    "stepInstall": "Nainštalujte aplikáciu",
+    "stepInstallHint": "Stiahnite {app} a nainštalujte ju do tohto zariadenia.",
+    "stepAdd": "Pridajte predplatné",
+    "stepAddHint": "Ťuknite na tlačidlo: {app} sa otvorí a importuje predplatné.",
+    "stepAddCopyHint": "{app} nevie importovať ťuknutím: skopírujte odkaz a pridajte ho v aplikácii zo schránky.",
+    "stepConnect": "Pripojte sa",
+    "stepConnectHint": "Otvorte {app}, vyberte server a zapnite pripojenie.",
+    "addSubscription": "Pridať predplatné",
+    "copyLink": "Kopírovať odkaz"
   },
   "menu": {
     "theme": "Vzhľad",

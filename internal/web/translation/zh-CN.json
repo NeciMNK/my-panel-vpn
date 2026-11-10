@@ -107,7 +107,18 @@
     "support": "支持",
     "qrTitle": "扫码。导入。连接。",
     "qrHint": "使用客户端应用扫描。请勿泄露此二维码。",
-    "saveQr": "保存二维码"
+    "saveQr": "保存二维码",
+    "platformDetected": "已自动识别",
+    "recommended": "推荐",
+    "stepInstall": "安装应用",
+    "stepInstallHint": "下载 {app} 并安装到此设备。",
+    "stepAdd": "添加订阅",
+    "stepAddHint": "点击按钮：{app} 将打开并导入你的订阅。",
+    "stepAddCopyHint": "{app} 不支持一键导入：请复制链接，然后在应用中从剪贴板添加。",
+    "stepConnect": "连接",
+    "stepConnectHint": "打开 {app}，选择服务器并开启连接。",
+    "addSubscription": "添加订阅",
+    "copyLink": "复制链接"
   },
   "menu": {
     "theme": "主题",

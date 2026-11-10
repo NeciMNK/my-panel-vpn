@@ -107,7 +107,18 @@
     "support": "Hỗ trợ",
     "qrTitle": "Quét. Nhập. Kết nối.",
     "qrHint": "Quét bằng ứng dụng khách. Không chia sẻ mã này cho người khác.",
-    "saveQr": "Lưu QR"
+    "saveQr": "Lưu QR",
+    "platformDetected": "Đã tự động nhận diện",
+    "recommended": "Khuyên dùng",
+    "stepInstall": "Cài đặt ứng dụng",
+    "stepInstallHint": "Tải {app} và cài đặt trên thiết bị này.",
+    "stepAdd": "Thêm gói đăng ký",
+    "stepAddHint": "Nhấn nút: {app} sẽ mở và nhập gói đăng ký của bạn.",
+    "stepAddCopyHint": "{app} không nhập được bằng một chạm: hãy sao chép liên kết rồi thêm trong ứng dụng từ bộ nhớ tạm.",
+    "stepConnect": "Kết nối",
+    "stepConnectHint": "Mở {app}, chọn máy chủ và bật kết nối.",
+    "addSubscription": "Thêm gói đăng ký",
+    "copyLink": "Sao chép liên kết"
   },
   "menu": {
     "theme": "Chủ đề",

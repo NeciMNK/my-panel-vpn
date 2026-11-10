@@ -107,7 +107,18 @@
     "support": "Support",
     "qrTitle": "Scan. Import. Connect.",
     "qrHint": "Scan with your client app. Keep this code private.",
-    "saveQr": "Save QR"
+    "saveQr": "Save QR",
+    "platformDetected": "Detected automatically",
+    "recommended": "Recommended",
+    "stepInstall": "Install the app",
+    "stepInstallHint": "Download {app} and install it on this device.",
+    "stepAdd": "Add the subscription",
+    "stepAddHint": "Tap the button: {app} opens and imports your subscription.",
+    "stepAddCopyHint": "{app} cannot import by tap: copy the link, then add it in the app from the clipboard.",
+    "stepConnect": "Connect",
+    "stepConnectHint": "Open {app}, pick a server and turn the connection on.",
+    "addSubscription": "Add subscription",
+    "copyLink": "Copy link"
   },
   "menu": {
     "theme": "Theme",

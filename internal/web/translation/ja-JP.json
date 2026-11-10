@@ -107,7 +107,18 @@
     "support": "サポート",
     "qrTitle": "スキャン。インポート。接続。",
     "qrHint": "クライアントアプリでスキャンしてください。このコードは他人に見せないでください。",
-    "saveQr": "QR を保存"
+    "saveQr": "QR を保存",
+    "platformDetected": "自動検出されました",
+    "recommended": "おすすめ",
+    "stepInstall": "アプリをインストール",
+    "stepInstallHint": "{app} をダウンロードしてこの端末にインストールしてください。",
+    "stepAdd": "サブスクリプションを追加",
+    "stepAddHint": "ボタンをタップすると {app} が開き、サブスクリプションを取り込みます。",
+    "stepAddCopyHint": "{app} はタップでの取り込みに対応していません。リンクをコピーし、アプリでクリップボードから追加してください。",
+    "stepConnect": "接続",
+    "stepConnectHint": "{app} を開き、サーバーを選んで接続をオンにしてください。",
+    "addSubscription": "サブスクリプションを追加",
+    "copyLink": "リンクをコピー"
   },
   "menu": {
     "theme": "テーマ",
