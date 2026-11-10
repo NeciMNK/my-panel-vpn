@@ -1102,6 +1102,9 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 		t.restartXrayFromScreen(callbackQuery)
 	case "rst_all", "reset_all_traffics":
 		t.renderScreen(chatId, t.resetAllConfirm())
+	case cbMySubscription:
+		t.answerSilent(callbackQuery.ID)
+		t.screenClientHome(chatId, callbackQuery.From.ID)
 	case cbClientPaid:
 		t.answerSilent(callbackQuery.ID)
 		t.screenPlanPicker(chatId)

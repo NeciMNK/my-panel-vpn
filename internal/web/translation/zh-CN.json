@@ -3003,7 +3003,8 @@
       "ledgerAddServer": "🖥 Add server cost",
       "ledgerDelete": "🗑 Delete",
       "ledgerFreeGroups": "🆓 Non-paying groups",
-      "nonPaying": "🆓 Does not pay: {{ .State }}"
+      "nonPaying": "🆓 Does not pay: {{ .State }}",
+      "mySubscription": "👤 My subscription"
     },
     "answers": {
       "broadcastStarted": "🚀 群发已开始。",

@@ -3003,7 +3003,8 @@
       "ledgerAddServer": "🖥 Добавить сервер",
       "ledgerDelete": "🗑 Удалить",
       "ledgerFreeGroups": "🆓 Неплатящие группы",
-      "nonPaying": "🆓 Не платит: {{ .State }}"
+      "nonPaying": "🆓 Не платит: {{ .State }}",
+      "mySubscription": "👤 Моя подписка"
     },
     "answers": {
       "broadcastStarted": "🚀 Рассылка запущена.",

@@ -3,6 +3,7 @@ package tgbot
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
@@ -180,5 +181,37 @@ func TestClientCardBackReturnsToItsListPage(t *testing.T) {
 		if got := backTargets(t, tb, navAdmin); len(got) != 1 || got[0] != "client_open "+email {
 			t.Errorf("back from %s = %q, want the card", sub, got)
 		}
+	}
+}
+
+// An admin who is also bound as a client never saw its own payment block or
+// "I have paid": its /start always opens the admin menu instead.
+func TestAdminBoundAsClientReachesItsOwnPaymentView(t *testing.T) {
+	tb := newNavigationBot(t)
+	seedClientForTgUser(t, navAdmin, "admin-own@x")
+	seedPaymentSettings(t, "300", "card")
+
+	tap(tb, navAdmin, cbHome, true)
+	if !buttonFor(t, tb, navAdmin, cbMySubscription) {
+		t.Fatal("the admin menu offers no way to the admin's own subscription")
+	}
+	tap(tb, navAdmin, cbMySubscription, true)
+	sc, _ := tb.screens().get(navAdmin)
+	if !strings.Contains(sc.body, "admin-own@x") || !strings.Contains(sc.body, tb.I18nBot("tgbot.payment.title")) {
+		t.Errorf("own subscription screen lacks the client or its payment block:\n%s", sc.body)
+	}
+	if !buttonFor(t, tb, navAdmin, cbClientPaid) {
+		t.Error("own subscription screen offers no \"I have paid\"")
+	}
+	if got := backTargets(t, tb, navAdmin); len(got) != 1 || got[0] != cbHome {
+		t.Errorf("back from own subscription = %q, want the admin menu", got)
+	}
+}
+
+func TestAdminWithoutOwnClientGetsNoSubscriptionButton(t *testing.T) {
+	tb := newNavigationBot(t)
+	tap(tb, navAdmin, cbHome, true)
+	if buttonFor(t, tb, navAdmin, cbMySubscription) {
+		t.Error("an admin bound to no client is offered its own subscription")
 	}
 }

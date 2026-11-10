@@ -31,6 +31,7 @@ const (
 	cbCatMaintenance = "cat:maintenance"
 	cbResetAll       = "rst_all"
 	cbRestartXry     = "xray_restart"
+	cbMySubscription = "my_sub"
 )
 
 // homeRows is the admin's menu: four categories and a refresh, one row per

@@ -28,7 +28,14 @@ func (t *Tgbot) screenHome(chatID, userID int64, delivery ...screenDelivery) {
 		return
 	}
 	body := t.homeSummary()
-	t.renderScreen(chatID, t.newScreen("main", body, t.homeRows()...), delivery...)
+	rows := t.homeRows()
+	// An admin bound as a client also pays: its own view is one tap away.
+	if traffics, err := t.inboundService.GetClientTrafficTgBot(userID); err == nil && len(traffics) > 0 {
+		rows = append([][]telego.InlineKeyboardButton{
+			tu.InlineKeyboardRow(t.btn("tgbot.buttons.mySubscription", cbMySubscription)),
+		}, rows...)
+	}
+	t.renderScreen(chatID, t.newScreen("main", body, rows...), delivery...)
 }
 
 // screenClientHome is a client's own entry point: its usage, then links and QR.
@@ -62,6 +69,11 @@ func (t *Tgbot) screenClientHome(chatID, userID int64, delivery ...screenDeliver
 	if info := t.loadPaymentInfo(); info.billed() {
 		body.WriteString(t.paymentBlock(info, traffics))
 		rows = append(rows, t.paymentRows(traffics)...)
+	}
+	if t.levelOf(userID) == levelAdmin {
+		rows = append(rows, t.backRow())
+		t.renderScreen(chatID, t.newScreen("main", body.String(), rows...), delivery...)
+		return
 	}
 	t.renderScreen(chatID, t.rootScreen("main", body.String(), rows...), delivery...)
 }
