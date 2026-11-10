@@ -127,6 +127,38 @@ var nodeSyncScopeAllow = map[string]map[string]struct{}{
 	"/certs/install":               {http.MethodPost: {}},
 }
 
+// nodeXrayScopeAllow lets a master manage a node's Xray template (outbounds,
+// routing, balancers, WARP) through /panel/api/nodes/:id/xray/* on the master.
+var nodeXrayScopeAllow = map[string]map[string]struct{}{
+	"/xray/":                          {http.MethodPost: {}},
+	"/xray/update":                    {http.MethodPost: {}},
+	"/xray/getDefaultJsonConfig":      {http.MethodGet: {}},
+	"/xray/getOutboundsTraffic":       {http.MethodGet: {}},
+	"/xray/getXrayResult":             {http.MethodGet: {}},
+	"/xray/warp/:action":              {http.MethodPost: {}},
+	"/xray/nord/:action":              {http.MethodPost: {}},
+	"/xray/pia/:action":               {http.MethodPost: {}},
+	"/xray/resetOutboundsTraffic":     {http.MethodPost: {}},
+	"/xray/testOutbound":              {http.MethodPost: {}},
+	"/xray/testOutbounds":             {http.MethodPost: {}},
+	"/xray/balancerStatus":            {http.MethodPost: {}},
+	"/xray/balancerOverride":          {http.MethodPost: {}},
+	"/xray/routeTest":                 {http.MethodPost: {}},
+	"/xray/homeTunnel":                {http.MethodPost: {}},
+	"/xray/homeTunnel/:id":            {http.MethodGet: {}},
+	"/xray/speedPlan":                 {http.MethodPost: {}},
+	"/xray/geodata/files":             {http.MethodGet: {}},
+	"/xray/geodata/categories":        {http.MethodGet: {}},
+	"/xray/geodata/entries":           {http.MethodGet: {}},
+	"/xray/geodata/validate":          {http.MethodPost: {}},
+	"/xray/outbound-subs":             {http.MethodGet: {}, http.MethodPost: {}},
+	"/xray/outbound-subs/:id/refresh": {http.MethodPost: {}},
+	"/xray/outbound-subs/:id/move":    {http.MethodPost: {}},
+	"/xray/outbound-subs/:id":         {http.MethodPost: {}},
+	"/xray/outbound-subs/:id/del":     {http.MethodPost: {}},
+	"/xray/outbound-subs/parse":       {http.MethodPost: {}},
+}
+
 var nodeAdminScopeAllow = map[string]map[string]struct{}{
 	"/server/updatePanel": {http.MethodPost: {}},
 }
@@ -167,12 +199,12 @@ func (a *APIController) enforceTokenScope(c *gin.Context) {
 			return
 		}
 	case model.ApiScopeNodeSync:
-		if scopeAllows(nodeSyncScopeAllow, rel, c.Request.Method) {
+		if scopeAllows(nodeSyncScopeAllow, rel, c.Request.Method) || scopeAllows(nodeXrayScopeAllow, rel, c.Request.Method) {
 			c.Next()
 			return
 		}
 	case model.ApiScopeNodeAdmin:
-		if scopeAllows(nodeSyncScopeAllow, rel, c.Request.Method) || scopeAllows(nodeAdminScopeAllow, rel, c.Request.Method) {
+		if scopeAllows(nodeSyncScopeAllow, rel, c.Request.Method) || scopeAllows(nodeXrayScopeAllow, rel, c.Request.Method) || scopeAllows(nodeAdminScopeAllow, rel, c.Request.Method) {
 			c.Next()
 			return
 		}
@@ -220,6 +252,12 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	// Nodes API — multi-panel management
 	nodes := api.Group("/nodes")
 	a.nodeController = NewNodeController(nodes)
+
+	NewCascadeController(api.Group("/cascades"))
+	NewHomeNetworkController(api.Group("/homeNetworks"))
+	NewWarpSwitchController(api.Group("/warpSwitch"))
+	NewSpeedController(api.Group("/speed"))
+	NewMasterClusterController(api.Group("/masters"))
 
 	// Hosts API — per-inbound override endpoints for subscription links
 	hosts := api.Group("/hosts")

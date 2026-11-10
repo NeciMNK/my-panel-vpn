@@ -414,6 +414,33 @@ export interface Blocker {
   detail?: string;
 }
 
+export interface Cascade {
+  createdAt: number;
+  enable: boolean;
+  entryInboundTags: string[];
+  entryNodeId: number;
+  exitCountry: string;
+  exitNodeIds: number[];
+  id: number;
+  lastError: string;
+  links: CascadeLink[];
+  name: string;
+  strategy: string;
+  updatedAt: number;
+}
+
+export interface CascadeLink {
+  address: string;
+  clientId: string;
+  email: string;
+  inboundId: number;
+  nodeId: number;
+  port: number;
+  publicKey: string;
+  serverName: string;
+  shortId: string;
+}
+
 export interface Client {
   adTag?: string;
   allowedIPs?: string[];
@@ -549,6 +576,13 @@ export interface ClientSlim {
   updatedAt: number;
 }
 
+export interface ClientSpeed {
+  email: string;
+  id: number;
+  maxMbps: number;
+  minMbps: number;
+}
+
 export interface ClientTraffic {
   down: number;
   email: string;
@@ -631,6 +665,34 @@ export interface HappLinkResult {
 export interface HistoryOfSeeders {
   id: number;
   seederName: string;
+}
+
+export interface HomeAccessRule {
+  emails: string[];
+  groups: string[];
+  targets: string[];
+}
+
+export interface HomeNetwork {
+  config: string;
+  createdAt: number;
+  enable: boolean;
+  errors: Record<string, string>;
+  gatewayNodeId: number;
+  hosts: string[];
+  id: number;
+  kind: string;
+  link?: CascadeLink | null;
+  name: string;
+  password: string;
+  psk: string;
+  rules: HomeAccessRule[];
+  server: string;
+  servers: number[];
+  subnets: string[];
+  tunnelState: string;
+  updatedAt: number;
+  username: string;
 }
 
 export interface Host {
@@ -819,6 +881,16 @@ export interface MLKEM768Response {
   seed: string;
 }
 
+export interface MasterStatus {
+  alive: boolean;
+  lastSeen: number;
+  leader: boolean;
+  name: string;
+  priority: number;
+  self: boolean;
+  url: string;
+}
+
 export interface Msg {
   msg: string;
   obj: unknown;
@@ -837,6 +909,7 @@ export interface Node {
   clientCount: number;
   configDirty: boolean;
   configDirtyAt: number;
+  country: string;
   cpuPct: number;
   createdAt: number;
   depletedCount: number;
@@ -873,12 +946,19 @@ export interface Node {
   xrayVersion: string;
 }
 
+export interface NodeJoinTokenView {
+  arch: string;
+  expiresAt: number;
+  token: string;
+}
+
 export interface NodeMutationRequest {
   address: string;
   allowPrivateAddress: boolean;
   apiToken?: string | null;
   basePath: string;
   clearApiToken?: boolean;
+  country: string;
   enable: boolean;
   id: number;
   inboundSyncMode: string;
@@ -900,6 +980,7 @@ export interface NodeView {
   clientCount: number;
   configDirty: boolean;
   configDirtyAt: number;
+  country: string;
   cpuPct: number;
   createdAt: number;
   depletedCount: number;
@@ -1009,6 +1090,20 @@ export interface RealityScanResult {
   x25519: boolean;
 }
 
+export interface ServerCapacity {
+  capacityMbps: number;
+  id: number;
+  nodeId: number;
+}
+
+export interface ServerFreeSpeed {
+  capacityMbps: number;
+  freePerUserMbps: number;
+  nodeId: number;
+  online: number;
+  usedMbps: number;
+}
+
 export interface ServerSettings {
   contentPaddingAddition?: string;
   disableCookies: boolean;
@@ -1056,22 +1151,10 @@ export interface Setting {
   value: string;
 }
 
-export interface Sponsor {
-  enable?: boolean | null;
-  from?: string | null;
-  id: string;
-  link: string;
-  logo?: string;
-  name: string;
-  slots: string[];
-  text: Record<string, string>;
-  title: Record<string, string>;
-  until: string;
-}
-
-export interface SponsorList {
-  contact?: string;
-  sponsors: Sponsor[];
+export interface SpeedOverview {
+  clients: ClientSpeed[];
+  load: ServerFreeSpeed[];
+  servers: ServerCapacity[];
 }
 
 export interface SubBalancer {
@@ -1162,5 +1245,14 @@ export interface User {
   id: number;
   password: string;
   username: string;
+}
+
+export interface WarpSwitch {
+  domains: string[];
+  id: number;
+  lastError: string;
+  mode: string;
+  nodeId: number;
+  updatedAt: number;
 }
 

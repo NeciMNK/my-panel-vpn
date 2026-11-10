@@ -8,6 +8,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"fmt"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
@@ -309,6 +310,23 @@ func TestMasterNodeContract(t *testing.T) {
 					}
 					_, err := master.ListRemoteTags(ctx)
 					return err
+				}, nil},
+				{"ProxyXray reads and writes the node's Xray template", []string{"ProxyXray"}, func() error {
+					resp, err := master.ProxyXray(ctx, http.MethodPost, "/", "", "", nil)
+					if err != nil {
+						return err
+					}
+					if resp.Status != http.StatusOK || !strings.Contains(string(resp.Body), `"success":true`) {
+						return fmt.Errorf("xray read: HTTP %d %s", resp.Status, resp.Body)
+					}
+					resp, err = master.ProxyXray(ctx, http.MethodGet, "/getOutboundsTraffic", "", "", nil)
+					if err != nil {
+						return err
+					}
+					if resp.Status != http.StatusOK {
+						return fmt.Errorf("outbound traffic: HTTP %d", resp.Status)
+					}
+					return nil
 				}, nil},
 				{"InstallTlsCert stores the pushed pair in the node's cert folder", []string{"InstallTlsCert"}, func() error {
 					certPEM, keyPEM := contractCertPair(t)

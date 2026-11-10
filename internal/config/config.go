@@ -293,3 +293,40 @@ func init() {
 	}
 	_ = copyFile(oldDBPath, newDBPath) // ignore error
 }
+
+// GetMasterPriority returns XUI_MASTER_PRIORITY, the rank of this panel among
+// several masters sharing one database (1 = primary). Unset = single master.
+func GetMasterPriority() (priority int, configured bool, err error) {
+	value := strings.TrimSpace(os.Getenv("XUI_MASTER_PRIORITY"))
+	if value == "" {
+		return 0, false, nil
+	}
+	priority, err = strconv.Atoi(value)
+	if err != nil || priority < 1 {
+		return 0, true, fmt.Errorf("XUI_MASTER_PRIORITY must be a whole number from 1 (primary) up, got %q", value)
+	}
+	return priority, true, nil
+}
+
+// GetMasterName returns XUI_MASTER_NAME, defaulting to the hostname.
+func GetMasterName() string {
+	if name := strings.TrimSpace(os.Getenv("XUI_MASTER_NAME")); name != "" {
+		return name
+	}
+	host, err := os.Hostname()
+	if err != nil || host == "" {
+		return "master"
+	}
+	return host
+}
+
+// GetMasterURL returns XUI_MASTER_URL, the panel address shown to the other masters.
+func GetMasterURL() string {
+	return strings.TrimSpace(os.Getenv("XUI_MASTER_URL"))
+}
+
+// GetClusterRolePath is where a master records whether it leads, for
+// `x-ui cluster is-leader` (keepalived's check) to read without the database.
+func GetClusterRolePath() string {
+	return filepath.Join(GetDBFolderPath(), "cluster-role")
+}
