@@ -1412,6 +1412,21 @@
           "saved": "Home network saved",
           "deleted": "Home network deleted"
         }
+      },
+      "warp": {
+        "title": "WARP",
+        "server": "Server",
+        "mode": "WARP",
+        "domains": "Sites through WARP",
+        "modes": {
+          "off": "Off",
+          "all": "All traffic",
+          "domains": "Only these sites"
+        },
+        "desc": "One switch per server. The first time it is turned on the server registers its own WARP account. Sites: domains, geosite: or regexp: entries. WARP only takes traffic that no cascade, home network or other rule claimed.",
+        "toasts": {
+          "saved": "WARP switch saved"
+        }
       }
     },
     "settings": {

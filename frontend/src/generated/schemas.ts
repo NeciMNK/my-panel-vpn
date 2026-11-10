@@ -5249,5 +5249,44 @@ export const SCHEMAS: Record<string, unknown> = {
       "username"
     ],
     "type": "object"
+  },
+  "WarpSwitch": {
+    "description": "WarpSwitch is one server's WARP switch: off, all traffic, or only the listed\nsites (domains, geosite: and regexp: entries). Node id 0 is this panel.",
+    "properties": {
+      "domains": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "lastError": {
+        "type": "string"
+      },
+      "mode": {
+        "example": "domains",
+        "type": "string"
+      },
+      "nodeId": {
+        "example": 0,
+        "type": "integer"
+      },
+      "updatedAt": {
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "domains",
+      "id",
+      "lastError",
+      "mode",
+      "nodeId",
+      "updatedAt"
+    ],
+    "type": "object"
   }
 };

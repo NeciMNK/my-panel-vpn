@@ -277,13 +277,25 @@ func insertHeadRules(cfg map[string]any, rules ...map[string]any) {
 	routing["rules"] = out
 }
 
+// appendTailRules keeps the WARP switch's rule last, so it only takes what
+// cascades and every other rule left over.
 func appendTailRules(cfg map[string]any, rules ...map[string]any) {
 	routing := templateRouting(cfg)
 	existing, _ := routing["rules"].([]any)
-	for _, r := range rules {
-		existing = append(existing, r)
+	at := len(existing)
+	for i, r := range existing {
+		if strings.HasPrefix(tagOf(r, "ruleTag"), warpRulePrefix) {
+			at = i
+			break
+		}
 	}
-	routing["rules"] = existing
+	out := make([]any, 0, len(existing)+len(rules))
+	out = append(out, existing[:at]...)
+	for _, r := range rules {
+		out = append(out, r)
+	}
+	out = append(out, existing[at:]...)
+	routing["rules"] = out
 }
 
 func isAPIRule(rule map[string]any) bool {

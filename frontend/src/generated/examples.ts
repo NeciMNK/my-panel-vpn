@@ -1336,5 +1336,15 @@ export const EXAMPLES: Record<string, unknown> = {
     "id": 0,
     "password": "",
     "username": ""
+  },
+  "WarpSwitch": {
+    "domains": [
+      ""
+    ],
+    "id": 1,
+    "lastError": "",
+    "mode": "domains",
+    "nodeId": 0,
+    "updatedAt": 0
   }
 };

@@ -1823,6 +1823,30 @@ export const sections: readonly Section[] = [
   },
 
   {
+    id: 'warp-switch',
+    title: 'WARP switch',
+    description:
+      'One Cloudflare WARP switch per server (node id 0 = this panel): off, all traffic, or only the listed sites. Turning it on registers the server\'s WARP account when it has none and adds the stock "warp" outbound; the routing rule is always the last one, so cascades, home networks and the admin\'s own rules decide first. All endpoints under /panel/api/warpSwitch.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/warpSwitch/list',
+        summary: 'List the switch position of every server that has one.',
+        responseSchema: 'WarpSwitch',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/warpSwitch/set',
+        summary:
+          "Move one server's switch and rewrite its Xray template. Domains accept plain domains, geosite: and regexp: entries.",
+        body: '{\n  "nodeId": 0,\n  "mode": "domains",\n  "domains": ["geosite:openai", "chatgpt.com"]\n}',
+        responseSchema: 'WarpSwitch',
+      },
+    ],
+  },
+
+  {
     id: 'nodes',
     title: 'Nodes',
     description:

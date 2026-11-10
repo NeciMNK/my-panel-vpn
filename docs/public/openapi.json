@@ -5276,6 +5276,45 @@
         ],
         "type": "object"
       },
+      "WarpSwitch": {
+        "description": "WarpSwitch is one server's WARP switch: off, all traffic, or only the listed\nsites (domains, geosite: and regexp: entries). Node id 0 is this panel.",
+        "properties": {
+          "domains": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "lastError": {
+            "type": "string"
+          },
+          "mode": {
+            "example": "domains",
+            "type": "string"
+          },
+          "nodeId": {
+            "example": 0,
+            "type": "integer"
+          },
+          "updatedAt": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "domains",
+          "id",
+          "lastError",
+          "mode",
+          "nodeId",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
       "WebSocketEnvelope": {
         "type": "object",
         "required": [
@@ -5342,6 +5381,10 @@
     {
       "name": "Home networks",
       "description": "Home LANs behind a WireGuard, OpenVPN or L2TP/IPsec tunnel held by one gateway server (node id 0 = this panel). Every other server reaches the gateway through a hidden VLESS+REALITY link. Users reach only the subnets and IPs their rules allow; everything else in the home network is blocked. All endpoints under /panel/api/homeNetworks."
+    },
+    {
+      "name": "WARP switch",
+      "description": "One Cloudflare WARP switch per server (node id 0 = this panel): off, all traffic, or only the listed sites. Turning it on registers the server's WARP account when it has none and adds the stock \"warp\" outbound; the routing rule is always the last one, so cascades, home networks and the admin's own rules decide first. All endpoints under /panel/api/warpSwitch."
     },
     {
       "name": "Nodes",
@@ -12330,6 +12373,119 @@
                       "type": "string"
                     },
                     "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/warpSwitch/list": {
+      "get": {
+        "tags": [
+          "WARP switch"
+        ],
+        "summary": "List the switch position of every server that has one.",
+        "operationId": "get_panel_api_warpSwitch_list",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/WarpSwitch"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "domains": [
+                        ""
+                      ],
+                      "id": 1,
+                      "lastError": "",
+                      "mode": "domains",
+                      "nodeId": 0,
+                      "updatedAt": 0
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/warpSwitch/set": {
+      "post": {
+        "tags": [
+          "WARP switch"
+        ],
+        "summary": "Move one server's switch and rewrite its Xray template. Domains accept plain domains, geosite: and regexp: entries.",
+        "operationId": "post_panel_api_warpSwitch_set",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "nodeId": 0,
+                "mode": "domains",
+                "domains": [
+                  "geosite:openai",
+                  "chatgpt.com"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/WarpSwitch"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "domains": [
+                      ""
+                    ],
+                    "id": 1,
+                    "lastError": "",
+                    "mode": "domains",
+                    "nodeId": 0,
+                    "updatedAt": 0
                   }
                 }
               }

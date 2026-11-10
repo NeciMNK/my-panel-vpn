@@ -253,6 +253,7 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 
 	NewCascadeController(api.Group("/cascades"))
 	NewHomeNetworkController(api.Group("/homeNetworks"))
+	NewWarpSwitchController(api.Group("/warpSwitch"))
 
 	// Hosts API — per-inbound override endpoints for subscription links
 	hosts := api.Group("/hosts")

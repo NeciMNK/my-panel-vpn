@@ -16,6 +16,7 @@
     "nodes",
     "cascades",
     "home-networks",
+    "warp-switch",
     "backup",
     "websocket"
   ]

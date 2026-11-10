@@ -1191,3 +1191,12 @@ export interface User {
   username: string;
 }
 
+export interface WarpSwitch {
+  domains: string[];
+  id: number;
+  lastError: string;
+  mode: string;
+  nodeId: number;
+  updatedAt: number;
+}
+

@@ -1271,3 +1271,13 @@ export const UserSchema = z.object({
 });
 export type User = z.infer<typeof UserSchema>;
 
+export const WarpSwitchSchema = z.object({
+  domains: z.array(z.string()),
+  id: z.number().int(),
+  lastError: z.string(),
+  mode: z.string(),
+  nodeId: z.number().int(),
+  updatedAt: z.number().int(),
+});
+export type WarpSwitch = z.infer<typeof WarpSwitchSchema>;
+

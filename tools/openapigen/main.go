@@ -28,6 +28,7 @@ func run(root, outDir string) error {
 				"CascadeLink",
 				"HomeNetwork",
 				"HomeAccessRule",
+				"WarpSwitch",
 				"User",
 				"Inbound",
 				"FallbackParentInfo",
