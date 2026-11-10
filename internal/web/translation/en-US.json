@@ -123,7 +123,6 @@
     "outbounds": "Outbounds",
     "apiDocs": "API Docs",
     "donate": "Donate",
-    "sponsors": "Sponsors",
     "docs": "Documentation",
     "openMenu": "Open menu",
     "pinSidebar": "Pin sidebar",
@@ -2636,15 +2635,6 @@
       "routingScriptActive": "A routing script is set under {section}, so Xray ignores these rules.",
       "targetNode": "Server",
       "targetLocal": "This server (master)"
-    },
-    "sponsors": {
-      "title": "Sponsors",
-      "intro": "Companies that support 3X-UI development. Sponsored links open in a new tab.",
-      "become": "Become a sponsor",
-      "tag": "Sponsor",
-      "visit": "Visit",
-      "yourBrand": "Your brand here",
-      "yourBrandText": "Put your company in front of thousands of server admins who open 3X-UI every day."
     }
   },
   "tgbot": {

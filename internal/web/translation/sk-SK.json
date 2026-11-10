@@ -123,7 +123,6 @@
     "outbounds": "Výstupy",
     "apiDocs": "Dokumentácia API",
     "donate": "Podporiť projekt",
-    "sponsors": "Sponzori",
     "docs": "Dokumentácia",
     "openMenu": "Otvoriť menu",
     "pinSidebar": "Pripnúť bočné menu",
@@ -2636,15 +2635,6 @@
       "routingScriptActive": "V časti {section} je nastavený skript smerovania, preto Xray tieto pravidlá ignoruje.",
       "targetNode": "Server",
       "targetLocal": "This server (master)"
-    },
-    "sponsors": {
-      "title": "Sponzori",
-      "intro": "Spoločnosti podporujúce vývoj 3X-UI. Sponzorované odkazy sa otvoria na novej karte.",
-      "become": "Stať sa sponzorom",
-      "tag": "Sponzor",
-      "visit": "Navštíviť",
-      "yourBrand": "Miesto pre vašu značku",
-      "yourBrandText": "Predstavte svoju spoločnosť tisícom správcov serverov, ktorí denne otvárajú 3X-UI."
     }
   },
   "tgbot": {
