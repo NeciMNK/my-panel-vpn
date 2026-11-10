@@ -3,6 +3,7 @@ package panel
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -41,7 +42,9 @@ type PanelUpdateInfo struct {
 }
 
 const (
-	panelUpdaterURL      = "https://raw.githubusercontent.com/MHSanaei/3x-ui/main/update.sh"
+	// panelRepo is this fork: updating from upstream 3x-ui would replace it with the original.
+	panelRepo            = "NeciMNK/my-panel-vpn"
+	panelUpdaterURL      = "https://raw.githubusercontent.com/" + panelRepo + "/main/update.sh"
 	maxPanelUpdaterBytes = 2 << 20
 	maxPanelReleaseBytes = 2 << 20
 	// devReleaseTag is the fixed-tag rolling pre-release the CI force-moves to the
@@ -67,6 +70,10 @@ type PanelUpdateStatus struct {
 	ExitCode   int    `json:"exitCode" example:"0"`
 	FinishedAt int64  `json:"finishedAt" example:"1735689612"`
 }
+
+var errPanelReleaseNotFound = errors.New("panel release not found")
+
+var panelReleaseAPI = "https://api.github.com/repos/" + panelRepo + "/releases/"
 
 var releaseCommitRegex = regexp.MustCompile(`(?i)commit=([0-9a-f]{7,40})`)
 
@@ -135,6 +142,10 @@ func (s *PanelService) GetUpdateInfo() (*PanelUpdateInfo, error) {
 		return getDevUpdateInfo()
 	}
 	latest, err := fetchLatestPanelVersion()
+	if errors.Is(err, errPanelReleaseNotFound) {
+		// No stable tag yet: update.sh then installs dev-latest, so report that build.
+		return getDevUpdateInfo()
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -437,9 +448,9 @@ func fetchLatestPanelVersion() (string, error) {
 // fetchPanelRelease fetches a release from GitHub. An empty tag resolves the
 // latest stable release; a non-empty tag (e.g. dev-latest) resolves that tag.
 func fetchPanelRelease(tag string) (*service.Release, error) {
-	url := "https://api.github.com/repos/MHSanaei/3x-ui/releases/latest"
+	url := panelReleaseAPI + "latest"
 	if tag != "" {
-		url = "https://api.github.com/repos/MHSanaei/3x-ui/releases/tags/" + tag
+		url = panelReleaseAPI + "tags/" + tag
 	}
 	client := (&service.SettingService{}).NewProxiedHTTPClient(10 * time.Second)
 	req, reqErr := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
@@ -451,6 +462,9 @@ func fetchPanelRelease(tag string) (*service.Release, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, fmt.Errorf("%w: %s", errPanelReleaseNotFound, url)
+	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("GitHub API returned status %d: %s", resp.StatusCode, resp.Status)
 	}
