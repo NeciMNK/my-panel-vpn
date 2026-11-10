@@ -125,6 +125,14 @@ func (s *ClientService) GetRecordsByTgID(tgId int64) ([]*model.ClientRecord, err
 	return rows, err
 }
 
+// GetBoundTelegramIDs lists each Telegram account bound to at least one client.
+func (s *ClientService) GetBoundTelegramIDs() ([]int64, error) {
+	var ids []int64
+	err := database.GetDB().Model(&model.ClientRecord{}).
+		Where("tg_id > 0").Distinct().Order("tg_id").Pluck("tg_id", &ids).Error
+	return ids, err
+}
+
 func (s *ClientService) GetByID(id int) (*model.ClientRecord, error) {
 	row := &model.ClientRecord{}
 	if err := database.GetDB().Where("id = ?", id).First(row).Error; err != nil {

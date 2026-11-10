@@ -1383,6 +1383,12 @@ func (s *ClientService) SetClientTelegramUserID(inboundSvc *InboundService, traf
 	})
 }
 
+func (s *ClientService) SetClientCommentByEmail(inboundSvc *InboundService, clientEmail string, comment string) (bool, error) {
+	return s.applyClientFieldByEmail(inboundSvc, clientEmail, func(c map[string]any) {
+		c["comment"] = comment
+	})
+}
+
 func (s *ClientService) CheckIsEnabledByEmail(inboundSvc *InboundService, clientEmail string) (bool, error) {
 	// The client's own row answers without loading and parsing its whole
 	// inbound; legacy clients never normalized into `clients` fall through.
