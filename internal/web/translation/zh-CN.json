@@ -2758,6 +2758,7 @@
       "qrCodeForClient": "客户端 {{ .Email }} 的二维码：",
       "paymentReported": "✅ The admin has been notified. Your subscription will be extended once the payment is confirmed.",
       "paymentAlreadyReported": "⏳ You have already reported this payment. Please wait for the admin to confirm it.",
+      "paymentAlreadyConfirmed": "✅ The payment of {{ .Email }} is already confirmed.",
       "paymentConfirmed": "✅ Payment confirmed for {{ .Email }}",
       "graceGranted": "⏳ Extended by {{ .Days }} days. Please pay before {{ .Date }}.",
       "graceUnavailable": "Deferred payment is not available right now.",

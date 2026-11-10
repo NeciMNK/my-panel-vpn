@@ -321,6 +321,8 @@ func TestConfirmPaymentLiftsFreePlanAndNotifiesClient(t *testing.T) {
 	billing.FreePlan = true
 	saveBilling(t, billing)
 
+	resetThrottles(t)
+	tap(tb, 5656, "client_paid 1", false)
 	before := time.Now()
 	tap(tb, 9001, "pay_ok freebie@x 1", true)
 
@@ -383,6 +385,8 @@ func TestTrustedClientDefersPayment(t *testing.T) {
 	}
 	setClientExpiry(t, "trusted@x", time.UnixMilli(deferred))
 
+	resetThrottles(t)
+	tap(tb, 5757, "client_paid 1", false)
 	tap(tb, 9001, "pay_ok trusted@x 1", true)
 	if want := due.Add(monthDays * 24 * time.Hour).UnixMilli(); trafficOf(t, "trusted@x").ExpiryTime != want {
 		t.Errorf("expiry after paying = %v, want %v: the credit was not repaid",
@@ -520,5 +524,33 @@ func TestApprovedFreePlanCreatesLimitedClient(t *testing.T) {
 	}
 	if len(adminMessages(calls(), 6161)) == 0 {
 		t.Errorf("the approved user was not told (calls: %v)", methods(calls()))
+	}
+}
+
+// Every admin gets a confirm button per report: a second tap, by the same admin
+// or another one, must not extend the term again.
+func TestConfirmPaymentAppliesOnceForOneReport(t *testing.T) {
+	tb, calls := newScreenTgbot(t, false)
+	initReportDB(t)
+	localizeWithRealBundle(t)
+	setTestAdmins(t, 9001, 9002)
+	resetThrottles(t)
+	seedBilledClient(t, 5757, "twice@x")
+	seedPaymentSettings(t, "300", "card")
+	due := time.Now().Add(5 * 24 * time.Hour)
+	setClientExpiry(t, "twice@x", due)
+
+	tap(tb, 5757, "client_paid 1", false)
+	tap(tb, 9001, "pay_ok twice@x 1", true)
+	once := trafficOf(t, "twice@x").ExpiryTime
+	if want := due.Add(monthDays * 24 * time.Hour).UnixMilli(); once != want {
+		t.Fatalf("expiry after the first confirm = %v, want %v", time.UnixMilli(once), time.UnixMilli(want))
+	}
+	tap(tb, 9002, "pay_ok twice@x 1", true)
+	if got := trafficOf(t, "twice@x").ExpiryTime; got != once {
+		t.Errorf("expiry after a second confirm = %v, want %v unchanged", time.UnixMilli(got), time.UnixMilli(once))
+	}
+	if n := len(adminMessages(calls(), 5757)); n != 1 {
+		t.Errorf("client confirmations = %d, want 1", n)
 	}
 }

@@ -2758,6 +2758,7 @@
       "qrCodeForClient": "QR-код для клиента {{ .Email }}:",
       "paymentReported": "✅ Администратор уведомлён. Подписку продлят после подтверждения оплаты.",
       "paymentAlreadyReported": "⏳ Вы уже сообщили об оплате. Дождитесь подтверждения администратора.",
+      "paymentAlreadyConfirmed": "✅ Оплата {{ .Email }} уже подтверждена.",
       "paymentConfirmed": "✅ Оплата {{ .Email }} подтверждена",
       "graceGranted": "⏳ Продлено на {{ .Days }} дней. Оплатите до {{ .Date }}.",
       "graceUnavailable": "Отсрочка сейчас недоступна.",

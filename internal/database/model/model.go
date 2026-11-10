@@ -1152,6 +1152,8 @@ type ClientBilling struct {
 	GraceDays int `json:"graceDays" gorm:"column:grace_days;default:0"`
 	// LastGraceAt (unix ms) spaces deferrals: one per graceCooldownDays, any number in total.
 	LastGraceAt int64 `json:"lastGraceAt" gorm:"column:last_grace_at;default:0"`
+	// PendingMonths is the term the client last reported paying; a confirm consumes it once.
+	PendingMonths int `json:"pendingMonths" gorm:"column:pending_months;default:0"`
 }
 
 // ClientExternalLink is a per-client entry surfaced in the client's
