@@ -319,9 +319,11 @@ func (s *OutboundSubscriptionService) RefreshAllEnabled() (int, error) {
 // goes through the SSRF-guarded dialer, which resolves, checks and dials the same
 // IP atomically — closing the DNS-rebinding gap left by validating the hostname
 // separately from the dial.
-func (s *OutboundSubscriptionService) subscriptionFetchClient(timeout time.Duration, allowInsecure bool) *http.Client {
+func (s *OutboundSubscriptionService) subscriptionFetchClient(timeout time.Duration, allowInsecure, viaPanelEgress bool) *http.Client {
 	var client *http.Client
-	if s.settingService.PanelEgressProxyURL() != "" {
+	// The quick panel proxy's own subscription is never fetched through its own
+	// exits: once they all die it could not refresh them any more.
+	if viaPanelEgress && s.settingService.PanelEgressProxyURL() != "" {
 		client = s.settingService.NewProxiedHTTPClient(timeout)
 	} else {
 		client = &http.Client{
@@ -407,7 +409,7 @@ func (s *OutboundSubscriptionService) fetchOutbounds(sub *model.OutboundSubscrip
 		return nil, common.NewError("subscription has no valid URL")
 	}
 
-	client := s.subscriptionFetchClient(30*time.Second, sub.AllowInsecure)
+	client := s.subscriptionFetchClient(30*time.Second, sub.AllowInsecure, sub.TagPrefix != PanelProxyTagPrefix)
 	// The transport lives for this fetch only; left alone, the provider decides how long
 	// the connections it parks stay open.
 	defer client.CloseIdleConnections()
