@@ -101,6 +101,7 @@ func allModels() []any {
 		&model.ServerCapacity{},
 		&model.MasterMember{},
 		&model.TlsCertificate{},
+		&model.TelegramTag{},
 	}
 }
 

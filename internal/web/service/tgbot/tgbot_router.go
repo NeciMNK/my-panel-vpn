@@ -122,6 +122,10 @@ func (t *Tgbot) OnReceive() {
 				if isAdmin, ok := t.gateCommand(&message); ok {
 					t.answerCommand(&message, message.Chat.ID, isAdmin)
 				}
+				// After the command, so a /start invite claim is bound before tagging.
+				if !sentForChat(&message) {
+					t.syncTelegramTag(message.From)
+				}
 				// The command is litter next to the screen it opens: the bot's answer
 				// is worth keeping. Commands for another bot never reach here.
 				t.deleteIncoming(&message)
@@ -146,6 +150,7 @@ func (t *Tgbot) OnReceive() {
 				if isAdmin, ok := t.gateCallback(&query); ok {
 					t.answerCallback(&query, isAdmin)
 				}
+				t.syncTelegramTag(&query.From)
 			})
 			return nil
 		}, th.AnyCallbackQueryWithMessage())

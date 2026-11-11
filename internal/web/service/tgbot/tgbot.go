@@ -392,6 +392,7 @@ func (t *Tgbot) Start(i18nFS embed.FS) error {
 		t.rememberBotUsername(b)
 		t.resolveScreenArt()
 		t.trySetBotCommands(b)
+		t.backfillTelegramTags()
 	}(liveBot())
 
 	// Start receiving Telegram bot messages
