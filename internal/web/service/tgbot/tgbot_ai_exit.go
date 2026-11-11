@@ -2,6 +2,7 @@ package tgbot
 
 import (
 	"context"
+	"html"
 	"net"
 	"strconv"
 	"strings"
@@ -27,6 +28,9 @@ const (
 	cbAIExitPin     = "ai_p"
 	cbAIExitWhere   = "ai_k"
 	cbAIExitBuy     = "ai_b"
+	cbAIExitReport  = "ai_r"
+	// cbAIExitConfirm is the admin's confirm; it must not start with "ai_".
+	cbAIExitConfirm = "aiok"
 	// anyCountry in cbAIExitWhere data drops the user's one AI country.
 	anyCountry = "*"
 	// noCountry stands in callback data for exits without a country code.
@@ -59,22 +63,31 @@ func (t *Tgbot) aiExitRows(tgUserID int64) [][]telego.InlineKeyboardButton {
 	if len(t.aiExitEmails(tgUserID)) > 0 {
 		return [][]telego.InlineKeyboardButton{tu.InlineKeyboardRow(t.btn("tgbot.buttons.aiExit", cbAIExit))}
 	}
-	price := t.paymentOrderService.AIExitPrice()
-	if price <= 0 {
+	price, info := t.paymentOrderService.AIExitPrice(), t.loadPaymentInfo()
+	if price <= 0 || (!info.online && info.details == "") {
 		return nil
 	}
-	total := t.loadPaymentInfo().money(price)
+	total := info.money(price)
 	return [][]telego.InlineKeyboardButton{tu.InlineKeyboardRow(t.btn2(
 		t.I18nBot("tgbot.buttons.aiExitBuy", "Total=="+total), cbAIExitBuy))}
 }
 
-// buyAIExit opens the invoice for the AI button; it unlocks once the provider
-// reports the payment.
+// buyAIExit opens the card invoice for the AI button, or shows where to pay by
+// hand for an admin to confirm; it unlocks once paid.
 func (t *Tgbot) buyAIExit(callbackQuery *telego.CallbackQuery) {
 	userID := callbackQuery.From.ID
 	traffics, err := t.inboundService.GetClientTrafficTgBot(userID)
-	if err != nil || len(traffics) == 0 || t.paymentOrderService.AIExitPrice() <= 0 {
+	price, info := t.paymentOrderService.AIExitPrice(), t.loadPaymentInfo()
+	if err != nil || len(traffics) == 0 || price <= 0 {
 		t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
+		return
+	}
+	chatID := callbackQuery.Message.GetChat().ID
+	if !info.online {
+		t.answerSilent(callbackQuery.ID)
+		text := t.I18nBot("tgbot.payment.aiExitManual", "Total=="+info.money(price), "Details=="+info.details)
+		t.renderScreen(chatID, t.newScreen("pay", text,
+			tu.InlineKeyboardRow(t.btn("tgbot.buttons.aiExitIPaid", cbAIExitReport)), t.backRow()))
 		return
 	}
 	if !invoiceOpens.allow(userID, time.Now()) {
@@ -84,7 +97,6 @@ func (t *Tgbot) buyAIExit(callbackQuery *telego.CallbackQuery) {
 	t.answerSilent(callbackQuery.ID)
 	ctx, cancel := context.WithTimeout(context.Background(), invoiceWindow)
 	defer cancel()
-	chatID := callbackQuery.Message.GetChat().ID
 	order, err := t.paymentOrderService.CreateAIExitOrder(ctx, userID, traffics[0].Email,
 		t.I18nBot("tgbot.payment.aiExitDescription"), t.paymentReturnURL())
 	if err != nil {
@@ -93,7 +105,62 @@ func (t *Tgbot) buyAIExit(callbackQuery *telego.CallbackQuery) {
 		return
 	}
 	text := t.I18nBot("tgbot.payment.aiExitInvoice", "Total=="+orderTotal(order))
-	t.renderScreen(chatID, t.newScreen("pay", text, append(t.invoiceRows(order), t.backRow())...))
+	rows := t.invoiceRows(order)
+	if info.details != "" {
+		text += t.I18nBot("tgbot.payment.details", "Details=="+info.details)
+		rows = append(rows, tu.InlineKeyboardRow(t.btn("tgbot.buttons.aiExitIPaid", cbAIExitReport)))
+	}
+	t.renderScreen(chatID, t.newScreen("pay", text, append(rows, t.backRow())...))
+}
+
+// aiExitReports spaces a client's manual AI button reports like plan reports.
+var aiExitReports = newActionThrottle(10 * time.Minute)
+
+// reportAIExitPayment pages the admins with a one-tap confirm of the client's
+// manual AI button payment.
+func (t *Tgbot) reportAIExitPayment(callbackQuery *telego.CallbackQuery) {
+	from := callbackQuery.From
+	traffics, err := t.inboundService.GetClientTrafficTgBot(from.ID)
+	price, info := t.paymentOrderService.AIExitPrice(), t.loadPaymentInfo()
+	if err != nil || len(traffics) == 0 || price <= 0 {
+		t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
+		return
+	}
+	if !aiExitReports.allow(from.ID, time.Now()) {
+		t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.paymentAlreadyReported"))
+		return
+	}
+	email := traffics[0].Email
+	msg := t.I18nBot("tgbot.messages.aiExitReported", "User=="+userLabel(from),
+		"Total=="+info.money(price), "Email=="+html.EscapeString(email))
+	rows := append([][]telego.InlineKeyboardButton{tu.InlineKeyboardRow(t.btn2(
+		t.I18nBot("tgbot.buttons.aiExitConfirm", "Email=="+email), t.encodeQuery(cbAIExitConfirm+" "+email)))},
+		t.hideButton().InlineKeyboard...)
+	t.SendMsgToTgbotAdmins(msg, tu.InlineKeyboard(rows...))
+	logger.Infof("tgbot: %s reported paying %s for the AI button of %s", userLabel(from), info.money(price), email)
+	t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.paymentReported"))
+	t.screenClientHome(callbackQuery.Message.GetChat().ID, from.ID)
+}
+
+// confirmAIExit is the admin's tap on a manual AI button report.
+func (t *Tgbot) confirmAIExit(callbackQuery *telego.CallbackQuery, email string) {
+	price := t.paymentOrderService.AIExitPrice()
+	claimed, err := t.paymentOrderService.ConfirmAIExit(email, price, t.I18nBot("tgbot.payment.aiExitDescription"), time.Now())
+	t.retireStaleConfirm(callbackQuery)
+	if err != nil {
+		logger.Warning("confirmAIExit:", err)
+		t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
+		return
+	}
+	if !claimed {
+		t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.paymentAlreadyConfirmed", "Email=="+email))
+		return
+	}
+	logger.Infof("tgbot: admin %s confirmed the AI button of %s", userLabel(callbackQuery.From), email)
+	if tgID := t.clientTgID(email); tgID != 0 {
+		t.sendNotice(tgID, t.I18nBot("tgbot.messages.aiExitBought"))
+	}
+	t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.paymentConfirmed", "Email=="+email))
 }
 
 func isAIExitCallback(data string) bool {
@@ -102,8 +169,12 @@ func isAIExitCallback(data string) bool {
 
 func (t *Tgbot) answerAIExit(callbackQuery *telego.CallbackQuery) {
 	chatID := callbackQuery.Message.GetChat().ID
-	if callbackQuery.Data == cbAIExitBuy {
+	switch callbackQuery.Data {
+	case cbAIExitBuy:
 		t.buyAIExit(callbackQuery)
+		return
+	case cbAIExitReport:
+		t.reportAIExitPayment(callbackQuery)
 		return
 	}
 	emails := t.aiExitEmails(callbackQuery.From.ID)

@@ -71,14 +71,24 @@ func (s *PaymentOrderService) FreePlanPrice() int {
 	return price
 }
 
-// AIExitPrice is what the AI button costs a client who is not a friend, or 0
-// when it is not for sale (no price or no provider).
+// AIExitPrice is what the AI button costs a client who is not a friend; 0
+// means it is not for sale.
 func (s *PaymentOrderService) AIExitPrice() int {
 	price, _ := s.settingService.GetTgAIExitPrice()
-	if price <= 0 || !s.Online() {
-		return 0
+	return max(price, 0)
+}
+
+// ConfirmAIExit is an admin's confirm of a manual AI button payment: it unlocks
+// the button and books amount once; false means it was already unlocked.
+func (s *PaymentOrderService) ConfirmAIExit(email string, amount int, note string, now time.Time) (bool, error) {
+	claimed, err := s.markAIPaid(email)
+	if err != nil || !claimed {
+		return false, err
 	}
-	return price
+	if err := s.ledgerService.RecordPayment(email, amount, note, now); err != nil {
+		logger.Warning("ledger: booking the AI button of", email, "failed:", err)
+	}
+	return true, nil
 }
 
 // CreateAIExitOrder opens the payment page for the AI button of email's owner;
@@ -283,13 +293,25 @@ func (s *PaymentOrderService) fulfil(order *model.PaymentOrder, now time.Time) (
 	return &PaymentResult{Email: email, Amount: order.Amount, Currency: order.Currency}, nil
 }
 
-func (s *PaymentOrderService) unlockAIExit(order *model.PaymentOrder, note string, now time.Time) (*PaymentResult, error) {
-	billing, err := s.clientService.GetBillingByEmail(order.Email)
+// markAIPaid sets AIPaid with a guarded UPDATE, which SaveBilling never touches,
+// so a stale billing save cannot take a bought button back; false: already set.
+func (s *PaymentOrderService) markAIPaid(email string) (bool, error) {
+	billing, err := s.clientService.GetBillingByEmail(email)
 	if err != nil {
-		return nil, err
+		return false, err
 	}
-	billing.AIPaid = true
-	if err := s.clientService.SaveBilling(billing); err != nil {
+	if billing.Id == 0 {
+		if err := s.clientService.SaveBilling(billing); err != nil {
+			return false, err
+		}
+	}
+	res := database.GetDB().Model(&model.ClientBilling{}).
+		Where("client_id = ? AND ai_paid = ?", billing.ClientId, false).Update("ai_paid", true)
+	return res.RowsAffected == 1, res.Error
+}
+
+func (s *PaymentOrderService) unlockAIExit(order *model.PaymentOrder, note string, now time.Time) (*PaymentResult, error) {
+	if _, err := s.markAIPaid(order.Email); err != nil {
 		return nil, err
 	}
 	if err := s.ledgerService.RecordPayment(order.Email, order.Amount, note, now); err != nil {

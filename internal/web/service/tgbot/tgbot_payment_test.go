@@ -241,7 +241,7 @@ func TestExpiryReminderCarriesPaymentDetails(t *testing.T) {
 
 func resetThrottles(t *testing.T) {
 	t.Helper()
-	for _, th := range []*actionThrottle{paymentReports, freeRequests, invoiceOpens} {
+	for _, th := range []*actionThrottle{paymentReports, freeRequests, invoiceOpens, aiExitReports} {
 		th.mu.Lock()
 		th.last = map[int64]time.Time{}
 		th.mu.Unlock()

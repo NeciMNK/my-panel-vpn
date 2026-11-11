@@ -199,13 +199,21 @@ func TestCanceledOrderIsClosed(t *testing.T) {
 	}
 }
 
-// The AI button is bought once: the paid order unlocks it and books the income.
+// The AI button is bought once: the paid order unlocks it (also on a client with a
+// saved billing row, which SaveBilling never updates for it) and books the income.
 func TestPaidAIExitOrderUnlocksTheButtonAndBooksIt(t *testing.T) {
 	now := time.Date(2026, 11, 11, 12, 0, 0, 0, time.UTC)
 	seedPayingClient(t, "ai@x", 0)
+	billing, err := (&ClientService{}).GetBillingByEmail("ai@x")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := (&ClientService{}).SaveBilling(billing); err != nil {
+		t.Fatal(err)
+	}
 	fake := useFakeProvider(t)
 	orders := &PaymentOrderService{}
-	if _, err := orders.CreateAIExitOrder(context.Background(), 79, "ai@x", "AI", "https://t.me/bot"); !errors.Is(err, ErrNothingToPay) {
+	if _, err = orders.CreateAIExitOrder(context.Background(), 79, "ai@x", "AI", "https://t.me/bot"); !errors.Is(err, ErrNothingToPay) {
 		t.Fatalf("at price 0 err = %v, want ErrNothingToPay", err)
 	}
 	setSettings(t, map[string]string{"tgAIExitPrice": "50"})

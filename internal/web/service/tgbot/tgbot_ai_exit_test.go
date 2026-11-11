@@ -9,6 +9,7 @@ import (
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 )
 
 // seedAIExitWorld: the client's master inbound enters a cascade to DE (2, 3)
@@ -179,5 +180,51 @@ func setAIExitPrice(t *testing.T, price string) {
 	t.Helper()
 	if err := database.GetDB().Model(&model.Setting{}).Where("key = ?", "tgAIExitPrice").Update("value", price).Error; err != nil {
 		t.Fatal(err)
+	}
+}
+
+// Without a card provider the AI button is paid by hand: the client reports
+// it, an admin confirms once, and only then it opens and the income is booked.
+func TestAdminConfirmsAManualAIButtonPayment(t *testing.T) {
+	tb, calls := newScreenTgbot(t, false)
+	initReportDB(t)
+	localizeWithRealBundle(t)
+	setTestAdmins(t, 9001)
+	resetThrottles(t)
+	seedBilledClient(t, 6060, "buyer@x")
+	seedAIExitWorld(t)
+	seedSettings(t, map[string]string{"tgPaymentCurrency": "RUB", "tgPaymentDetails": "Card 2200", "tgAIExitPrice": "50"})
+
+	tb.screenClientHome(6060, 6060)
+	if _, markup := screenMarkup(t, tb, 6060); !strings.Contains(markup, `"`+cbAIExitBuy+`"`) {
+		t.Fatalf("with payment details the AI button must be on sale without a provider: %s", markup)
+	}
+	tap(tb, 6060, cbAIExitBuy, false)
+	body, markup := screenMarkup(t, tb, 6060)
+	if !strings.Contains(body, "Card 2200") || !strings.Contains(markup, `"`+cbAIExitReport+`"`) {
+		t.Fatalf("the manual pay screen lacks the details or the I-paid button: %s %s", body, markup)
+	}
+
+	tap(tb, 6060, cbAIExitReport, false)
+	notices := adminMessages(calls(), 9001)
+	if len(notices) != 1 {
+		t.Fatalf("admin notices = %d, want 1 report", len(notices))
+	}
+	if billingOf(t, "buyer@x").AIPaid {
+		t.Fatal("the report unlocked the button before an admin confirmed it")
+	}
+
+	tap(tb, 9001, cbAIExitConfirm+" buyer@x", true)
+	tap(tb, 9001, cbAIExitConfirm+" buyer@x", true)
+	if !billingOf(t, "buyer@x").AIPaid {
+		t.Fatal("the admin's confirm did not unlock the AI button")
+	}
+	report, _ := (&service.LedgerService{}).Report(service.LedgerMonthOf(time.Now()))
+	if len(report.Entries) != 1 || report.Entries[0].Amount != 50 {
+		t.Fatalf("ledger = %+v, want one 50 entry despite two confirms", report.Entries)
+	}
+	tb.screenClientHome(6060, 6060)
+	if _, markup := screenMarkup(t, tb, 6060); !strings.Contains(markup, `"`+cbAIExit+`"`) {
+		t.Fatalf("a confirmed buyer has no AI button: %s", markup)
 	}
 }

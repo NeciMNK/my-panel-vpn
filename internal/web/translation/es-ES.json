@@ -2889,7 +2889,7 @@
       "friendDiscountDesc": "Percent off every plan for clients an admin marked as friends (the \"🤝 Friend\" button on the client card in the bot). The term discounts above apply first.",
       "errFriendDiscount": "A whole number from 0 to 99",
       "aiExitPrice": "AI button price",
-      "aiExitPriceDesc": "One-off price of the bot's \"🤖 I will use AI\" button (a permanent exit IP). Friends always get it free. 0 hides it from everyone else; it is sold by card only, so it also needs a payment provider. Clients who already paid keep it."
+      "aiExitPriceDesc": "One-off price of the bot's \"🤖 I will use AI\" button (a permanent exit IP). Friends always get it free. 0 hides it from everyone else. It is paid by card when a provider is connected, or by hand to the payment details with an admin's confirm in the bot. Clients who already paid keep it."
     }
   },
   "tgbot": {
@@ -3046,6 +3046,7 @@
       "onlinePaymentDelayed": "✅ Payment received. The administrator will finish setting it up shortly.",
       "onlineFreeAdmin": "💳 Free plan bought online: {{ .User }} → {{ .Email }}, {{ .Total }}",
       "aiExitBoughtAdmin": "🤖 AI button bought online: {{ .User }} → {{ .Email }}, {{ .Total }}",
+      "aiExitReported": "🤖 {{ .User }} says they paid {{ .Total }} for the AI button: {{ .Email }}",
       "aiExitBought": "✅ Payment received. The 🤖 I will use AI button is yours for good.",
       "freePaid": "✅ Payment received! Your free plan ({{ .GB }} GB a month) is ready.",
       "paidOnlineLine": "💳 {{ .Email }} paid online, active until {{ .Date }}",
@@ -3132,6 +3133,8 @@
       "aiExitPickFromList": "📋 Pick a server from the list",
       "aiExitAuto": "✨ Choose for me",
       "aiExitBuy": "🤖 I will use AI · {{ .Total }}",
+      "aiExitIPaid": "✅ I paid",
+      "aiExitConfirm": "✅ Confirm AI button: {{ .Email }}",
       "aiExitOnlyIn": "🤖 Only in {{ .Country }}",
       "aiExitAnyCountry": "🌍 In every country",
       "aiExitCountry": "🌍 Country for AI",
@@ -3235,6 +3238,7 @@
       "freeInvoice": "🧾 <b>Free plan</b>: {{ .GB }} GB a month, no end date — {{ .Total }} once.\r\nThe payment keeps spam bots out, and {{ .Total }} comes off your first paid subscription. Access is created automatically after payment.",
       "aiExitDescription": "VPN: permanent exit IP for AI services",
       "aiExitInvoice": "🧾 <b>🤖 I will use AI</b>: a permanent exit IP, so AI services do not block your account — {{ .Total }} once, yours for good.\r\nThe button unlocks automatically after payment.",
+      "aiExitManual": "🧾 <b>🤖 I will use AI</b>: a permanent exit IP, so AI services do not block your account — {{ .Total }} once, yours for good.\r\n🏦 Where to pay:\r\n{{ .Details }}\r\n\r\nThen tap \"I paid\": the button opens once an admin confirms the payment.",
       "orderDescription": "VPN {{ .Email }}, {{ .Months }} mo"
     },
     "ledger": {
