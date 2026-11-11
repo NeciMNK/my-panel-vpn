@@ -98,6 +98,7 @@ var defaultValueMap = map[string]string{
 	"tgBotVpnFallback":            "true",
 	"tgBotAPIServer":              "",
 	"tgBotChatId":                 "",
+	"tgBotUsername":               "",
 	"tgRunTime":                   "@daily",
 	"tgBotBackup":                 "false",
 	"tgCpu":                       "80",
@@ -942,6 +943,16 @@ func (s *SettingService) GetSubClashUserAgentRegex() (string, error) {
 
 func (s *SettingService) GetSubTitle() (string, error) {
 	return s.getString("subTitle")
+}
+
+// GetTgBotUsername is the bot's @username as last reported by Telegram; the
+// bot records it on start so the sub server can link to it while Telegram is down.
+func (s *SettingService) GetTgBotUsername() (string, error) {
+	return s.getString("tgBotUsername")
+}
+
+func (s *SettingService) SetTgBotUsername(username string) error {
+	return s.setString("tgBotUsername", username)
 }
 
 func (s *SettingService) GetSubSupportUrl() (string, error) {
