@@ -1,5 +1,5 @@
-// Package homenet turns a home network (subnets behind a WireGuard, OpenVPN or
-// L2TP/IPsec tunnel) into Xray pieces and, for OpenVPN and L2TP, a system tunnel.
+// Package homenet turns a home network (subnets behind a WireGuard, OpenVPN,
+// L2TP/IPsec or IKEv2 tunnel) into Xray pieces and, except WireGuard, a system tunnel.
 package homenet
 
 import (
@@ -16,12 +16,13 @@ const (
 	KindWireGuard = "wireguard"
 	KindOpenVPN   = "openvpn"
 	KindL2TP      = "l2tp"
+	KindIKEv2     = "ikev2"
 )
 
 // Kinds lists the tunnel types a home network can use.
-var Kinds = []string{KindWireGuard, KindOpenVPN, KindL2TP}
+var Kinds = []string{KindWireGuard, KindOpenVPN, KindL2TP, KindIKEv2}
 
-// IfName is the system interface of a home network's OpenVPN/L2TP tunnel;
+// IfName is the system interface of a home network's system tunnel;
 // Linux caps interface names at 15 bytes.
 func IfName(id int) string { return fmt.Sprintf("mph%d", id) }
 

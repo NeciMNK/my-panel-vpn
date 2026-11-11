@@ -3013,10 +3013,10 @@
         "type": "object"
       },
       "HomeNetwork": {
-        "description": "HomeNetwork is a network behind a tunnel (WireGuard, OpenVPN or L2TP/IPsec)\nthat one server holds; users reach only the subnets and IPs their rules allow.",
+        "description": "HomeNetwork is a network behind a tunnel (WireGuard, OpenVPN, L2TP/IPsec or IKEv2)\nthat one server holds; users reach only the subnets and IPs their rules allow.",
         "properties": {
           "config": {
-            "description": "Config is the pasted wg-quick or .ovpn file.",
+            "description": "Config is the pasted wg-quick or .ovpn file, or the IKEv2 router's CA certificate.",
             "type": "string"
           },
           "createdAt": {
@@ -6119,7 +6119,7 @@
     },
     {
       "name": "Home networks",
-      "description": "Home LANs behind a WireGuard, OpenVPN or L2TP/IPsec tunnel held by one gateway server (node id 0 = this panel). Every other server reaches the gateway through a hidden VLESS+REALITY link. Users reach only the subnets and IPs their rules allow; everything else in the home network is blocked. All endpoints under /panel/api/homeNetworks."
+      "description": "Home LANs behind a WireGuard, OpenVPN, L2TP/IPsec or IKEv2/IPsec tunnel held by one gateway server (node id 0 = this panel). Every other server reaches the gateway through a hidden VLESS+REALITY link. Users reach only the subnets and IPs their rules allow; everything else in the home network is blocked. All endpoints under /panel/api/homeNetworks."
     },
     {
       "name": "Masters",
@@ -17917,7 +17917,7 @@
         "tags": [
           "Xray Settings"
         ],
-        "summary": "On a gateway server: bring a home network's OpenVPN or L2TP/IPsec client up (installing it when missing) or tear it down. Called by the master; answers within 45s even while the client still installs.",
+        "summary": "On a gateway server: bring a home network's OpenVPN, L2TP/IPsec or IKEv2 client up (installing it when missing) or tear it down. Called by the master; answers within 45s even while the client still installs.",
         "operationId": "post_panel_api_xray_homeTunnel",
         "requestBody": {
           "required": true,
