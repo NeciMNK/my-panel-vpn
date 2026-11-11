@@ -866,8 +866,8 @@ func (s *NodeService) Delete(id int) error {
 	// is its guid normally but its node-unique key for a cloned/ambiguous-guid
 	// node (see effectiveNodeKey) — so we purge both below.
 	var guid string
-	var n model.Node
-	if err := db.Select("guid").Where("id = ?", id).First(&n).Error; err == nil {
+	n := model.Node{Id: id}
+	if err := db.Select("id", "guid", "address").Where("id = ?", id).First(&n).Error; err == nil {
 		guid = n.Guid
 	}
 	// Delete the node row and its per-node child rows atomically. Remove the
@@ -886,6 +886,9 @@ func (s *NodeService) Delete(id int) error {
 			guids = append(guids, guid)
 		}
 		if err := tx.Where("node_guid IN ?", guids).Delete(&model.NodeClientIp{}).Error; err != nil {
+			return err
+		}
+		if err := unbindLedgerNode(tx, n); err != nil {
 			return err
 		}
 		return tx.Where("id = ?", id).Delete(&model.Node{}).Error

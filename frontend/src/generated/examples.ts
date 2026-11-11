@@ -1038,6 +1038,11 @@ export const EXAMPLES: Record<string, unknown> = {
     "month": "2026-11",
     "note": "1 mo"
   },
+  "LedgerNode": {
+    "address": "203.0.113.7",
+    "id": 1,
+    "name": "panel-node1"
+  },
   "LedgerNonPaying": {
     "email": "admin",
     "group": "family",
@@ -1070,6 +1075,13 @@ export const EXAMPLES: Record<string, unknown> = {
     ],
     "income": 2400,
     "month": "2026-11",
+    "nodes": [
+      {
+        "address": "203.0.113.7",
+        "id": 1,
+        "name": "panel-node1"
+      }
+    ],
     "nonPaying": [
       {
         "email": "admin",
@@ -1089,11 +1101,13 @@ export const EXAMPLES: Record<string, unknown> = {
     "serverCosts": 1500,
     "servers": [
       {
+        "address": "198.51.100.4",
         "billingDay": 15,
         "endMonth": "",
         "id": 1,
         "monthlyCost": 500,
         "name": "Hetzner DE",
+        "nodeId": 0,
         "paidThrough": "2027-02",
         "startMonth": "2026-11"
       }
@@ -1108,11 +1122,13 @@ export const EXAMPLES: Record<string, unknown> = {
     ]
   },
   "LedgerServer": {
+    "address": "198.51.100.4",
     "billingDay": 15,
     "endMonth": "",
     "id": 1,
     "monthlyCost": 500,
     "name": "Hetzner DE",
+    "nodeId": 0,
     "paidThrough": "2027-02",
     "startMonth": "2026-11"
   },

@@ -340,3 +340,72 @@ func TestSaveServerKeepsPaidThrough(t *testing.T) {
 		t.Errorf("after edit paid %q cost %d; want 2026-12, 600", stored.PaidThrough, stored.MonthlyCost)
 	}
 }
+
+// A server bound to a node shows that node's live address; one that is not a node
+// (e.g. the master) keeps its typed IP, and binding to a missing node is refused.
+func TestLedgerServerNodeBinding(t *testing.T) {
+	setupBulkDB(t)
+	ledger := &LedgerService{}
+	db := database.GetDB()
+	node := model.Node{Name: "panel-node1", Address: "203.0.113.7", Port: 2053}
+	if err := db.Create(&node).Error; err != nil {
+		t.Fatal(err)
+	}
+
+	bound := model.LedgerServer{Name: "NL 1", MonthlyCost: 1000, StartMonth: "2026-11", NodeId: node.Id, Address: "stale"}
+	if err := ledger.SaveServer(&bound); err != nil {
+		t.Fatalf("SaveServer bound: %v", err)
+	}
+	master := model.LedgerServer{Name: "De panel", MonthlyCost: 476, StartMonth: "2026-11", Address: " 198.51.100.4 "}
+	if err := ledger.SaveServer(&master); err != nil {
+		t.Fatalf("SaveServer master: %v", err)
+	}
+	if err := ledger.SaveServer(&model.LedgerServer{Name: "x", MonthlyCost: 1, StartMonth: "2026-11", NodeId: node.Id + 100}); !errors.Is(err, ErrLedgerNode) {
+		t.Errorf("missing node: err = %v, want %v", err, ErrLedgerNode)
+	}
+	if err := db.Model(&node).Update("address", "203.0.113.8").Error; err != nil {
+		t.Fatal(err)
+	}
+
+	report, err := ledger.Report("2026-11")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := map[string]string{}
+	for _, server := range report.Servers {
+		got[server.Name] = server.Address
+	}
+	want := map[string]string{"NL 1": "", "De panel": "198.51.100.4"}
+	if len(got) != len(want) || got["NL 1"] != want["NL 1"] || got["De panel"] != want["De panel"] {
+		t.Errorf("server addresses = %v, want %v", got, want)
+	}
+	wantNodes := []LedgerNode{{Id: node.Id, Name: "panel-node1", Address: "203.0.113.8"}}
+	if len(report.Nodes) != 1 || report.Nodes[0] != wantNodes[0] {
+		t.Errorf("nodes = %+v, want %+v", report.Nodes, wantNodes)
+	}
+}
+
+// Deleting a node must not leave the server pointing at a missing (or reused) id,
+// and must keep the IP the admin saw next to the server.
+func TestNodeDeleteKeepsLedgerServerAddress(t *testing.T) {
+	setupBulkDB(t)
+	db := database.GetDB()
+	node := model.Node{Name: "panel-node2", Address: "203.0.113.9", Port: 2053}
+	if err := db.Create(&node).Error; err != nil {
+		t.Fatal(err)
+	}
+	server := model.LedgerServer{Name: "Ru", MonthlyCost: 2000, StartMonth: "2026-09", NodeId: node.Id}
+	if err := (&LedgerService{}).SaveServer(&server); err != nil {
+		t.Fatal(err)
+	}
+	if err := (&NodeService{}).Delete(node.Id); err != nil {
+		t.Fatalf("Delete: %v", err)
+	}
+	var after model.LedgerServer
+	if err := db.First(&after, server.Id).Error; err != nil {
+		t.Fatal(err)
+	}
+	if after.NodeId != 0 || after.Address != "203.0.113.9" {
+		t.Errorf("after node delete: nodeId=%d address=%q, want 0 %q", after.NodeId, after.Address, "203.0.113.9")
+	}
+}

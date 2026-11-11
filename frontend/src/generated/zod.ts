@@ -962,6 +962,13 @@ export const LedgerEntrySchema = z.object({
 });
 export type LedgerEntry = z.infer<typeof LedgerEntrySchema>;
 
+export const LedgerNodeSchema = z.object({
+  address: z.string(),
+  id: z.number().int(),
+  name: z.string(),
+});
+export type LedgerNode = z.infer<typeof LedgerNodeSchema>;
+
 export const LedgerNonPayingSchema = z.object({
   email: z.string(),
   group: z.string(),
@@ -986,6 +993,7 @@ export const LedgerReportSchema = z.object({
   freeGroups: z.array(z.string()),
   income: z.number().int(),
   month: z.string(),
+  nodes: z.array(z.lazy(() => LedgerNodeSchema)),
   nonPaying: z.array(z.lazy(() => LedgerNonPayingSchema)),
   otherExpenses: z.number().int(),
   payingClients: z.number().int(),
@@ -998,11 +1006,13 @@ export const LedgerReportSchema = z.object({
 export type LedgerReport = z.infer<typeof LedgerReportSchema>;
 
 export const LedgerServerSchema = z.object({
+  address: z.string(),
   billingDay: z.number().int(),
   endMonth: z.string(),
   id: z.number().int(),
   monthlyCost: z.number().int(),
   name: z.string(),
+  nodeId: z.number().int(),
   paidThrough: z.string(),
   startMonth: z.string(),
 });

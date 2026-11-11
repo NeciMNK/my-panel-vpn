@@ -140,6 +140,7 @@ func run(root, outDir string) error {
 				"LedgerNonPaying",
 				"LedgerPayment",
 				"LedgerServerDue",
+				"LedgerNode",
 				"ClientBillingView",
 				"PaymentPlanPrice",
 				"PaymentResult",

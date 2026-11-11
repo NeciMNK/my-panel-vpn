@@ -2892,7 +2892,11 @@
       "extend": "Extend",
       "extendMonths": "by {count} mo",
       "paidThrough": "paid through {month}",
-      "errDay": "Day must be 1–31"
+      "errDay": "Day must be 1–31",
+      "address": "IP / адреса",
+      "node": "Нода",
+      "nodeHint": "Оберіть ноду на цьому сервері: її адреса показуватиметься тут і змінюватиметься разом із налаштуваннями ноди. Для сервера без ноди (наприклад, самої панелі) впишіть IP нижче.",
+      "noNode": "— не нода —"
     }
   },
   "tgbot": {
