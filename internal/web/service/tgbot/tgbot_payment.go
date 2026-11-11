@@ -13,6 +13,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/entity"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 	"github.com/mhsanaei/3x-ui/v3/internal/xray"
 
 	"github.com/mymmrac/telego"
@@ -40,10 +41,13 @@ var (
 )
 
 type paymentInfo struct {
-	price    int
-	currency string
-	plans    []entity.PaymentPlan
-	details  string
+	price          int
+	currency       string
+	plans          []entity.PaymentPlan
+	details        string
+	friendDiscount int
+	// online is true when an acquiring provider takes payments and confirms them itself.
+	online bool
 }
 
 // billed is false while the admin set neither a price nor details: the panel then bills nobody.
@@ -63,12 +67,12 @@ func (p paymentInfo) plan(months int) (entity.PaymentPlan, bool) {
 	return p.plans[i], true
 }
 
-// planTotal is the plan's price as text, or "" when no price is set.
-func (p paymentInfo) planTotal(plan entity.PaymentPlan) string {
+// planTotal is the plan's price for this client as text, or "" when no price is set.
+func (p paymentInfo) planTotal(plan entity.PaymentPlan, billing *model.ClientBilling) string {
 	if p.price <= 0 {
 		return ""
 	}
-	return p.money(plan.Total(p.price))
+	return p.money(service.ClientPrice(plan.Total(p.price), billing, p.friendDiscount))
 }
 
 func (t *Tgbot) loadPaymentInfo() paymentInfo {
@@ -76,6 +80,8 @@ func (t *Tgbot) loadPaymentInfo() paymentInfo {
 	info.price, info.currency, info.plans = t.billingService.PaymentPlans()
 	details, _ := t.settingService.GetTgPaymentDetails()
 	info.details = strings.TrimSpace(details)
+	info.friendDiscount = t.billingService.FriendDiscount()
+	info.online = t.paymentOrderService.Online()
 	return info
 }
 
@@ -112,8 +118,12 @@ func (t *Tgbot) paymentBlock(info paymentInfo, traffics []*xray.ClientTraffic) s
 	var b strings.Builder
 	b.WriteString(t.I18nBot("tgbot.payment.title"))
 	free, deferred := false, false
-	for _, traffic := range traffics {
+	owner := &model.ClientBilling{}
+	for i, traffic := range traffics {
 		billing := t.billingFor(traffic.Email)
+		if i == 0 {
+			owner = billing
+		}
 		free = free || billing.FreePlan
 		deferred = deferred || billing.GraceDays > 0
 	}
@@ -131,9 +141,15 @@ func (t *Tgbot) paymentBlock(info paymentInfo, traffics []*xray.ClientTraffic) s
 		}
 	}
 	if info.price > 0 {
+		if owner.Friend && info.friendDiscount > 0 {
+			b.WriteString(t.I18nBot("tgbot.payment.friend", "Percent=="+strconv.Itoa(info.friendDiscount)))
+		}
+		if owner.Credit > 0 {
+			b.WriteString(t.I18nBot("tgbot.payment.credit", "Total=="+info.money(owner.Credit)))
+		}
 		b.WriteString(t.I18nBot("tgbot.payment.plansTitle"))
 		for _, plan := range info.plans {
-			b.WriteString(t.planLine(info, plan))
+			b.WriteString(t.planLine(info, plan, owner))
 		}
 	}
 	if info.details != "" {
@@ -142,8 +158,8 @@ func (t *Tgbot) paymentBlock(info paymentInfo, traffics []*xray.ClientTraffic) s
 	return b.String()
 }
 
-func (t *Tgbot) planLine(info paymentInfo, plan entity.PaymentPlan) string {
-	params := []string{"Months==" + strconv.Itoa(plan.Months), "Total==" + info.planTotal(plan)}
+func (t *Tgbot) planLine(info paymentInfo, plan entity.PaymentPlan, billing *model.ClientBilling) string {
+	params := []string{"Months==" + strconv.Itoa(plan.Months), "Total==" + info.planTotal(plan, billing)}
 	if plan.DiscountPercent > 0 {
 		return t.I18nBot("tgbot.payment.planDiscounted", append(params, "Percent=="+strconv.Itoa(plan.DiscountPercent))...)
 	}
@@ -167,9 +183,16 @@ func (t *Tgbot) deferrable(traffics []*xray.ClientTraffic) []*xray.ClientTraffic
 	return out
 }
 
-// paymentRows are the client's own payment actions under its screen or reminder.
-func (t *Tgbot) paymentRows(traffics []*xray.ClientTraffic) [][]telego.InlineKeyboardButton {
-	rows := [][]telego.InlineKeyboardButton{tu.InlineKeyboardRow(t.btn("tgbot.buttons.iPaid", cbClientPaid))}
+// paymentRows are the client's own payment actions under its screen or reminder:
+// card payment when a provider is set, the manual "I paid" while there is somewhere to pay by hand.
+func (t *Tgbot) paymentRows(info paymentInfo, traffics []*xray.ClientTraffic) [][]telego.InlineKeyboardButton {
+	var rows [][]telego.InlineKeyboardButton
+	if info.online && info.price > 0 {
+		rows = append(rows, tu.InlineKeyboardRow(t.btn("tgbot.buttons.payOnline", cbPayOnline)))
+	}
+	if !info.online || info.details != "" {
+		rows = append(rows, tu.InlineKeyboardRow(t.btn("tgbot.buttons.iPaid", cbClientPaid)))
+	}
 	if len(t.deferrable(traffics)) > 0 {
 		rows = append(rows, tu.InlineKeyboardRow(t.btn2(
 			t.I18nBot("tgbot.buttons.payLater", "Days=="+strconv.Itoa(graceDays)), cbClientDefer)))
@@ -185,7 +208,7 @@ func (t *Tgbot) sendExpiryReminder(chatID int64, text string, due []*xray.Client
 		t.sendNotice(chatID, text)
 		return
 	}
-	rows := append(t.paymentRows(due), t.hideButton().InlineKeyboard...)
+	rows := append(t.paymentRows(info, due), t.hideButton().InlineKeyboard...)
 	t.SendMsgToTgbot(chatID, text+"\r\n"+t.paymentBlock(info, due), tu.InlineKeyboard(rows...))
 }
 
@@ -229,12 +252,13 @@ func userLabel(user telego.User) string {
 
 // screenPlanPicker asks which term the client paid for, so the admin confirms
 // exactly that term instead of guessing it from the amount received.
-func (t *Tgbot) screenPlanPicker(chatID int64) {
+func (t *Tgbot) screenPlanPicker(chatID, userID int64) {
 	info := t.loadPaymentInfo()
+	owner := t.ownerBilling(userID)
 	rows := make([][]telego.InlineKeyboardButton, 0, len(info.plans))
 	for _, plan := range info.plans {
 		label := t.I18nBot("tgbot.buttons.planOption", "Months=="+strconv.Itoa(plan.Months))
-		if total := info.planTotal(plan); total != "" {
+		if total := info.planTotal(plan, owner); total != "" {
 			label += " · " + total
 		}
 		rows = append(rows, tu.InlineKeyboardRow(t.btn2(label, cbClientPaid+" "+strconv.Itoa(plan.Months))))
@@ -258,7 +282,7 @@ func (t *Tgbot) reportClientPayment(callbackQuery *telego.CallbackQuery, monthsT
 		t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.paymentAlreadyReported"))
 		return
 	}
-	total := info.planTotal(plan)
+	total := info.planTotal(plan, t.billingFor(traffics[0].Email))
 	if total == "" {
 		total = "—"
 	}
@@ -491,6 +515,40 @@ func (t *Tgbot) trustedRow(email string) []telego.InlineKeyboardButton {
 		t.I18nBot("tgbot.buttons.trusted", "State=="+strings.TrimSpace(state)), t.encodeQuery("trust "+email)))
 }
 
+// ownerBilling prices screens that speak for all of a user's subscriptions by the first one.
+func (t *Tgbot) ownerBilling(userID int64) *model.ClientBilling {
+	traffics, err := t.inboundService.GetClientTrafficTgBot(userID)
+	if err != nil || len(traffics) == 0 {
+		return &model.ClientBilling{}
+	}
+	return t.billingFor(traffics[0].Email)
+}
+
+// friendRow is the client card's switch for the friends discount.
+func (t *Tgbot) friendRow(email string) []telego.InlineKeyboardButton {
+	state := t.I18nBot("tgbot.messages.no")
+	if t.billingFor(email).Friend {
+		state = t.I18nBot("tgbot.messages.yes")
+	}
+	return tu.InlineKeyboardRow(t.btn2(
+		t.I18nBot("tgbot.buttons.friend", "State=="+strings.TrimSpace(state)), t.encodeQuery("friend "+email)))
+}
+
+func (t *Tgbot) toggleFriend(callbackQuery *telego.CallbackQuery, email string) {
+	billing, err := t.clientService.GetBillingByEmail(email)
+	if err == nil {
+		billing.Friend = !billing.Friend
+		err = t.clientService.SaveBilling(billing)
+	}
+	if err != nil {
+		logger.Warning("toggleFriend:", err)
+		t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
+		return
+	}
+	t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.successfulOperation"))
+	t.searchClientScreen(callbackQuery.Message.GetChat().ID, email)
+}
+
 func (t *Tgbot) toggleTrusted(callbackQuery *telego.CallbackQuery, email string) {
 	billing, err := t.clientService.GetBillingByEmail(email)
 	if err == nil {
@@ -521,16 +579,19 @@ func (t *Tgbot) freePlanEnabled() bool {
 }
 
 // sendStrangerWelcome gives an unbound account its ChatID and, when the panel
-// offers a free plan, a way to ask an admin for one.
+// offers a free plan, a way to buy it online or to ask an admin for one.
 func (t *Tgbot) sendStrangerWelcome(chatID, userID int64) {
 	text := t.I18nBot("tgbot.answers.askToAddUserId", "TgUserID=="+strconv.FormatInt(userID, 10))
 	if !t.freePlanEnabled() {
 		t.sendNotice(chatID, text)
 		return
 	}
-	rows := append([][]telego.InlineKeyboardButton{
-		tu.InlineKeyboardRow(t.btn2(t.I18nBot("tgbot.buttons.requestFree", "GB=="+strconv.Itoa(t.freePlanGB())), cbFreeRequest)),
-	}, t.hideButton().InlineKeyboard...)
+	gb := strconv.Itoa(t.freePlanGB())
+	offer := t.btn2(t.I18nBot("tgbot.buttons.requestFree", "GB=="+gb), cbFreeRequest)
+	if price := t.paymentOrderService.FreePlanPrice(); price > 0 {
+		offer = t.btn2(t.I18nBot("tgbot.buttons.buyFree", "GB=="+gb, "Total=="+t.loadPaymentInfo().money(price)), cbFreeBuy)
+	}
+	rows := append([][]telego.InlineKeyboardButton{tu.InlineKeyboardRow(offer)}, t.hideButton().InlineKeyboard...)
 	t.SendMsgToTgbot(chatID, text, tu.InlineKeyboard(rows...))
 }
 

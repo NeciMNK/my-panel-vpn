@@ -2176,7 +2176,26 @@
       },
       "eventSpeedLow": "Speed below user minimum",
       "eventMasterLeader": "Another master took over",
-      "tgPaymentMoved": "The price, discounts and where to pay are set on the Finance page."
+      "tgPaymentMoved": "The price, discounts and where to pay are set on the Finance page.",
+      "tgFreePlanPrice": "Ціна безкоштовного тарифу (онлайн)",
+      "tgFreePlanPriceDesc": "Разова оплата проти спам-ботів. Якщо більше 0 і підключено платіжку, новий користувач сплачує її карткою в боті й отримує безкоштовний тариф автоматично, без схвалення адміна; ця сума віднімається з його першої платної підписки. 0 або без платіжки — лишається безкоштовний запит, який схвалює адмін.",
+      "tgFreePlanInbounds": "Підключення для оплаченого безкоштовного тарифу",
+      "tgFreePlanInboundsDesc": "Безкоштовний тариф, куплений онлайн, створює клієнта на цих підключеннях. Якщо жодного не обрано, онлайн-продаж безкоштовного тарифу вимкнено.",
+      "tgPayOnline": "Онлайн-оплата",
+      "tgPayHowTo": "Підключіть платіжку, і клієнти платитимуть карткою прямо в боті: підписка продовжується автоматично, без підтвердження адміна. Ручне «Я сплатив» працюватиме й далі, якщо на сторінці «Фінанси» заповнено реквізити. Кроки: відкрийте магазин у ЮKassa, скопіюйте сюди shopId і секретний ключ, збережіть і натисніть «Перевірити підключення».",
+      "tgPayProvider": "Платіжна система",
+      "tgPayProviderDesc": "Хто приймає оплату карткою. «Вручну» — оплату підтверджує адміністратор.",
+      "tgPayManual": "Вручну (підтверджує адмін)",
+      "tgPayYooKassa": "ЮKassa",
+      "tgPayShopId": "Ідентифікатор магазину (shopId)",
+      "tgPayShopIdDesc": "Особистий кабінет ЮKassa → Інтеграція → Ключі API: число над списком ключів.",
+      "tgPaySecret": "Секретний ключ",
+      "tgPaySecretDesc": "Випускається на тій самій сторінці «Ключі API»; починається з live_ (або test_ у тестового магазину). Зберігається лише в панелі й більше не показується.",
+      "tgPaySecretConfigured": "Задано; залиште порожнім, щоб зберегти поточний ключ.",
+      "tgPayTest": "Перевірити підключення",
+      "tgPayTestFailed": "Перевірка платіжки не пройшла (спершу збережіть налаштування)",
+      "tgPayTestLive": "Підключено до магазину ЮKassa {{ .Account }}: реальні платежі.",
+      "tgPayTestSandbox": "Підключено до тестового магазину ЮKassa {{ .Account }}: реальні гроші не списуються. Коли будете готові, поставте ключі бойового магазину."
     },
     "xray": {
       "save": "Зберегти",
@@ -2893,6 +2912,9 @@
       "extendMonths": "by {count} mo",
       "paidThrough": "paid through {month}",
       "errDay": "Day must be 1–31",
+      "friendDiscount": "Знижка для друзів",
+      "friendDiscountDesc": "Відсоток знижки на будь-який термін для клієнтів, яких адмін позначив другом (кнопка «🤝 Друг» у картці клієнта в боті). Спершу застосовується знижка за термін.",
+      "errFriendDiscount": "Ціле число від 0 до 99",
       "address": "IP / адреса",
       "node": "Нода",
       "nodeHint": "Оберіть ноду на цьому сервері: її адреса показуватиметься тут і змінюватиметься разом із налаштуваннями ноди. Для сервера без ноди (наприклад, самої панелі) впишіть IP нижче.",
@@ -3046,7 +3068,13 @@
       "masterLeaderPrevious": "It took over from {{ .Previous }}.",
       "attachedInbounds": "🔗 Підключення: {{ .Inbounds }}\r\n",
       "clientSearchPrompt": "🔍 Надішліть частину email клієнта, щоб знайти його.",
-      "clientSearchQuery": "🔍 Пошук: {{ .Query }}"
+      "clientSearchQuery": "🔍 Пошук: {{ .Query }}",
+      "onlinePaymentFailed": "⚠️ Онлайн-оплату #{{ .Id }} від {{ .User }} ({{ .Total }}) отримано, але не застосовано: {{ .Error }}\r\nЗастосуйте її вручну.",
+      "onlinePaymentDelayed": "✅ Оплату отримано. Адміністратор незабаром завершить налаштування.",
+      "onlineFreeAdmin": "💳 Безкоштовний тариф куплено онлайн: {{ .User }} → {{ .Email }}, {{ .Total }}",
+      "freePaid": "✅ Оплату отримано! Ваш безкоштовний тариф ({{ .GB }} ГБ на місяць) готовий.",
+      "paidOnlineLine": "💳 {{ .Email }} сплачено онлайн, активна до {{ .Date }}",
+      "onlinePaymentAdmin": "💳 Онлайн-оплата: {{ .User }} — {{ .Email }}, {{ .Months }} міс, {{ .Total }}"
     },
     "buttons": {
       "closeKeyboard": "❌ Закрити клавіатуру",
@@ -3121,14 +3149,19 @@
       "ledgerFreeGroups": "🆓 Non-paying groups",
       "nonPaying": "🆓 Does not pay: {{ .State }}",
       "mySubscription": "👤 Моя підписка",
+      "clearSearch": "✖️ Скинути пошук",
+      "payOnline": "💳 Сплатити карткою",
+      "payNow": "💳 Сплатити {{ .Total }}",
+      "checkPayment": "🔄 Я сплатив — перевірити",
+      "buyFree": "🆓 Отримати {{ .GB }} ГБ/міс безкоштовно за {{ .Total }}",
+      "friend": "🤝 Друг (знижка): {{ .State }}",
       "aiExit": "🤖 I will use AI",
       "aiExitChoose": "{{ .Country }}: choose a server",
       "aiExitYes": "✅ Yes",
       "aiExitNo": "❌ No",
       "aiExitForgot": "🤷 I don't remember",
       "aiExitPickFromList": "📋 Pick a server from the list",
-      "aiExitAuto": "✨ Choose for me",
-      "clearSearch": "✖️ Скинути пошук"
+      "aiExitAuto": "✨ Choose for me"
     },
     "answers": {
       "broadcastStarted": "🚀 Розсилку запущено.",
@@ -3166,7 +3199,11 @@
       "aiExitUnavailable": "This server cannot be pinned right now. Please choose again.",
       "aiExitPinned": "📌 Pinned: {{ .Server }}",
       "freeRequested": "✅ Запит надіслано. Адміністратор його розгляне.",
-      "freeAlreadyRequested": "⏳ Ви вже надіслали запит. Будь ласка, зачекайте."
+      "freeAlreadyRequested": "⏳ Ви вже надіслали запит. Будь ласка, зачекайте.",
+      "paymentUnavailable": "⚠️ Оплата карткою зараз недоступна, спробуйте пізніше.",
+      "paymentPending": "Оплата ще не надійшла. Вона перевіряється й автоматично.",
+      "paymentAlreadyApplied": "✅ Цю оплату вже враховано.",
+      "paymentCanceled": "Цей рахунок закрито. Якщо хочете сплатити, відкрийте новий."
     },
     "screens": {
       "panel": "Панель",
@@ -3209,7 +3246,15 @@
       "plansTitle": "💰 Вартість:\r\n",
       "plan": "• {{ .Months }} міс — {{ .Total }}\r\n",
       "planDiscounted": "• {{ .Months }} міс — {{ .Total }} (−{{ .Percent }}%)\r\n",
-      "choosePlan": "💳 За який термін ви сплатили?"
+      "choosePlan": "💳 За який термін ви сплатили?",
+      "friend": "🤝 Знижка для друзів: −{{ .Percent }}%\r\n",
+      "credit": "🎁 Перша оплата дешевша на {{ .Total }}: стільки ви вже сплатили за безкоштовний тариф.\r\n",
+      "chooseSubscription": "💳 Яку підписку сплачуєте?",
+      "chooseOnlinePlan": "💳 {{ .Email }}: оберіть термін",
+      "invoice": "🧾 <b>Рахунок</b>: {{ .Email }}, {{ .Months }} міс — {{ .Total }}\r\nСплатіть на сторінці: підписка продовжиться автоматично протягом хвилини.",
+      "freeDescription": "VPN безкоштовний тариф {{ .GB }} ГБ/міс",
+      "freeInvoice": "🧾 <b>Безкоштовний тариф</b>: {{ .GB }} ГБ на місяць, без терміну — разово {{ .Total }}.\r\nОплата захищає від спам-ботів, а {{ .Total }} віднімемо з першої платної підписки. Доступ створиться автоматично після оплати.",
+      "orderDescription": "VPN {{ .Email }}, {{ .Months }} міс"
     },
     "ledger": {
       "summary": "💰 <b>Finance for {{ .Month }}</b>\r\n\r\n➕ Income: {{ .Income }}\r\n➖ Expenses: {{ .Expenses }} (servers {{ .Servers }})\r\n{{ .Sign }} <b>Result: {{ .Balance }}</b>\r\n👥 Paying clients: {{ .Paying }}, expected {{ .Expected }}\r\n",

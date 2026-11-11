@@ -122,8 +122,56 @@ Set the price, discounts and where to pay in **Finance → Prices and payment** 
   opens the add-client wizard prefilled with the user's Telegram ID, the free
   quota (**Free plan traffic**, 10 GB by default) and a monthly traffic reset; the admin picks the inbounds. Confirming any payment
   for a free client removes the limit.
+- **Friends**: the **🤝 Friend** button in the bot's client card gives that client
+  the **Friends discount** (a percent under **Finance → Prices and payment**). It
+  applies to every term after the term discount; the client sees its own prices.
+- **Granting by hand** works as before: create the client in the panel or the bot.
+  Such a client pays nothing and gets no free-plan credit.
 
 With no price and no payment details, clients see no payment block.
+
+### Online payment (YooKassa)
+
+With a payment provider connected, a client pays by card/SBP right from the bot
+and the subscription is extended on its own; no admin confirms anything.
+
+1. Sign up at [YooKassa](https://yookassa.ru) (self-employed or sole trader works)
+   and wait for the shop to be activated. To try it first, create a **test shop**:
+   it moves no real money.
+2. In the YooKassa dashboard open **Integration → API keys**: copy the **shopId**
+   (the number above the keys) and issue a **secret key** (`live_…`, or `test_…`
+   for a test shop).
+3. In the panel: **Settings → Telegram → Payment → Online payment**, pick
+   **YooKassa**, paste the shopId and secret key, **save**, then press **Check
+   connection**: the panel shows the shop number and whether it is a test or live
+   shop. No HTTP notifications (webhook) are needed: the panel polls YooKassa every
+   15 seconds, so it works without a public address.
+4. Check the price under **Finance → Prices and payment**; the currency defaults to `RUB`.
+
+What changes in the bot:
+
+- Clients get a **💳 Pay by card** button → term → an invoice with a pay link. Once
+  paid, the term is extended automatically (within ~15 seconds, or at once on
+  **I paid — check**), the client and admins are told and the income is booked in
+  **Finance**. The amount is checked against YooKassa's answer: a payment of a
+  different sum is not applied and the admins are warned.
+- The manual **I have paid** stays while payment details are filled in on
+  **Finance** (e.g. for a card transfer); without details clients only see card payment.
+- **Paid free plan (keeps spam bots out)**: set the **Free plan price** (e.g. 5) and
+  the **Inbounds for paid free plans**. A new user sees **Get N GB/mo free for
+  5 RUB**, pays and becomes a free-plan client right away, with no admin approval.
+  Those 5 RUB come off their **first** paid plan; renewals are full price. Buying a
+  full plan straight away works too. The 5 RUB credit exists only when the free plan
+  was paid online: a client given the plan by hand does not get it.
+
+An unpaid invoice lives for 24 hours. The secret key is stored only in the panel
+database and is never shown after saving.
+
+<Callout type="info">
+  Another provider is a code change: implement the `payment.Provider` interface
+  (`internal/payment/provider.go`: verify keys, create an invoice, read a payment)
+  and add it to `payment.New` and the settings list.
+</Callout>
 
 ## Finance
 
@@ -176,6 +224,11 @@ The warning lead times come from `expireDiff` (days before expiry) and
 | `tgPaymentDetails` | _(none)_               | Where to pay: card, phone or a payment link.   |
 | `tgFreePlanEnable` | `false`                | Let strangers request a free monthly plan.     |
 | `tgFreePlanGB`     | `10`                   | Monthly traffic of a new free client, in GB.   |
+| `tgFreePlanPrice`  | `0`                    | Free plan price when paid online; comes off the first plan. |
+| `tgFreePlanInbounds` | _(none)_             | Inbound ids for a client who bought the free plan online. |
+| `tgFriendDiscount` | `0`                    | Friends discount, percent.                      |
+| `tgPayProvider`    | _(none)_               | Payment provider: empty (manual) or `yookassa`. |
+| `tgPayShopId` / `tgPaySecret` | _(none)_ / _(secret)_ | YooKassa shopId and secret key.        |
 
 <Callout type="warn">
   The bot token controls your bot — keep it secret and only add **trusted** admin

@@ -571,7 +571,27 @@ export default function LedgerPage() {
                                 <Input placeholder="3:10, 6:15, 12:20" />
                               </FormField>
                             </Col>
-                            <Col span={24}>
+                            <Col xs={24} md={6}>
+                              <FormField
+                                name="friendDiscount"
+                                label={t('pages.ledger.friendDiscount')}
+                                tooltip={t('pages.ledger.friendDiscountDesc')}
+                                rules={{
+                                  validate: rhfZodValidate(
+                                    LedgerPaymentSchema.shape.friendDiscount,
+                                  ),
+                                }}
+                              >
+                                <InputNumber
+                                  min={0}
+                                  max={99}
+                                  precision={0}
+                                  addonAfter="%"
+                                  style={{ width: '100%' }}
+                                />
+                              </FormField>
+                            </Col>
+                            <Col xs={24} md={18}>
                               <FormField
                                 name="details"
                                 label={t('pages.ledger.details')}

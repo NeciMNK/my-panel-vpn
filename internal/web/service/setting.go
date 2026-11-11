@@ -21,6 +21,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/payment"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/netproxy"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/random"
@@ -115,6 +116,12 @@ var defaultValueMap = map[string]string{
 	"tgPaymentDetails":            "",
 	"tgFreePlanEnable":            "false",
 	"tgFreePlanGB":                "10",
+	"tgFreePlanPrice":             "0",
+	"tgFreePlanInbounds":          "",
+	"tgFriendDiscount":            "0",
+	"tgPayProvider":               "",
+	"tgPayShopId":                 "",
+	"tgPaySecret":                 "",
 	"twoFactorEnable":             "false",
 	"twoFactorToken":              "",
 	"happLinkEnable":              "false",
@@ -381,6 +388,7 @@ func (s *SettingService) GetAllSettingView() (*entity.AllSettingView, error) {
 	view.HasNordSecret = secretConfigured(mustString(s.GetNord()))
 	view.HasSmtpPassword = secretConfigured(allSetting.SmtpPassword)
 	view.HasDiscordBotToken = secretConfigured(allSetting.DiscordBotToken)
+	view.HasTgPaySecret = secretConfigured(allSetting.TgPaySecret)
 	var apiTokenCount int64
 	if err := database.GetDB().Model(model.ApiToken{}).Where("enabled = ?", true).Count(&apiTokenCount).Error; err == nil {
 		view.HasApiToken = apiTokenCount > 0
@@ -390,6 +398,7 @@ func (s *SettingService) GetAllSettingView() (*entity.AllSettingView, error) {
 	view.LdapPassword = ""
 	view.SmtpPassword = ""
 	view.DiscordBotToken = ""
+	view.TgPaySecret = ""
 	return view, nil
 }
 
@@ -727,6 +736,40 @@ func (s *SettingService) GetTgFreePlanEnable() (bool, error) {
 
 func (s *SettingService) GetTgFreePlanGB() (int, error) {
 	return s.getInt("tgFreePlanGB")
+}
+
+func (s *SettingService) GetTgFreePlanPrice() (int, error) {
+	return s.getInt("tgFreePlanPrice")
+}
+
+// GetTgFreePlanInbounds lists the inbounds a paid free plan is created on; bad ids are skipped.
+func (s *SettingService) GetTgFreePlanInbounds() []int {
+	raw, _ := s.getString("tgFreePlanInbounds")
+	var ids []int
+	for part := range strings.SplitSeq(raw, ",") {
+		if id, err := strconv.Atoi(strings.TrimSpace(part)); err == nil && id > 0 {
+			ids = append(ids, id)
+		}
+	}
+	return ids
+}
+
+func (s *SettingService) GetTgFriendDiscount() (int, error) {
+	return s.getInt("tgFriendDiscount")
+}
+
+// GetPaymentConfig is the acquiring provider setting; an empty Provider means manual payments.
+func (s *SettingService) GetPaymentConfig() payment.Config {
+	var cfg payment.Config
+	cfg.Provider, _ = s.getString("tgPayProvider")
+	cfg.ShopID, _ = s.getString("tgPayShopId")
+	cfg.Secret, _ = s.getString("tgPaySecret")
+	cfg.ShopID, cfg.Secret = strings.TrimSpace(cfg.ShopID), strings.TrimSpace(cfg.Secret)
+	return cfg
+}
+
+func (s *SettingService) GetTgPaySecret() (string, error) {
+	return s.getString("tgPaySecret")
 }
 
 func (s *SettingService) GetTgPaymentDetails() (string, error) {
@@ -1764,6 +1807,7 @@ type SecretClears struct {
 	LdapPassword    bool
 	SmtpPassword    bool
 	DiscordBotToken bool
+	TgPaySecret     bool
 }
 
 func (s *SettingService) UpdateAllSetting(allSetting *entity.AllSetting, clears SecretClears) error {
@@ -1912,6 +1956,13 @@ func (s *SettingService) preserveRedactedSecrets(allSetting *entity.AllSetting, 
 			return err
 		}
 		allSetting.DiscordBotToken = value
+	}
+	if !clears.TgPaySecret && strings.TrimSpace(allSetting.TgPaySecret) == "" {
+		value, err := s.GetTgPaySecret()
+		if err != nil {
+			return err
+		}
+		allSetting.TgPaySecret = value
 	}
 	return nil
 }
@@ -2129,6 +2180,7 @@ var factoryDefaultSecretKeys = map[string]bool{
 	"ldapPassword":    true,
 	"smtpPassword":    true,
 	"discordBotToken": true,
+	"tgPaySecret":     true,
 }
 
 /*

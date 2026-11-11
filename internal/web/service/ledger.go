@@ -31,12 +31,14 @@ var (
 
 	ErrLedgerMonth  = errors.New("month must be YYYY-MM")
 	ErrLedgerAmount = errors.New("amount must be positive")
-	ErrLedgerKind   = errors.New("kind must be income or expense")
-	ErrLedgerName   = errors.New("name is required")
-	ErrLedgerRange  = errors.New("end month is before start month")
-	ErrLedgerDay    = errors.New("billing day must be 1-31")
-	ErrLedgerMonths = errors.New("extend by 1-36 months")
-	ErrLedgerNode   = errors.New("node not found")
+	// ErrFriendDiscount keeps a friend's price above zero: 100% would hand out plans for free.
+	ErrFriendDiscount = errors.New("friends discount must be 0-99%")
+	ErrLedgerKind     = errors.New("kind must be income or expense")
+	ErrLedgerName     = errors.New("name is required")
+	ErrLedgerRange    = errors.New("end month is before start month")
+	ErrLedgerDay      = errors.New("billing day must be 1-31")
+	ErrLedgerMonths   = errors.New("extend by 1-36 months")
+	ErrLedgerNode     = errors.New("node not found")
 )
 
 // LedgerService is the admin's profit/loss book: recurring server costs,
@@ -95,6 +97,8 @@ type LedgerPayment struct {
 	Currency  string `json:"currency" example:"RUB"`
 	Discounts string `json:"discounts" example:"3:10, 6:15, 12:20"`
 	Details   string `json:"details" example:"Card 2200 0000 0000 0000"`
+	// FriendDiscount is the percent off every plan for clients marked as friends.
+	FriendDiscount int `json:"friendDiscount" example:"20"`
 }
 
 func LedgerMonthOf(t time.Time) string { return t.Format("2006-01") }
@@ -319,6 +323,7 @@ func (s *LedgerService) payment() LedgerPayment {
 	p.Currency, _ = s.settingService.GetTgPaymentCurrency()
 	p.Discounts, _ = s.settingService.GetTgPaymentDiscounts()
 	p.Details, _ = s.settingService.GetTgPaymentDetails()
+	p.FriendDiscount, _ = s.settingService.GetTgFriendDiscount()
 	return p
 }
 
@@ -326,6 +331,9 @@ func (s *LedgerService) payment() LedgerPayment {
 func (s *LedgerService) SavePayment(p LedgerPayment) error {
 	if p.Price < 0 {
 		return ErrLedgerAmount
+	}
+	if p.FriendDiscount < 0 || p.FriendDiscount > 99 {
+		return ErrFriendDiscount
 	}
 	if _, err := entity.ParsePaymentPlans(p.Discounts); err != nil {
 		return err
@@ -335,6 +343,7 @@ func (s *LedgerService) SavePayment(p LedgerPayment) error {
 		"tgPaymentCurrency":  strings.TrimSpace(p.Currency),
 		"tgPaymentDiscounts": strings.TrimSpace(p.Discounts),
 		"tgPaymentDetails":   strings.TrimSpace(p.Details),
+		"tgFriendDiscount":   strconv.Itoa(p.FriendDiscount),
 	} {
 		if err := s.settingService.setString(key, value); err != nil {
 			return err

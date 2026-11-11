@@ -179,8 +179,13 @@ export interface AllSetting {
   tgEnabledEvents: string;
   tgFreePlanEnable: boolean;
   tgFreePlanGB: number;
+  tgFreePlanInbounds: string;
+  tgFreePlanPrice: number;
   tgLang: string;
   tgMemory: number;
+  tgPayProvider: string;
+  tgPaySecret: string;
+  tgPayShopId: string;
   tgRunTime: string;
   timeLocation: string;
   trafficDiff: number;
@@ -219,6 +224,7 @@ export interface AllSettingView {
   hasNordSecret: boolean;
   hasSmtpPassword: boolean;
   hasTgBotToken: boolean;
+  hasTgPaySecret: boolean;
   hasTwoFactorToken: boolean;
   hasWarpSecret: boolean;
   ipLimitAllowlist: string;
@@ -373,8 +379,13 @@ export interface AllSettingView {
   tgEnabledEvents: string;
   tgFreePlanEnable: boolean;
   tgFreePlanGB: number;
+  tgFreePlanInbounds: string;
+  tgFreePlanPrice: number;
   tgLang: string;
   tgMemory: number;
+  tgPayProvider: string;
+  tgPaySecret: string;
+  tgPayShopId: string;
   tgRunTime: string;
   timeLocation: string;
   trafficDiff: number;
@@ -496,10 +507,12 @@ export interface Client {
 }
 
 export interface ClientBillingView {
+  credit: number;
   currency: string;
   email: string;
   expiryTime: number;
   freePlan: boolean;
+  friend: boolean;
   graceDays: number;
   nonPaying: boolean;
   pendingMonths: number;
@@ -917,6 +930,7 @@ export interface LedgerPayment {
   currency: string;
   details: string;
   discounts: string;
+  friendDiscount: number;
   price: number;
 }
 

@@ -249,7 +249,9 @@ type Tgbot struct {
 	xrayService    service.XrayService
 	ledgerService  service.LedgerService
 	billingService service.BillingService
-	lastStatus     *service.Status
+	// paymentOrderService sells terms through the acquiring provider, when one is set.
+	paymentOrderService service.PaymentOrderService
+	lastStatus          *service.Status
 }
 
 // NewTgbot creates a new Tgbot instance.

@@ -130,3 +130,74 @@ func TestApplyPaymentRejectsBadInput(t *testing.T) {
 		})
 	}
 }
+
+func TestClientPrice(t *testing.T) {
+	cases := []struct {
+		name    string
+		total   int
+		billing model.ClientBilling
+		friend  int
+		want    int
+	}{
+		{name: "regular client pays the term total", total: 300, friend: 20, want: 300},
+		{name: "friend gets the friends percent", total: 300, billing: model.ClientBilling{Friend: true}, friend: 20, want: 240},
+		{name: "friend without a set percent pays full", total: 300, billing: model.ClientBilling{Friend: true}, want: 300},
+		{name: "free-plan credit comes off", total: 300, billing: model.ClientBilling{Credit: 5}, want: 295},
+		{name: "credit after the friends percent", total: 300, billing: model.ClientBilling{Friend: true, Credit: 5}, friend: 50, want: 145},
+		{name: "credit never makes a price negative", total: 3, billing: model.ClientBilling{Credit: 5}, want: 0},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := ClientPrice(tc.total, &tc.billing, tc.friend); got != tc.want {
+				t.Errorf("ClientPrice = %d, want %d", got, tc.want)
+			}
+		})
+	}
+}
+
+// The free-plan credit is a one-off: the first paid term is cheaper by it and
+// books that price, every later renewal is back at the friend's full price.
+func TestApplyPaymentSpendsFreePlanCreditOnce(t *testing.T) {
+	now := time.Date(2026, 11, 10, 12, 0, 0, 0, time.UTC)
+	seedPayingClient(t, "pal@x", now.Add(24*time.Hour).UnixMilli())
+	if err := (&SettingService{}).setString("tgFriendDiscount", "20"); err != nil {
+		t.Fatal(err)
+	}
+	clients := &ClientService{}
+	billing, err := clients.GetBillingByEmail("pal@x")
+	if err != nil {
+		t.Fatal(err)
+	}
+	billing.Friend, billing.Credit = true, 5
+	if err := clients.SaveBilling(billing); err != nil {
+		t.Fatal(err)
+	}
+	billingSvc := &BillingService{}
+	for i, want := range []int{235, 240} {
+		result, err := billingSvc.ApplyPayment("pal@x", 1, "1 mo", now)
+		if err != nil {
+			t.Fatalf("payment %d: %v", i+1, err)
+		}
+		if result.Amount != want {
+			t.Errorf("payment %d booked %d, want %d", i+1, result.Amount, want)
+		}
+	}
+	after, _ := clients.GetBillingByEmail("pal@x")
+	if after.Credit != 0 || !after.Friend {
+		t.Errorf("billing after payments = %+v, want credit 0 and still a friend", after)
+	}
+}
+
+// An online payment books what the provider charged, not today's price list.
+func TestApplyOnlinePaymentBooksTheChargedAmount(t *testing.T) {
+	now := time.Date(2026, 11, 10, 12, 0, 0, 0, time.UTC)
+	seedPayingClient(t, "web@x", now.UnixMilli())
+	result, err := (&BillingService{}).ApplyOnlinePayment("web@x", 1, 250, "online", now)
+	if err != nil || result.Amount != 250 {
+		t.Fatalf("result = %+v, %v; want 250 booked", result, err)
+	}
+	report, _ := (&LedgerService{}).Report(LedgerMonthOf(now))
+	if len(report.Entries) != 1 || report.Entries[0].Amount != 250 {
+		t.Errorf("ledger = %+v, want one 250 entry", report.Entries)
+	}
+}

@@ -2543,6 +2543,13 @@ export const sections: readonly Section[] = [
       },
       {
         method: 'POST',
+        path: '/panel/api/setting/testPayment',
+        summary:
+          'Check the saved acquiring provider credentials (YooKassa shop id and secret key) without charging anyone. The message says whether the shop is a sandbox or live.',
+        response: '{\n  "success": true,\n  "msg": "Connected to YooKassa shop 123456 (live)"\n}',
+      },
+      {
+        method: 'POST',
         path: '/panel/api/setting/panelProxy',
         summary:
           'Return the quick panel proxy: its mode (client, link, subscription or empty when off), its source and the panelproxy-* outbounds it builds now.',

@@ -38,6 +38,11 @@ export class AllSetting {
   tgLang = 'en-US';
   tgFreePlanEnable = false;
   tgFreePlanGB = 10;
+  tgFreePlanPrice = 0;
+  tgFreePlanInbounds = '';
+  tgPayProvider = '';
+  tgPayShopId = '';
+  tgPaySecret = '';
   twoFactorEnable = false;
   twoFactorToken = '';
   xrayTemplateConfig = '';
@@ -201,6 +206,8 @@ export class AllSetting {
   discordEnabledEvents = 'login.attempt,cpu.high';
   hasDiscordBotToken = false;
   clearDiscordBotToken = false;
+  hasTgPaySecret = false;
+  clearTgPaySecret = false;
 
   constructor(data?: unknown) {
     if (data != null) {

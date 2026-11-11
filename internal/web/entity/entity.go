@@ -60,6 +60,12 @@ type AllSetting struct {
 	// Prices and discounts are edited on the Finance page (LedgerService.SavePayment), not here.
 	TgFreePlanEnable bool `json:"tgFreePlanEnable" form:"tgFreePlanEnable"`
 	TgFreePlanGB     int  `json:"tgFreePlanGB" form:"tgFreePlanGB" validate:"gte=1,lte=100000"`
+	// A price above 0 sells the free plan through the provider instead of an admin request.
+	TgFreePlanPrice    int    `json:"tgFreePlanPrice" form:"tgFreePlanPrice" validate:"gte=0,lte=100000"`
+	TgFreePlanInbounds string `json:"tgFreePlanInbounds" form:"tgFreePlanInbounds" example:"1,2"`
+	TgPayProvider      string `json:"tgPayProvider" form:"tgPayProvider" validate:"omitempty,oneof=yookassa" example:"yookassa"`
+	TgPayShopId        string `json:"tgPayShopId" form:"tgPayShopId" example:"123456"`
+	TgPaySecret        string `json:"tgPaySecret" form:"tgPaySecret"`
 
 	SmtpEnable         bool   `json:"smtpEnable" form:"smtpEnable"`
 	SmtpHost           string `json:"smtpHost" form:"smtpHost"`
@@ -232,6 +238,7 @@ type AllSettingView struct {
 	HasNordSecret      bool `json:"hasNordSecret"`
 	HasSmtpPassword    bool `json:"hasSmtpPassword"`
 	HasDiscordBotToken bool `json:"hasDiscordBotToken"`
+	HasTgPaySecret     bool `json:"hasTgPaySecret"`
 }
 
 func pathHasForbiddenChar(s string) bool {
