@@ -1406,6 +1406,7 @@
       "save": "Lưu",
       "infoDesc": "Mọi thay đổi được thực hiện ở đây cần phải được lưu. Vui lòng khởi động lại bảng điều khiển để áp dụng các thay đổi.",
       "restartPanel": "Khởi động lại bảng điều khiển",
+      "migrateFrom": "Chuyển từ…",
       "restartPanelDesc": "Bạn có chắc chắn muốn khởi động lại bảng điều khiển? Nhấn OK để khởi động lại sau 3 giây. Nếu bạn không thể truy cập bảng điều khiển sau khi khởi động lại, vui lòng xem thông tin nhật ký của bảng điều khiển trên máy chủ.",
       "restartPanelSuccess": "Đã khởi động lại bảng điều khiển thành công",
       "actions": "Hành động",

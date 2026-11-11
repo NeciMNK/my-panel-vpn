@@ -1527,6 +1527,7 @@
       "save": "Uložiť",
       "infoDesc": "Každú zmenu najprv uložte. Na jej použitie reštartujte panel.",
       "restartPanel": "Reštartovať panel",
+      "migrateFrom": "Presunúť z…",
       "restartPanelDesc": "Naozaj chcete reštartovať panel? Ak sa po reštarte nedá otvoriť, skontrolujte záznamy panelu na serveri.",
       "restartPanelSuccess": "Panel bol úspešne reštartovaný.",
       "actions": "Akcie",

@@ -1406,6 +1406,7 @@
       "save": "Kaydet",
       "infoDesc": "Burada yapılan her değişikliğin kaydedilmesi gerekir. Değişikliklerin uygulanması için paneli yeniden başlatın.",
       "restartPanel": "Paneli Yeniden Başlat",
+      "migrateFrom": "Şuradan taşı…",
       "restartPanelDesc": "Paneli yeniden başlatmak istediğinizden emin misiniz? Yeniden başlattıktan sonra panele erişemezseniz, sunucudaki panel loglarını kontrol edin.",
       "restartPanelSuccess": "Panel başarıyla yeniden başlatıldı.",
       "actions": "İşlemler",
