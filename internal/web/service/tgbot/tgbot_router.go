@@ -1272,7 +1272,7 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 		email, freePlan, tgID := draft.email, draft.freePlan, draft.tgID
 		addClientDrafts.reset(actor)
 		if userID, err := strconv.ParseInt(tgID, 10, 64); freePlan && err == nil && userID > 0 {
-			t.sendNotice(userID, t.I18nBot("tgbot.messages.freeApproved", "GB=="+strconv.Itoa(freePlanGB)))
+			t.sendNotice(userID, t.I18nBot("tgbot.messages.freeApproved", "GB=="+strconv.Itoa(t.freePlanGB())))
 			t.screenClientHome(userID, userID, screenSendNew)
 		}
 		// The new client's card is the screen: the links and the QR hang off it,

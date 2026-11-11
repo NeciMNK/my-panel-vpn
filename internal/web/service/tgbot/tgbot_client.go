@@ -121,7 +121,7 @@ func (t *Tgbot) SubmitAddClient(draft *clientDraft) (bool, error) {
 		TgID:       tgIDInt,
 	}
 	if draft.freePlan {
-		client.TotalGB = freePlanGB * 1024 * 1024 * 1024
+		client.TotalGB = int64(t.freePlanGB()) << 30
 		client.TrafficReset = "monthly"
 		client.TrafficResetDay = 1
 	}

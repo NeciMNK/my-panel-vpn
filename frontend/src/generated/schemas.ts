@@ -538,6 +538,11 @@ export const SCHEMAS: Record<string, unknown> = {
         "description": "Prices and discounts are edited on the Finance page (LedgerService.SavePayment), not here.",
         "type": "boolean"
       },
+      "tgFreePlanGB": {
+        "maximum": 100000,
+        "minimum": 1,
+        "type": "integer"
+      },
       "tgLang": {
         "type": "string"
       },
@@ -759,6 +764,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgCpu",
       "tgEnabledEvents",
       "tgFreePlanEnable",
+      "tgFreePlanGB",
       "tgLang",
       "tgMemory",
       "tgRunTime",
@@ -1339,6 +1345,11 @@ export const SCHEMAS: Record<string, unknown> = {
         "description": "Prices and discounts are edited on the Finance page (LedgerService.SavePayment), not here.",
         "type": "boolean"
       },
+      "tgFreePlanGB": {
+        "maximum": 100000,
+        "minimum": 1,
+        "type": "integer"
+      },
       "tgLang": {
         "type": "string"
       },
@@ -1568,6 +1579,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgCpu",
       "tgEnabledEvents",
       "tgFreePlanEnable",
+      "tgFreePlanGB",
       "tgLang",
       "tgMemory",
       "tgRunTime",

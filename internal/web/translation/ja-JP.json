@@ -2037,7 +2037,9 @@
       "subHostSortModeDesc": "異なるインバウンド間でもホストページの順序に従います。サーバーが出力する順序を指定しますが、クライアントアプリが独自に並べ替える場合があります。",
       "tgPayment": "Payment",
       "tgFreePlan": "Free plan",
-      "tgFreePlanDesc": "Let unknown Telegram users ask for a free subscription (10 GB a month). Every request must be approved by an admin in the bot; paying for any term removes the limit.",
+      "tgFreePlanDesc": "Let unknown Telegram users ask for a free subscription with a monthly traffic quota (set below). Every request must be approved by an admin in the bot; paying for any term removes the limit.",
+      "tgFreePlanGB": "Free plan traffic (GB)",
+      "tgFreePlanGBDesc": "How many gigabytes a month a new free client gets. Clients that already exist keep their current limit.",
       "panelProxy": {
         "setup": "Through my VPN",
         "title": "Route the panel through a proxy",
