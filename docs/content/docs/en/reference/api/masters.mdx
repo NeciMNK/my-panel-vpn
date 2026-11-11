@@ -22,14 +22,17 @@ _openapi:
       url: '#remove-a-master-that-is-down-for-good-from-the-list-a-running-master-is-refused-and-so-is-any-change-while-another-master-is-offline-or-when-this-panel-is-not-the-leading-primary'
     - depth: 2
       title: Rank every master, the new primary first; it takes the lead within about
-        two heartbeats. Allowed only on the leading primary while every master
-        is online.
-      url: '#rank-every-master-the-new-primary-first-it-takes-the-lead-within-about-two-heartbeats-allowed-only-on-the-leading-primary-while-every-master-is-online'
+        two heartbeats. Allowed only on the leading primary while every joined
+        master is online (pending masters do not block).
+      url: '#rank-every-master-the-new-primary-first-it-takes-the-lead-within-about-two-heartbeats-allowed-only-on-the-leading-primary-while-every-joined-master-is-online-pending-masters-do-not-block'
     - depth: 2
       title: List a new master last in priority and return the env file it must start
-        with. It shows as pending until its first heartbeat. Allowed only on the
-        leading primary while every master is online.
-      url: '#list-a-new-master-last-in-priority-and-return-the-env-file-it-must-start-with-it-shows-as-pending-until-its-first-heartbeat-allowed-only-on-the-leading-primary-while-every-master-is-online'
+        with. It shows as pending until its first heartbeat and blocks nothing
+        meanwhile. dbHost replaces a DSN host that names this machine
+        (127.0.0.1, localhost, a socket); dbLocal in the response flags a DSN
+        that still does. Allowed only on the leading primary while every joined
+        master is online.
+      url: '#list-a-new-master-last-in-priority-and-return-the-env-file-it-must-start-with-it-shows-as-pending-until-its-first-heartbeat-and-blocks-nothing-meanwhile-dbhost-replaces-a-dsn-host-that-names-this-machine-127001-localhost-a-socket-dblocal-in-the-response-flags-a-dsn-that-still-does-allowed-only-on-the-leading-primary-while-every-joined-master-is-online'
   structuredData:
     headings:
       - content: Every master that joined, whether it is alive and which one leads.
@@ -40,12 +43,15 @@ _openapi:
         id: remove-a-master-that-is-down-for-good-from-the-list-a-running-master-is-refused-and-so-is-any-change-while-another-master-is-offline-or-when-this-panel-is-not-the-leading-primary
       - content: Rank every master, the new primary first; it takes the lead within
           about two heartbeats. Allowed only on the leading primary while every
-          master is online.
-        id: rank-every-master-the-new-primary-first-it-takes-the-lead-within-about-two-heartbeats-allowed-only-on-the-leading-primary-while-every-master-is-online
+          joined master is online (pending masters do not block).
+        id: rank-every-master-the-new-primary-first-it-takes-the-lead-within-about-two-heartbeats-allowed-only-on-the-leading-primary-while-every-joined-master-is-online-pending-masters-do-not-block
       - content: List a new master last in priority and return the env file it must
-          start with. It shows as pending until its first heartbeat. Allowed
-          only on the leading primary while every master is online.
-        id: list-a-new-master-last-in-priority-and-return-the-env-file-it-must-start-with-it-shows-as-pending-until-its-first-heartbeat-allowed-only-on-the-leading-primary-while-every-master-is-online
+          start with. It shows as pending until its first heartbeat and blocks
+          nothing meanwhile. dbHost replaces a DSN host that names this machine
+          (127.0.0.1, localhost, a socket); dbLocal in the response flags a DSN
+          that still does. Allowed only on the leading primary while every
+          joined master is online.
+        id: list-a-new-master-last-in-priority-and-return-the-env-file-it-must-start-with-it-shows-as-pending-until-its-first-heartbeat-and-blocks-nothing-meanwhile-dbhost-replaces-a-dsn-host-that-names-this-machine-127001-localhost-a-socket-dblocal-in-the-response-flags-a-dsn-that-still-does-allowed-only-on-the-leading-primary-while-every-joined-master-is-online
     contents: []
 ---
 

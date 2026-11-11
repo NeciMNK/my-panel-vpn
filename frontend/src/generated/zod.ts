@@ -1032,6 +1032,7 @@ export const MLKEM768ResponseSchema = z.object({
 export type MLKEM768Response = z.infer<typeof MLKEM768ResponseSchema>;
 
 export const MasterSetupSchema = z.object({
+  dbLocal: z.boolean(),
   env: z.string(),
   keyFile: z.string().optional(),
   name: z.string(),

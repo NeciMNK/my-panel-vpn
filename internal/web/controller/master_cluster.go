@@ -29,6 +29,8 @@ type ReorderMastersRequest struct {
 type AddMasterRequest struct {
 	Name string `json:"name" validate:"required,max=64" example:"master-3"`
 	Url  string `json:"url" validate:"omitempty,url,max=255" example:"https://panel-3.example.com:2053"`
+	// DbHost is how the new master reaches the database when this one uses 127.0.0.1.
+	DbHost string `json:"dbHost" validate:"omitempty,hostname_rfc1123|ip,max=255" example:"10.0.0.1"`
 }
 
 func NewMasterClusterController(g *gin.RouterGroup) *MasterClusterController {
@@ -66,7 +68,7 @@ func (a *MasterClusterController) add(c *gin.Context) {
 	if !ok {
 		return
 	}
-	setup, err := a.cluster.Add(req.Name, req.Url)
+	setup, err := a.cluster.Add(req.Name, req.Url, req.DbHost)
 	a.reply(c, "pages.nodes.masters.toasts.added", setup, err)
 }
 

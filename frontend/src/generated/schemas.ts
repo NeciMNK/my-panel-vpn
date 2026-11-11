@@ -4237,6 +4237,11 @@ export const SCHEMAS: Record<string, unknown> = {
   "MasterSetup": {
     "description": "MasterSetup is what a newly added master needs in its env file.",
     "properties": {
+      "dbLocal": {
+        "description": "DBLocal warns that XUI_DB_DSN still names this machine's database.",
+        "example": false,
+        "type": "boolean"
+      },
       "env": {
         "example": "XUI_DB_TYPE=postgres\nXUI_MASTER_NAME=master-3\n",
         "type": "string"
@@ -4256,6 +4261,7 @@ export const SCHEMAS: Record<string, unknown> = {
       }
     },
     "required": [
+      "dbLocal",
       "env",
       "name",
       "priority"

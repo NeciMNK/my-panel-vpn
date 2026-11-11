@@ -1839,15 +1839,15 @@ export const sections: readonly Section[] = [
         method: 'POST',
         path: '/panel/api/masters/reorder',
         summary:
-          'Rank every master, the new primary first; it takes the lead within about two heartbeats. Allowed only on the leading primary while every master is online.',
+          'Rank every master, the new primary first; it takes the lead within about two heartbeats. Allowed only on the leading primary while every joined master is online (pending masters do not block).',
         body: '{\n  "names": ["master-2", "master-1"]\n}',
       },
       {
         method: 'POST',
         path: '/panel/api/masters/add',
         summary:
-          'List a new master last in priority and return the env file it must start with. It shows as pending until its first heartbeat. Allowed only on the leading primary while every master is online.',
-        body: '{\n  "name": "master-3",\n  "url": "https://panel-3.example.com:2053"\n}',
+          'List a new master last in priority and return the env file it must start with. It shows as pending until its first heartbeat and blocks nothing meanwhile. dbHost replaces a DSN host that names this machine (127.0.0.1, localhost, a socket); dbLocal in the response flags a DSN that still does. Allowed only on the leading primary while every joined master is online.',
+        body: '{\n  "name": "master-3",\n  "url": "https://panel-3.example.com:2053",\n  "dbHost": "10.0.0.1"\n}',
         responseSchema: 'MasterSetup',
       },
     ],

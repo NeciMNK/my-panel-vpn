@@ -1544,7 +1544,10 @@
           "running": "master {{ .Name }} is still running; stop it first",
           "nameTaken": "a master named {{ .Name }} already exists",
           "badOrder": "the order must list every master exactly once"
-        }
+        },
+        "addDbHost": "Database address for the new master",
+        "addDbHostHint": "Fill in when this master reaches PostgreSQL over 127.0.0.1: the new master gets this address instead. PostgreSQL must accept connections from the new server (listen_addresses and pg_hba.conf).",
+        "setupDbLocal": "XUI_DB_DSN still points to this server's own database (127.0.0.1 or a socket), which the new master cannot reach. Put the database address into the DSN, or add the master again with the database address filled in."
       }
     },
     "settings": {
