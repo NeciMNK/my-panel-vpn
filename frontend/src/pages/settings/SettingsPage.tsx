@@ -32,6 +32,7 @@ import DiscordTab from './DiscordTab';
 import SubscriptionGeneralTab from './SubscriptionGeneralTab';
 import SubscriptionFormatsTab from './SubscriptionFormatsTab';
 import SubscriptionBalancersTab from './SubscriptionBalancersTab';
+import MigrateFromButton from './MigrateFromButton';
 import './SettingsPage.css';
 
 interface ApiMsg {
@@ -281,7 +282,7 @@ export default function SettingsPage() {
                       <Card hoverable>
                         <Row className="header-row">
                           <Col xs={24} sm={10} className="header-actions">
-                            <Space>
+                            <Space wrap>
                               <Button type="primary" disabled={saveDisabled} onClick={onSave}>
                                 {t('pages.settings.save')}
                               </Button>
@@ -293,6 +294,7 @@ export default function SettingsPage() {
                               >
                                 {t('pages.settings.restartPanel')}
                               </Button>
+                              <MigrateFromButton />
                             </Space>
                           </Col>
                           <Col xs={24} sm={14} className="header-info">

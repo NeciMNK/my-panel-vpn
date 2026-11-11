@@ -1386,6 +1386,7 @@
       "save": "Guardar",
       "infoDesc": "Cada cambio realizado aquí debe ser guardado. Por favor, reinicie el panel para aplicar los cambios.",
       "restartPanel": "Reiniciar panel",
+      "migrateFrom": "Migrar desde…",
       "restartPanelDesc": "¿Está seguro de que desea reiniciar el panel? Haga clic en Aceptar para reiniciar después de 3 segundos. Si no puede acceder al panel después de reiniciar, por favor, consulte la información de registro del panel en el servidor.",
       "restartPanelSuccess": "El panel se reinició correctamente",
       "actions": "Acciones",

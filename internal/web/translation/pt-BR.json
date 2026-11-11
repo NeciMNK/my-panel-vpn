@@ -1386,6 +1386,7 @@
       "save": "Salvar",
       "infoDesc": "Toda alteração feita aqui precisa ser salva. Reinicie o painel para aplicar as alterações.",
       "restartPanel": "Reiniciar painel",
+      "migrateFrom": "Migrar de…",
       "restartPanelDesc": "Tem certeza de que deseja reiniciar o painel? Se não conseguir acessar o painel após reiniciar, consulte os logs do painel no servidor.",
       "restartPanelSuccess": "O painel foi reiniciado com sucesso",
       "actions": "Ações",

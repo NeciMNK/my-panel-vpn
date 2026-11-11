@@ -1507,6 +1507,7 @@
       "save": "Save",
       "infoDesc": "Every change made here needs to be saved. Please restart the panel to apply changes.",
       "restartPanel": "Restart Panel",
+      "migrateFrom": "Move from…",
       "restartPanelDesc": "Are you sure you want to restart the panel? If you cannot access the panel after restarting, please view the panel log info on the server.",
       "restartPanelSuccess": "The panel was successfully restarted.",
       "actions": "Actions",
