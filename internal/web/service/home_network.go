@@ -64,7 +64,7 @@ func (s *HomeNetworkService) validate(req *HomeNetworkRequest) error {
 		return common.NewError("home network request is required")
 	}
 	if !slices.Contains(homenet.Kinds, req.Kind) {
-		return common.NewError("connection type must be wireguard, openvpn or l2tp")
+		return common.NewError("connection type must be wireguard, openvpn, l2tp or ikev2")
 	}
 	var err error
 	if req.Subnets, err = homenet.NormalizeTargets(req.Subnets); err != nil {
@@ -105,6 +105,14 @@ func (s *HomeNetworkService) validate(req *HomeNetworkRequest) error {
 	case homenet.KindL2TP:
 		t := &homenet.Tunnel{Server: req.Server, Username: req.Username, Password: req.Password, PSK: req.Psk}
 		if _, err := homenet.L2TPFiles(t, "/"); err != nil {
+			return common.NewError(err.Error())
+		}
+	case homenet.KindIKEv2:
+		t := homeTunnel(&model.HomeNetwork{
+			Kind: req.Kind, Config: req.Config, Server: strings.TrimSpace(req.Server),
+			Username: req.Username, Password: req.Password, Psk: req.Psk, Subnets: req.Subnets, Hosts: req.Hosts,
+		}, true)
+		if _, err := homenet.IKEv2Files(t, "/"); err != nil {
 			return common.NewError(err.Error())
 		}
 	}
@@ -283,10 +291,14 @@ func homeFingerprint(h *model.HomeNetwork, servers []int, rules []resolvedHomeRu
 }
 
 func homeTunnel(h *model.HomeNetwork, enable bool) *homenet.Tunnel {
-	return &homenet.Tunnel{
+	t := &homenet.Tunnel{
 		Id: h.Id, Kind: h.Kind, Enable: enable, OpenVPN: h.Config, Server: h.Server,
 		Username: h.Username, Password: h.Password, PSK: h.Psk, Routes: homeTargets(h),
 	}
+	if h.Kind == homenet.KindIKEv2 {
+		t.OpenVPN, t.CA = "", h.Config
+	}
+	return t
 }
 
 // setHomeTunnel brings a system tunnel up or down on its gateway server.

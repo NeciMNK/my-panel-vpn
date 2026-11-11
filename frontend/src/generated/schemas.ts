@@ -2948,10 +2948,10 @@ export const SCHEMAS: Record<string, unknown> = {
     "type": "object"
   },
   "HomeNetwork": {
-    "description": "HomeNetwork is a network behind a tunnel (WireGuard, OpenVPN or L2TP/IPsec)\nthat one server holds; users reach only the subnets and IPs their rules allow.",
+    "description": "HomeNetwork is a network behind a tunnel (WireGuard, OpenVPN, L2TP/IPsec or IKEv2)\nthat one server holds; users reach only the subnets and IPs their rules allow.",
     "properties": {
       "config": {
-        "description": "Config is the pasted wg-quick or .ovpn file.",
+        "description": "Config is the pasted wg-quick or .ovpn file, or the IKEv2 router's CA certificate.",
         "type": "string"
       },
       "createdAt": {

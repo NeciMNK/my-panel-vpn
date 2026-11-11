@@ -64,10 +64,10 @@ _openapi:
         outbound is removed.
       url: '#force-a-balancer-in-the-running-core-to-always-pick-one-outbound-routingserviceoverridebalancertarget-applied-live-without-a-restart-and-kept-across-config-saves-cleared-when-xray-restarts-or-the-target-outbound-is-removed'
     - depth: 2
-      title: "On a gateway server: bring a home network's OpenVPN or L2TP/IPsec client
-        up (installing it when missing) or tear it down. Called by the master;
-        answers within 45s even while the client still installs."
-      url: '#on-a-gateway-server-bring-a-home-networks-openvpn-or-l2tpipsec-client-up-installing-it-when-missing-or-tear-it-down-called-by-the-master-answers-within-45s-even-while-the-client-still-installs'
+      title: "On a gateway server: bring a home network's OpenVPN, L2TP/IPsec or IKEv2
+        client up (installing it when missing) or tear it down. Called by the
+        master; answers within 45s even while the client still installs."
+      url: '#on-a-gateway-server-bring-a-home-networks-openvpn-l2tpipsec-or-ikev2-client-up-installing-it-when-missing-or-tear-it-down-called-by-the-master-answers-within-45s-even-while-the-client-still-installs'
     - depth: 2
       title: 'On a gateway server: whether a home network tunnel runs and its
         interface is up.'
@@ -177,10 +177,11 @@ _openapi:
           restart and kept across config saves; cleared when Xray restarts or
           the target outbound is removed.
         id: force-a-balancer-in-the-running-core-to-always-pick-one-outbound-routingserviceoverridebalancertarget-applied-live-without-a-restart-and-kept-across-config-saves-cleared-when-xray-restarts-or-the-target-outbound-is-removed
-      - content: "On a gateway server: bring a home network's OpenVPN or L2TP/IPsec
-          client up (installing it when missing) or tear it down. Called by the
-          master; answers within 45s even while the client still installs."
-        id: on-a-gateway-server-bring-a-home-networks-openvpn-or-l2tpipsec-client-up-installing-it-when-missing-or-tear-it-down-called-by-the-master-answers-within-45s-even-while-the-client-still-installs
+      - content: "On a gateway server: bring a home network's OpenVPN, L2TP/IPsec or
+          IKEv2 client up (installing it when missing) or tear it down. Called
+          by the master; answers within 45s even while the client still
+          installs."
+        id: on-a-gateway-server-bring-a-home-networks-openvpn-l2tpipsec-or-ikev2-client-up-installing-it-when-missing-or-tear-it-down-called-by-the-master-answers-within-45s-even-while-the-client-still-installs
       - content: 'On a gateway server: whether a home network tunnel runs and its
           interface is up.'
         id: on-a-gateway-server-whether-a-home-network-tunnel-runs-and-its-interface-is-up

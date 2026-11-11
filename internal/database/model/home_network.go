@@ -1,6 +1,6 @@
 package model
 
-// HomeNetwork is a network behind a tunnel (WireGuard, OpenVPN or L2TP/IPsec)
+// HomeNetwork is a network behind a tunnel (WireGuard, OpenVPN, L2TP/IPsec or IKEv2)
 // that one server holds; users reach only the subnets and IPs their rules allow.
 type HomeNetwork struct {
 	Id            int    `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
@@ -8,7 +8,7 @@ type HomeNetwork struct {
 	Enable        bool   `json:"enable" gorm:"default:true" example:"true"`
 	Kind          string `json:"kind" example:"wireguard"`
 	GatewayNodeId int    `json:"gatewayNodeId" gorm:"column:gateway_node_id" example:"0"`
-	// Config is the pasted wg-quick or .ovpn file.
+	// Config is the pasted wg-quick or .ovpn file, or the IKEv2 router's CA certificate.
 	Config   string `json:"config"`
 	Server   string `json:"server" example:"203.0.113.7"`
 	Username string `json:"username"`

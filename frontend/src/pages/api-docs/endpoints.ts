@@ -1779,7 +1779,7 @@ export const sections: readonly Section[] = [
     id: 'home-networks',
     title: 'Home networks',
     description:
-      'Home LANs behind a WireGuard, OpenVPN or L2TP/IPsec tunnel held by one gateway server (node id 0 = this panel). Every other server reaches the gateway through a hidden VLESS+REALITY link. Users reach only the subnets and IPs their rules allow; everything else in the home network is blocked. All endpoints under /panel/api/homeNetworks.',
+      'Home LANs behind a WireGuard, OpenVPN, L2TP/IPsec or IKEv2/IPsec tunnel held by one gateway server (node id 0 = this panel). Every other server reaches the gateway through a hidden VLESS+REALITY link. Users reach only the subnets and IPs their rules allow; everything else in the home network is blocked. All endpoints under /panel/api/homeNetworks.',
     endpoints: [
       {
         method: 'GET',
@@ -2879,7 +2879,7 @@ export const sections: readonly Section[] = [
         method: 'POST',
         path: '/panel/api/xray/homeTunnel',
         summary:
-          "On a gateway server: bring a home network's OpenVPN or L2TP/IPsec client up (installing it when missing) or tear it down. Called by the master; answers within 45s even while the client still installs.",
+          "On a gateway server: bring a home network's OpenVPN, L2TP/IPsec or IKEv2 client up (installing it when missing) or tear it down. Called by the master; answers within 45s even while the client still installs.",
         body: '{\n  "id": 1,\n  "kind": "openvpn",\n  "enable": true,\n  "openvpn": "client\\nremote home.example.net 1194\\n...",\n  "routes": ["192.168.1.0/24"]\n}',
       },
       {
