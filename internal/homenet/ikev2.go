@@ -194,9 +194,9 @@ exit 0
 	return b.String()
 }
 
-// ikev2Start loads the connection into the running charon and
+// swanctlStart loads the connection into the running charon and
 // starts it; charon itself retries and restarts it from then on.
-func ikev2Start(id int) string {
+func swanctlStart(id int) string {
 	return fmt.Sprintf(`#!/bin/sh
 i=0
 until swanctl --stats >/dev/null 2>&1; do

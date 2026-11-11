@@ -129,7 +129,7 @@ func checkPPPValue(field, v string) error {
 	return nil
 }
 
-// L2TPFiles renders the xl2tpd, pppd and IPsec files of an L2TP tunnel, keyed
+// L2TPFiles renders the xl2tpd, pppd and swanctl files of an L2TP tunnel, keyed
 // by absolute path; IPsec files are omitted when there is no pre-shared key.
 func L2TPFiles(t *Tunnel, dir string) (map[string]string, error) {
 	for field, v := range map[string]string{"server": t.Server, "username": t.Username, "password": t.Password, "psk": t.PSK} {
@@ -166,19 +166,39 @@ ip-up-script %s
 `, IfName(t.Id), t.Username, t.Password, filepath.Join(dir, upScript))
 	files[filepath.Join(dir, upScript)] = routeUpScript(t)
 	if t.PSK != "" {
-		files[filepath.Join(ipsecDir, conn+".conf")] = fmt.Sprintf(`conn %s
-	keyexchange=ikev1
-	authby=secret
-	type=transport
-	left=%%defaultroute
-	leftprotoport=17/1701
-	right=%s
-	rightprotoport=17/1701
-	ike=aes256-sha1-modp2048,aes128-sha1-modp2048,3des-sha1-modp1024!
-	esp=aes256-sha1,aes128-sha1,3des-sha1!
-	auto=add
-`, conn, t.Server)
-		files[filepath.Join(ipsecDir, conn+".secrets")] = fmt.Sprintf("%%any %s : PSK \"%s\"\n", t.Server, t.PSK)
+		files[filepath.Join(swanctlDir, conn+".conf")] = fmt.Sprintf(`connections {
+	%[1]s {
+		version = 1
+		remote_addrs = %[2]s
+		proposals = aes256-sha1-modp2048, aes128-sha1-modp2048, 3des-sha1-modp1024
+		dpd_delay = 30s
+		keyingtries = 0
+		local {
+			auth = psk
+		}
+		remote {
+			auth = psk
+		}
+		children {
+			%[1]s {
+				mode = transport
+				local_ts = dynamic[udp/1701]
+				remote_ts = dynamic[udp/1701]
+				esp_proposals = aes256-sha1, aes128-sha1, 3des-sha1
+				dpd_action = restart
+				close_action = start
+			}
+		}
+	}
+}
+secrets {
+	ike-%[1]s {
+		id = "%[2]s"
+		secret = "%[3]s"
+	}
+}
+`, conn, t.Server, t.PSK)
+		files[filepath.Join(dir, "start")] = swanctlStart(t.Id)
 	}
 	return files, nil
 }
@@ -187,12 +207,11 @@ func unitName(id int) string { return fmt.Sprintf("x-ui-home-%d", id) }
 
 // Paths are variables so tests can render into a temp dir.
 var (
-	baseDir    = "/etc/x-ui/home"
-	ipsecDir   = "/etc/ipsec.d"
-	unitDir    = "/etc/systemd/system"
-	run        = runCommand
-	lookPath   = exec.LookPath
-	ipsecFiles = [2]string{"/etc/ipsec.conf", "/etc/ipsec.secrets"}
+	baseDir  = "/etc/x-ui/home"
+	ipsecDir = "/etc/ipsec.d"
+	unitDir  = "/etc/systemd/system"
+	run      = runCommand
+	lookPath = exec.LookPath
 )
 
 // commandTimeout bounds one system command; apt installs are the slowest.
@@ -234,23 +253,6 @@ func ensurePackages(bins map[string]string) error {
 	return run("env", append([]string{"DEBIAN_FRONTEND=noninteractive", "apt-get", "install", "-y", "-qq"}, missing...)...)
 }
 
-// ensureInclude adds an include line for our IPsec files to a strongSwan main
-// file once, leaving everything else in it alone.
-func ensureInclude(path, line string) error {
-	raw, err := os.ReadFile(path)
-	if err != nil && !os.IsNotExist(err) {
-		return err
-	}
-	if strings.Contains(string(raw), line) {
-		return nil
-	}
-	body := string(raw)
-	if body != "" && !strings.HasSuffix(body, "\n") {
-		body += "\n"
-	}
-	return os.WriteFile(path, []byte(body+line+"\n"), 0o600)
-}
-
 func writeFiles(files map[string]string) error {
 	for path, body := range files {
 		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
@@ -276,6 +278,41 @@ func charonUnit() string {
 	return "strongswan"
 }
 
+// ensureCharon installs and starts the charon that swanctl drives, plus the
+// extra packages a tunnel needs; vici is loaded only when charon starts.
+func ensureCharon(bins map[string]string) error {
+	bins["swanctl"] = "strongswan-swanctl"
+	if charonUnit() == "strongswan" {
+		bins["charon-systemd"] = "charon-systemd"
+	}
+	if err := ensurePackages(bins); err != nil {
+		return err
+	}
+	if run("swanctl", "--stats") != nil {
+		return run("systemctl", "restart", charonUnit())
+	}
+	return nil
+}
+
+// dropStarterConn unloads an L2TP connection written to ipsec.d by panels
+// before the swanctl switch, so charon does not keep two SAs for it.
+func dropStarterConn(conn string) error {
+	legacy := []string{filepath.Join(ipsecDir, conn+".conf"), filepath.Join(ipsecDir, conn+".secrets")}
+	if _, err := os.Stat(legacy[0]); err != nil {
+		return nil
+	}
+	_ = run("ipsec", "down", conn)
+	for _, p := range legacy {
+		if err := os.Remove(p); err != nil && !os.IsNotExist(err) {
+			return err
+		}
+	}
+	if _, err := lookPath("ipsec"); err == nil {
+		return run("ipsec", "reload")
+	}
+	return nil
+}
+
 func unitFile(t *Tunnel, dir string) string {
 	if t.Kind == KindIKEv2 {
 		daemon := charonUnit()
@@ -297,31 +334,33 @@ RestartSec=10s
 WantedBy=multi-user.target
 `, t.Id, filepath.Join(dir, "start"), unitName(t.Id), daemon)
 	}
-	var exec string
+	var exec, deps string
 	switch t.Kind {
 	case KindOpenVPN:
 		exec = "ExecStart=/usr/sbin/openvpn --config " + filepath.Join(dir, "client.conf")
 	default:
-		pre := ""
+		pre, post := "", ""
 		if t.PSK != "" {
-			pre = fmt.Sprintf("ExecStartPre=-/bin/sh -c 'ipsec status >/dev/null 2>&1 || ipsec start; sleep 2; ipsec reload; ipsec up %s'\n", unitName(t.Id))
+			deps = " " + charonUnit() + ".service"
+			pre = "ExecStartPre=" + filepath.Join(dir, "start") + "\n"
+			post = fmt.Sprintf("\nExecStopPost=-/usr/sbin/swanctl --terminate --ike %s --timeout 10", unitName(t.Id))
 		}
 		exec = pre + fmt.Sprintf("ExecStart=/usr/sbin/xl2tpd -D -c %s -p /run/%s.pid -C /run/%s.control",
-			filepath.Join(dir, "xl2tpd.conf"), unitName(t.Id), unitName(t.Id))
+			filepath.Join(dir, "xl2tpd.conf"), unitName(t.Id), unitName(t.Id)) + post
 	}
 	return fmt.Sprintf(`[Unit]
 Description=x-ui home network %d
-After=network-online.target
-Wants=network-online.target
+After=network-online.target%[3]s
+Wants=network-online.target%[3]s
 
 [Service]
-%s
+%[2]s
 Restart=always
 RestartSec=10s
 
 [Install]
 WantedBy=multi-user.target
-`, t.Id, exec)
+`, t.Id, exec, deps)
 }
 
 // Apply brings the tunnel to the wanted state on this server: installs the
@@ -332,9 +371,6 @@ func Apply(t *Tunnel) error {
 	unitPath := filepath.Join(unitDir, unit+".service")
 	if !t.Enable {
 		_ = run("systemctl", "disable", "--now", unit)
-		if t.Kind == KindL2TP {
-			_ = run("ipsec", "down", unit)
-		}
 		table := fmt.Sprint(RouteTable(t.Id))
 		for _, family := range []string{"-4", "-6"} {
 			_ = run("ip", family, "rule", "del", "oif", IfName(t.Id), "lookup", table)
@@ -343,9 +379,10 @@ func Apply(t *Tunnel) error {
 		for _, p := range []string{unitPath, filepath.Join(ipsecDir, unit+".conf"), filepath.Join(ipsecDir, unit+".secrets")} {
 			_ = os.Remove(p)
 		}
-		if t.Kind == KindIKEv2 {
-			_ = os.Remove(filepath.Join(swanctlDir, unit+".conf"))
+		if conf := filepath.Join(swanctlDir, unit+".conf"); os.Remove(conf) == nil {
 			_ = run("swanctl", "--load-all", "--noprompt")
+		}
+		if t.Kind == KindIKEv2 {
 			_ = run("ip", "link", "del", IfName(t.Id))
 		}
 		_ = os.RemoveAll(dir)
@@ -367,48 +404,36 @@ func Apply(t *Tunnel) error {
 			files[filepath.Join(dir, "auth")] = t.Username + "\n" + t.Password + "\n"
 		}
 	case KindL2TP:
-		bins := map[string]string{"xl2tpd": "xl2tpd", "pppd": "ppp"}
-		if t.PSK != "" {
-			bins["ipsec"] = "strongswan"
-		}
-		if err := ensurePackages(bins); err != nil {
-			return err
-		}
 		l2tp, err := L2TPFiles(t, dir)
 		if err != nil {
 			return err
 		}
 		files = l2tp
-		if t.PSK != "" {
-			if err := ensureInclude(ipsecFiles[0], "include "+ipsecDir+"/x-ui-home-*.conf"); err != nil {
-				return err
-			}
-			if err := ensureInclude(ipsecFiles[1], "include "+ipsecDir+"/x-ui-home-*.secrets"); err != nil {
-				return err
-			}
-		}
-	case KindIKEv2:
-		bins := map[string]string{"swanctl": "strongswan-swanctl"}
-		if charonUnit() == "strongswan" {
-			bins["charon-systemd"] = "charon-systemd"
-		}
-		if t.PSK == "" {
-			bins[eapPlugin] = "libcharon-extra-plugins"
-		}
-		if err := ensurePackages(bins); err != nil {
+		if err := dropStarterConn(unit); err != nil {
 			return err
 		}
+		bins := map[string]string{"xl2tpd": "xl2tpd", "pppd": "ppp"}
+		if t.PSK == "" {
+			err = ensurePackages(bins)
+		} else {
+			err = ensureCharon(bins)
+		}
+		if err != nil {
+			return err
+		}
+	case KindIKEv2:
 		ike, err := IKEv2Files(t, dir)
 		if err != nil {
 			return err
 		}
 		files = ike
-		files[filepath.Join(dir, "start")] = ikev2Start(t.Id)
-		// charon loads the vici plugin swanctl talks to only when it starts.
-		if run("swanctl", "--stats") != nil {
-			if err := run("systemctl", "restart", charonUnit()); err != nil {
-				return err
-			}
+		files[filepath.Join(dir, "start")] = swanctlStart(t.Id)
+		bins := map[string]string{}
+		if t.PSK == "" {
+			bins[eapPlugin] = "libcharon-extra-plugins"
+		}
+		if err := ensureCharon(bins); err != nil {
+			return err
 		}
 	default:
 		return fmt.Errorf("tunnel kind %q is not a system tunnel", t.Kind)
