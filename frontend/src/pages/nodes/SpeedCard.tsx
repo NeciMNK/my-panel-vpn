@@ -17,6 +17,7 @@ import {
 import { DashboardOutlined, DeleteOutlined, ThunderboltOutlined } from '@ant-design/icons';
 
 import { HttpUtil, IntlUtil } from '@/utils';
+import { selectTagRender } from '@/components/form/SelectTag';
 import { useClientOptions } from '@/api/queries/useClientOptions';
 import type { NodeRecord } from '@/api/queries/useNodesQuery';
 import type { SpeedTestSettings, SpeedTestStats } from '@/generated/types';
@@ -58,6 +59,7 @@ export interface SpeedServerRow {
 const SPEED_KEY = ['speed', 'overview'] as const;
 const SPEED_INPUT_WIDTH = 140;
 const JSON_HEADERS = { headers: { 'Content-Type': 'application/json' } };
+const TIME_ZONES = Intl.supportedValuesOf('timeZone');
 
 // Every server gets a row; one without a capacity has no load to show yet.
 export function speedServerRows(
@@ -94,7 +96,7 @@ export default function SpeedCard({ nodes }: { nodes: NodeRecord[] }) {
   const [capDrafts, setCapDrafts] = useState<Record<number, number>>({});
   const [draft, setDraft] = useState<ClientSpeedRecord>({ email: '', minMbps: 0, maxMbps: 0 });
   const [historyFor, setHistoryFor] = useState<{ nodeId: number; name: string } | null>(null);
-  const [everyHoursDraft, setEveryHoursDraft] = useState<number | null>(null);
+  const [scheduleDraft, setScheduleDraft] = useState<SpeedTestSettings | null>(null);
 
   const servers = useMemo(
     () => [
@@ -127,7 +129,15 @@ export default function SpeedCard({ nodes }: { nodes: NodeRecord[] }) {
       HttpUtil.post('/panel/api/speed/testSettings', req, JSON_HEADERS),
     onSettled: invalidate,
   });
-  const testSettings = overview?.testSettings ?? { autoCapacity: true, everyHours: 0 };
+  const testSettings = overview?.testSettings ?? {
+    autoCapacity: true,
+    everyHours: 0,
+    times: [],
+    timezone: 'Europe/Moscow',
+  };
+  const schedule = scheduleDraft ?? testSettings;
+  const editSchedule = (patch: Partial<SpeedTestSettings>) =>
+    setScheduleDraft({ ...schedule, ...patch });
 
   const serverColumns = [
     { title: t('pages.nodes.speed.server'), dataIndex: 'name', key: 'name' },
@@ -295,31 +305,58 @@ export default function SpeedCard({ nodes }: { nodes: NodeRecord[] }) {
           />
         </Form.Item>
         <Form.Item label={t('pages.nodes.speed.everyHours')} htmlFor="speed-every-hours">
-          <Space.Compact>
-            <InputNumber
-              id="speed-every-hours"
-              style={{ width: SPEED_INPUT_WIDTH }}
-              min={0}
-              max={168}
-              value={everyHoursDraft ?? testSettings.everyHours}
-              onChange={(v) => setEveryHoursDraft(v ?? 0)}
-            />
-            {everyHoursDraft !== null && (
-              <Button
-                type="primary"
-                loading={setTestSettings.isPending}
-                onClick={() =>
-                  setTestSettings.mutate(
-                    { ...testSettings, everyHours: everyHoursDraft },
-                    { onSuccess: () => setEveryHoursDraft(null) },
-                  )
-                }
-              >
-                {t('save')}
-              </Button>
-            )}
-          </Space.Compact>
+          <InputNumber
+            id="speed-every-hours"
+            style={{ width: SPEED_INPUT_WIDTH }}
+            min={0}
+            max={168}
+            value={schedule.everyHours}
+            onChange={(v) => editSchedule({ everyHours: v ?? 0 })}
+          />
         </Form.Item>
+        <Form.Item label={t('pages.nodes.speed.times')} htmlFor="speed-times">
+          <Select
+            id="speed-times"
+            mode="tags"
+            tagRender={selectTagRender}
+            style={{ minWidth: 220 }}
+            placeholder="03:00, 13:30"
+            tokenSeparators={[',', ' ']}
+            open={false}
+            value={schedule.times}
+            onChange={(times: string[]) => editSchedule({ times })}
+          />
+        </Form.Item>
+        <Form.Item label={t('pages.nodes.speed.timezone')} htmlFor="speed-timezone">
+          <Select
+            id="speed-timezone"
+            showSearch
+            style={{ minWidth: 200 }}
+            value={schedule.timezone}
+            options={TIME_ZONES.map((z) => ({ value: z, label: z }))}
+            onChange={(timezone: string) => editSchedule({ timezone })}
+          />
+        </Form.Item>
+        {scheduleDraft !== null && (
+          <Form.Item>
+            <Button
+              type="primary"
+              loading={setTestSettings.isPending}
+              onClick={() =>
+                setTestSettings.mutate(
+                  { ...scheduleDraft, autoCapacity: testSettings.autoCapacity },
+                  {
+                    onSuccess: (msg) => {
+                      if (msg?.success) setScheduleDraft(null);
+                    },
+                  },
+                )
+              }
+            >
+              {t('save')}
+            </Button>
+          </Form.Item>
+        )}
       </Form>
       <Table
         rowKey="nodeId"

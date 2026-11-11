@@ -1306,6 +1306,8 @@ export interface SpeedTestResult {
 export interface SpeedTestSettings {
   autoCapacity: boolean;
   everyHours: number;
+  times: string[];
+  timezone: string;
 }
 
 export interface SpeedTestStats {

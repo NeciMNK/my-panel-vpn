@@ -1474,7 +1474,12 @@ export const EXAMPLES: Record<string, unknown> = {
     ],
     "testSettings": {
       "autoCapacity": true,
-      "everyHours": 6
+      "everyHours": 6,
+      "times": [
+        "03:00",
+        "13:30"
+      ],
+      "timezone": "Europe/Moscow"
     },
     "testStats": [
       {
@@ -1507,7 +1512,12 @@ export const EXAMPLES: Record<string, unknown> = {
   },
   "SpeedTestSettings": {
     "autoCapacity": true,
-    "everyHours": 6
+    "everyHours": 6,
+    "times": [
+      "03:00",
+      "13:30"
+    ],
+    "timezone": "Europe/Moscow"
   },
   "SpeedTestStats": {
     "avgDownloadMbps": 910.4,

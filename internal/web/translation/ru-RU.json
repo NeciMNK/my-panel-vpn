@@ -1412,6 +1412,8 @@
         "triggerSchedule": "Расписание",
         "providerSpeedtest": "Speedtest",
         "providerYandex": "Яндекс Интернетометр",
+        "times": "Замерять в (ЧЧ:ММ)",
+        "timezone": "Часовой пояс",
         "toasts": {
           "saved": "Ограничения скорости сохранены",
           "testStarted": "Замер скорости запущен, он займёт около минуты"

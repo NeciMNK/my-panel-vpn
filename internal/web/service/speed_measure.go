@@ -7,8 +7,11 @@ import (
 	"math"
 	"net/http"
 	"sort"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
+	_ "time/tzdata"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
@@ -26,13 +29,19 @@ const (
 	// speedTestStatsWindow is the span the per-server statistics cover.
 	speedTestStatsWindow = 30 * 24 * time.Hour
 	speedTestMaxHours    = 24 * 7
+	// speedTestSlotWindow is how late a clock-time test may still start, so a
+	// busy or restarted panel does not skip it.
+	speedTestSlotWindow = 15 * time.Minute
+	speedTestMaxTimes   = 48
 )
 
 // SpeedTestSettings: AutoCapacity makes every successful test set the server's
-// link speed; EveryHours > 0 also tests each server on that schedule.
+// link speed; EveryHours > 0 and Times (HH:MM in Timezone) also schedule tests.
 type SpeedTestSettings struct {
-	AutoCapacity bool `json:"autoCapacity" example:"true"`
-	EveryHours   int  `json:"everyHours" example:"6"`
+	AutoCapacity bool     `json:"autoCapacity" example:"true"`
+	EveryHours   int      `json:"everyHours" example:"6"`
+	Times        []string `json:"times" example:"[\"03:00\",\"13:30\"]"`
+	Timezone     string   `json:"timezone" example:"Europe/Moscow"`
 }
 
 // SpeedTestStats sums up one server's successful tests over the last 30 days.
@@ -136,18 +145,97 @@ func (s *SpeedService) TestSettings() (SpeedTestSettings, error) {
 	if err != nil {
 		return SpeedTestSettings{}, err
 	}
-	return SpeedTestSettings{AutoCapacity: auto, EveryHours: every}, nil
+	times, err := settings.GetSpeedTestTimes()
+	if err != nil {
+		return SpeedTestSettings{}, err
+	}
+	zone, err := settings.GetSpeedTestTimezone()
+	if err != nil {
+		return SpeedTestSettings{}, err
+	}
+	out := SpeedTestSettings{AutoCapacity: auto, EveryHours: every, Times: []string{}, Timezone: zone}
+	if times != "" {
+		out.Times = strings.Split(times, ",")
+	}
+	return out, nil
 }
 
 func (s *SpeedService) SetTestSettings(req *SpeedTestSettings) error {
 	if req == nil || req.EveryHours < 0 || req.EveryHours > speedTestMaxHours {
 		return common.NewErrorf("the schedule must be 0 to %d hours", speedTestMaxHours)
 	}
+	times, err := normalizeTestTimes(req.Times)
+	if err != nil {
+		return err
+	}
+	if _, err := time.LoadLocation(req.Timezone); err != nil || req.Timezone == "" {
+		return common.NewErrorf("unknown time zone %q", req.Timezone)
+	}
 	settings := &SettingService{}
 	if err := settings.SetSpeedTestAutoCapacity(req.AutoCapacity); err != nil {
 		return err
 	}
-	return settings.SetSpeedTestEveryHours(req.EveryHours)
+	if err := settings.SetSpeedTestEveryHours(req.EveryHours); err != nil {
+		return err
+	}
+	if err := settings.SetSpeedTestTimes(strings.Join(times, ",")); err != nil {
+		return err
+	}
+	return settings.SetSpeedTestTimezone(req.Timezone)
+}
+
+// normalizeTestTimes turns "3:00" into "03:00", sorted and without repeats.
+func normalizeTestTimes(in []string) ([]string, error) {
+	seen := map[string]bool{}
+	out := []string{}
+	for _, raw := range in {
+		h, m, ok := parseClock(strings.TrimSpace(raw))
+		if !ok {
+			return nil, common.NewErrorf("%q is not a time of day (HH:MM)", raw)
+		}
+		t := fmt.Sprintf("%02d:%02d", h, m)
+		if !seen[t] {
+			seen[t] = true
+			out = append(out, t)
+		}
+	}
+	if len(out) > speedTestMaxTimes {
+		return nil, common.NewErrorf("at most %d test times", speedTestMaxTimes)
+	}
+	sort.Strings(out)
+	return out, nil
+}
+
+func parseClock(v string) (hour, minute int, ok bool) {
+	hs, ms, found := strings.Cut(v, ":")
+	if !found || len(ms) != 2 || hs == "" || len(hs) > 2 {
+		return 0, 0, false
+	}
+	h, errH := strconv.Atoi(hs)
+	m, errM := strconv.Atoi(ms)
+	if errH != nil || errM != nil || h < 0 || h > 23 || m < 0 || m > 59 {
+		return 0, 0, false
+	}
+	return h, m, true
+}
+
+// lastSlot is the latest configured clock time at or before now, in loc.
+func lastSlot(now time.Time, times []string, loc *time.Location) (time.Time, bool) {
+	var best time.Time
+	local := now.In(loc)
+	for _, day := range []time.Time{local, local.AddDate(0, 0, -1)} {
+		for _, v := range times {
+			h, m, ok := parseClock(v)
+			if !ok {
+				continue
+			}
+			t := time.Date(day.Year(), day.Month(), day.Day(), h, m, 0, 0, loc)
+			if !t.After(now) && t.After(best) {
+				best = t
+			}
+		}
+	}
+	return best, !best.IsZero()
 }
 
 // StartTest measures one server in the background; the result lands in the
@@ -172,10 +260,10 @@ func (s *SpeedService) StartTest(nodeID int) error {
 // older than the schedule; servers sharing an uplink would skew each other.
 func (s *SpeedService) RunScheduled(now time.Time) {
 	settings, err := s.TestSettings()
-	if err != nil || settings.EveryHours <= 0 {
+	if err != nil {
 		return
 	}
-	for _, id := range s.dueForTest(now, time.Duration(settings.EveryHours)*time.Hour) {
+	for _, id := range s.dueForTest(now, settings) {
 		if !claimSpeedTest(id) {
 			continue
 		}
@@ -184,8 +272,19 @@ func (s *SpeedService) RunScheduled(now time.Time) {
 	}
 }
 
-// dueForTest lists the panel and every enabled online node not tested within every.
-func (s *SpeedService) dueForTest(now time.Time, every time.Duration) []int {
+// dueForTest lists the panel and every enabled online node that is past its
+// interval, or has not been tested since the latest clock time began.
+func (s *SpeedService) dueForTest(now time.Time, settings SpeedTestSettings) []int {
+	every := time.Duration(settings.EveryHours) * time.Hour
+	var slot time.Time
+	if loc, err := time.LoadLocation(settings.Timezone); err == nil {
+		if t, ok := lastSlot(now, settings.Times, loc); ok && now.Sub(t) < speedTestSlotWindow {
+			slot = t
+		}
+	}
+	if every <= 0 && slot.IsZero() {
+		return nil
+	}
 	var nodes []*model.Node
 	if err := database.GetDB().Where("enable = ? AND status = ?", true, "online").Order("id asc").Find(&nodes).Error; err != nil {
 		logger.Warning("speed test: list nodes:", err)
@@ -209,7 +308,9 @@ func (s *SpeedService) dueForTest(now time.Time, every time.Duration) []int {
 	}
 	var out []int
 	for _, id := range ids {
-		if now.UnixMilli()-lastAt[id] >= every.Milliseconds() {
+		pastInterval := every > 0 && now.UnixMilli()-lastAt[id] >= every.Milliseconds()
+		missedSlot := !slot.IsZero() && lastAt[id] < slot.UnixMilli()
+		if pastInterval || missedSlot {
 			out = append(out, id)
 		}
 	}

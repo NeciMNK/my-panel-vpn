@@ -5786,7 +5786,7 @@
         "type": "object"
       },
       "SpeedTestSettings": {
-        "description": "SpeedTestSettings: AutoCapacity makes every successful test set the server's\nlink speed; EveryHours > 0 also tests each server on that schedule.",
+        "description": "SpeedTestSettings: AutoCapacity makes every successful test set the server's\nlink speed; EveryHours > 0 and Times (HH:MM in Timezone) also schedule tests.",
         "properties": {
           "autoCapacity": {
             "example": true,
@@ -5795,11 +5795,27 @@
           "everyHours": {
             "example": 6,
             "type": "integer"
+          },
+          "times": {
+            "example": [
+              "03:00",
+              "13:30"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "timezone": {
+            "example": "Europe/Moscow",
+            "type": "string"
           }
         },
         "required": [
           "autoCapacity",
-          "everyHours"
+          "everyHours",
+          "times",
+          "timezone"
         ],
         "type": "object"
       },
@@ -13727,7 +13743,12 @@
                     ],
                     "testSettings": {
                       "autoCapacity": true,
-                      "everyHours": 6
+                      "everyHours": 6,
+                      "times": [
+                        "03:00",
+                        "13:30"
+                      ],
+                      "timezone": "Europe/Moscow"
                     },
                     "testStats": [
                       {
@@ -13962,7 +13983,7 @@
         "tags": [
           "Speed limits"
         ],
-        "summary": "Whether speed tests set link speeds automatically, and how often every server is tested (0 = only on demand, max 168 hours).",
+        "summary": "Whether speed tests set link speeds automatically, and when every server is tested: every N hours (0 = off, max 168) and/or at clock times HH:MM in an IANA time zone. A clock time missed by more than 15 minutes is skipped.",
         "operationId": "post_panel_api_speed_testSettings",
         "requestBody": {
           "required": true,
@@ -13973,7 +13994,13 @@
               },
               "example": {
                 "autoCapacity": true,
-                "everyHours": 6
+                "everyHours": 0,
+                "times": [
+                  "03:00",
+                  "08:00",
+                  "13:30"
+                ],
+                "timezone": "Europe/Moscow"
               }
             }
           }

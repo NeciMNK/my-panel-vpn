@@ -5760,7 +5760,7 @@ export const SCHEMAS: Record<string, unknown> = {
     "type": "object"
   },
   "SpeedTestSettings": {
-    "description": "SpeedTestSettings: AutoCapacity makes every successful test set the server's\nlink speed; EveryHours \u003e 0 also tests each server on that schedule.",
+    "description": "SpeedTestSettings: AutoCapacity makes every successful test set the server's\nlink speed; EveryHours \u003e 0 and Times (HH:MM in Timezone) also schedule tests.",
     "properties": {
       "autoCapacity": {
         "example": true,
@@ -5769,11 +5769,27 @@ export const SCHEMAS: Record<string, unknown> = {
       "everyHours": {
         "example": 6,
         "type": "integer"
+      },
+      "times": {
+        "example": [
+          "03:00",
+          "13:30"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "timezone": {
+        "example": "Europe/Moscow",
+        "type": "string"
       }
     },
     "required": [
       "autoCapacity",
-      "everyHours"
+      "everyHours",
+      "times",
+      "timezone"
     ],
     "type": "object"
   },

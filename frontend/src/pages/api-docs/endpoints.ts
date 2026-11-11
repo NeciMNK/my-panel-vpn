@@ -1928,8 +1928,8 @@ export const sections: readonly Section[] = [
         method: 'POST',
         path: '/panel/api/speed/testSettings',
         summary:
-          'Whether speed tests set link speeds automatically, and how often every server is tested (0 = only on demand, max 168 hours).',
-        body: '{\n  "autoCapacity": true,\n  "everyHours": 6\n}',
+          'Whether speed tests set link speeds automatically, and when every server is tested: every N hours (0 = off, max 168) and/or at clock times HH:MM in an IANA time zone. A clock time missed by more than 15 minutes is skipped.',
+        body: '{\n  "autoCapacity": true,\n  "everyHours": 0,\n  "times": ["03:00", "08:00", "13:30"],\n  "timezone": "Europe/Moscow"\n}',
       },
     ],
   },

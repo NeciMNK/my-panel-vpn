@@ -1399,6 +1399,8 @@ export type SpeedTestResult = z.infer<typeof SpeedTestResultSchema>;
 export const SpeedTestSettingsSchema = z.object({
   autoCapacity: z.boolean(),
   everyHours: z.number().int(),
+  times: z.array(z.string()),
+  timezone: z.string(),
 });
 export type SpeedTestSettings = z.infer<typeof SpeedTestSettingsSchema>;
 

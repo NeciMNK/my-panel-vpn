@@ -78,7 +78,7 @@ func TestSpeedTestResultSetsTheLinkSpeed(t *testing.T) {
 			if err := s.SetCapacity(&ServerCapacityRequest{NodeId: 0, CapacityMbps: 1000}); err != nil {
 				t.Fatal(err)
 			}
-			if err := s.SetTestSettings(&SpeedTestSettings{AutoCapacity: c.auto}); err != nil {
+			if err := s.SetTestSettings(&SpeedTestSettings{AutoCapacity: c.auto, Timezone: "UTC"}); err != nil {
 				t.Fatal(err)
 			}
 			useSpeedTests(t, c.final)
@@ -124,7 +124,7 @@ func TestScheduledSpeedTestsPickServersNotTestedWithinTheInterval(t *testing.T) 
 			t.Fatal(err)
 		}
 	}
-	got := (&SpeedService{}).dueForTest(now, 6*time.Hour)
+	got := (&SpeedService{}).dueForTest(now, SpeedTestSettings{EveryHours: 6})
 	if want := []int{0, nodes[1].Id}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("due = %v, want %v", got, want)
 	}
@@ -163,5 +163,69 @@ func TestSpeedTestStatsCoverSuccessfulRunsOfTheLastMonth(t *testing.T) {
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("stats = %+v\nwant    %+v", got, want)
+	}
+}
+
+func TestSpeedTestTimesFireOnceAtEachClockTimeInTheirZone(t *testing.T) {
+	dbtest.InitDB(t, filepath.Join(t.TempDir(), "x-ui.db"))
+	msk, err := time.LoadLocation("Europe/Moscow")
+	if err != nil {
+		t.Fatal(err)
+	}
+	node := &model.Node{Name: "de", Address: "a.example", Port: 2053, Enable: true, Status: "online"}
+	if err := database.GetDB().Create(node).Error; err != nil {
+		t.Fatal(err)
+	}
+	settings := SpeedTestSettings{Times: []string{"03:00", "13:30", "23:43"}, Timezone: "Europe/Moscow"}
+	at := func(h, m int) time.Time { return time.Date(2026, 11, 11, h, m, 0, 0, msk) }
+	s := &SpeedService{}
+	cases := []struct {
+		name string
+		now  time.Time
+		want []int
+	}{
+		{"before any time", at(2, 59), nil},
+		{"a minute after 13:30 MSK, every server", at(13, 31), []int{0, node.Id}},
+		{"long after a time whose window passed", at(14, 0), nil},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := s.dueForTest(c.now.UTC(), settings); !reflect.DeepEqual(got, c.want) {
+				t.Fatalf("due = %v, want %v", got, c.want)
+			}
+		})
+	}
+	if err := database.GetDB().Create(&model.SpeedTestResult{NodeId: 0, CreatedAt: at(13, 32).UnixMilli()}).Error; err != nil {
+		t.Fatal(err)
+	}
+	if got, want := s.dueForTest(at(13, 33).UTC(), settings), []int{node.Id}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("after the panel ran at 13:32, due = %v, want %v", got, want)
+	}
+}
+
+func TestSpeedTestSettingsNormaliseTimes(t *testing.T) {
+	dbtest.InitDB(t, filepath.Join(t.TempDir(), "x-ui.db"))
+	s := &SpeedService{}
+	if err := s.SetTestSettings(&SpeedTestSettings{Times: []string{"19:20", "3:00", " 08:00 ", "3:00"}, Timezone: "Europe/Moscow"}); err != nil {
+		t.Fatal(err)
+	}
+	got, err := s.TestSettings()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"03:00", "08:00", "19:20"}; !reflect.DeepEqual(got.Times, want) || got.Timezone != "Europe/Moscow" {
+		t.Fatalf("settings = %+v, want times %v in Europe/Moscow", got, want)
+	}
+	for _, bad := range []struct {
+		req  SpeedTestSettings
+		want string
+	}{
+		{SpeedTestSettings{Times: []string{"24:00"}, Timezone: "UTC"}, `"24:00" is not a time of day (HH:MM)`},
+		{SpeedTestSettings{Times: []string{"7:5"}, Timezone: "UTC"}, `"7:5" is not a time of day (HH:MM)`},
+		{SpeedTestSettings{Times: []string{"08:00"}, Timezone: "Mars/Olympus"}, `unknown time zone "Mars/Olympus"`},
+	} {
+		if err := s.SetTestSettings(&bad.req); err == nil || err.Error() != bad.want {
+			t.Fatalf("SetTestSettings(%+v) = %v, want %q", bad.req, err, bad.want)
+		}
 	}
 }

@@ -318,7 +318,7 @@ const (
 	cadenceHomeNetwork   = "@every 1m"
 	cadenceSpeed         = "@every 30s"
 	cadenceShaping       = "@every 5s"
-	cadenceSpeedTest     = "@every 5m"
+	cadenceSpeedTest     = "@every 1m"
 	cadenceMasterBeat    = "@every 5s"
 	cadenceXrayLogPrune  = "@every 10m"
 	cadenceTlsCertRenew  = "@every 1h"
