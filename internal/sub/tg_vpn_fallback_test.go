@@ -21,8 +21,8 @@ type tgVpnFixture struct {
 	fallback *service.TgVpnFallback
 }
 
-// newTgVpnFixture seeds a master with one local inbound, one node VMess inbound
-// and one node MTProto inbound, with the bot on and no proxy configured.
+// newTgVpnFixture seeds a master with a local inbound and node VMess, MTProto and
+// hidden cascade-link (mp-*) inbounds, with the bot on and no proxy configured.
 func newTgVpnFixture(t *testing.T) *tgVpnFixture {
 	t.Helper()
 	initSubDB(t)
@@ -41,6 +41,7 @@ func newTgVpnFixture(t *testing.T) *tgVpnFixture {
 		{UserId: 1, Tag: "local-vmess", Enable: true, Port: 4431, Protocol: model.VMESS, Settings: empty, StreamSettings: stream},
 		{UserId: 1, Tag: "node-vmess", Enable: true, Port: 4432, Protocol: model.VMESS, Settings: empty, StreamSettings: stream, NodeID: &node.Id},
 		{UserId: 1, Tag: "node-mtproto", Enable: true, Port: 4433, Protocol: model.MTProto, Settings: empty, NodeID: &node.Id},
+		{UserId: 1, Tag: "mp-cascade-1-in-n1", Enable: true, Port: 4434, Protocol: model.VLESS, Settings: empty, StreamSettings: stream, NodeID: &node.Id},
 	} {
 		if err := db.Create(ib).Error; err != nil {
 			t.Fatalf("seed inbound: %v", err)

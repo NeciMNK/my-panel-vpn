@@ -198,6 +198,7 @@ export const AllSettingSchema = z.object({
   tgCpu: z.number().int().min(0).max(100),
   tgEnabledEvents: z.string(),
   tgFreePlanEnable: z.boolean(),
+  tgFreePlanGB: z.number().int().min(1).max(100000),
   tgLang: z.string(),
   tgMemory: z.number().int().min(0).max(100),
   tgRunTime: z.string(),
@@ -392,6 +393,7 @@ export const AllSettingViewSchema = z.object({
   tgCpu: z.number().int().min(0).max(100),
   tgEnabledEvents: z.string(),
   tgFreePlanEnable: z.boolean(),
+  tgFreePlanGB: z.number().int().min(1).max(100000),
   tgLang: z.string(),
   tgMemory: z.number().int().min(0).max(100),
   tgRunTime: z.string(),
@@ -447,6 +449,8 @@ export type Blocker = z.infer<typeof BlockerSchema>;
 
 export const CascadeSchema = z.object({
   createdAt: z.number().int(),
+  directDomains: z.array(z.string()),
+  directIps: z.array(z.string()),
   enable: z.boolean(),
   entryInboundTags: z.array(z.string()),
   entryNodeId: z.number().int(),
@@ -455,7 +459,9 @@ export const CascadeSchema = z.object({
   id: z.number().int(),
   lastError: z.string(),
   links: z.array(z.lazy(() => CascadeLinkSchema)),
+  mode: z.string(),
   name: z.string(),
+  relayInboundTags: z.array(z.string()),
   strategy: z.string(),
   updatedAt: z.number().int(),
 });
@@ -989,6 +995,7 @@ export const LedgerServerSchema = z.object({
   id: z.number().int(),
   monthlyCost: z.number().int(),
   name: z.string(),
+  paidThrough: z.string(),
   startMonth: z.string(),
 });
 export type LedgerServer = z.infer<typeof LedgerServerSchema>;

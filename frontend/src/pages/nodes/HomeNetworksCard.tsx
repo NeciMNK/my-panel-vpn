@@ -24,7 +24,7 @@ import { selectTagRender } from '@/components/form';
 import type { NodeRecord } from '@/api/queries/useNodesQuery';
 import { useClientGroupOptions, useClientOptions } from '@/api/queries/useClientOptions';
 
-export type HomeKind = 'wireguard' | 'openvpn' | 'l2tp';
+export type HomeKind = 'wireguard' | 'openvpn' | 'l2tp' | 'ikev2';
 
 export interface HomeAccessRule {
   emails: string[];
@@ -240,6 +240,9 @@ export default function HomeNetworksCard({ nodes }: HomeNetworksCardProps) {
   ];
 
   const targets = form ? [...form.subnets, ...form.hosts] : [];
+  const ikev2 = form?.kind === 'ikev2';
+  const serverLabel = ikev2 ? 'pages.nodes.home.serverIkev2' : 'pages.nodes.home.server';
+  const pskLabel = ikev2 ? 'pages.nodes.home.pskIkev2' : 'pages.nodes.home.psk';
 
   return (
     <Card
@@ -299,7 +302,7 @@ export default function HomeNetworksCard({ nodes }: HomeNetworksCardProps) {
             <Form.Item label={t('pages.nodes.home.kind')}>
               <Segmented
                 value={form.kind}
-                options={(['wireguard', 'openvpn', 'l2tp'] as const).map((k) => ({
+                options={(['wireguard', 'openvpn', 'l2tp', 'ikev2'] as const).map((k) => ({
                   value: k,
                   label: t(`pages.nodes.home.kinds.${k}`),
                 }))}
@@ -318,7 +321,7 @@ export default function HomeNetworksCard({ nodes }: HomeNetworksCardProps) {
                 onChange={(v: number) => setForm({ ...form, gatewayNodeId: v })}
               />
             </Form.Item>
-            {form.kind !== 'l2tp' && (
+            {(form.kind === 'wireguard' || form.kind === 'openvpn') && (
               <Form.Item
                 label={t('pages.nodes.home.config')}
                 extra={t(
@@ -337,10 +340,10 @@ export default function HomeNetworksCard({ nodes }: HomeNetworksCardProps) {
                 />
               </Form.Item>
             )}
-            {form.kind === 'l2tp' && (
-              <Form.Item label={t('pages.nodes.home.server')} required>
+            {(form.kind === 'l2tp' || form.kind === 'ikev2') && (
+              <Form.Item label={t(serverLabel)} required>
                 <Input
-                  aria-label={t('pages.nodes.home.server')}
+                  aria-label={t(serverLabel)}
                   value={form.server}
                   onChange={(e) => setForm({ ...form, server: e.target.value })}
                 />
@@ -362,16 +365,32 @@ export default function HomeNetworksCard({ nodes }: HomeNetworksCardProps) {
                     onChange={(e) => setForm({ ...form, password: e.target.value })}
                   />
                 </Form.Item>
-                {form.kind === 'l2tp' && (
-                  <Form.Item label={t('pages.nodes.home.psk')}>
+                {(form.kind === 'l2tp' || form.kind === 'ikev2') && (
+                  <Form.Item label={t(pskLabel)}>
                     <Input.Password
-                      aria-label={t('pages.nodes.home.psk')}
+                      aria-label={t(pskLabel)}
                       value={form.psk}
                       onChange={(e) => setForm({ ...form, psk: e.target.value })}
                     />
                   </Form.Item>
                 )}
               </Space>
+            )}
+            {form.kind === 'ikev2' && (
+              <Form.Item
+                label={t('pages.nodes.home.ca')}
+                extra={t('pages.nodes.home.caHint')}
+                required={form.psk === ''}
+              >
+                <Input.TextArea
+                  aria-label={t('pages.nodes.home.ca')}
+                  rows={5}
+                  spellCheck={false}
+                  placeholder="-----BEGIN CERTIFICATE-----"
+                  value={form.config}
+                  onChange={(e) => setForm({ ...form, config: e.target.value })}
+                />
+              </Form.Item>
             )}
             <Form.Item
               label={t('pages.nodes.home.subnets')}

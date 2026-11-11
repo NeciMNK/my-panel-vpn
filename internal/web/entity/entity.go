@@ -59,6 +59,7 @@ type AllSetting struct {
 	TgEnabledEvents  string `json:"tgEnabledEvents" form:"tgEnabledEvents"`
 	// Prices and discounts are edited on the Finance page (LedgerService.SavePayment), not here.
 	TgFreePlanEnable bool `json:"tgFreePlanEnable" form:"tgFreePlanEnable"`
+	TgFreePlanGB     int  `json:"tgFreePlanGB" form:"tgFreePlanGB" validate:"gte=1,lte=100000"`
 
 	SmtpEnable         bool   `json:"smtpEnable" form:"smtpEnable"`
 	SmtpHost           string `json:"smtpHost" form:"smtpHost"`

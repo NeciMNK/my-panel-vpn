@@ -47,6 +47,7 @@ export const AllSettingSchema = z
     nodeDownThreshold: z.number().int().min(1).max(100).optional(),
     tgLang: z.string().optional(),
     tgFreePlanEnable: z.boolean().optional(),
+    tgFreePlanGB: z.number().int().min(1).max(100000).optional(),
     twoFactorEnable: z.boolean().optional(),
     twoFactorToken: z.string().optional(),
     xrayTemplateConfig: z.string().optional(),

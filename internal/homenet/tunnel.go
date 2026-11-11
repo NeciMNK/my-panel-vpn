@@ -9,12 +9,13 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"time"
 )
 
-// Tunnel is a system OpenVPN or L2TP/IPsec client the gateway server keeps up.
+// Tunnel is a system OpenVPN, L2TP/IPsec or IKEv2 client the gateway server keeps up.
 type Tunnel struct {
 	Id       int      `json:"id"`
 	Kind     string   `json:"kind"`
@@ -24,6 +25,7 @@ type Tunnel struct {
 	Username string   `json:"username,omitempty"`
 	Password string   `json:"password,omitempty"`
 	PSK      string   `json:"psk,omitempty"`
+	CA       string   `json:"ca,omitempty"`
 	Routes   []string `json:"routes"`
 }
 
@@ -209,13 +211,20 @@ func runCommand(name string, args ...string) error {
 func ensurePackages(bins map[string]string) error {
 	var missing []string
 	for bin, pkg := range bins {
-		if _, err := lookPath(bin); err != nil {
+		var err error
+		if filepath.IsAbs(bin) {
+			_, err = os.Stat(bin)
+		} else {
+			_, err = lookPath(bin)
+		}
+		if err != nil && !slices.Contains(missing, pkg) {
 			missing = append(missing, pkg)
 		}
 	}
 	if len(missing) == 0 {
 		return nil
 	}
+	slices.Sort(missing)
 	if _, err := lookPath("apt-get"); err != nil {
 		return fmt.Errorf("install %s on this server first", strings.Join(missing, ", "))
 	}
@@ -248,7 +257,7 @@ func writeFiles(files map[string]string) error {
 			return err
 		}
 		mode := os.FileMode(0o600)
-		if filepath.Base(path) == upScript {
+		if base := filepath.Base(path); base == upScript || base == "updown" || base == "start" {
 			mode = 0o700
 		}
 		if err := os.WriteFile(path, []byte(body), mode); err != nil {
@@ -258,7 +267,36 @@ func writeFiles(files map[string]string) error {
 	return nil
 }
 
+// charonUnit is the systemd unit running charon: strongswan-starter where the
+// legacy ipsec tools are installed, else charon-systemd (Debian 13 has no starter).
+func charonUnit() string {
+	if _, err := lookPath("ipsec"); err == nil {
+		return "strongswan-starter"
+	}
+	return "strongswan"
+}
+
 func unitFile(t *Tunnel, dir string) string {
+	if t.Kind == KindIKEv2 {
+		daemon := charonUnit()
+		return fmt.Sprintf(`[Unit]
+Description=x-ui home network %[1]d
+After=network-online.target %[4]s.service
+Wants=network-online.target %[4]s.service
+PartOf=%[4]s.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=%[2]s
+ExecStop=-/usr/sbin/swanctl --terminate --ike %[3]s --timeout 10
+Restart=on-failure
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target
+`, t.Id, filepath.Join(dir, "start"), unitName(t.Id), daemon)
+	}
 	var exec string
 	switch t.Kind {
 	case KindOpenVPN:
@@ -305,6 +343,11 @@ func Apply(t *Tunnel) error {
 		for _, p := range []string{unitPath, filepath.Join(ipsecDir, unit+".conf"), filepath.Join(ipsecDir, unit+".secrets")} {
 			_ = os.Remove(p)
 		}
+		if t.Kind == KindIKEv2 {
+			_ = os.Remove(filepath.Join(swanctlDir, unit+".conf"))
+			_ = run("swanctl", "--load-all", "--noprompt")
+			_ = run("ip", "link", "del", IfName(t.Id))
+		}
 		_ = os.RemoveAll(dir)
 		return run("systemctl", "daemon-reload")
 	}
@@ -341,6 +384,29 @@ func Apply(t *Tunnel) error {
 				return err
 			}
 			if err := ensureInclude(ipsecFiles[1], "include "+ipsecDir+"/x-ui-home-*.secrets"); err != nil {
+				return err
+			}
+		}
+	case KindIKEv2:
+		bins := map[string]string{"swanctl": "strongswan-swanctl"}
+		if charonUnit() == "strongswan" {
+			bins["charon-systemd"] = "charon-systemd"
+		}
+		if t.PSK == "" {
+			bins[eapPlugin] = "libcharon-extra-plugins"
+		}
+		if err := ensurePackages(bins); err != nil {
+			return err
+		}
+		ike, err := IKEv2Files(t, dir)
+		if err != nil {
+			return err
+		}
+		files = ike
+		files[filepath.Join(dir, "start")] = ikev2Start(t.Id)
+		// charon loads the vici plugin swanctl talks to only when it starts.
+		if run("swanctl", "--stats") != nil {
+			if err := run("systemctl", "restart", charonUnit()); err != nil {
 				return err
 			}
 		}

@@ -414,6 +414,9 @@ func (s *ClientService) AddInboundClient(inboundSvc *InboundService, data *model
 	if err != nil {
 		return false, err
 	}
+	if err := refuseRegularClientsOnManagedInbound(inbound, clients); err != nil {
+		return false, err
+	}
 	existingClients, err := inboundSvc.GetClients(inbound)
 	if err != nil {
 		return false, err
@@ -1380,6 +1383,12 @@ func (s *ClientService) SetClientTelegramUserID(inboundSvc *InboundService, traf
 	// back to the client record on its next SyncInbound (#5039).
 	return s.applyClientFieldByEmail(inboundSvc, traffic.Email, func(c map[string]any) {
 		c["tgId"] = tgId
+	})
+}
+
+func (s *ClientService) SetClientCommentByEmail(inboundSvc *InboundService, clientEmail string, comment string) (bool, error) {
+	return s.applyClientFieldByEmail(inboundSvc, clientEmail, func(c map[string]any) {
+		c["comment"] = comment
 	})
 }
 

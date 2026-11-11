@@ -134,8 +134,17 @@ func (a *SettingController) getFactoryDefaults(c *gin.Context) {
 
 // updateSetting updates all settings with the provided data.
 func (a *SettingController) updateSetting(c *gin.Context) {
-	form, ok := middleware.BindAndValidate[updateSettingForm](c)
-	if !ok {
+	// Fields the body leaves out keep their stored value, so a page that only
+	// sends what it changed cannot reset a setting it never showed.
+	stored, err := a.settingService.GetAllSetting()
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.settings.toasts.modifySettings"), err)
+		return
+	}
+	form := &updateSettingForm{AllSetting: *stored}
+	// A secret the body leaves out reads as blank: "unchanged", or cleared by its clear flag.
+	form.TgBotToken, form.LdapPassword, form.SmtpPassword, form.DiscordBotToken = "", "", "", ""
+	if !middleware.BindAndValidateInto(c, form) {
 		return
 	}
 	allSetting := &form.AllSetting
@@ -161,7 +170,7 @@ func (a *SettingController) updateSetting(c *gin.Context) {
 			}
 		}
 	}
-	err := a.settingService.UpdateAllSetting(allSetting, service.SecretClears{
+	err = a.settingService.UpdateAllSetting(allSetting, service.SecretClears{
 		TgBotToken:      form.ClearTgBotToken,
 		LdapPassword:    form.ClearLdapPassword,
 		SmtpPassword:    form.ClearSmtpPassword,

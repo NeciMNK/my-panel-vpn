@@ -1172,6 +1172,8 @@ type LedgerServer struct {
 	BillingDay int `json:"billingDay" gorm:"column:billing_day;default:1" example:"15"`
 	// RemindedFor is the YYYY-MM whose bill the admins were already reminded of.
 	RemindedFor string `json:"-" gorm:"column:reminded_for;default:''"`
+	// PaidThrough is the last YYYY-MM whose bill the admin paid ahead with Extend.
+	PaidThrough string `json:"paidThrough" gorm:"column:paid_through;default:''" example:"2027-02"`
 }
 
 func (LedgerServer) TableName() string { return "ledger_servers" }
@@ -1804,6 +1806,13 @@ func MergeClientRecord(existing *ClientRecord, incoming *ClientRecord) []ClientM
 		existing.UpdatedAt = incoming.UpdatedAt
 	}
 	return conflicts
+}
+
+// TelegramTag is the comment tag the bot last wrote for a Telegram account, so
+// it replaces only its own text and never an admin note that looks like a tag.
+type TelegramTag struct {
+	TgID int64  `json:"tgId" gorm:"primaryKey;autoIncrement:false;column:tg_id"`
+	Tag  string `json:"tag" gorm:"column:tag"`
 }
 
 // TlsCertificate is an ACME certificate the panel issued over Cloudflare DNS-01

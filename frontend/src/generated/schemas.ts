@@ -538,6 +538,11 @@ export const SCHEMAS: Record<string, unknown> = {
         "description": "Prices and discounts are edited on the Finance page (LedgerService.SavePayment), not here.",
         "type": "boolean"
       },
+      "tgFreePlanGB": {
+        "maximum": 100000,
+        "minimum": 1,
+        "type": "integer"
+      },
       "tgLang": {
         "type": "string"
       },
@@ -759,6 +764,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgCpu",
       "tgEnabledEvents",
       "tgFreePlanEnable",
+      "tgFreePlanGB",
       "tgLang",
       "tgMemory",
       "tgRunTime",
@@ -1339,6 +1345,11 @@ export const SCHEMAS: Record<string, unknown> = {
         "description": "Prices and discounts are edited on the Finance page (LedgerService.SavePayment), not here.",
         "type": "boolean"
       },
+      "tgFreePlanGB": {
+        "maximum": 100000,
+        "minimum": 1,
+        "type": "integer"
+      },
       "tgLang": {
         "type": "string"
       },
@@ -1568,6 +1579,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgCpu",
       "tgEnabledEvents",
       "tgFreePlanEnable",
+      "tgFreePlanGB",
       "tgLang",
       "tgMemory",
       "tgRunTime",
@@ -1721,6 +1733,18 @@ export const SCHEMAS: Record<string, unknown> = {
         "format": "int64",
         "type": "integer"
       },
+      "directDomains": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "directIps": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
       "enable": {
         "example": true,
         "type": "boolean"
@@ -1759,9 +1783,20 @@ export const SCHEMAS: Record<string, unknown> = {
         },
         "type": "array"
       },
+      "mode": {
+        "description": "Mode is split, relay or both; empty is a cascade saved before modes, a relay.",
+        "example": "split",
+        "type": "string"
+      },
       "name": {
         "example": "RU → DE",
         "type": "string"
+      },
+      "relayInboundTags": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
       },
       "strategy": {
         "example": "leastPing",
@@ -1774,6 +1809,8 @@ export const SCHEMAS: Record<string, unknown> = {
     },
     "required": [
       "createdAt",
+      "directDomains",
+      "directIps",
       "enable",
       "entryInboundTags",
       "entryNodeId",
@@ -1782,7 +1819,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "id",
       "lastError",
       "links",
+      "mode",
       "name",
+      "relayInboundTags",
       "strategy",
       "updatedAt"
     ],
@@ -2948,10 +2987,10 @@ export const SCHEMAS: Record<string, unknown> = {
     "type": "object"
   },
   "HomeNetwork": {
-    "description": "HomeNetwork is a network behind a tunnel (WireGuard, OpenVPN or L2TP/IPsec)\nthat one server holds; users reach only the subnets and IPs their rules allow.",
+    "description": "HomeNetwork is a network behind a tunnel (WireGuard, OpenVPN, L2TP/IPsec or IKEv2)\nthat one server holds; users reach only the subnets and IPs their rules allow.",
     "properties": {
       "config": {
-        "description": "Config is the pasted wg-quick or .ovpn file.",
+        "description": "Config is the pasted wg-quick or .ovpn file, or the IKEv2 router's CA certificate.",
         "type": "string"
       },
       "createdAt": {
@@ -4069,6 +4108,11 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": "Hetzner DE",
         "type": "string"
       },
+      "paidThrough": {
+        "description": "PaidThrough is the last YYYY-MM whose bill the admin paid ahead with Extend.",
+        "example": "2027-02",
+        "type": "string"
+      },
       "startMonth": {
         "example": "2026-11",
         "type": "string"
@@ -4080,6 +4124,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "id",
       "monthlyCost",
       "name",
+      "paidThrough",
       "startMonth"
     ],
     "type": "object"

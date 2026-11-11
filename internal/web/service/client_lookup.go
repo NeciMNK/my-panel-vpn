@@ -125,6 +125,28 @@ func (s *ClientService) GetRecordsByTgID(tgId int64) ([]*model.ClientRecord, err
 	return rows, err
 }
 
+// GetTelegramTag returns the comment tag last written for tgID, or "".
+func (s *ClientService) GetTelegramTag(tgID int64) (string, error) {
+	var tags []string
+	err := database.GetDB().Model(&model.TelegramTag{}).Where("tg_id = ?", tgID).Limit(1).Pluck("tag", &tags).Error
+	if err != nil || len(tags) == 0 {
+		return "", err
+	}
+	return tags[0], nil
+}
+
+func (s *ClientService) SetTelegramTag(tgID int64, tag string) error {
+	return database.GetDB().Save(&model.TelegramTag{TgID: tgID, Tag: tag}).Error
+}
+
+// GetBoundTelegramIDs lists each Telegram account bound to at least one client.
+func (s *ClientService) GetBoundTelegramIDs() ([]int64, error) {
+	var ids []int64
+	err := database.GetDB().Model(&model.ClientRecord{}).
+		Where("tg_id > 0").Distinct().Order("tg_id").Pluck("tg_id", &ids).Error
+	return ids, err
+}
+
 func (s *ClientService) GetByID(id int) (*model.ClientRecord, error) {
 	row := &model.ClientRecord{}
 	if err := database.GetDB().Where("id = ?", id).First(row).Error; err != nil {

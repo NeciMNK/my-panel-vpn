@@ -391,7 +391,8 @@ func (s *InboundService) GetInboundOptions(userId int) ([]InboundOption, error) 
 	err := db.Table("inbounds").
 		Select("inbounds.id, inbounds.remark, inbounds.tag, inbounds.protocol, inbounds.port, inbounds.enable, inbounds.stream_settings, inbounds.settings, inbounds.listen, inbounds.share_addr, inbounds.share_addr_strategy, inbounds.node_id, COALESCE(nodes.address, '') AS node_address, inbounds.disable_flow").
 		Joins("LEFT JOIN nodes ON nodes.id = inbounds.node_id").
-		Where("inbounds.user_id = ?", userId).
+		// The panel's own link inbounds are never a target for a user client.
+		Where("inbounds.user_id = ? AND inbounds.tag NOT LIKE ?", userId, managedTagPrefix+"%").
 		Order("inbounds.id ASC").
 		Scan(&rows).Error
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {

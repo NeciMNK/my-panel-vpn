@@ -9,12 +9,30 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/runtime"
 )
 
 // Everything this fork writes into an Xray template carries a tag that starts
 // with managedTagPrefix, so a feature can strip and rewrite only its own part.
 const managedTagPrefix = "mp-"
+
+var errManagedInboundClient = common.NewError("this is a service inbound of a cascade or home network link: only the panel's own clients can be on it")
+
+// refuseRegularClientsOnManagedInbound keeps users off the panel's hidden link
+// inbounds, where they would bypass the cascade's routing and pins.
+func refuseRegularClientsOnManagedInbound(inbound *model.Inbound, clients []model.Client) error {
+	if !strings.HasPrefix(inbound.Tag, managedTagPrefix) {
+		return nil
+	}
+	for _, c := range clients {
+		if !strings.HasPrefix(c.Email, managedTagPrefix) {
+			return errManagedInboundClient
+		}
+	}
+	return nil
+}
 
 // xrayTemplate is one panel's Xray template plus the facts needed to edit it.
 type xrayTemplate struct {

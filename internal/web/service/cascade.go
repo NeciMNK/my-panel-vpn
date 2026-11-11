@@ -37,6 +37,10 @@ type CascadeRequest struct {
 	ExitCountry      string   `json:"exitCountry" example:"DE"`
 	EntryInboundTags []string `json:"entryInboundTags"`
 	Strategy         string   `json:"strategy" example:"leastPing"`
+	Mode             string   `json:"mode" example:"split"`
+	DirectDomains    []string `json:"directDomains"`
+	DirectIPs        []string `json:"directIps"`
+	RelayInboundTags []string `json:"relayInboundTags"`
 }
 
 var cascadeMu sync.Mutex
@@ -97,6 +101,9 @@ func (s *CascadeService) validate(req *CascadeRequest) error {
 	if !slices.Contains(cascadeStrategies, req.Strategy) {
 		return common.NewError("unknown balancing strategy " + req.Strategy)
 	}
+	if err := normalizeCascadeRouting(req); err != nil {
+		return err
+	}
 	for _, id := range append([]int{req.EntryNodeId}, req.ExitNodeIds...) {
 		if id == 0 {
 			continue
@@ -119,7 +126,8 @@ func (s *CascadeService) Create(ctx context.Context, req *CascadeRequest, userID
 	c := &model.Cascade{
 		Name: strings.TrimSpace(req.Name), Enable: req.Enable, EntryNodeId: req.EntryNodeId,
 		ExitNodeIds: req.ExitNodeIds, ExitCountry: req.ExitCountry, EntryInboundTags: req.EntryInboundTags,
-		Strategy: req.Strategy,
+		Strategy: req.Strategy, Mode: req.Mode, DirectDomains: req.DirectDomains,
+		DirectIPs: req.DirectIPs, RelayInboundTags: req.RelayInboundTags,
 	}
 	if err := database.GetDB().Create(c).Error; err != nil {
 		return nil, err
@@ -153,6 +161,10 @@ func (s *CascadeService) Update(ctx context.Context, id int, req *CascadeRequest
 	c.ExitCountry = req.ExitCountry
 	c.EntryInboundTags = req.EntryInboundTags
 	c.Strategy = req.Strategy
+	c.Mode = req.Mode
+	c.DirectDomains = req.DirectDomains
+	c.DirectIPs = req.DirectIPs
+	c.RelayInboundTags = req.RelayInboundTags
 	err = s.apply(ctx, c, prevEntry, userID, masterAddress)
 	s.saveState(c, err)
 	return c, err
@@ -249,23 +261,21 @@ func (s *CascadeService) rewriteEntry(ctx context.Context, nodeID int, c *model.
 		if err != nil {
 			return err
 		}
-		applyCascadeToTemplate(tmpl.Config, c, pins)
+		applyCascadeToTemplate(tmpl.Config, c, pins, splitZone(nodeCountry(nodeID)))
 	}
 	return store.Save(ctx, tmpl)
 }
 
-// applyCascadeToTemplate adds one outbound per exit and a tail rule sending
-// the chained inbounds (all when none were picked) to it or to a balancer.
-func applyCascadeToTemplate(cfg map[string]any, c *model.Cascade, pins []model.CascadePin) {
+// applyCascadeToTemplate adds one outbound per exit and tail rules: relay-only
+// inbounds first, then the split's direct rules, then the catch-all to the exit.
+func applyCascadeToTemplate(cfg map[string]any, c *model.Cascade, pins []model.CascadePin, zone cascadeZone) {
 	for _, l := range c.Links {
 		appendOutbounds(cfg, cascadeOutbound(c.Id, l))
 	}
-	rule := map[string]any{"type": "field", "ruleTag": cascadeRouteTag(c.Id), "network": "tcp,udp"}
-	if len(c.EntryInboundTags) > 0 {
-		rule["inboundTag"] = c.EntryInboundTags
-	}
+	mode := cascadeMode(c)
+	target := map[string]any{}
 	if len(c.Links) == 1 {
-		rule["outboundTag"] = cascadeLinkTag(c.Id, c.Links[0].NodeId)
+		target["outboundTag"] = cascadeLinkTag(c.Id, c.Links[0].NodeId)
 	} else {
 		selector := cascadePrefix(c.Id) + "n"
 		appendBalancer(cfg, map[string]any{
@@ -280,10 +290,40 @@ func applyCascadeToTemplate(cfg map[string]any, c *model.Cascade, pins []model.C
 		case "leastLoad":
 			observeSubjects(cfg, "burstObservatory", selector)
 		}
-		rule["balancerTag"] = cascadeRouteTag(c.Id)
-		appendTailRules(cfg, cascadePinRules(c, pins)...)
+		target["balancerTag"] = cascadeRouteTag(c.Id)
 	}
-	appendTailRules(cfg, rule)
+	multi := len(c.Links) > 1
+	if mode == CascadeModeBoth {
+		if multi {
+			appendTailRules(cfg, cascadePinRules(c, pins, cascadePrefix(c.Id)+"relay-", c.RelayInboundTags)...)
+		}
+		appendTailRules(cfg, cascadeRule(cascadePrefix(c.Id)+"relay", c.RelayInboundTags, target))
+	}
+	if mode != CascadeModeRelay {
+		appendOutbounds(cfg, map[string]any{"tag": cascadeDirectTag(c.Id), "protocol": "freedom"})
+		direct := map[string]any{"outboundTag": cascadeDirectTag(c.Id)}
+		domain := cascadeRule(cascadePrefix(c.Id)+"direct-domain", c.EntryInboundTags, direct)
+		domain["domain"] = append(slices.Clone(zone.Domains), c.DirectDomains...)
+		ip := cascadeRule(cascadePrefix(c.Id)+"direct-ip", c.EntryInboundTags, direct)
+		ip["ip"] = append(slices.Clone(zone.IPs), c.DirectIPs...)
+		appendTailRules(cfg, domain, ip)
+	}
+	if multi {
+		appendTailRules(cfg, cascadePinRules(c, pins, cascadePrefix(c.Id), c.EntryInboundTags)...)
+	}
+	appendTailRules(cfg, cascadeRule(cascadeRouteTag(c.Id), c.EntryInboundTags, target))
+}
+
+// cascadeRule is a tcp+udp field rule for inbounds (all when empty) to target.
+func cascadeRule(tag string, inbounds []string, target map[string]any) map[string]any {
+	rule := map[string]any{"type": "field", "ruleTag": tag, "network": "tcp,udp"}
+	if len(inbounds) > 0 {
+		rule["inboundTag"] = inbounds
+	}
+	for k, v := range target {
+		rule[k] = v
+	}
+	return rule
 }
 
 func cascadeOutbound(cascadeID int, l model.CascadeLink) map[string]any {

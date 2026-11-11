@@ -35,6 +35,7 @@ var (
 	ErrLedgerName   = errors.New("name is required")
 	ErrLedgerRange  = errors.New("end month is before start month")
 	ErrLedgerDay    = errors.New("billing day must be 1-31")
+	ErrLedgerMonths = errors.New("extend by 1-36 months")
 )
 
 // LedgerService is the admin's profit/loss book: recurring server costs,
@@ -207,7 +208,7 @@ func (s *LedgerService) SaveServer(server *model.LedgerServer) error {
 	case server.BillingDay < 1 || server.BillingDay > 31:
 		return ErrLedgerDay
 	}
-	return database.GetDB().Omit("reminded_for").Save(server).Error
+	return database.GetDB().Omit("reminded_for", "paid_through").Save(server).Error
 }
 
 func (s *LedgerService) DeleteServer(id int) error {
@@ -326,6 +327,9 @@ func nextServerBill(server model.LedgerServer, now time.Time) (time.Time, bool) 
 	if start, err := time.ParseInLocation("2006-01", server.StartMonth, now.Location()); err == nil && start.After(month) {
 		month = start
 	}
+	if paid, err := time.ParseInLocation("2006-01", server.PaidThrough, now.Location()); err == nil && !paid.Before(month) {
+		month = paid.AddDate(0, 1, 0)
+	}
 	for range 2 {
 		if !serverChargedIn(server, LedgerMonthOf(month)) {
 			return time.Time{}, false
@@ -336,6 +340,27 @@ func nextServerBill(server model.LedgerServer, now time.Time) (time.Time, bool) 
 		month = month.AddDate(0, 1, 0)
 	}
 	return time.Time{}, false
+}
+
+// ExtendServer pays the server's next months bills ahead; a stopped server runs again until then.
+func (s *LedgerService) ExtendServer(id, months int, now time.Time) (model.LedgerServer, error) {
+	var server model.LedgerServer
+	if months < 1 || months > 36 {
+		return server, ErrLedgerMonths
+	}
+	db := database.GetDB()
+	if err := db.First(&server, id).Error; err != nil {
+		return server, err
+	}
+	running := server
+	running.EndMonth = ""
+	due, _ := nextServerBill(running, now)
+	server.PaidThrough = LedgerMonthOf(due.AddDate(0, 0, 1-due.Day()).AddDate(0, months-1, 0))
+	if server.EndMonth != "" && server.EndMonth < server.PaidThrough {
+		server.EndMonth = server.PaidThrough
+	}
+	err := db.Model(&server).Updates(map[string]any{"paid_through": server.PaidThrough, "end_month": server.EndMonth}).Error
+	return server, err
 }
 
 // ServersToRemind are bills due within days from now that admins were not yet told about.

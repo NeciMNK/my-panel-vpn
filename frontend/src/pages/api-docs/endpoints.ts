@@ -272,7 +272,7 @@ export const sections: readonly Section[] = [
         method: 'GET',
         path: '/panel/api/inbounds/options',
         summary:
-          'Lightweight picker projection of the authenticated user’s inbounds. Returns id, remark, tag, protocol, port, a server-computed tlsFlowCapable flag (true for VLESS on TCP with tls or reality, or on XHTTP with VLESS encryption / vlessenc enabled), and ssMethod (the Shadowsocks cipher, empty for non-Shadowsocks inbounds — used by the client UI to generate a valid Shadowsocks 2022 PSK). Use this for dropdowns and attach pickers — it skips settings, streamSettings, and clientStats so the payload stays small even on panels with thousands of clients.',
+          'Lightweight picker projection of the authenticated user’s inbounds. Returns id, remark, tag, protocol, port, a server-computed tlsFlowCapable flag (true for VLESS on TCP with tls or reality, or on XHTTP with VLESS encryption / vlessenc enabled), and ssMethod (the Shadowsocks cipher, empty for non-Shadowsocks inbounds — used by the client UI to generate a valid Shadowsocks 2022 PSK). The panel’s own hidden cascade / home-network link inbounds (tag mp-*) are left out. Use this for dropdowns and attach pickers — it skips settings, streamSettings, and clientStats so the payload stays small even on panels with thousands of clients.',
         responseSchema: 'InboundOption',
         responseSchemaArray: true,
       },
@@ -1779,7 +1779,7 @@ export const sections: readonly Section[] = [
     id: 'home-networks',
     title: 'Home networks',
     description:
-      'Home LANs behind a WireGuard, OpenVPN or L2TP/IPsec tunnel held by one gateway server (node id 0 = this panel). Every other server reaches the gateway through a hidden VLESS+REALITY link. Users reach only the subnets and IPs their rules allow; everything else in the home network is blocked. All endpoints under /panel/api/homeNetworks.',
+      'Home LANs behind a WireGuard, OpenVPN, L2TP/IPsec or IKEv2/IPsec tunnel held by one gateway server (node id 0 = this panel). Every other server reaches the gateway through a hidden VLESS+REALITY link. Users reach only the subnets and IPs their rules allow; everything else in the home network is blocked. All endpoints under /panel/api/homeNetworks.',
     endpoints: [
       {
         method: 'GET',
@@ -2104,6 +2104,14 @@ export const sections: readonly Section[] = [
       },
       {
         method: 'POST',
+        path: '/panel/api/ledger/servers/extend',
+        summary:
+          'Pay a server ahead for 1-36 months: its next payment date and reminder move past them, and a stopped server runs again until then.',
+        body: '{\n  "id": 1,\n  "months": 3\n}',
+        responseSchema: 'LedgerServer',
+      },
+      {
+        method: 'POST',
         path: '/panel/api/ledger/entries/add',
         summary:
           'Book an income (a payment received) or a one-off expense to a month. Confirmed Telegram payments are booked automatically.',
@@ -2408,7 +2416,7 @@ export const sections: readonly Section[] = [
         method: 'POST',
         path: '/panel/api/setting/update',
         summary:
-          'Persist every setting at once. The body mirrors the shape returned by /all. Invalid values (bad ports, missing cert pairs, etc.) are rejected before write.',
+          'Persist settings. The body mirrors the shape returned by /all; a field it leaves out keeps its stored value, and a secret left out or blank stays unchanged unless its clear flag is set. Invalid values (bad ports, missing cert pairs, etc.) are rejected before write.',
         body: '{\n  "webPort": 2053,\n  "webBasePath": "/",\n  "subPort": 10882,\n  "subPath": "/sub/",\n  "subClashAutoDetect": false,\n  "subClashUserAgentRegex": "",\n  "subJsonEnable": false,\n  "subJsonAutoDetect": false,\n  "subJsonAlwaysArray": false,\n  "subJsonUserAgentRegex": "",\n  "subJsonPath": "/json/",\n  "subJsonURI": "https://sub.example.com/json/",\n  "subClashEnable": true,\n  "subClashPath": "/clash/",\n  "subClashURI": "https://sub.example.com/clash/",\n  "tgBotEnable": false,\n  ...\n}',
       },
       {
@@ -2879,7 +2887,7 @@ export const sections: readonly Section[] = [
         method: 'POST',
         path: '/panel/api/xray/homeTunnel',
         summary:
-          "On a gateway server: bring a home network's OpenVPN or L2TP/IPsec client up (installing it when missing) or tear it down. Called by the master; answers within 45s even while the client still installs.",
+          "On a gateway server: bring a home network's OpenVPN, L2TP/IPsec or IKEv2 client up (installing it when missing) or tear it down. Called by the master; answers within 45s even while the client still installs.",
         body: '{\n  "id": 1,\n  "kind": "openvpn",\n  "enable": true,\n  "openvpn": "client\\nremote home.example.net 1194\\n...",\n  "routes": ["192.168.1.0/24"]\n}',
       },
       {

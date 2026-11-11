@@ -62,7 +62,7 @@ func (a *HomeNetworkController) del(c *gin.Context) {
 	jsonMsg(c, I18nWeb(c, "pages.nodes.home.toasts.deleted"), a.homeService.Delete(c.Request.Context(), id))
 }
 
-// homeTunnel runs on a gateway node: the master hands it the OpenVPN/L2TP
+// homeTunnel runs on a gateway node: the master hands it the system
 // tunnel it must keep up (or tear down).
 func (a *XraySettingController) homeTunnel(c *gin.Context) {
 	t := &homenet.Tunnel{}

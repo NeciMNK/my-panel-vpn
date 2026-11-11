@@ -22,10 +22,11 @@ _openapi:
         credential fields are never included.
       url: '#return-the-shipped-factory-default-value-per-browser-safe-setting-key-so-clients-can-tell-a-stored-value-apart-from-the-default-it-would-fall-back-to-per-install-material-secret-panelguid-mtls-keys-and-credential-fields-are-never-included'
     - depth: 2
-      title: Persist every setting at once. The body mirrors the shape returned by
-        /all. Invalid values (bad ports, missing cert pairs, etc.) are rejected
-        before write.
-      url: '#persist-every-setting-at-once-the-body-mirrors-the-shape-returned-by-all-invalid-values-bad-ports-missing-cert-pairs-etc-are-rejected-before-write'
+      title: Persist settings. The body mirrors the shape returned by /all; a field it
+        leaves out keeps its stored value, and a secret left out or blank stays
+        unchanged unless its clear flag is set. Invalid values (bad ports,
+        missing cert pairs, etc.) are rejected before write.
+      url: '#persist-settings-the-body-mirrors-the-shape-returned-by-all-a-field-it-leaves-out-keeps-its-stored-value-and-a-secret-left-out-or-blank-stays-unchanged-unless-its-clear-flag-is-set-invalid-values-bad-ports-missing-cert-pairs-etc-are-rejected-before-write'
     - depth: 2
       title: Validate any regular expression with the backend Go RE2 compiler without
         saving it.
@@ -93,10 +94,11 @@ _openapi:
           would fall back to. Per-install material (secret, panelGuid, mTLS
           keys) and credential fields are never included.
         id: return-the-shipped-factory-default-value-per-browser-safe-setting-key-so-clients-can-tell-a-stored-value-apart-from-the-default-it-would-fall-back-to-per-install-material-secret-panelguid-mtls-keys-and-credential-fields-are-never-included
-      - content: Persist every setting at once. The body mirrors the shape returned by
-          /all. Invalid values (bad ports, missing cert pairs, etc.) are
-          rejected before write.
-        id: persist-every-setting-at-once-the-body-mirrors-the-shape-returned-by-all-invalid-values-bad-ports-missing-cert-pairs-etc-are-rejected-before-write
+      - content: Persist settings. The body mirrors the shape returned by /all; a field
+          it leaves out keeps its stored value, and a secret left out or blank
+          stays unchanged unless its clear flag is set. Invalid values (bad
+          ports, missing cert pairs, etc.) are rejected before write.
+        id: persist-settings-the-body-mirrors-the-shape-returned-by-all-a-field-it-leaves-out-keeps-its-stored-value-and-a-secret-left-out-or-blank-stays-unchanged-unless-its-clear-flag-is-set-invalid-values-bad-ports-missing-cert-pairs-etc-are-rejected-before-write
       - content: Validate any regular expression with the backend Go RE2 compiler
           without saving it.
         id: validate-any-regular-expression-with-the-backend-go-re2-compiler-without-saving-it

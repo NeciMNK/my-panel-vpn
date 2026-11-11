@@ -10,6 +10,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/dbtest"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/homenet"
 )
 
 const homeWG = "[Interface]\nPrivateKey = cPriv=\nAddress = 10.8.0.2/32\n\n[Peer]\nPublicKey = hPub=\nEndpoint = home.example.net:51820\n"
@@ -164,12 +165,15 @@ func TestHomeNetworkValidation(t *testing.T) {
 		t.Fatalf("subnets not normalized: %v", req.Subnets)
 	}
 	cases := map[string]func(r *HomeNetworkRequest){
-		"connection type must be wireguard, openvpn or l2tp":           func(r *HomeNetworkRequest) { r.Kind = "pptp" },
+		"connection type must be wireguard, openvpn, l2tp or ikev2":    func(r *HomeNetworkRequest) { r.Kind = "pptp" },
 		"add at least one subnet or IP of the home network":            func(r *HomeNetworkRequest) { r.Subnets = nil },
 		"rule 1: 10.9.9.9 is not one of this network's subnets or IPs": func(r *HomeNetworkRequest) { r.Rules = []model.HomeAccessRule{{Targets: []string{"10.9.9.9"}}} },
 		"wireguard config: exactly one [Peer] is supported":            func(r *HomeNetworkRequest) { r.Config = "[Interface]\nPrivateKey = a\n" },
 		"openvpn config has no remote line":                            func(r *HomeNetworkRequest) { r.Kind, r.Config = "openvpn", "client\n" },
 		"password must not contain quotes, backslashes or line breaks": func(r *HomeNetworkRequest) { r.Kind, r.Server, r.Password = "l2tp", "1.2.3.4", `a"b` },
+		"ikev2: login with a username needs the router's CA certificate": func(r *HomeNetworkRequest) {
+			r.Kind, r.Config, r.Server, r.Username, r.Password = "ikev2", "", "1.2.3.4", "anna", "pw"
+		},
 	}
 	for want, mutate := range cases {
 		r := base()
@@ -222,5 +226,34 @@ func TestHomeNetworkCreateAndDeleteOnASinglePanel(t *testing.T) {
 	}
 	if got := localRuleTags(t); len(got) != 0 {
 		t.Fatalf("delete left rules: %v", got)
+	}
+}
+
+const homeRouterCA = `-----BEGIN CERTIFICATE-----
+MIIBeDCCAR+gAwIBAgIUR6xi17frsjUSus+uOUaGqItpXSAwCgYIKoZIzj0EAwIw
+EjEQMA4GA1UEAwwHaG9tZSBDQTAeFw0yNjExMTEwNDM5NDZaFw0zNjExMDgwNDM5
+NDZaMBIxEDAOBgNVBAMMB2hvbWUgQ0EwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNC
+AASDbJ5bIh3tb0rHDdnQ4IZwuReYoI2wKSV70WRtyl+JA91Bq+2gu4WBPFMs9ycx
+fFAwu2zpTngfKXRVcLivXhdQo1MwUTAdBgNVHQ4EFgQUJaoGl6mmkGrmT/rdeW0m
+Jgtq1lYwHwYDVR0jBBgwFoAUJaoGl6mmkGrmT/rdeW0mJgtq1lYwDwYDVR0TAQH/
+BAUwAwEB/zAKBggqhkjOPQQDAgNHADBEAiApkxR/a4XbcHKKI/ObjuPHQRhkCeNW
+/Nr5o/YQGhbw8AIgRtZ5IVr1gLmT0PAVT707wCAIMeyX2AQpV6Wyfm9Fz4Q=
+-----END CERTIFICATE-----
+`
+
+// The gateway renders the IKEv2 client from what the master sends it; without
+// the router's CA there it cannot verify the router and refuses to start.
+func TestHomeIKEv2TunnelCarriesTheRouterCA(t *testing.T) {
+	h := &model.HomeNetwork{
+		Id: 3, Kind: "ikev2", Config: homeRouterCA, Server: "home.example.net",
+		Username: "anna", Password: "pw", Subnets: []string{"192.168.1.0/24"},
+	}
+	tun := homeTunnel(h, true)
+	files, err := homenet.IKEv2Files(tun, "/d")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if files["/d/ca.pem"] != homeRouterCA || tun.OpenVPN != "" {
+		t.Fatalf("tunnel = %+v", tun)
 	}
 }

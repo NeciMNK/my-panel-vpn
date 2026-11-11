@@ -564,6 +564,11 @@
             "description": "Prices and discounts are edited on the Finance page (LedgerService.SavePayment), not here.",
             "type": "boolean"
           },
+          "tgFreePlanGB": {
+            "maximum": 100000,
+            "minimum": 1,
+            "type": "integer"
+          },
           "tgLang": {
             "type": "string"
           },
@@ -785,6 +790,7 @@
           "tgCpu",
           "tgEnabledEvents",
           "tgFreePlanEnable",
+          "tgFreePlanGB",
           "tgLang",
           "tgMemory",
           "tgRunTime",
@@ -1365,6 +1371,11 @@
             "description": "Prices and discounts are edited on the Finance page (LedgerService.SavePayment), not here.",
             "type": "boolean"
           },
+          "tgFreePlanGB": {
+            "maximum": 100000,
+            "minimum": 1,
+            "type": "integer"
+          },
           "tgLang": {
             "type": "string"
           },
@@ -1594,6 +1605,7 @@
           "tgCpu",
           "tgEnabledEvents",
           "tgFreePlanEnable",
+          "tgFreePlanGB",
           "tgLang",
           "tgMemory",
           "tgRunTime",
@@ -1747,6 +1759,18 @@
             "format": "int64",
             "type": "integer"
           },
+          "directDomains": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "directIps": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
           "enable": {
             "example": true,
             "type": "boolean"
@@ -1785,9 +1809,20 @@
             },
             "type": "array"
           },
+          "mode": {
+            "description": "Mode is split, relay or both; empty is a cascade saved before modes, a relay.",
+            "example": "split",
+            "type": "string"
+          },
           "name": {
             "example": "RU → DE",
             "type": "string"
+          },
+          "relayInboundTags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           },
           "strategy": {
             "example": "leastPing",
@@ -1800,6 +1835,8 @@
         },
         "required": [
           "createdAt",
+          "directDomains",
+          "directIps",
           "enable",
           "entryInboundTags",
           "entryNodeId",
@@ -1808,7 +1845,9 @@
           "id",
           "lastError",
           "links",
+          "mode",
           "name",
+          "relayInboundTags",
           "strategy",
           "updatedAt"
         ],
@@ -2974,10 +3013,10 @@
         "type": "object"
       },
       "HomeNetwork": {
-        "description": "HomeNetwork is a network behind a tunnel (WireGuard, OpenVPN or L2TP/IPsec)\nthat one server holds; users reach only the subnets and IPs their rules allow.",
+        "description": "HomeNetwork is a network behind a tunnel (WireGuard, OpenVPN, L2TP/IPsec or IKEv2)\nthat one server holds; users reach only the subnets and IPs their rules allow.",
         "properties": {
           "config": {
-            "description": "Config is the pasted wg-quick or .ovpn file.",
+            "description": "Config is the pasted wg-quick or .ovpn file, or the IKEv2 router's CA certificate.",
             "type": "string"
           },
           "createdAt": {
@@ -4095,6 +4134,11 @@
             "example": "Hetzner DE",
             "type": "string"
           },
+          "paidThrough": {
+            "description": "PaidThrough is the last YYYY-MM whose bill the admin paid ahead with Extend.",
+            "example": "2027-02",
+            "type": "string"
+          },
           "startMonth": {
             "example": "2026-11",
             "type": "string"
@@ -4106,6 +4150,7 @@
           "id",
           "monthlyCost",
           "name",
+          "paidThrough",
           "startMonth"
         ],
         "type": "object"
@@ -6074,7 +6119,7 @@
     },
     {
       "name": "Home networks",
-      "description": "Home LANs behind a WireGuard, OpenVPN or L2TP/IPsec tunnel held by one gateway server (node id 0 = this panel). Every other server reaches the gateway through a hidden VLESS+REALITY link. Users reach only the subnets and IPs their rules allow; everything else in the home network is blocked. All endpoints under /panel/api/homeNetworks."
+      "description": "Home LANs behind a WireGuard, OpenVPN, L2TP/IPsec or IKEv2/IPsec tunnel held by one gateway server (node id 0 = this panel). Every other server reaches the gateway through a hidden VLESS+REALITY link. Users reach only the subnets and IPs their rules allow; everything else in the home network is blocked. All endpoints under /panel/api/homeNetworks."
     },
     {
       "name": "Masters",
@@ -6474,7 +6519,7 @@
         "tags": [
           "Inbounds"
         ],
-        "summary": "Lightweight picker projection of the authenticated user’s inbounds. Returns id, remark, tag, protocol, port, a server-computed tlsFlowCapable flag (true for VLESS on TCP with tls or reality, or on XHTTP with VLESS encryption / vlessenc enabled), and ssMethod (the Shadowsocks cipher, empty for non-Shadowsocks inbounds — used by the client UI to generate a valid Shadowsocks 2022 PSK). Use this for dropdowns and attach pickers — it skips settings, streamSettings, and clientStats so the payload stays small even on panels with thousands of clients.",
+        "summary": "Lightweight picker projection of the authenticated user’s inbounds. Returns id, remark, tag, protocol, port, a server-computed tlsFlowCapable flag (true for VLESS on TCP with tls or reality, or on XHTTP with VLESS encryption / vlessenc enabled), and ssMethod (the Shadowsocks cipher, empty for non-Shadowsocks inbounds — used by the client UI to generate a valid Shadowsocks 2022 PSK). The panel’s own hidden cascade / home-network link inbounds (tag mp-*) are left out. Use this for dropdowns and attach pickers — it skips settings, streamSettings, and clientStats so the payload stays small even on panels with thousands of clients.",
         "operationId": "get_panel_api_inbounds_options",
         "responses": {
           "200": {
@@ -12438,6 +12483,12 @@
                   "obj": [
                     {
                       "createdAt": 0,
+                      "directDomains": [
+                        ""
+                      ],
+                      "directIps": [
+                        ""
+                      ],
                       "enable": true,
                       "entryInboundTags": [
                         ""
@@ -12462,7 +12513,11 @@
                           "shortId": ""
                         }
                       ],
+                      "mode": "split",
                       "name": "RU → DE",
+                      "relayInboundTags": [
+                        ""
+                      ],
                       "strategy": "leastPing",
                       "updatedAt": 0
                     }
@@ -12525,6 +12580,12 @@
                   "success": true,
                   "obj": {
                     "createdAt": 0,
+                    "directDomains": [
+                      ""
+                    ],
+                    "directIps": [
+                      ""
+                    ],
                     "enable": true,
                     "entryInboundTags": [
                       ""
@@ -12549,7 +12610,11 @@
                         "shortId": ""
                       }
                     ],
+                    "mode": "split",
                     "name": "RU → DE",
+                    "relayInboundTags": [
+                      ""
+                    ],
                     "strategy": "leastPing",
                     "updatedAt": 0
                   }
@@ -12622,6 +12687,12 @@
                   "success": true,
                   "obj": {
                     "createdAt": 0,
+                    "directDomains": [
+                      ""
+                    ],
+                    "directIps": [
+                      ""
+                    ],
                     "enable": true,
                     "entryInboundTags": [
                       ""
@@ -12646,7 +12717,11 @@
                         "shortId": ""
                       }
                     ],
+                    "mode": "split",
                     "name": "RU → DE",
+                    "relayInboundTags": [
+                      ""
+                    ],
                     "strategy": "leastPing",
                     "updatedAt": 0
                   }
@@ -14567,6 +14642,7 @@
                         "id": 1,
                         "monthlyCost": 500,
                         "name": "Hetzner DE",
+                        "paidThrough": "2027-02",
                         "startMonth": "2026-11"
                       }
                     ],
@@ -14637,6 +14713,7 @@
                     "id": 1,
                     "monthlyCost": 500,
                     "name": "Hetzner DE",
+                    "paidThrough": "2027-02",
                     "startMonth": "2026-11"
                   }
                 }
@@ -14681,6 +14758,64 @@
                       "type": "string"
                     },
                     "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/ledger/servers/extend": {
+      "post": {
+        "tags": [
+          "Ledger"
+        ],
+        "summary": "Pay a server ahead for 1-36 months: its next payment date and reminder move past them, and a stopped server runs again until then.",
+        "operationId": "post_panel_api_ledger_servers_extend",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "id": 1,
+                "months": 3
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/LedgerServer"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "billingDay": 15,
+                    "endMonth": "",
+                    "id": 1,
+                    "monthlyCost": 500,
+                    "name": "Hetzner DE",
+                    "paidThrough": "2027-02",
+                    "startMonth": "2026-11"
                   }
                 }
               }
@@ -16292,7 +16427,7 @@
         "tags": [
           "Settings"
         ],
-        "summary": "Persist every setting at once. The body mirrors the shape returned by /all. Invalid values (bad ports, missing cert pairs, etc.) are rejected before write.",
+        "summary": "Persist settings. The body mirrors the shape returned by /all; a field it leaves out keeps its stored value, and a secret left out or blank stays unchanged unless its clear flag is set. Invalid values (bad ports, missing cert pairs, etc.) are rejected before write.",
         "operationId": "post_panel_api_setting_update",
         "requestBody": {
           "required": true,
@@ -17782,7 +17917,7 @@
         "tags": [
           "Xray Settings"
         ],
-        "summary": "On a gateway server: bring a home network's OpenVPN or L2TP/IPsec client up (installing it when missing) or tear it down. Called by the master; answers within 45s even while the client still installs.",
+        "summary": "On a gateway server: bring a home network's OpenVPN, L2TP/IPsec or IKEv2 client up (installing it when missing) or tear it down. Called by the master; answers within 45s even while the client still installs.",
         "operationId": "post_panel_api_xray_homeTunnel",
         "requestBody": {
           "required": true,

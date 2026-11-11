@@ -178,6 +178,7 @@ export interface AllSetting {
   tgCpu: number;
   tgEnabledEvents: string;
   tgFreePlanEnable: boolean;
+  tgFreePlanGB: number;
   tgLang: string;
   tgMemory: number;
   tgRunTime: string;
@@ -371,6 +372,7 @@ export interface AllSettingView {
   tgCpu: number;
   tgEnabledEvents: string;
   tgFreePlanEnable: boolean;
+  tgFreePlanGB: number;
   tgLang: string;
   tgMemory: number;
   tgRunTime: string;
@@ -421,6 +423,8 @@ export interface Blocker {
 
 export interface Cascade {
   createdAt: number;
+  directDomains: string[];
+  directIps: string[];
   enable: boolean;
   entryInboundTags: string[];
   entryNodeId: number;
@@ -429,7 +433,9 @@ export interface Cascade {
   id: number;
   lastError: string;
   links: CascadeLink[];
+  mode: string;
   name: string;
+  relayInboundTags: string[];
   strategy: string;
   updatedAt: number;
 }
@@ -926,6 +932,7 @@ export interface LedgerServer {
   id: number;
   monthlyCost: number;
   name: string;
+  paidThrough: string;
   startMonth: string;
 }
 

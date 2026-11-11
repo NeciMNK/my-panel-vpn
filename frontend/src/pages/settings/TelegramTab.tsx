@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
-import { Alert, Button, Input, Select, Space, Switch, Tabs } from 'antd';
+import { Alert, Button, Input, InputNumber, Select, Space, Switch, Tabs } from 'antd';
 import {
   BellOutlined,
   SendOutlined,
@@ -10,6 +10,7 @@ import {
   WarningOutlined,
 } from '@ant-design/icons';
 import { HttpUtil, LanguageManager } from '@/utils';
+import { onNumber } from '@/utils/onNumber';
 import type { AllSetting } from '@/models/setting';
 import { SettingListItem } from '@/components/ui';
 import { TelegramNotifications } from '@/components/ui/notifications/TelegramNotifications';
@@ -300,6 +301,19 @@ export default function TelegramTab({ allSetting, updateSetting }: TelegramTabPr
                 <Switch
                   checked={allSetting.tgFreePlanEnable}
                   onChange={(v) => updateSetting({ tgFreePlanEnable: v })}
+                />
+              </SettingListItem>
+              <SettingListItem
+                paddings="small"
+                title={t('pages.settings.tgFreePlanGB')}
+                description={t('pages.settings.tgFreePlanGBDesc')}
+              >
+                <InputNumber
+                  value={allSetting.tgFreePlanGB}
+                  min={1}
+                  max={100000}
+                  style={{ width: '100%' }}
+                  onChange={onNumber((v) => updateSetting({ tgFreePlanGB: v }))}
                 />
               </SettingListItem>
             </>

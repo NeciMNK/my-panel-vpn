@@ -1285,7 +1285,22 @@
         "exitModeServers": "Вибрані сервери",
         "exitModeCountry": "Усі сервери країни",
         "country": "Країна виходу",
-        "countryHint": "Трафік іде на найшвидший сервер цієї країни. Нові ноди країни додаються самі."
+        "countryHint": "Трафік іде на найшвидший сервер цієї країни. Нові ноди країни додаються самі.",
+        "split": "Розділяти трафік",
+        "splitHint": "Сайти та IP країни вхідного сервера (для Росії: .ru, .su, .рф, geosite:category-ru, geoip:ru) і те, що вказано нижче, виходять в інтернет просто з входу; все інше йде через вихід.",
+        "relay": "Чистий проброс",
+        "relayHint": "Вхід лише пробрасує трафік: усе йде через вихід.",
+        "relayInbounds": "Інбаунди лише для пробросу",
+        "relayInboundsHint": "Коли увімкнено обидва перемикачі, ці інбаунди входу пробрасують усе, інші інбаунди каскаду розділяють трафік.",
+        "directDomains": "Ще напряму: сайти",
+        "directDomainsHint": "Додається до шаблону країни: example.com, domain:, full:, regexp:, geosite:.",
+        "directIps": "Ще напряму: IP",
+        "directIpsHint": "Додається до шаблону країни: IP, підмережа CIDR або geoip:.",
+        "modes": {
+          "split": "розділення",
+          "relay": "проброс",
+          "both": "розділення + проброс"
+        }
       },
       "country": "Країна",
       "countryHint": "Дволітерний код країни (DE, NL, FI). Ноди однієї країни разом потрапляють у каскади «за країною».",
@@ -1304,17 +1319,22 @@
         "kinds": {
           "wireguard": "WireGuard",
           "openvpn": "OpenVPN",
-          "l2tp": "L2TP/IPsec"
+          "l2tp": "L2TP/IPsec",
+          "ikev2": "IKEv2/IPsec"
         },
         "gateway": "Server that holds the tunnel",
-        "gatewayHint": "OpenVPN and L2TP clients are installed on this server automatically (Debian/Ubuntu).",
+        "gatewayHint": "OpenVPN, L2TP and IKEv2 clients are installed on this server automatically (Debian/Ubuntu).",
         "config": "Config file",
         "configHintWg": "Paste the WireGuard config exported by the home router: [Interface] and one [Peer].",
         "configHintOvpn": "Paste the .ovpn file. Its routes and scripts are ignored: only the addresses below go through the tunnel.",
         "server": "L2TP server address",
+        "serverIkev2": "IKEv2 server address",
         "username": "Username",
         "password": "Password",
         "psk": "IPsec pre-shared key (empty = L2TP without IPsec)",
+        "pskIkev2": "Pre-shared key (empty = log in with the username and password)",
+        "ca": "Router's CA certificate",
+        "caHint": "PEM certificate of the CA that signed the router's certificate. Needed for login with a username and password.",
         "subnets": "Home subnets",
         "subnetsHint": "For example 192.168.1.0/24. Press Enter after each one.",
         "hosts": "Single home addresses",
@@ -2023,7 +2043,9 @@
       "subHostSortModeDesc": "Використовується порядок зі сторінки хостів для всіх вхідних підключень. Це визначає порядок видачі сервером; клієнтські застосунки можуть сортувати вузли самостійно.",
       "tgPayment": "Оплата",
       "tgFreePlan": "Безкоштовний тариф",
-      "tgFreePlanDesc": "Дозволити незнайомим користувачам Telegram запросити безкоштовну підписку (10 ГБ на місяць). Кожен запит схвалює адміністратор у боті; оплата будь-якого терміну знімає ліміт.",
+      "tgFreePlanDesc": "Дозволити незнайомим користувачам Telegram запросити безкоштовну підписку з місячним лімітом трафіку (задається нижче). Кожен запит схвалює адміністратор у боті; оплата будь-якого терміну знімає ліміт.",
+      "tgFreePlanGB": "Трафік безкоштовного тарифу (ГБ)",
+      "tgFreePlanGBDesc": "Скільки гігабайт на місяць отримує новий безкоштовний клієнт. Для вже створених клієнтів ліміт не змінюється.",
       "panelProxy": {
         "setup": "Через мій VPN",
         "title": "Запити панелі через проксі",
@@ -2799,6 +2821,9 @@
       "billingDay": "Payment day",
       "billingDayHint": "Day of the month the bill is due (1–31). In shorter months it moves to the last day. Admins get a Telegram reminder the day before.",
       "nextPayment": "Next payment",
+      "extend": "Extend",
+      "extendMonths": "by {count} mo",
+      "paidThrough": "paid through {month}",
       "errDay": "Day must be 1–31"
     }
   },

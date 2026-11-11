@@ -168,6 +168,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "tgCpu": 0,
     "tgEnabledEvents": "",
     "tgFreePlanEnable": false,
+    "tgFreePlanGB": 1,
     "tgLang": "",
     "tgMemory": 0,
     "tgRunTime": "",
@@ -360,6 +361,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "tgCpu": 0,
     "tgEnabledEvents": "",
     "tgFreePlanEnable": false,
+    "tgFreePlanGB": 1,
     "tgLang": "",
     "tgMemory": 0,
     "tgRunTime": "",
@@ -420,6 +422,12 @@ export const EXAMPLES: Record<string, unknown> = {
   },
   "Cascade": {
     "createdAt": 0,
+    "directDomains": [
+      ""
+    ],
+    "directIps": [
+      ""
+    ],
     "enable": true,
     "entryInboundTags": [
       ""
@@ -444,7 +452,11 @@ export const EXAMPLES: Record<string, unknown> = {
         "shortId": ""
       }
     ],
+    "mode": "split",
     "name": "RU → DE",
+    "relayInboundTags": [
+      ""
+    ],
     "strategy": "leastPing",
     "updatedAt": 0
   },
@@ -1076,6 +1088,7 @@ export const EXAMPLES: Record<string, unknown> = {
         "id": 1,
         "monthlyCost": 500,
         "name": "Hetzner DE",
+        "paidThrough": "2027-02",
         "startMonth": "2026-11"
       }
     ],
@@ -1094,6 +1107,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "id": 1,
     "monthlyCost": 500,
     "name": "Hetzner DE",
+    "paidThrough": "2027-02",
     "startMonth": "2026-11"
   },
   "LedgerServerDue": {

@@ -1285,7 +1285,22 @@
         "exitModeServers": "Picked servers",
         "exitModeCountry": "All servers of a country",
         "country": "Exit country",
-        "countryHint": "Traffic leaves through the fastest server of this country. New nodes of the country join automatically."
+        "countryHint": "Traffic leaves through the fastest server of this country. New nodes of the country join automatically.",
+        "split": "Split traffic",
+        "splitHint": "Sites and IPs of the entry server's country (Russia: .ru, .su, .рф, geosite:category-ru, geoip:ru) and the entries below leave the internet from the entry itself; everything else goes through the exit.",
+        "relay": "Pure relay",
+        "relayHint": "The entry only forwards traffic: everything goes through the exit.",
+        "relayInbounds": "Inbounds that only relay",
+        "relayInboundsHint": "With both switches on these entry inbounds relay everything; the other chained inbounds split.",
+        "directDomains": "Also direct: sites",
+        "directDomainsHint": "Added to the country template: example.com, domain:, full:, regexp:, geosite: entries.",
+        "directIps": "Also direct: IPs",
+        "directIpsHint": "Added to the country template: an IP, a CIDR or geoip: entries.",
+        "modes": {
+          "split": "split",
+          "relay": "relay",
+          "both": "split + relay"
+        }
       },
       "country": "Country",
       "countryHint": "Two-letter country code (DE, NL, FI). Nodes of one country together join \"by country\" cascades.",
@@ -1304,17 +1319,22 @@
         "kinds": {
           "wireguard": "WireGuard",
           "openvpn": "OpenVPN",
-          "l2tp": "L2TP/IPsec"
+          "l2tp": "L2TP/IPsec",
+          "ikev2": "IKEv2/IPsec"
         },
         "gateway": "Server that holds the tunnel",
-        "gatewayHint": "OpenVPN and L2TP clients are installed on this server automatically (Debian/Ubuntu).",
+        "gatewayHint": "OpenVPN, L2TP and IKEv2 clients are installed on this server automatically (Debian/Ubuntu).",
         "config": "Config file",
         "configHintWg": "Paste the WireGuard config exported by the home router: [Interface] and one [Peer].",
         "configHintOvpn": "Paste the .ovpn file. Its routes and scripts are ignored: only the addresses below go through the tunnel.",
         "server": "L2TP server address",
+        "serverIkev2": "IKEv2 server address",
         "username": "Username",
         "password": "Password",
         "psk": "IPsec pre-shared key (empty = L2TP without IPsec)",
+        "pskIkev2": "Pre-shared key (empty = log in with the username and password)",
+        "ca": "Router's CA certificate",
+        "caHint": "PEM certificate of the CA that signed the router's certificate. Needed for login with a username and password.",
         "subnets": "Home subnets",
         "subnetsHint": "For example 192.168.1.0/24. Press Enter after each one.",
         "hosts": "Single home addresses",
@@ -2023,7 +2043,9 @@
       "subHostSortModeDesc": "Segue a ordem da página de hosts entre diferentes entradas. Define a ordem emitida pelo servidor; os aplicativos clientes podem aplicar sua própria ordenação.",
       "tgPayment": "Payment",
       "tgFreePlan": "Free plan",
-      "tgFreePlanDesc": "Let unknown Telegram users ask for a free subscription (10 GB a month). Every request must be approved by an admin in the bot; paying for any term removes the limit.",
+      "tgFreePlanDesc": "Let unknown Telegram users ask for a free subscription with a monthly traffic quota (set below). Every request must be approved by an admin in the bot; paying for any term removes the limit.",
+      "tgFreePlanGB": "Free plan traffic (GB)",
+      "tgFreePlanGBDesc": "How many gigabytes a month a new free client gets. Clients that already exist keep their current limit.",
       "panelProxy": {
         "setup": "Through my VPN",
         "title": "Route the panel through a proxy",
@@ -2799,6 +2821,9 @@
       "billingDay": "Payment day",
       "billingDayHint": "Day of the month the bill is due (1–31). In shorter months it moves to the last day. Admins get a Telegram reminder the day before.",
       "nextPayment": "Next payment",
+      "extend": "Extend",
+      "extendMonths": "by {count} mo",
+      "paidThrough": "paid through {month}",
       "errDay": "Day must be 1–31"
     }
   },
