@@ -1447,7 +1447,7 @@
       "save": "Simpan",
       "infoDesc": "Setiap perubahan yang dibuat di sini perlu disimpan. Harap restart panel untuk menerapkan perubahan.",
       "restartPanel": "Mulai ulang panel",
-      "migrateFrom": "Pindahkan dari…",
+      "migrateFrom": "Pindahkan dari",
       "restartPanelDesc": "Apakah Anda yakin ingin merestart panel? Jika Anda tidak dapat mengakses panel setelah merestart, lihat info log panel di server.",
       "restartPanelSuccess": "Panel berhasil dimulai ulang",
       "actions": "Tindakan",

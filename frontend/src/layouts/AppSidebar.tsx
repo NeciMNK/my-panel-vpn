@@ -26,6 +26,7 @@ import {
   SearchOutlined,
   SettingOutlined,
   SunOutlined,
+  SwapOutlined,
   TelegramFilled,
 } from '@ant-design/icons';
 
@@ -239,6 +240,11 @@ export default function AppSidebar() {
         label: t('pages.settings.subBalancers.menu'),
       });
     }
+    children.push({
+      key: '/settings#migrate',
+      icon: <SwapOutlined aria-hidden />,
+      label: t('pages.settings.migrateFrom'),
+    });
     return children;
   }, [t, showSubFormats, showSubBalancers]);
 
