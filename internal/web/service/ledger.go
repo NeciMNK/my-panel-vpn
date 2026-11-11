@@ -36,6 +36,7 @@ var (
 	ErrLedgerRange  = errors.New("end month is before start month")
 	ErrLedgerDay    = errors.New("billing day must be 1-31")
 	ErrLedgerMonths = errors.New("extend by 1-36 months")
+	ErrLedgerNode   = errors.New("node not found")
 )
 
 // LedgerService is the admin's profit/loss book: recurring server costs,
@@ -50,6 +51,13 @@ type LedgerNonPaying struct {
 	Email  string `json:"email" example:"admin"`
 	Reason string `json:"reason" example:"group"`
 	Group  string `json:"group" example:"family"`
+}
+
+// LedgerNode is a node a server cost can be bound to, with the address it is reached at.
+type LedgerNode struct {
+	Id      int    `json:"id" example:"1"`
+	Name    string `json:"name" example:"panel-node1"`
+	Address string `json:"address" example:"203.0.113.7"`
 }
 
 // LedgerServerDue is a server's next bill.
@@ -76,6 +84,7 @@ type LedgerReport struct {
 	NonPaying      []LedgerNonPaying    `json:"nonPaying"`
 	FreeGroups     []string             `json:"freeGroups"`
 	Servers        []model.LedgerServer `json:"servers"`
+	Nodes          []LedgerNode         `json:"nodes"`
 	Upcoming       []LedgerServerDue    `json:"upcoming"`
 	Entries        []model.LedgerEntry  `json:"entries"`
 }
@@ -111,12 +120,15 @@ func (s *LedgerService) Report(month string) (*LedgerReport, error) {
 		return nil, ErrLedgerMonth
 	}
 	db := database.GetDB()
-	report := &LedgerReport{Month: month, NonPaying: []LedgerNonPaying{}, FreeGroups: []string{}}
+	report := &LedgerReport{Month: month, NonPaying: []LedgerNonPaying{}, FreeGroups: []string{}, Nodes: []LedgerNode{}}
 	report.Payment = s.payment()
 	report.Price = report.Payment.Price
 	report.Currency = strings.TrimSpace(report.Payment.Currency)
 
 	if err := db.Order("start_month, id").Find(&report.Servers).Error; err != nil {
+		return nil, err
+	}
+	if err := db.Model(&model.Node{}).Order("name").Find(&report.Nodes).Error; err != nil {
 		return nil, err
 	}
 	report.Upcoming = []LedgerServerDue{}
@@ -193,6 +205,18 @@ func (s *LedgerService) countPaying(report *LedgerReport) error {
 
 func (s *LedgerService) SaveServer(server *model.LedgerServer) error {
 	server.Name = strings.TrimSpace(server.Name)
+	server.Address = strings.TrimSpace(server.Address)
+	db := database.GetDB()
+	if server.NodeId != 0 {
+		var count int64
+		if err := db.Model(&model.Node{}).Where("id = ?", server.NodeId).Count(&count).Error; err != nil {
+			return err
+		}
+		if count == 0 {
+			return ErrLedgerNode
+		}
+		server.Address = ""
+	}
 	if server.BillingDay == 0 {
 		server.BillingDay = 1
 	}
@@ -208,7 +232,13 @@ func (s *LedgerService) SaveServer(server *model.LedgerServer) error {
 	case server.BillingDay < 1 || server.BillingDay > 31:
 		return ErrLedgerDay
 	}
-	return database.GetDB().Omit("reminded_for", "paid_through").Save(server).Error
+	return db.Omit("reminded_for", "paid_through").Save(server).Error
+}
+
+// unbindLedgerNode keeps a deleted node's address on the servers bound to it.
+func unbindLedgerNode(tx *gorm.DB, node model.Node) error {
+	return tx.Model(&model.LedgerServer{}).Where("node_id = ?", node.Id).
+		Updates(map[string]any{"node_id": 0, "address": node.Address}).Error
 }
 
 func (s *LedgerService) DeleteServer(id int) error {

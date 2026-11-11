@@ -901,6 +901,12 @@ export interface LedgerEntry {
   note: string;
 }
 
+export interface LedgerNode {
+  address: string;
+  id: number;
+  name: string;
+}
+
 export interface LedgerNonPaying {
   email: string;
   group: string;
@@ -923,6 +929,7 @@ export interface LedgerReport {
   freeGroups: string[];
   income: number;
   month: string;
+  nodes: LedgerNode[];
   nonPaying: LedgerNonPaying[];
   otherExpenses: number;
   payingClients: number;
@@ -934,11 +941,13 @@ export interface LedgerReport {
 }
 
 export interface LedgerServer {
+  address: string;
   billingDay: number;
   endMonth: string;
   id: number;
   monthlyCost: number;
   name: string;
+  nodeId: number;
   paidThrough: string;
   startMonth: string;
 }

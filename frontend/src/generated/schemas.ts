@@ -3966,6 +3966,29 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "LedgerNode": {
+    "description": "LedgerNode is a node a server cost can be bound to, with the address it is reached at.",
+    "properties": {
+      "address": {
+        "example": "203.0.113.7",
+        "type": "string"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "name": {
+        "example": "panel-node1",
+        "type": "string"
+      }
+    },
+    "required": [
+      "address",
+      "id",
+      "name"
+    ],
+    "type": "object"
+  },
   "LedgerNonPaying": {
     "description": "LedgerNonPaying is a client kept out of the expected income, with the reason.",
     "properties": {
@@ -4056,6 +4079,12 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": "2026-11",
         "type": "string"
       },
+      "nodes": {
+        "items": {
+          "$ref": "#/components/schemas/LedgerNode"
+        },
+        "type": "array"
+      },
       "nonPaying": {
         "items": {
           "$ref": "#/components/schemas/LedgerNonPaying"
@@ -4103,6 +4132,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "freeGroups",
       "income",
       "month",
+      "nodes",
       "nonPaying",
       "otherExpenses",
       "payingClients",
@@ -4117,6 +4147,11 @@ export const SCHEMAS: Record<string, unknown> = {
   "LedgerServer": {
     "description": "LedgerServer is a recurring monthly server cost, charged to every month from\nStartMonth through EndMonth (YYYY-MM; empty EndMonth means still running).",
     "properties": {
+      "address": {
+        "description": "Address is the typed IP of a server that is not a node (e.g. the master itself).",
+        "example": "198.51.100.4",
+        "type": "string"
+      },
       "billingDay": {
         "description": "BillingDay is the day of the month the bill is due; short months move it to their last day.",
         "example": 15,
@@ -4137,6 +4172,11 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": "Hetzner DE",
         "type": "string"
       },
+      "nodeId": {
+        "description": "NodeId binds the cost to a node, whose address is shown live; 0 = not a node.",
+        "example": 0,
+        "type": "integer"
+      },
       "paidThrough": {
         "description": "PaidThrough is the last YYYY-MM whose bill the admin paid ahead with Extend.",
         "example": "2027-02",
@@ -4148,11 +4188,13 @@ export const SCHEMAS: Record<string, unknown> = {
       }
     },
     "required": [
+      "address",
       "billingDay",
       "endMonth",
       "id",
       "monthlyCost",
       "name",
+      "nodeId",
       "paidThrough",
       "startMonth"
     ],

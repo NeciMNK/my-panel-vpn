@@ -2129,8 +2129,8 @@ export const sections: readonly Section[] = [
         method: 'POST',
         path: '/panel/api/ledger/servers/save',
         summary:
-          'Create (id 0) or update a recurring server cost. It is charged to every month from startMonth through endMonth; an empty endMonth means the server is still paid for.',
-        body: '{\n  "id": 0,\n  "name": "Hetzner DE",\n  "monthlyCost": 500,\n  "startMonth": "2026-11",\n  "endMonth": ""\n}',
+          'Create (id 0) or update a recurring server cost. It is charged to every month from startMonth through endMonth; an empty endMonth means the server is still paid for. nodeId binds it to a node (the report shows that node\'s address); for a server that is not a node, set nodeId 0 and type its IP in address.',
+        body: '{\n  "id": 0,\n  "name": "Hetzner DE",\n  "monthlyCost": 500,\n  "startMonth": "2026-11",\n  "endMonth": "",\n  "nodeId": 1,\n  "address": ""\n}',
         responseSchema: 'LedgerServer',
       },
       {

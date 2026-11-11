@@ -2865,7 +2865,11 @@
       "extend": "Extend",
       "extendMonths": "by {count} mo",
       "paidThrough": "paid through {month}",
-      "errDay": "Day must be 1–31"
+      "errDay": "Day must be 1–31",
+      "address": "IP / address",
+      "node": "Node",
+      "nodeHint": "Pick the node this server runs; its address is shown and follows the node's settings. For a server that is not a node (e.g. this panel) type the IP below.",
+      "noNode": "— not a node —"
     }
   },
   "tgbot": {
