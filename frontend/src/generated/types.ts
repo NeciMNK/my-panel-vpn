@@ -1283,6 +1283,41 @@ export interface SpeedOverview {
   clients: ClientSpeed[];
   load: ServerFreeSpeed[];
   servers: ServerCapacity[];
+  testSettings: SpeedTestSettings;
+  testStats: SpeedTestStats[];
+  testing: number[];
+}
+
+export interface SpeedTestResult {
+  capacityMbps: number;
+  createdAt: number;
+  downloadMbps: number;
+  error: string;
+  id: number;
+  nodeId: number;
+  pingMs: number;
+  provider: string;
+  server: string;
+  trigger: string;
+  uploadMbps: number;
+  usedMbps: number;
+}
+
+export interface SpeedTestSettings {
+  autoCapacity: boolean;
+  everyHours: number;
+  times: string[];
+  timezone: string;
+}
+
+export interface SpeedTestStats {
+  avgDownloadMbps: number;
+  avgUploadMbps: number;
+  count: number;
+  last?: SpeedTestResult | null;
+  maxDownloadMbps: number;
+  minDownloadMbps: number;
+  nodeId: number;
 }
 
 export interface SubBalancer {

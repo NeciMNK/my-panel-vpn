@@ -318,6 +318,7 @@ const (
 	cadenceHomeNetwork   = "@every 1m"
 	cadenceSpeed         = "@every 30s"
 	cadenceShaping       = "@every 5s"
+	cadenceSpeedTest     = "@every 1m"
 	cadenceMasterBeat    = "@every 5s"
 	cadenceXrayLogPrune  = "@every 10m"
 	cadenceTlsCertRenew  = "@every 1h"
@@ -380,6 +381,7 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	_, _ = s.cron.AddJob(cadenceHomeNetwork, job.LeaderOnly(job.NewHomeNetworkJob()))
 	_, _ = s.cron.AddJob(cadenceTgVpnFallback, job.LeaderOnly(job.NewTgVpnFallbackJob()))
 	_, _ = s.cron.AddJob(cadenceSpeed, job.LeaderOnly(job.NewSpeedJob()))
+	_, _ = s.cron.AddJob(cadenceSpeedTest, job.LeaderOnly(job.NewSpeedTestJob()))
 	_, _ = s.cron.AddJob(cadenceShaping, job.LeaderOnly(job.NewShapingJob()))
 	if service.ClusterEnabled() {
 		clusterJob := job.NewMasterClusterJob(func(bool) {
