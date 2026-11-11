@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
@@ -48,17 +49,17 @@ func TestTrustedClientPinsAnAIExitThroughTheQuiz(t *testing.T) {
 
 	tb.screenClientHome(6060, 6060)
 	if _, markup := screenMarkup(t, tb, 6060); strings.Contains(markup, `"`+cbAIExit+`"`) {
-		t.Fatalf("an untrusted client is offered the AI button: %s", markup)
+		t.Fatalf("a client who is no friend and did not pay is offered the AI button: %s", markup)
 	}
 	tap(tb, 6060, cbAIExit, false)
 	if got := pinnedExits(t, "ai@x"); len(got) != 0 {
-		t.Fatalf("an untrusted client pinned %v", got)
+		t.Fatalf("a client who is no friend pinned %v", got)
 	}
 
-	tap(tb, 9001, "trust ai@x", true)
+	tap(tb, 9001, "friend ai@x", true)
 	tb.screenClientHome(6060, 6060)
 	if _, markup := screenMarkup(t, tb, 6060); !strings.Contains(markup, `"`+cbAIExit+`"`) {
-		t.Fatalf("a trusted client has no AI button: %s", markup)
+		t.Fatalf("a friend has no AI button: %s", markup)
 	}
 
 	tap(tb, 6060, cbAIExit, false)
@@ -93,7 +94,7 @@ func TestTrustedClientUsesAIOnlyInOneCountry(t *testing.T) {
 	setTestAdmins(t, 9001)
 	seedBilledClient(t, 6060, "ai@x")
 	seedAIExitWorld(t)
-	tap(tb, 9001, "trust ai@x", true)
+	tap(tb, 9001, "friend ai@x", true)
 
 	tap(tb, 6060, cbAIExit, false)
 	if got := pinnedExits(t, "ai@x"); len(got) != 0 {
@@ -123,5 +124,60 @@ func TestTrustedClientUsesAIOnlyInOneCountry(t *testing.T) {
 	tap(tb, 6060, "ai_k *", false)
 	if got := pinnedExits(t, "ai@x"); !reflect.DeepEqual(got, []int{2, 4}) {
 		t.Fatalf("any country pins = %v, want NL's only server 4 added", got)
+	}
+}
+
+// Friends get the AI button free; anyone else buys it once by card, and with
+// the price at 0 they never see it.
+func TestAIButtonIsFreeForFriendsAndSoldOnceToOthers(t *testing.T) {
+	tb, calls := newScreenTgbot(t, false)
+	initReportDB(t)
+	localizeWithRealBundle(t)
+	setTestAdmins(t, 9001)
+	resetThrottles(t)
+	fake := useBotFakeProvider(t)
+	seedBilledClient(t, 6060, "buyer@x")
+	seedAIExitWorld(t)
+	seedSettings(t, map[string]string{"tgPaymentCurrency": "RUB", "tgAIExitPrice": "0"})
+
+	tb.screenClientHome(6060, 6060)
+	if _, markup := screenMarkup(t, tb, 6060); strings.Contains(markup, `"`+cbAIExit) {
+		t.Fatalf("at price 0 a client who is no friend sees the AI button: %s", markup)
+	}
+
+	setAIExitPrice(t, "50")
+	tb.screenClientHome(6060, 6060)
+	if _, markup := screenMarkup(t, tb, 6060); !strings.Contains(markup, `"`+cbAIExitBuy+`"`) ||
+		strings.Contains(markup, `"`+cbAIExit+`"`) || !strings.Contains(markup, "50 RUB") {
+		t.Fatalf("an unpaid client must be offered the AI button for 50 RUB only: %s", markup)
+	}
+	tap(tb, 6060, "ai_k NL", false)
+	if got := pinnedExits(t, "buyer@x"); len(got) != 0 {
+		t.Fatalf("an unpaid client pinned %v", got)
+	}
+
+	tap(tb, 6060, cbAIExitBuy, false)
+	if len(fake.orders) != 1 || fake.orders[0].Amount != 50 {
+		t.Fatalf("invoices = %+v, want one for 50", fake.orders)
+	}
+	fake.payAll()
+	tb.CheckPaymentOrders(time.Now())
+	if !billingOf(t, "buyer@x").AIPaid {
+		t.Fatal("the paid order did not unlock the AI button")
+	}
+	if n := len(adminMessages(calls(), 9001)); n != 1 {
+		t.Errorf("admin notices = %d, want 1 about the purchase", n)
+	}
+	setAIExitPrice(t, "0")
+	tb.screenClientHome(6060, 6060)
+	if _, markup := screenMarkup(t, tb, 6060); !strings.Contains(markup, `"`+cbAIExit+`"`) {
+		t.Fatalf("a client who paid lost the AI button when the price went to 0: %s", markup)
+	}
+}
+
+func setAIExitPrice(t *testing.T, price string) {
+	t.Helper()
+	if err := database.GetDB().Model(&model.Setting{}).Where("key = ?", "tgAIExitPrice").Update("value", price).Error; err != nil {
+		t.Fatal(err)
 	}
 }

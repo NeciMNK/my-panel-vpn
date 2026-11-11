@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"strconv"
 	"sync"
 	"testing"
@@ -195,5 +196,32 @@ func TestCanceledOrderIsClosed(t *testing.T) {
 	pending, _ := orders.PendingOrders(time.Now())
 	if len(pending) != 0 {
 		t.Errorf("canceled order still polled: %+v", pending)
+	}
+}
+
+// The AI button is bought once: the paid order unlocks it and books the income.
+func TestPaidAIExitOrderUnlocksTheButtonAndBooksIt(t *testing.T) {
+	now := time.Date(2026, 11, 11, 12, 0, 0, 0, time.UTC)
+	seedPayingClient(t, "ai@x", 0)
+	fake := useFakeProvider(t)
+	orders := &PaymentOrderService{}
+	if _, err := orders.CreateAIExitOrder(context.Background(), 79, "ai@x", "AI", "https://t.me/bot"); !errors.Is(err, ErrNothingToPay) {
+		t.Fatalf("at price 0 err = %v, want ErrNothingToPay", err)
+	}
+	setSettings(t, map[string]string{"tgAIExitPrice": "50"})
+	order, err := orders.CreateAIExitOrder(context.Background(), 79, "ai@x", "AI", "https://t.me/bot")
+	if err != nil || order.Amount != 50 {
+		t.Fatalf("order = %+v, %v; want 50", order, err)
+	}
+	fake.pay(order.InvoiceId, payment.Payment{Status: payment.StatusPaid, AmountMinor: 5000, Currency: "RUB"})
+	if out := orders.CheckOrder(context.Background(), order, now); !out.Fulfilled || out.Err != nil {
+		t.Fatalf("outcome = %+v", out)
+	}
+	if billing, _ := (&ClientService{}).GetBillingByEmail("ai@x"); !billing.AIPaid {
+		t.Error("the paid order did not unlock the AI button")
+	}
+	report, _ := (&LedgerService{}).Report(LedgerMonthOf(now))
+	if len(report.Entries) != 1 || report.Entries[0].Amount != 50 || report.Entries[0].Email != "ai@x" {
+		t.Errorf("ledger = %+v, want one 50 entry for ai@x", report.Entries)
 	}
 }

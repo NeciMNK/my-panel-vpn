@@ -20,6 +20,7 @@ import (
 const (
 	OrderPlan = "plan"
 	OrderFree = "free"
+	OrderAI   = "ai"
 
 	OrderPending  = "pending"
 	OrderPaid     = "paid"
@@ -70,6 +71,39 @@ func (s *PaymentOrderService) FreePlanPrice() int {
 	return price
 }
 
+// AIExitPrice is what the AI button costs a client who is not a friend, or 0
+// when it is not for sale (no price or no provider).
+func (s *PaymentOrderService) AIExitPrice() int {
+	price, _ := s.settingService.GetTgAIExitPrice()
+	if price <= 0 || !s.Online() {
+		return 0
+	}
+	return price
+}
+
+// CreateAIExitOrder opens the payment page for the AI button of email's owner;
+// an unpaid order of the same user is reused.
+func (s *PaymentOrderService) CreateAIExitOrder(ctx context.Context, tgID int64, email, description, returnURL string) (*model.PaymentOrder, error) {
+	price := s.AIExitPrice()
+	if price <= 0 {
+		return nil, ErrNothingToPay
+	}
+	if open, ok := s.openOrder(OrderAI, tgID, price); ok {
+		return open, nil
+	}
+	order := &model.PaymentOrder{Kind: OrderAI, TgID: tgID, Email: email, Amount: price}
+	return s.open(ctx, order, description, returnURL)
+}
+
+// openOrder is the user's still-payable invoice of kind and amount, if any.
+func (s *PaymentOrderService) openOrder(kind string, tgID int64, amount int) (*model.PaymentOrder, bool) {
+	var open model.PaymentOrder
+	err := database.GetDB().Where("kind = ? AND tg_id = ? AND status = ? AND amount = ? AND created_at > ?",
+		kind, tgID, OrderPending, amount, time.Now().Add(-orderLifetime).UnixMilli()).
+		Order("id DESC").Limit(1).Find(&open).Error
+	return &open, err == nil && open.Id > 0 && open.PayURL != ""
+}
+
 // VerifyProvider checks the saved provider credentials against the provider.
 func (s *PaymentOrderService) VerifyProvider(ctx context.Context) (payment.Account, error) {
 	provider, err := s.provider()
@@ -109,12 +143,8 @@ func (s *PaymentOrderService) CreateFreePlanOrder(ctx context.Context, tgID int6
 	if price <= 0 {
 		return nil, ErrFreePlanOffline
 	}
-	var open model.PaymentOrder
-	err := database.GetDB().Where("kind = ? AND tg_id = ? AND status = ? AND amount = ? AND created_at > ?",
-		OrderFree, tgID, OrderPending, price, time.Now().Add(-orderLifetime).UnixMilli()).
-		Order("id DESC").Limit(1).Find(&open).Error
-	if err == nil && open.Id > 0 && open.PayURL != "" {
-		return &open, nil
+	if open, ok := s.openOrder(OrderFree, tgID, price); ok {
+		return open, nil
 	}
 	order := &model.PaymentOrder{Kind: OrderFree, TgID: tgID, Email: email, Amount: price}
 	return s.open(ctx, order, description, returnURL)
@@ -235,8 +265,11 @@ func (s *PaymentOrderService) move(order *model.PaymentOrder, from, to string) b
 
 func (s *PaymentOrderService) fulfil(order *model.PaymentOrder, now time.Time) (*PaymentResult, error) {
 	note := fmt.Sprintf("%s #%s", order.Provider, order.InvoiceId)
-	if order.Kind == OrderPlan {
+	switch order.Kind {
+	case OrderPlan:
 		return s.billingService.ApplyOnlinePayment(order.Email, order.Months, order.Amount, note, now)
+	case OrderAI:
+		return s.unlockAIExit(order, note, now)
 	}
 	email, err := s.createFreeClient(order)
 	if err != nil {
@@ -248,6 +281,21 @@ func (s *PaymentOrderService) fulfil(order *model.PaymentOrder, now time.Time) (
 		logger.Warning("ledger: booking the free plan of", email, "failed:", err)
 	}
 	return &PaymentResult{Email: email, Amount: order.Amount, Currency: order.Currency}, nil
+}
+
+func (s *PaymentOrderService) unlockAIExit(order *model.PaymentOrder, note string, now time.Time) (*PaymentResult, error) {
+	billing, err := s.clientService.GetBillingByEmail(order.Email)
+	if err != nil {
+		return nil, err
+	}
+	billing.AIPaid = true
+	if err := s.clientService.SaveBilling(billing); err != nil {
+		return nil, err
+	}
+	if err := s.ledgerService.RecordPayment(order.Email, order.Amount, note, now); err != nil {
+		logger.Warning("ledger: booking the AI button of", order.Email, "failed:", err)
+	}
+	return &PaymentResult{Email: order.Email, Amount: order.Amount, Currency: order.Currency}, nil
 }
 
 // createFreeClient makes the paid free-plan client on the configured inbounds

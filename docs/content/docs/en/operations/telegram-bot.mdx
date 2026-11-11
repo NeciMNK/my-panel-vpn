@@ -109,7 +109,10 @@ Set the price, discounts and where to pay in **Finance → Prices and payment** 
   A trusted client whose subscription ends within 15 days can extend it by 15 days
   on credit, at most once every 30 days but with no limit on the total; admins are
   told, and the next confirmed payment repays all the deferred days.
-- **I will use AI**: a trusted client also gets this button. AI services ban
+- **I will use AI**: free for friends (**🤝 Friend**). Any other client sees it
+  only while **AI button price** (Finance → Prices and payment) is above 0 and a
+  payment provider is connected, and buys it once by card; it stays theirs even
+  if the price later goes back to 0. AI services ban
   accounts whose IP keeps changing, so it pins the client to one exit server per
   country of the cascades their subscriptions use. A country with one exit is
   pinned at once; otherwise the bot asks whether the client already used AI
@@ -232,6 +235,7 @@ The warning lead times come from `expireDiff` (days before expiry) and
 | `tgFreePlanPrice`  | `0`                    | Free plan price when paid online; comes off the first plan. |
 | `tgFreePlanInbounds` | _(none)_             | Inbound ids for a client who bought the free plan online. |
 | `tgFriendDiscount` | `0`                    | Friends discount, percent.                      |
+| `tgAIExitPrice`    | `0`                    | One-off price of the AI button for non-friends; 0 hides it. |
 | `tgPayProvider`    | _(none)_               | Payment provider: empty (manual) or `yookassa`. |
 | `tgPayShopId` / `tgPaySecret` | _(none)_ / _(secret)_ | YooKassa shopId and secret key.        |
 

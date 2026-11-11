@@ -1057,6 +1057,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "reason": "group"
   },
   "LedgerPayment": {
+    "aiExitPrice": 50,
     "currency": "RUB",
     "details": "Card 2200 0000 0000 0000",
     "discounts": "3:10, 6:15, 12:20",
@@ -1094,6 +1095,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "otherExpenses": 0,
     "payingClients": 10,
     "payment": {
+      "aiExitPrice": 50,
       "currency": "RUB",
       "details": "Card 2200 0000 0000 0000",
       "discounts": "3:10, 6:15, 12:20",

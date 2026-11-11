@@ -90,6 +90,8 @@ type LedgerPayment struct {
 	Details   string `json:"details" example:"Card 2200 0000 0000 0000"`
 	// FriendDiscount is the percent off every plan for clients marked as friends.
 	FriendDiscount int `json:"friendDiscount" example:"20"`
+	// AIExitPrice is the one-off price of the bot's AI button; friends get it free, 0 hides it.
+	AIExitPrice int `json:"aiExitPrice" example:"50"`
 }
 
 func LedgerMonthOf(t time.Time) string { return t.Format("2006-01") }
@@ -294,12 +296,13 @@ func (s *LedgerService) payment() LedgerPayment {
 	p.Discounts, _ = s.settingService.GetTgPaymentDiscounts()
 	p.Details, _ = s.settingService.GetTgPaymentDetails()
 	p.FriendDiscount, _ = s.settingService.GetTgFriendDiscount()
+	p.AIExitPrice, _ = s.settingService.GetTgAIExitPrice()
 	return p
 }
 
 // SavePayment validates everything before writing, so a bad discount list changes nothing.
 func (s *LedgerService) SavePayment(p LedgerPayment) error {
-	if p.Price < 0 {
+	if p.Price < 0 || p.AIExitPrice < 0 {
 		return ErrLedgerAmount
 	}
 	if p.FriendDiscount < 0 || p.FriendDiscount > 99 {
@@ -314,6 +317,7 @@ func (s *LedgerService) SavePayment(p LedgerPayment) error {
 		"tgPaymentDiscounts": strings.TrimSpace(p.Discounts),
 		"tgPaymentDetails":   strings.TrimSpace(p.Details),
 		"tgFriendDiscount":   strconv.Itoa(p.FriendDiscount),
+		"tgAIExitPrice":      strconv.Itoa(p.AIExitPrice),
 	} {
 		if err := s.settingService.setString(key, value); err != nil {
 			return err

@@ -2887,7 +2887,9 @@
       "errDay": "Day must be 1–31",
       "friendDiscount": "Friends discount",
       "friendDiscountDesc": "Percent off every plan for clients an admin marked as friends (the \"🤝 Friend\" button on the client card in the bot). The term discounts above apply first.",
-      "errFriendDiscount": "A whole number from 0 to 99"
+      "errFriendDiscount": "A whole number from 0 to 99",
+      "aiExitPrice": "AI button price",
+      "aiExitPriceDesc": "One-off price of the bot's \"🤖 I will use AI\" button (a permanent exit IP). Friends always get it free. 0 hides it from everyone else; it is sold by card only, so it also needs a payment provider. Clients who already paid keep it."
     }
   },
   "tgbot": {
@@ -3043,6 +3045,8 @@
       "onlinePaymentFailed": "⚠️ Online payment #{{ .Id }} from {{ .User }} ({{ .Total }}) was received but not applied: {{ .Error }}\r\nApply it by hand.",
       "onlinePaymentDelayed": "✅ Payment received. The administrator will finish setting it up shortly.",
       "onlineFreeAdmin": "💳 Free plan bought online: {{ .User }} → {{ .Email }}, {{ .Total }}",
+      "aiExitBoughtAdmin": "🤖 AI button bought online: {{ .User }} → {{ .Email }}, {{ .Total }}",
+      "aiExitBought": "✅ Payment received. The 🤖 I will use AI button is yours for good.",
       "freePaid": "✅ Payment received! Your free plan ({{ .GB }} GB a month) is ready.",
       "paidOnlineLine": "💳 {{ .Email }} paid online, active until {{ .Date }}",
       "onlinePaymentAdmin": "💳 Online payment: {{ .User }} — {{ .Email }}, {{ .Months }} mo, {{ .Total }}"
@@ -3127,6 +3131,7 @@
       "aiExitForgot": "🤷 I don't remember",
       "aiExitPickFromList": "📋 Pick a server from the list",
       "aiExitAuto": "✨ Choose for me",
+      "aiExitBuy": "🤖 I will use AI · {{ .Total }}",
       "aiExitOnlyIn": "🤖 Only in {{ .Country }}",
       "aiExitAnyCountry": "🌍 In every country",
       "aiExitCountry": "🌍 Country for AI",
@@ -3168,7 +3173,7 @@
       "paymentConfirmed": "✅ Payment confirmed for {{ .Email }}",
       "graceGranted": "⏳ Extended by {{ .Days }} days. Please pay before {{ .Date }}.",
       "graceUnavailable": "Deferred payment is not available right now.",
-      "aiExitTrustedOnly": "Pinning an IP is available to trusted users only.",
+      "aiExitLocked": "The AI button is not available on your subscription.",
       "aiExitAllBusy": "Every server of this country is out of free speed right now. Please try again later.",
       "aiExitUnavailable": "This server cannot be pinned right now. Please choose again.",
       "aiExitPinned": "📌 Pinned: {{ .Server }}",
@@ -3228,6 +3233,8 @@
       "invoice": "🧾 <b>Invoice</b>: {{ .Email }}, {{ .Months }} mo — {{ .Total }}\r\nPay on the page: the subscription is extended automatically within a minute.",
       "freeDescription": "VPN free plan {{ .GB }} GB/mo",
       "freeInvoice": "🧾 <b>Free plan</b>: {{ .GB }} GB a month, no end date — {{ .Total }} once.\r\nThe payment keeps spam bots out, and {{ .Total }} comes off your first paid subscription. Access is created automatically after payment.",
+      "aiExitDescription": "VPN: permanent exit IP for AI services",
+      "aiExitInvoice": "🧾 <b>🤖 I will use AI</b>: a permanent exit IP, so AI services do not block your account — {{ .Total }} once, yours for good.\r\nThe button unlocks automatically after payment.",
       "orderDescription": "VPN {{ .Email }}, {{ .Months }} mo"
     },
     "ledger": {

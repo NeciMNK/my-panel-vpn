@@ -2887,7 +2887,9 @@
       "errDay": "Day must be 1–31",
       "friendDiscount": "Знижка для друзів",
       "friendDiscountDesc": "Відсоток знижки на будь-який термін для клієнтів, яких адмін позначив другом (кнопка «🤝 Друг» у картці клієнта в боті). Спершу застосовується знижка за термін.",
-      "errFriendDiscount": "Ціле число від 0 до 99"
+      "errFriendDiscount": "Ціле число від 0 до 99",
+      "aiExitPrice": "AI button price",
+      "aiExitPriceDesc": "One-off price of the bot's \"🤖 I will use AI\" button (a permanent exit IP). Friends always get it free. 0 hides it from everyone else; it is sold by card only, so it also needs a payment provider. Clients who already paid keep it."
     }
   },
   "tgbot": {
@@ -3043,6 +3045,8 @@
       "onlinePaymentFailed": "⚠️ Онлайн-оплату #{{ .Id }} від {{ .User }} ({{ .Total }}) отримано, але не застосовано: {{ .Error }}\r\nЗастосуйте її вручну.",
       "onlinePaymentDelayed": "✅ Оплату отримано. Адміністратор незабаром завершить налаштування.",
       "onlineFreeAdmin": "💳 Безкоштовний тариф куплено онлайн: {{ .User }} → {{ .Email }}, {{ .Total }}",
+      "aiExitBoughtAdmin": "🤖 AI button bought online: {{ .User }} → {{ .Email }}, {{ .Total }}",
+      "aiExitBought": "✅ Payment received. The 🤖 I will use AI button is yours for good.",
       "freePaid": "✅ Оплату отримано! Ваш безкоштовний тариф ({{ .GB }} ГБ на місяць) готовий.",
       "paidOnlineLine": "💳 {{ .Email }} сплачено онлайн, активна до {{ .Date }}",
       "onlinePaymentAdmin": "💳 Онлайн-оплата: {{ .User }} — {{ .Email }}, {{ .Months }} міс, {{ .Total }}"
@@ -3127,6 +3131,7 @@
       "aiExitForgot": "🤷 I don't remember",
       "aiExitPickFromList": "📋 Pick a server from the list",
       "aiExitAuto": "✨ Choose for me",
+      "aiExitBuy": "🤖 I will use AI · {{ .Total }}",
       "aiExitOnlyIn": "🤖 Only in {{ .Country }}",
       "aiExitAnyCountry": "🌍 In every country",
       "aiExitCountry": "🌍 Country for AI",
@@ -3168,7 +3173,7 @@
       "paymentConfirmed": "✅ Оплату {{ .Email }} підтверджено",
       "graceGranted": "⏳ Продовжено на {{ .Days }} днів. Сплатіть до {{ .Date }}.",
       "graceUnavailable": "Відстрочка зараз недоступна.",
-      "aiExitTrustedOnly": "Pinning an IP is available to trusted users only.",
+      "aiExitLocked": "The AI button is not available on your subscription.",
       "aiExitAllBusy": "Every server of this country is out of free speed right now. Please try again later.",
       "aiExitUnavailable": "This server cannot be pinned right now. Please choose again.",
       "aiExitPinned": "📌 Pinned: {{ .Server }}",
@@ -3228,6 +3233,8 @@
       "invoice": "🧾 <b>Рахунок</b>: {{ .Email }}, {{ .Months }} міс — {{ .Total }}\r\nСплатіть на сторінці: підписка продовжиться автоматично протягом хвилини.",
       "freeDescription": "VPN безкоштовний тариф {{ .GB }} ГБ/міс",
       "freeInvoice": "🧾 <b>Безкоштовний тариф</b>: {{ .GB }} ГБ на місяць, без терміну — разово {{ .Total }}.\r\nОплата захищає від спам-ботів, а {{ .Total }} віднімемо з першої платної підписки. Доступ створиться автоматично після оплати.",
+      "aiExitDescription": "VPN: permanent exit IP for AI services",
+      "aiExitInvoice": "🧾 <b>🤖 I will use AI</b>: a permanent exit IP, so AI services do not block your account — {{ .Total }} once, yours for good.\r\nThe button unlocks automatically after payment.",
       "orderDescription": "VPN {{ .Email }}, {{ .Months }} міс"
     },
     "ledger": {

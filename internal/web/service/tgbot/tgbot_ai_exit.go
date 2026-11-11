@@ -14,8 +14,8 @@ import (
 	tu "github.com/mymmrac/telego/telegoutil"
 )
 
-// AI services ban accounts whose IP keeps changing, so a trusted client can pin
-// a permanent exit per country: a sole server at once, otherwise via a short quiz.
+// AI services ban accounts whose IP keeps changing, so a friend or a client who
+// bought it can pin a permanent exit per country: a sole server at once, else a quiz.
 const (
 	cbAIExit        = "ai"
 	cbAIExitHome    = "ai_o"
@@ -26,25 +26,74 @@ const (
 	cbAIExitAuto    = "ai_a"
 	cbAIExitPin     = "ai_p"
 	cbAIExitWhere   = "ai_k"
+	cbAIExitBuy     = "ai_b"
 	// anyCountry in cbAIExitWhere data drops the user's one AI country.
 	anyCountry = "*"
 	// noCountry stands in callback data for exits without a country code.
 	noCountry = "-"
 )
 
-// trustedEmails are the subscriptions of tgUserID whose owner the admin trusts.
-func (t *Tgbot) trustedEmails(tgUserID int64) []string {
+// aiExitEmails are all subscriptions of tgUserID when any of them is a friend's
+// (free) or bought the AI button, else nil; the pin covers the whole person.
+func (t *Tgbot) aiExitEmails(tgUserID int64) []string {
 	traffics, err := t.inboundService.GetClientTrafficTgBot(tgUserID)
 	if err != nil {
 		return nil
 	}
-	var out []string
+	unlocked := false
+	out := make([]string, 0, len(traffics))
 	for _, traffic := range traffics {
-		if t.billingFor(traffic.Email).Trusted {
-			out = append(out, traffic.Email)
-		}
+		billing := t.billingFor(traffic.Email)
+		unlocked = unlocked || billing.Friend || billing.AIPaid
+		out = append(out, traffic.Email)
+	}
+	if !unlocked {
+		return nil
 	}
 	return out
+}
+
+// aiExitRows is the home screen's AI button: open for friends and buyers, with
+// its price for other clients, and absent while it costs 0.
+func (t *Tgbot) aiExitRows(tgUserID int64) [][]telego.InlineKeyboardButton {
+	if len(t.aiExitEmails(tgUserID)) > 0 {
+		return [][]telego.InlineKeyboardButton{tu.InlineKeyboardRow(t.btn("tgbot.buttons.aiExit", cbAIExit))}
+	}
+	price := t.paymentOrderService.AIExitPrice()
+	if price <= 0 {
+		return nil
+	}
+	total := t.loadPaymentInfo().money(price)
+	return [][]telego.InlineKeyboardButton{tu.InlineKeyboardRow(t.btn2(
+		t.I18nBot("tgbot.buttons.aiExitBuy", "Total=="+total), cbAIExitBuy))}
+}
+
+// buyAIExit opens the invoice for the AI button; it unlocks once the provider
+// reports the payment.
+func (t *Tgbot) buyAIExit(callbackQuery *telego.CallbackQuery) {
+	userID := callbackQuery.From.ID
+	traffics, err := t.inboundService.GetClientTrafficTgBot(userID)
+	if err != nil || len(traffics) == 0 || t.paymentOrderService.AIExitPrice() <= 0 {
+		t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
+		return
+	}
+	if !invoiceOpens.allow(userID, time.Now()) {
+		t.sendCallbackAnswerTgBot(callbackQuery.ID, "")
+		return
+	}
+	t.answerSilent(callbackQuery.ID)
+	ctx, cancel := context.WithTimeout(context.Background(), invoiceWindow)
+	defer cancel()
+	chatID := callbackQuery.Message.GetChat().ID
+	order, err := t.paymentOrderService.CreateAIExitOrder(ctx, userID, traffics[0].Email,
+		t.I18nBot("tgbot.payment.aiExitDescription"), t.paymentReturnURL())
+	if err != nil {
+		logger.Warning("online payment: opening the AI button invoice for", userID, "failed:", err)
+		t.sendNotice(chatID, t.I18nBot("tgbot.answers.paymentUnavailable"))
+		return
+	}
+	text := t.I18nBot("tgbot.payment.aiExitInvoice", "Total=="+orderTotal(order))
+	t.renderScreen(chatID, t.newScreen("pay", text, append(t.invoiceRows(order), t.backRow())...))
 }
 
 func isAIExitCallback(data string) bool {
@@ -53,9 +102,13 @@ func isAIExitCallback(data string) bool {
 
 func (t *Tgbot) answerAIExit(callbackQuery *telego.CallbackQuery) {
 	chatID := callbackQuery.Message.GetChat().ID
-	emails := t.trustedEmails(callbackQuery.From.ID)
+	if callbackQuery.Data == cbAIExitBuy {
+		t.buyAIExit(callbackQuery)
+		return
+	}
+	emails := t.aiExitEmails(callbackQuery.From.ID)
 	if len(emails) == 0 {
-		t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.aiExitTrustedOnly"))
+		t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.aiExitLocked"))
 		return
 	}
 	action, arg, _ := strings.Cut(callbackQuery.Data, " ")

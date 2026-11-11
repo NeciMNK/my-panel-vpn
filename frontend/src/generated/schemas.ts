@@ -4064,6 +4064,11 @@ export const SCHEMAS: Record<string, unknown> = {
   "LedgerPayment": {
     "description": "LedgerPayment is what clients pay: the bot bills by it and the Finance page edits it.",
     "properties": {
+      "aiExitPrice": {
+        "description": "AIExitPrice is the one-off price of the bot's AI button; friends get it free, 0 hides it.",
+        "example": 50,
+        "type": "integer"
+      },
       "currency": {
         "example": "RUB",
         "type": "string"
@@ -4087,6 +4092,7 @@ export const SCHEMAS: Record<string, unknown> = {
       }
     },
     "required": [
+      "aiExitPrice",
       "currency",
       "details",
       "discounts",

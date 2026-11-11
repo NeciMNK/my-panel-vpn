@@ -46,6 +46,10 @@ export const LedgerPaymentSchema = z.object({
     .int('pages.ledger.errFriendDiscount')
     .min(0, 'pages.ledger.errFriendDiscount')
     .max(99, 'pages.ledger.errFriendDiscount'),
+  aiExitPrice: z
+    .number({ error: 'pages.ledger.errPrice' })
+    .int('pages.ledger.errPrice')
+    .min(0, 'pages.ledger.errPrice'),
 });
 export type LedgerPayment = z.infer<typeof LedgerPaymentSchema>;
 
