@@ -385,6 +385,9 @@ func isCommandForBot(text string, username string) bool {
 func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool) {
 	chatId := callbackQuery.Message.GetChat().ID
 	actor := callbackActor(callbackQuery)
+	if data, err := t.decodeQuery(callbackQuery.Data); err == nil && t.answerOnlinePayment(callbackQuery, data) {
+		return
+	}
 
 	// Only an admin's wizard callbacks touch a draft, so only they take its lock:
 	// a report tap must not wait on a slot, a rejected chat must not be stored.
@@ -450,6 +453,8 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 				t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
 			case "trust":
 				t.toggleTrusted(callbackQuery, email)
+			case "friend":
+				t.toggleFriend(callbackQuery, email)
 			case "nonpay":
 				t.toggleNonPaying(callbackQuery, email)
 			case "ledger":
@@ -1128,7 +1133,7 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 		t.screenClientHome(chatId, callbackQuery.From.ID)
 	case cbClientPaid:
 		t.answerSilent(callbackQuery.ID)
-		t.screenPlanPicker(chatId)
+		t.screenPlanPicker(chatId, callbackQuery.From.ID)
 	case cbClientDefer:
 		t.deferPayment(callbackQuery)
 	case "client_traffic":

@@ -124,6 +124,7 @@ func (t *Tgbot) clientRows(chatID int64, email string) [][]telego.InlineKeyboard
 		),
 		tu.InlineKeyboardRow(t.btn("tgbot.buttons.toggle", t.encodeQuery("toggle_enable "+email))),
 		t.trustedRow(email),
+		t.friendRow(email),
 		t.nonPayingRow(email),
 		t.backTo(t.clientListOrigin(chatID)),
 	}

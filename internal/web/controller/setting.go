@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"strconv"
@@ -40,6 +41,7 @@ type updateSettingForm struct {
 	ClearLdapPassword    bool   `json:"clearLdapPassword" form:"clearLdapPassword"`
 	ClearSmtpPassword    bool   `json:"clearSmtpPassword" form:"clearSmtpPassword"`
 	ClearDiscordBotToken bool   `json:"clearDiscordBotToken" form:"clearDiscordBotToken"`
+	ClearTgPaySecret     bool   `json:"clearTgPaySecret" form:"clearTgPaySecret"`
 }
 
 type panelProxyForm struct {
@@ -59,6 +61,7 @@ type SettingController struct {
 	apiTokenService panel.ApiTokenService
 	xrayService     service.XrayService
 	panelProxy      service.PanelProxyService
+	paymentOrders   service.PaymentOrderService
 }
 
 // NewSettingController creates a new SettingController and initializes its routes.
@@ -88,6 +91,7 @@ func (a *SettingController) initRouter(g *gin.RouterGroup) {
 	g.POST("/testTgBot", a.testTgBot)
 	g.POST("/tgBotCapabilities", a.tgBotCapabilities)
 	g.POST("/testDiscord", a.testDiscord)
+	g.POST("/testPayment", a.testPayment)
 	g.POST("/panelProxy", a.getPanelProxy)
 	g.POST("/panelProxy/set", a.setPanelProxy)
 	g.POST("/panelProxy/check", a.checkPanelProxy)
@@ -144,6 +148,7 @@ func (a *SettingController) updateSetting(c *gin.Context) {
 	form := &updateSettingForm{AllSetting: *stored}
 	// A secret the body leaves out reads as blank: "unchanged", or cleared by its clear flag.
 	form.TgBotToken, form.LdapPassword, form.SmtpPassword, form.DiscordBotToken = "", "", "", ""
+	form.TgPaySecret = ""
 	if !middleware.BindAndValidateInto(c, form) {
 		return
 	}
@@ -175,6 +180,7 @@ func (a *SettingController) updateSetting(c *gin.Context) {
 		LdapPassword:    form.ClearLdapPassword,
 		SmtpPassword:    form.ClearSmtpPassword,
 		DiscordBotToken: form.ClearDiscordBotToken,
+		TgPaySecret:     form.ClearTgPaySecret,
 	})
 	if err == nil && twoFactorErr == nil && !oldTwoFactor && allSetting.TwoFactorEnable {
 		if bumpErr := a.userService.BumpLoginEpoch(); bumpErr != nil {
@@ -379,6 +385,22 @@ func (a *SettingController) testSmtp(c *gin.Context) {
 		"stage":   result.Stage,
 		"msg":     result.Message,
 	})
+}
+
+// testPayment checks the saved acquiring credentials without charging anyone.
+func (a *SettingController) testPayment(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 20*time.Second)
+	defer cancel()
+	account, err := a.paymentOrders.VerifyProvider(ctx)
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.settings.tgPayTestFailed"), err)
+		return
+	}
+	key := "pages.settings.tgPayTestLive"
+	if account.Test {
+		key = "pages.settings.tgPayTestSandbox"
+	}
+	jsonMsg(c, I18nWeb(c, key, "Account=="+account.ID), nil)
 }
 
 func (a *SettingController) testTgBot(c *gin.Context) {

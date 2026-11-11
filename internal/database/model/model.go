@@ -1158,6 +1158,29 @@ type ClientBilling struct {
 	NonPaying bool `json:"nonPaying" gorm:"column:non_paying;default:false"`
 	// PendingMonths is the term the client last reported paying; a confirm consumes it once.
 	PendingMonths int `json:"pendingMonths" gorm:"column:pending_months;default:0"`
+	// Friend prices every plan with the admin-set friends discount.
+	Friend bool `json:"friend" gorm:"column:friend;default:false"`
+	// Credit is money paid online for the free plan; the first paid plan is that much cheaper.
+	Credit int `json:"credit" gorm:"column:credit;default:0"`
+}
+
+// PaymentOrder is one online payment through the acquiring provider: a plan term
+// for a client, or the paid free plan that creates the client once the money arrives.
+type PaymentOrder struct {
+	Id        int    `json:"id" gorm:"primaryKey;autoIncrement"`
+	Provider  string `json:"provider" gorm:"not null"`
+	InvoiceId string `json:"invoiceId" gorm:"column:invoice_id;index"`
+	PayURL    string `json:"payUrl" gorm:"column:pay_url;default:''"`
+	Kind      string `json:"kind" gorm:"not null"`
+	TgID      int64  `json:"tgId" gorm:"column:tg_id;index"`
+	Email     string `json:"email" gorm:"default:''"`
+	Months    int    `json:"months" gorm:"default:0"`
+	Amount    int    `json:"amount" gorm:"not null"`
+	Currency  string `json:"currency" gorm:"not null"`
+	// Status moves pending -> paid -> done (or canceled/failed); each step is a guarded UPDATE.
+	Status    string `json:"status" gorm:"index;not null"`
+	CreatedAt int64  `json:"createdAt" gorm:"autoCreateTime:milli"`
+	UpdatedAt int64  `json:"updatedAt" gorm:"autoUpdateTime:milli"`
 }
 
 // LedgerServer is a recurring monthly server cost, charged to every month from

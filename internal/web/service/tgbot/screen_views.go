@@ -68,7 +68,7 @@ func (t *Tgbot) screenClientHome(chatID, userID int64, delivery ...screenDeliver
 	}
 	if info := t.loadPaymentInfo(); info.billed() {
 		body.WriteString(t.paymentBlock(info, traffics))
-		rows = append(rows, t.paymentRows(traffics)...)
+		rows = append(rows, t.paymentRows(info, traffics)...)
 	}
 	if t.levelOf(userID) == levelAdmin {
 		rows = append(rows, t.backRow())

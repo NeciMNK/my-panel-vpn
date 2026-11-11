@@ -33,7 +33,7 @@ type BillingService struct {
 	xrayService    XrayService
 }
 
-// PaymentPlanPrice is one payable term with its total in the payment currency (0 without a price).
+// PaymentPlanPrice is one payable term with this client's total in the payment currency (0 without a price).
 type PaymentPlanPrice struct {
 	Months          int `json:"months" example:"3"`
 	DiscountPercent int `json:"discountPercent" example:"10"`
@@ -49,6 +49,8 @@ type ClientBillingView struct {
 	NonPaying     bool               `json:"nonPaying" example:"false"`
 	GraceDays     int                `json:"graceDays" example:"0"`
 	PendingMonths int                `json:"pendingMonths" example:"0"`
+	Friend        bool               `json:"friend" example:"false"`
+	Credit        int                `json:"credit" example:"0"`
 	Currency      string             `json:"currency" example:"RUB"`
 	Plans         []PaymentPlanPrice `json:"plans"`
 }
@@ -80,10 +82,35 @@ func (s *BillingService) PaymentPlans() (price int, currency string, plans []ent
 // PaymentAmount is the price of months: a listed term's discounted total, else months at full price.
 func (s *BillingService) PaymentAmount(months int) (int, string) {
 	price, currency, plans := s.PaymentPlans()
+	return termTotal(price, plans, months), currency
+}
+
+func termTotal(price int, plans []entity.PaymentPlan, months int) int {
 	if i := slices.IndexFunc(plans, func(p entity.PaymentPlan) bool { return p.Months == months }); i >= 0 {
-		return plans[i].Total(price), currency
+		return plans[i].Total(price)
 	}
-	return months * price, currency
+	return months * price
+}
+
+// FriendDiscount is the admin-set friends percent, clamped to 0-99.
+func (s *BillingService) FriendDiscount() int {
+	pct, _ := s.settingService.GetTgFriendDiscount()
+	return min(max(pct, 0), 99)
+}
+
+// ClientPrice is what this client owes for a term's total: friends get their
+// percent off, then free-plan credit paid online comes off, never below zero.
+func ClientPrice(total int, billing *model.ClientBilling, friendDiscount int) int {
+	if billing.Friend && friendDiscount > 0 {
+		total = (total*(100-friendDiscount) + 50) / 100
+	}
+	return max(total-max(billing.Credit, 0), 0)
+}
+
+// ClientPaymentAmount is what the client pays for months now, with its own discounts.
+func (s *BillingService) ClientPaymentAmount(billing *model.ClientBilling, months int) (int, string) {
+	total, currency := s.PaymentAmount(months)
+	return ClientPrice(total, billing, s.FriendDiscount()), currency
 }
 
 func (s *BillingService) GetClientBilling(email string) (*ClientBillingView, error) {
@@ -99,13 +126,17 @@ func (s *BillingService) GetClientBilling(email string) (*ClientBillingView, err
 		return nil, err
 	}
 	price, currency, plans := s.PaymentPlans()
+	friendDiscount := s.FriendDiscount()
 	view := &ClientBillingView{
 		Email: email, ExpiryTime: traffic.ExpiryTime, Trusted: billing.Trusted, FreePlan: billing.FreePlan,
 		NonPaying: billing.NonPaying, GraceDays: billing.GraceDays, PendingMonths: billing.PendingMonths,
-		Currency: currency, Plans: make([]PaymentPlanPrice, 0, len(plans)),
+		Friend: billing.Friend, Credit: billing.Credit, Currency: currency, Plans: make([]PaymentPlanPrice, 0, len(plans)),
 	}
 	for _, plan := range plans {
-		view.Plans = append(view.Plans, PaymentPlanPrice{Months: plan.Months, DiscountPercent: plan.DiscountPercent, Total: plan.Total(price)})
+		view.Plans = append(view.Plans, PaymentPlanPrice{
+			Months: plan.Months, DiscountPercent: plan.DiscountPercent,
+			Total: ClientPrice(plan.Total(price), billing, friendDiscount),
+		})
 	}
 	return view, nil
 }
@@ -127,8 +158,18 @@ func PaidExpiry(expiry int64, billing *model.ClientBilling, days int, now int64)
 }
 
 // ApplyPayment extends the client's term by months, lifts a free plan's quota,
-// settles credit, drops any pending bot report and books the income under note.
+// settles credit, drops any pending bot report and books the client's price under note.
 func (s *BillingService) ApplyPayment(email string, months int, note string, now time.Time) (*PaymentResult, error) {
+	return s.applyPayment(email, months, -1, note, now)
+}
+
+// ApplyOnlinePayment is ApplyPayment for money the provider took: it books the
+// amount actually charged, even if prices changed while the client paid.
+func (s *BillingService) ApplyOnlinePayment(email string, months, amount int, note string, now time.Time) (*PaymentResult, error) {
+	return s.applyPayment(email, months, max(amount, 0), note, now)
+}
+
+func (s *BillingService) applyPayment(email string, months, paid int, note string, now time.Time) (*PaymentResult, error) {
 	if months < 1 || months > maxPaymentMonths {
 		return nil, ErrPaymentMonths
 	}
@@ -143,6 +184,10 @@ func (s *BillingService) ApplyPayment(email string, months int, note string, now
 	if err != nil {
 		return nil, err
 	}
+	amount, currency := s.ClientPaymentAmount(billing, months)
+	if paid >= 0 {
+		amount = paid
+	}
 	expiry := PaidExpiry(traffic.ExpiryTime, billing, months*PaymentMonthDays, now.UnixMilli())
 	if expiry != traffic.ExpiryTime {
 		if err := s.applyClientEdit(s.clientService.ResetClientExpiryTimeByEmail(&s.inboundService, email, expiry)); err != nil {
@@ -154,7 +199,7 @@ func (s *BillingService) ApplyPayment(email string, months int, note string, now
 			return nil, err
 		}
 	}
-	billing.FreePlan, billing.GraceDays = false, 0
+	billing.FreePlan, billing.GraceDays, billing.Credit = false, 0, 0
 	if err := s.clientService.SaveBilling(billing); err != nil {
 		logger.Warning("payment: saving billing for", email, "failed:", err)
 	}
@@ -162,8 +207,7 @@ func (s *BillingService) ApplyPayment(email string, months int, note string, now
 		Update("pending_months", 0).Error; err != nil {
 		logger.Warning("payment: clearing the pending report for", email, "failed:", err)
 	}
-	result := &PaymentResult{Email: email, Months: months, ExpiryTime: expiry}
-	result.Amount, result.Currency = s.PaymentAmount(months)
+	result := &PaymentResult{Email: email, Months: months, ExpiryTime: expiry, Amount: amount, Currency: currency}
 	if result.Amount > 0 {
 		if err := s.ledgerService.RecordPayment(email, result.Amount, note, now); err != nil {
 			logger.Warning("ledger: booking payment for", email, "failed:", err)
