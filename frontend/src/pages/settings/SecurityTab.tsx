@@ -285,7 +285,6 @@ export default function SecurityTab({ allSetting, updateSetting, saveSetting }: 
         onConfirm: async (ok: boolean, code?: string) => {
           if (!ok) return;
           const next = {
-            ...allSetting,
             twoFactorEnable: false,
             twoFactorToken: '',
             twoFactorCode: code || '',

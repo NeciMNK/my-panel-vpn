@@ -1,15 +1,23 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
+	"net/http"
+	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/dbtest"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/json_util"
+	"github.com/mhsanaei/3x-ui/v3/internal/util/netsafe"
 	"github.com/mhsanaei/3x-ui/v3/internal/xray"
 )
 
@@ -227,5 +235,81 @@ func TestPanelProxySetLinkModeDropsOwnSubscription(t *testing.T) {
 	}
 	if mode, _, _ := svc.stored(); mode != PanelProxyModeOff {
 		t.Fatalf("mode after a refused Set = %q, want it unchanged", mode)
+	}
+}
+
+// The quick panel proxy used to be ignored by the bot, Discord and the updater
+// unless the legacy panelOutbound setting was also non-empty.
+func TestPanelEgressProxyURLFollowsQuickPanelProxy(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("the fake core is a shell script")
+	}
+	dbDir := t.TempDir()
+	t.Setenv("XUI_DB_FOLDER", dbDir)
+	dbtest.InitDB(t, filepath.Join(dbDir, "x-ui.db"))
+	binFolder := t.TempDir()
+	t.Setenv("XUI_BIN_FOLDER", binFolder)
+	t.Setenv("XUI_LOG_FOLDER", t.TempDir())
+	if err := os.WriteFile(filepath.Join(binFolder, xray.GetBinaryName()), []byte(fakeXrayCore("26.6.27", true)), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := (&PanelProxyService{}).Set(PanelProxyModeLink, "socks5://198.51.100.4:1080"); err != nil {
+		t.Fatalf("Set: %v", err)
+	}
+	if tag, _ := (&SettingService{}).GetPanelOutbound(); tag != "" {
+		t.Fatalf("panelOutbound = %q, the test needs it empty", tag)
+	}
+	startFakeCore(t)
+
+	want := fmt.Sprintf("socks5://127.0.0.1:%d", panelEgressBasePort)
+	if got := (&SettingService{}).PanelEgressProxyURL(); got != want {
+		t.Fatalf("PanelEgressProxyURL() = %q, want %q", got, want)
+	}
+}
+
+// With the bridge now always used, the subscription mode's own feed would be
+// fetched through its own exits and could never be refreshed once they all die.
+func TestPanelProxyOwnSubscriptionIsFetchedDirectly(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("the fake core is a shell script")
+	}
+	dbDir := t.TempDir()
+	t.Setenv("XUI_DB_FOLDER", dbDir)
+	dbtest.InitDB(t, filepath.Join(dbDir, "x-ui.db"))
+	binFolder := t.TempDir()
+	t.Setenv("XUI_BIN_FOLDER", binFolder)
+	t.Setenv("XUI_LOG_FOLDER", t.TempDir())
+	if err := os.WriteFile(filepath.Join(binFolder, xray.GetBinaryName()), []byte(fakeXrayCore("26.6.27", true)), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := (&PanelProxyService{}).Set(PanelProxyModeLink, "socks5://198.51.100.4:1080"); err != nil {
+		t.Fatalf("Set: %v", err)
+	}
+	startFakeCore(t)
+
+	for _, tc := range []struct {
+		name           string
+		viaPanelEgress bool
+		wantDirect     bool
+	}{
+		{name: "panel proxy's own subscription", viaPanelEgress: false, wantDirect: true},
+		{name: "admin's subscription", viaPanelEgress: true, wantDirect: false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			client := (&OutboundSubscriptionService{}).subscriptionFetchClient(5*time.Second, false, tc.viaPanelEgress)
+			ctx := netsafe.ContextWithAllowPrivate(context.Background(), false)
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://127.0.0.1:1/", nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = client.Do(req)
+			if err == nil {
+				t.Fatal("fetch of a closed port succeeded")
+			}
+			// Only the direct, SSRF-guarded dialer refuses the private target itself.
+			if direct := strings.Contains(err.Error(), "blocked private"); direct != tc.wantDirect {
+				t.Fatalf("direct fetch = %v, want %v (err: %v)", direct, tc.wantDirect, err)
+			}
+		})
 	}
 }

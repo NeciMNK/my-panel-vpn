@@ -576,18 +576,11 @@ func (s *SettingService) SetPanelOutbound(tag string) error {
 	return s.setString("panelOutbound", tag)
 }
 
-// PanelEgressProxyURL resolves the loopback SOCKS bridge that the generated
-// config exposes when a panel outbound is configured (see injectPanelEgress).
-// It returns "" — meaning a direct connection — when the feature is off or
-// the bridge is not present in the running core yet.
+// PanelEgressProxyURL returns the running loopback bridge of the quick panel proxy
+// or panelOutbound (see injectPanelEgress), or "" for a direct connection.
 func (s *SettingService) PanelEgressProxyURL() string {
-	tag, err := s.GetPanelOutbound()
-	if err != nil || tag == "" {
-		return ""
-	}
 	proc := XrayProcess()
 	if proc == nil || !proc.IsRunning() {
-		logger.Warning("panel outbound [", tag, "] is set but Xray is not running, using a direct connection")
 		return ""
 	}
 	cfg := proc.GetConfig()
@@ -599,7 +592,9 @@ func (s *SettingService) PanelEgressProxyURL() string {
 			return fmt.Sprintf("socks5://127.0.0.1:%d", cfg.InboundConfigs[i].Port)
 		}
 	}
-	logger.Warning("panel outbound [", tag, "] is set but the egress bridge is not in the running config, using a direct connection")
+	if tag, err := s.GetPanelOutbound(); err == nil && tag != "" {
+		logger.Warning("panel outbound [", tag, "] is set but the egress bridge is not in the running config, using a direct connection")
+	}
 	return ""
 }
 
