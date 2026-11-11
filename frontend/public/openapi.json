@@ -16292,7 +16292,7 @@
         "tags": [
           "Settings"
         ],
-        "summary": "Persist every setting at once. The body mirrors the shape returned by /all. Invalid values (bad ports, missing cert pairs, etc.) are rejected before write.",
+        "summary": "Persist settings. The body mirrors the shape returned by /all; a field it leaves out keeps its stored value, and a secret left out or blank stays unchanged unless its clear flag is set. Invalid values (bad ports, missing cert pairs, etc.) are rejected before write.",
         "operationId": "post_panel_api_setting_update",
         "requestBody": {
           "required": true,

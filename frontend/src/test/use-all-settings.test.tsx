@@ -198,4 +198,32 @@ describe('useAllSettings', () => {
     expect(result.current.allSetting.hasTgBotToken).toBe(true);
     expect(result.current.saveDisabled).toBe(true);
   });
+
+  it('saves only the fields edited on the page, never a stale copy of the rest', async () => {
+    let stored: Record<string, unknown> = { panelOutbound: '', pageSize: 25 };
+    const bodies: Record<string, unknown>[] = [];
+    vi.spyOn(HttpUtil, 'post').mockImplementation(async (url, body) => {
+      if (url === '/panel/api/setting/all') return new Msg(true, '', stored);
+      bodies.push(body as Record<string, unknown>);
+      return new Msg(true, '', {});
+    });
+    const queryClient = makeTestQueryClient();
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+    const { result } = renderHook(() => useAllSettings(), { wrapper });
+    await waitFor(() => expect(result.current.fetched).toBe(true));
+
+    stored = { panelOutbound: 'proxy-de', pageSize: 25 };
+    act(() => result.current.updateSetting({ pageSize: 50 }));
+    await act(async () => {
+      await result.current.saveAll();
+    });
+    act(() => result.current.updateSetting({ expireDiff: 3 }));
+    await act(async () => {
+      await result.current.saveAll();
+    });
+
+    expect(bodies).toEqual([{ pageSize: 50 }, { expireDiff: 3 }]);
+  });
 });

@@ -237,3 +237,66 @@ func TestTestDiscordEndpoint(t *testing.T) {
 		t.Fatalf("expected success, got %s", resp.Body.String())
 	}
 }
+
+// A save carried every field, so one that left panelOutbound out (or sent it from
+// a page loaded earlier) silently switched the panel's own traffic back to direct.
+func TestUpdateSettingKeepsFieldsTheSaveLeavesOut(t *testing.T) {
+	t.Setenv("XUI_DB_FOLDER", t.TempDir())
+	dbtest.InitDB(t, filepath.Join(t.TempDir(), "x-ui.db"))
+	settingService := service.SettingService{}
+	if err := settingService.SetPanelOutbound("proxy-de"); err != nil {
+		t.Fatalf("seed panelOutbound: %v", err)
+	}
+	if err := settingService.SetTgBotChatId("12345"); err != nil {
+		t.Fatalf("seed chat id: %v", err)
+	}
+
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	NewSettingController(router.Group("/panel/api"))
+	req := httptest.NewRequest(http.MethodPost, "/panel/api/setting/update", strings.NewReader(`{"pageSize":50}`))
+	req.Header.Set("Content-Type", "application/json")
+	resp := httptest.NewRecorder()
+	router.ServeHTTP(resp, req)
+	if !strings.Contains(resp.Body.String(), `"success":true`) {
+		t.Fatalf("partial save rejected: %s", resp.Body.String())
+	}
+
+	all, err := settingService.GetAllSetting()
+	if err != nil {
+		t.Fatalf("GetAllSetting: %v", err)
+	}
+	if all.PageSize != 50 || all.PanelOutbound != "proxy-de" || all.TgBotChatId != "12345" {
+		t.Fatalf("after saving pageSize: pageSize=%d panelOutbound=%q tgBotChatId=%q, want 50/proxy-de/12345",
+			all.PageSize, all.PanelOutbound, all.TgBotChatId)
+	}
+}
+
+// With the stored token prefilled, a clear flag sent without the token itself kept it.
+func TestUpdateSettingClearsSecretSentOnlyAsClearFlag(t *testing.T) {
+	t.Setenv("XUI_DB_FOLDER", t.TempDir())
+	dbtest.InitDB(t, filepath.Join(t.TempDir(), "x-ui.db"))
+	settingService := service.SettingService{}
+	if err := settingService.SetTgBotToken("123:keep"); err != nil {
+		t.Fatalf("seed token: %v", err)
+	}
+
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+	NewSettingController(router.Group("/panel/api"))
+	for _, tc := range []struct{ body, want string }{
+		{body: `{"pageSize":40}`, want: "123:keep"},
+		{body: `{"clearTgBotToken":true}`, want: ""},
+	} {
+		req := httptest.NewRequest(http.MethodPost, "/panel/api/setting/update", strings.NewReader(tc.body))
+		req.Header.Set("Content-Type", "application/json")
+		resp := httptest.NewRecorder()
+		router.ServeHTTP(resp, req)
+		if !strings.Contains(resp.Body.String(), `"success":true`) {
+			t.Fatalf("%s rejected: %s", tc.body, resp.Body.String())
+		}
+		if got, _ := settingService.GetTgBotToken(); got != tc.want {
+			t.Fatalf("after %s token = %q, want %q", tc.body, got, tc.want)
+		}
+	}
+}
