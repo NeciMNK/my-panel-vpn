@@ -4069,6 +4069,11 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": "Hetzner DE",
         "type": "string"
       },
+      "paidThrough": {
+        "description": "PaidThrough is the last YYYY-MM whose bill the admin paid ahead with Extend.",
+        "example": "2027-02",
+        "type": "string"
+      },
       "startMonth": {
         "example": "2026-11",
         "type": "string"
@@ -4080,6 +4085,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "id",
       "monthlyCost",
       "name",
+      "paidThrough",
       "startMonth"
     ],
     "type": "object"

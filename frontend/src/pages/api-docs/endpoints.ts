@@ -2104,6 +2104,14 @@ export const sections: readonly Section[] = [
       },
       {
         method: 'POST',
+        path: '/panel/api/ledger/servers/extend',
+        summary:
+          'Pay a server ahead for 1-36 months: its next payment date and reminder move past them, and a stopped server runs again until then.',
+        body: '{\n  "id": 1,\n  "months": 3\n}',
+        responseSchema: 'LedgerServer',
+      },
+      {
+        method: 'POST',
         path: '/panel/api/ledger/entries/add',
         summary:
           'Book an income (a payment received) or a one-off expense to a month. Confirmed Telegram payments are booked automatically.',

@@ -218,6 +218,8 @@ func TestNextServerBill(t *testing.T) {
 		{"31st in a short month", model.LedgerServer{BillingDay: 31, StartMonth: "2026-01"}, "2027-02-10", "2027-02-28"},
 		{"not started yet", model.LedgerServer{BillingDay: 3, StartMonth: "2027-01"}, "2026-11-10", "2027-01-03"},
 		{"last month already paid", model.LedgerServer{BillingDay: 5, StartMonth: "2026-01", EndMonth: "2026-11"}, "2026-11-10", ""},
+		{"paid ahead", model.LedgerServer{BillingDay: 15, StartMonth: "2026-01", PaidThrough: "2027-01"}, "2026-11-10", "2027-02-15"},
+		{"paid through a past month", model.LedgerServer{BillingDay: 15, StartMonth: "2026-01", PaidThrough: "2026-09"}, "2026-11-10", "2026-11-15"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -264,5 +266,77 @@ func TestServersToRemindOncePerBill(t *testing.T) {
 	next, _ := ledger.ServersToRemind(time.Date(2026, 12, 14, 9, 0, 0, 0, time.Local), 1)
 	if len(next) != 1 || next[0].Date != "2026-12-15" {
 		t.Errorf("next month = %+v, want DE on 2026-12-15", next)
+	}
+}
+
+// Extending pays the next N bills: the next due date jumps past them, so no
+// reminder fires for a month already paid, and a stopped server runs again.
+func TestExtendServer(t *testing.T) {
+	setupBulkDB(t)
+	ledger := &LedgerService{}
+	now := time.Date(2026, 11, 20, 9, 0, 0, 0, time.Local)
+	cases := []struct {
+		name     string
+		server   model.LedgerServer
+		months   int
+		wantPaid string
+		wantEnd  string
+		wantNext string
+	}{
+		{"day passed this month", model.LedgerServer{Name: "DE", MonthlyCost: 500, StartMonth: "2026-01", BillingDay: 15}, 3, "2027-02", "", "2027-03-15"},
+		{"day still ahead", model.LedgerServer{Name: "NL", MonthlyCost: 400, StartMonth: "2026-01", BillingDay: 25}, 1, "2026-11", "", "2026-12-25"},
+		{"already paid ahead", model.LedgerServer{Name: "FI", MonthlyCost: 300, StartMonth: "2026-01", BillingDay: 1, PaidThrough: "2027-01"}, 2, "2027-03", "", "2027-04-01"},
+		{"stopped server", model.LedgerServer{Name: "US", MonthlyCost: 900, StartMonth: "2026-01", EndMonth: "2026-10", BillingDay: 5}, 2, "2027-01", "2027-01", ""},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			server := tc.server
+			if err := ledger.SaveServer(&server); err != nil {
+				t.Fatal(err)
+			}
+			if tc.server.PaidThrough != "" {
+				database.GetDB().Model(&server).Update("paid_through", tc.server.PaidThrough)
+			}
+			got, err := ledger.ExtendServer(server.Id, tc.months, now)
+			if err != nil {
+				t.Fatalf("ExtendServer: %v", err)
+			}
+			var stored model.LedgerServer
+			database.GetDB().First(&stored, server.Id)
+			next := ""
+			if due, ok := nextServerBill(stored, now); ok {
+				next = due.Format(time.DateOnly)
+			}
+			if stored.PaidThrough != tc.wantPaid || stored.EndMonth != tc.wantEnd || next != tc.wantNext || got != stored {
+				t.Errorf("paid %q end %q next %q (returned %+v); want paid %q end %q next %q",
+					stored.PaidThrough, stored.EndMonth, next, got, tc.wantPaid, tc.wantEnd, tc.wantNext)
+			}
+		})
+	}
+
+	if _, err := ledger.ExtendServer(1, 0, now); !errors.Is(err, ErrLedgerMonths) {
+		t.Errorf("extend by 0 months: err = %v, want %v", err, ErrLedgerMonths)
+	}
+}
+
+// Editing a server in the form must not wipe what Extend recorded as paid.
+func TestSaveServerKeepsPaidThrough(t *testing.T) {
+	setupBulkDB(t)
+	ledger := &LedgerService{}
+	server := model.LedgerServer{Name: "DE", MonthlyCost: 500, StartMonth: "2026-01", BillingDay: 15}
+	if err := ledger.SaveServer(&server); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ledger.ExtendServer(server.Id, 2, time.Date(2026, 11, 10, 9, 0, 0, 0, time.Local)); err != nil {
+		t.Fatal(err)
+	}
+	edited := model.LedgerServer{Id: server.Id, Name: "DE", MonthlyCost: 600, StartMonth: "2026-01", BillingDay: 15}
+	if err := ledger.SaveServer(&edited); err != nil {
+		t.Fatal(err)
+	}
+	var stored model.LedgerServer
+	database.GetDB().First(&stored, server.Id)
+	if stored.PaidThrough != "2026-12" || stored.MonthlyCost != 600 {
+		t.Errorf("after edit paid %q cost %d; want 2026-12, 600", stored.PaidThrough, stored.MonthlyCost)
 	}
 }

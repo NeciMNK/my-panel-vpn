@@ -1172,6 +1172,8 @@ type LedgerServer struct {
 	BillingDay int `json:"billingDay" gorm:"column:billing_day;default:1" example:"15"`
 	// RemindedFor is the YYYY-MM whose bill the admins were already reminded of.
 	RemindedFor string `json:"-" gorm:"column:reminded_for;default:''"`
+	// PaidThrough is the last YYYY-MM whose bill the admin paid ahead with Extend.
+	PaidThrough string `json:"paidThrough" gorm:"column:paid_through;default:''" example:"2027-02"`
 }
 
 func (LedgerServer) TableName() string { return "ledger_servers" }

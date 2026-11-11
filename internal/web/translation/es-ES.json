@@ -2798,6 +2798,9 @@
       "billingDay": "Payment day",
       "billingDayHint": "Day of the month the bill is due (1–31). In shorter months it moves to the last day. Admins get a Telegram reminder the day before.",
       "nextPayment": "Next payment",
+      "extend": "Extend",
+      "extendMonths": "by {count} mo",
+      "paidThrough": "paid through {month}",
       "errDay": "Day must be 1–31"
     }
   },
