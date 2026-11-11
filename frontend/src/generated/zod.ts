@@ -467,6 +467,14 @@ export const CascadeSchema = z.object({
 });
 export type Cascade = z.infer<typeof CascadeSchema>;
 
+export const CascadeFixedExitSchema = z.object({
+  createdAt: z.number().int(),
+  email: z.string(),
+  id: z.number().int(),
+  nodeId: z.number().int(),
+});
+export type CascadeFixedExit = z.infer<typeof CascadeFixedExitSchema>;
+
 export const CascadeLinkSchema = z.object({
   address: z.string(),
   clientId: z.string(),

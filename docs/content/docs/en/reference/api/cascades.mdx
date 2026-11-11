@@ -26,6 +26,21 @@ _openapi:
       title: Remove a cascade from the entry template and delete its link inbounds on
         every exit.
       url: '#remove-a-cascade-from-the-entry-template-and-delete-its-link-inbounds-on-every-exit'
+    - depth: 2
+      title: List the exits users are permanently pinned to. In every multi-exit
+        cascade that has the pinned exit, the user always leaves from it,
+        connected or not; while it is down they fall back to another exit and
+        return as soon as it is back.
+      url: '#list-the-exits-users-are-permanently-pinned-to-in-every-multi-exit-cascade-that-has-the-pinned-exit-the-user-always-leaves-from-it-connected-or-not-while-it-is-down-they-fall-back-to-another-exit-and-return-as-soon-as-it-is-back'
+    - depth: 2
+      title: 'Pin a user to an exit server (node id 0 = this panel). A user keeps one
+        pin per country: pinning another exit of the same country replaces it.
+        Routing is rewritten at once.'
+      url: '#pin-a-user-to-an-exit-server-node-id-0--this-panel-a-user-keeps-one-pin-per-country-pinning-another-exit-of-the-same-country-replaces-it-routing-is-rewritten-at-once'
+    - depth: 2
+      title: 'Remove a pin: the user goes back to automatic exit choice and keeps
+        their current exit under the usual 15-minute hold.'
+      url: '#remove-a-pin-the-user-goes-back-to-automatic-exit-choice-and-keeps-their-current-exit-under-the-usual-15-minute-hold'
   structuredData:
     headings:
       - content: List every cascade with its provisioned links and the last apply error.
@@ -41,6 +56,18 @@ _openapi:
       - content: Remove a cascade from the entry template and delete its link inbounds
           on every exit.
         id: remove-a-cascade-from-the-entry-template-and-delete-its-link-inbounds-on-every-exit
+      - content: List the exits users are permanently pinned to. In every multi-exit
+          cascade that has the pinned exit, the user always leaves from it,
+          connected or not; while it is down they fall back to another exit and
+          return as soon as it is back.
+        id: list-the-exits-users-are-permanently-pinned-to-in-every-multi-exit-cascade-that-has-the-pinned-exit-the-user-always-leaves-from-it-connected-or-not-while-it-is-down-they-fall-back-to-another-exit-and-return-as-soon-as-it-is-back
+      - content: 'Pin a user to an exit server (node id 0 = this panel). A user keeps
+          one pin per country: pinning another exit of the same country replaces
+          it. Routing is rewritten at once.'
+        id: pin-a-user-to-an-exit-server-node-id-0--this-panel-a-user-keeps-one-pin-per-country-pinning-another-exit-of-the-same-country-replaces-it-routing-is-rewritten-at-once
+      - content: 'Remove a pin: the user goes back to automatic exit choice and keeps
+          their current exit under the usual 15-minute hold.'
+        id: remove-a-pin-the-user-goes-back-to-automatic-exit-choice-and-keeps-their-current-exit-under-the-usual-15-minute-hold
     contents: []
 ---
 
@@ -51,7 +78,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/cascades/list","method":"get"},{"path":"/panel/api/cascades/add","method":"post"},{"path":"/panel/api/cascades/update/{id}","method":"post"},{"path":"/panel/api/cascades/del/{id}","method":"post"}]} showTitle />
+      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/cascades/list","method":"get"},{"path":"/panel/api/cascades/add","method":"post"},{"path":"/panel/api/cascades/update/{id}","method":"post"},{"path":"/panel/api/cascades/del/{id}","method":"post"},{"path":"/panel/api/cascades/fixedExits","method":"get"},{"path":"/panel/api/cascades/fixedExits/set","method":"post"},{"path":"/panel/api/cascades/fixedExits/del","method":"post"}]} showTitle />
     </>
   );
 }

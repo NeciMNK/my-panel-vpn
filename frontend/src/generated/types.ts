@@ -440,6 +440,13 @@ export interface Cascade {
   updatedAt: number;
 }
 
+export interface CascadeFixedExit {
+  createdAt: number;
+  email: string;
+  id: number;
+  nodeId: number;
+}
+
 export interface CascadeLink {
   address: string;
   clientId: string;

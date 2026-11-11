@@ -30,6 +30,8 @@ type stickyView struct {
 	// set); MinMbps is each user's minimum speed.
 	FreeMbps map[int]float64
 	MinMbps  map[string]int
+	// Fixed is each user's admin-chosen exit in this cascade.
+	Fixed map[string]int
 }
 
 // hasRoom reports whether exit id still leaves need Mbit/s for one more user.
@@ -54,7 +56,20 @@ func nextCascadePins(pins []model.CascadePin, v stickyView) ([]model.CascadePin,
 	load := map[int]int{}
 	for _, p := range pins {
 		here := v.OnlineHere[p.Email]
+		fixed, isFixed := v.Fixed[p.Email]
 		switch {
+		case isFixed && usable[fixed]:
+			if p.NodeId != fixed {
+				p.NodeId = fixed
+				changed = true
+			}
+			if here {
+				p.LastSeen = v.Now
+			}
+			kept = append(kept, p)
+			pinned[p.Email] = true
+			load[p.NodeId]++
+			continue
 		case !usable[p.NodeId]:
 		case !here && v.OnlineElsewhere[p.Email]:
 			// The user picked another server themselves: no hold applies.
@@ -72,6 +87,19 @@ func nextCascadePins(pins []model.CascadePin, v stickyView) ([]model.CascadePin,
 	}
 	if len(usable) == 0 {
 		return kept, changed
+	}
+	fixedUsers := make([]string, 0)
+	for email, id := range v.Fixed {
+		if usable[id] && !pinned[email] {
+			fixedUsers = append(fixedUsers, email)
+		}
+	}
+	sort.Strings(fixedUsers)
+	for _, email := range fixedUsers {
+		kept = append(kept, model.CascadePin{Email: email, NodeId: v.Fixed[email], LastSeen: v.Now})
+		pinned[email] = true
+		load[v.Fixed[email]]++
+		changed = true
 	}
 	newcomers := make([]string, 0)
 	for email := range v.OnlineHere {
@@ -220,6 +248,11 @@ func (s *CascadeService) StickCascadeUsers(ctx context.Context) {
 	if m, err := minSpeeds(); err == nil {
 		mins = m
 	}
+	var fixed []model.CascadeFixedExit
+	if err := database.GetDB().Order("id asc").Find(&fixed).Error; err != nil {
+		logger.Warning("cascade sticky: list fixed exits:", err)
+		return
+	}
 
 	for _, c := range rows {
 		old, err := loadCascadePins(c.Id)
@@ -236,6 +269,7 @@ func (s *CascadeService) StickCascadeUsers(ctx context.Context) {
 				view.Exits = append(view.Exits, l.NodeId)
 			}
 			view.OnlineHere, view.OnlineElsewhere = cascadeOnline(c.EntryNodeId, byGuid, guidOf)
+			view.Fixed = fixedExitsIn(fixed, view.Exits)
 		}
 		next, changed := nextCascadePins(old, view)
 		if err := saveCascadePins(c.Id, old, next); err != nil {

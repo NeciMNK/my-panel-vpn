@@ -1772,6 +1772,28 @@ export const sections: readonly Section[] = [
           'Remove a cascade from the entry template and delete its link inbounds on every exit.',
         params: [{ name: 'id', in: 'path', type: 'number', desc: 'Cascade ID.' }],
       },
+      {
+        method: 'GET',
+        path: '/panel/api/cascades/fixedExits',
+        summary:
+          'List the exits users are permanently pinned to. In every multi-exit cascade that has the pinned exit, the user always leaves from it, connected or not; while it is down they fall back to another exit and return as soon as it is back.',
+        responseSchema: 'CascadeFixedExit',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/cascades/fixedExits/set',
+        summary:
+          'Pin a user to an exit server (node id 0 = this panel). A user keeps one pin per country: pinning another exit of the same country replaces it. Routing is rewritten at once.',
+        body: '{\n  "email": "anna",\n  "nodeId": 2\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/cascades/fixedExits/del',
+        summary:
+          'Remove a pin: the user goes back to automatic exit choice and keeps their current exit under the usual 15-minute hold.',
+        body: '{\n  "email": "anna",\n  "nodeId": 2\n}',
+      },
     ],
   },
 

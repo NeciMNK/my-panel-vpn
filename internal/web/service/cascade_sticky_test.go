@@ -114,6 +114,63 @@ func TestNextCascadePins(t *testing.T) {
 			wantChanged: true,
 		},
 		{
+			name:        "a fixed user is pinned before they connect",
+			view:        stickyView{Now: now, Exits: []int{2, 5}, Healthy: allUp, Fixed: map[string]int{"anna": 5}},
+			want:        map[string]int{"anna": 5},
+			wantChanged: true,
+		},
+		{
+			name: "a fixed pin outlives the hold and other servers",
+			pins: []model.CascadePin{{Id: 1, Email: "anna", NodeId: 5, LastSeen: now - hold - 1}},
+			view: stickyView{
+				Now: now, Exits: []int{2, 5}, Healthy: allUp, OnlineElsewhere: emailSet("anna"),
+				Fixed: map[string]int{"anna": 5},
+			},
+			want:        map[string]int{"anna": 5},
+			wantChanged: false,
+		},
+		{
+			name: "a fixed user ignores load and minimum speed",
+			pins: []model.CascadePin{{Id: 1, Email: "bob", NodeId: 5, LastSeen: now}},
+			view: stickyView{
+				Now: now, Exits: []int{2, 5}, Healthy: allUp, OnlineHere: emailSet("anna", "bob"),
+				FreeMbps: map[int]float64{2: 60, 5: 1}, MinMbps: map[string]int{"anna": 50},
+				Fixed: map[string]int{"anna": 5},
+			},
+			want:        map[string]int{"anna": 5, "bob": 5},
+			wantChanged: true,
+		},
+		{
+			name: "a fixed user falls back to a live exit while theirs is down",
+			pins: []model.CascadePin{{Id: 1, Email: "anna", NodeId: 5, LastSeen: now}},
+			view: stickyView{
+				Now: now, Exits: []int{2, 5}, Healthy: map[int]bool{2: true}, OnlineHere: emailSet("anna"),
+				Fixed: map[string]int{"anna": 5},
+			},
+			want:        map[string]int{"anna": 2},
+			wantChanged: true,
+		},
+		{
+			name: "a fixed user returns to their exit once it is back",
+			pins: []model.CascadePin{{Id: 1, Email: "anna", NodeId: 2, LastSeen: now}},
+			view: stickyView{
+				Now: now, Exits: []int{2, 5}, Healthy: allUp, OnlineHere: emailSet("anna"),
+				Fixed: map[string]int{"anna": 5},
+			},
+			want:        map[string]int{"anna": 5},
+			wantChanged: true,
+		},
+		{
+			name: "a fixed exit outside the cascade changes nothing",
+			pins: []model.CascadePin{{Id: 1, Email: "anna", NodeId: 2, LastSeen: now}},
+			view: stickyView{
+				Now: now, Exits: []int{2, 5}, Healthy: allUp, OnlineHere: emailSet("anna"),
+				Fixed: map[string]int{"anna": 9},
+			},
+			want:        map[string]int{"anna": 2},
+			wantChanged: false,
+		},
+		{
 			name:        "a removed exit drops its pins",
 			pins:        []model.CascadePin{{Id: 1, Email: "anna", NodeId: 9, LastSeen: now}},
 			view:        stickyView{Now: now, Exits: []int{2, 5}, Healthy: allUp},

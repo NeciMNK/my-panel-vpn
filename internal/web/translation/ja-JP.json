@@ -1302,6 +1302,18 @@
           "both": "split + relay"
         }
       },
+      "fixedExits": {
+        "title": "Pinned exits",
+        "desc": "The user always leaves to the internet through the chosen server (with its IP) in every cascade that has this server as an exit, e.g. \"all servers of DE\". One pinned server per country. While it is down the user is moved to another exit for the time being and comes back as soon as the server is online again.",
+        "user": "User",
+        "exit": "Exit server",
+        "pin": "Pin",
+        "fallback": "down — on another exit for now",
+        "toasts": {
+          "saved": "Exit pinned",
+          "deleted": "Pin removed"
+        }
+      },
       "country": "Country",
       "countryHint": "Two-letter country code (DE, NL, FI). Nodes of one country together join \"by country\" cascades.",
       "countryInvalid": "Use a two-letter country code such as DE",

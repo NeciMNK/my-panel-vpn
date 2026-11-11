@@ -1827,6 +1827,35 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "CascadeFixedExit": {
+    "description": "CascadeFixedExit is an admin's permanent choice of exit for one user: every\ncascade with that exit sends the user there while it is up.",
+    "properties": {
+      "createdAt": {
+        "example": 1762862400,
+        "format": "int64",
+        "type": "integer"
+      },
+      "email": {
+        "example": "anna",
+        "type": "string"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "nodeId": {
+        "example": 2,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "createdAt",
+      "email",
+      "id",
+      "nodeId"
+    ],
+    "type": "object"
+  },
   "CascadeLink": {
     "description": "CascadeLink is the hidden VLESS+REALITY hop the master provisions on one exit.",
     "properties": {

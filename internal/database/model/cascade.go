@@ -47,3 +47,12 @@ type CascadePin struct {
 	LastSeen  int64  `json:"lastSeen" gorm:"column:last_seen"`
 	CreatedAt int64  `json:"createdAt" gorm:"autoCreateTime"`
 }
+
+// CascadeFixedExit is an admin's permanent choice of exit for one user: every
+// cascade with that exit sends the user there while it is up.
+type CascadeFixedExit struct {
+	Id        int    `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
+	Email     string `json:"email" gorm:"uniqueIndex:idx_cascade_fixed_exit" example:"anna"`
+	NodeId    int    `json:"nodeId" gorm:"column:node_id;uniqueIndex:idx_cascade_fixed_exit" example:"2"`
+	CreatedAt int64  `json:"createdAt" gorm:"autoCreateTime" example:"1762862400"`
+}
