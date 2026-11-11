@@ -1031,11 +1031,20 @@ export const MLKEM768ResponseSchema = z.object({
 });
 export type MLKEM768Response = z.infer<typeof MLKEM768ResponseSchema>;
 
+export const MasterSetupSchema = z.object({
+  env: z.string(),
+  keyFile: z.string().optional(),
+  name: z.string(),
+  priority: z.number().int(),
+});
+export type MasterSetup = z.infer<typeof MasterSetupSchema>;
+
 export const MasterStatusSchema = z.object({
   alive: z.boolean(),
   lastSeen: z.number().int(),
   leader: z.boolean(),
   name: z.string(),
+  pending: z.boolean(),
   priority: z.number().int(),
   self: z.boolean(),
   url: z.string(),

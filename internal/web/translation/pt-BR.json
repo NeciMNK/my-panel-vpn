@@ -1391,12 +1391,38 @@
         "states": {
           "leader": "Leader",
           "follower": "Standby",
-          "down": "Down"
+          "down": "Down",
+          "pending": "Pending"
         },
         "self": "this panel",
         "forget": "Forget",
         "toasts": {
-          "forgotten": "Master removed from the list"
+          "forgotten": "Master removed from the list",
+          "reordered": "Priorities saved; the new primary takes the lead within about 10 seconds",
+          "added": "Master added",
+          "refused": "Masters were not changed"
+        },
+        "makePrimary": "Make primary",
+        "moveUp": "Higher",
+        "moveDown": "Lower",
+        "add": "Add master",
+        "addTitle": "Add a master",
+        "addName": "Name",
+        "addUrl": "Panel address",
+        "addSubmit": "Add",
+        "setupHint": "Install the panel on the new server, put these lines into /etc/default/x-ui and run systemctl restart x-ui. Until its first heartbeat the master shows as pending, and other changes wait for it.",
+        "setupKeyFile": "Node tokens are encrypted: copy {{file}} from this master to the same path on the new one.",
+        "copyEnv": "Copy",
+        "lockedOffline": "Changes are locked: master {{name}} is offline. Bring it back or forget it.",
+        "lockedNotPrimary": "Masters can be changed only on the leading primary master ({{name}}).",
+        "refusals": {
+          "notCluster": "this panel is a single master (XUI_MASTER_PRIORITY is not set)",
+          "notPrimary": "masters can be changed only on the leading primary master {{ .Name }}",
+          "offline": "master {{ .Name }} is offline; every master must be online",
+          "unknown": "no master named {{ .Name }}",
+          "running": "master {{ .Name }} is still running; stop it first",
+          "nameTaken": "a master named {{ .Name }} already exists",
+          "badOrder": "the order must list every master exactly once"
         }
       }
     },

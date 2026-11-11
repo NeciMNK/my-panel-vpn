@@ -963,11 +963,19 @@ export interface MLKEM768Response {
   seed: string;
 }
 
+export interface MasterSetup {
+  env: string;
+  keyFile?: string;
+  name: string;
+  priority: number;
+}
+
 export interface MasterStatus {
   alive: boolean;
   lastSeen: number;
   leader: boolean;
   name: string;
+  pending: boolean;
   priority: number;
   self: boolean;
   url: string;
