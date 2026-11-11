@@ -38,6 +38,7 @@ import CascadesCard from './CascadesCard';
 import HomeNetworksCard from './HomeNetworksCard';
 import WarpSwitchCard from './WarpSwitchCard';
 import SpeedCard from './SpeedCard';
+import FixedExitsCard from './FixedExitsCard';
 import MastersCard from './MastersCard';
 import { setMessageInstance } from '@/utils/messageBus';
 import { HttpUtil } from '@/utils';
@@ -390,6 +391,10 @@ export default function NodesPage() {
 
                   <Col span={24}>
                     <CascadesCard nodes={nodes} />
+                  </Col>
+
+                  <Col span={24}>
+                    <FixedExitsCard nodes={nodes} />
                   </Col>
 
                   <Col span={24}>

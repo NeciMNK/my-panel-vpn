@@ -68,6 +68,7 @@ func migrationModels() []any {
 		&model.NodeJoinToken{},
 		&model.Cascade{},
 		&model.CascadePin{},
+		&model.CascadeFixedExit{},
 		&model.HomeNetwork{},
 		&model.WarpSwitch{},
 		&model.ClientSpeed{},

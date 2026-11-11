@@ -26,6 +26,7 @@ func run(root, outDir string) error {
 			StructAllow: setOf(
 				"Cascade",
 				"CascadeLink",
+				"CascadeFixedExit",
 				"HomeNetwork",
 				"HomeAccessRule",
 				"WarpSwitch",

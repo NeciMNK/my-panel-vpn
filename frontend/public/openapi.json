@@ -1853,6 +1853,35 @@
         ],
         "type": "object"
       },
+      "CascadeFixedExit": {
+        "description": "CascadeFixedExit is an admin's permanent choice of exit for one user: every\ncascade with that exit sends the user there while it is up.",
+        "properties": {
+          "createdAt": {
+            "example": 1762862400,
+            "format": "int64",
+            "type": "integer"
+          },
+          "email": {
+            "example": "anna",
+            "type": "string"
+          },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "nodeId": {
+            "example": 2,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "createdAt",
+          "email",
+          "id",
+          "nodeId"
+        ],
+        "type": "object"
+      },
       "CascadeLink": {
         "description": "CascadeLink is the hidden VLESS+REALITY hop the master provisions on one exit.",
         "properties": {
@@ -12790,6 +12819,140 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/cascades/fixedExits": {
+      "get": {
+        "tags": [
+          "Cascades"
+        ],
+        "summary": "List the exits users are permanently pinned to. In every multi-exit cascade that has the pinned exit, the user always leaves from it, connected or not; while it is down they fall back to another exit and return as soon as it is back.",
+        "operationId": "get_panel_api_cascades_fixedExits",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CascadeFixedExit"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "createdAt": 1762862400,
+                      "email": "anna",
+                      "id": 1,
+                      "nodeId": 2
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/cascades/fixedExits/set": {
+      "post": {
+        "tags": [
+          "Cascades"
+        ],
+        "summary": "Pin a user to an exit server (node id 0 = this panel). A user keeps one pin per country: pinning another exit of the same country replaces it. Routing is rewritten at once.",
+        "operationId": "post_panel_api_cascades_fixedExits_set",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "email": "anna",
+                "nodeId": 2
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/cascades/fixedExits/del": {
+      "post": {
+        "tags": [
+          "Cascades"
+        ],
+        "summary": "Remove a pin: the user goes back to automatic exit choice and keeps their current exit under the usual 15-minute hold.",
+        "operationId": "post_panel_api_cascades_fixedExits_del",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "email": "anna",
+                "nodeId": 2
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful response",

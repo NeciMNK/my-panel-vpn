@@ -22,6 +22,9 @@ func NewCascadeController(g *gin.RouterGroup) *CascadeController {
 	g.POST("/add", a.add)
 	g.POST("/update/:id", a.update)
 	g.POST("/del/:id", a.del)
+	g.GET("/fixedExits", a.fixedExits)
+	g.POST("/fixedExits/set", a.setFixedExit)
+	g.POST("/fixedExits/del", a.delFixedExit)
 	return a
 }
 
@@ -77,4 +80,25 @@ func (a *CascadeController) del(c *gin.Context) {
 		return
 	}
 	jsonMsg(c, I18nWeb(c, "pages.nodes.cascade.toasts.deleted"), a.cascadeService.Delete(c.Request.Context(), id))
+}
+
+func (a *CascadeController) fixedExits(c *gin.Context) {
+	rows, err := a.cascadeService.ListFixedExits()
+	jsonObj(c, rows, err)
+}
+
+func (a *CascadeController) setFixedExit(c *gin.Context) {
+	req, ok := middleware.BindAndValidate[service.CascadeFixedExitRequest](c)
+	if !ok {
+		return
+	}
+	jsonMsg(c, I18nWeb(c, "pages.nodes.fixedExits.toasts.saved"), a.cascadeService.SetFixedExit(c.Request.Context(), req))
+}
+
+func (a *CascadeController) delFixedExit(c *gin.Context) {
+	req, ok := middleware.BindAndValidate[service.CascadeFixedExitRequest](c)
+	if !ok {
+		return
+	}
+	jsonMsg(c, I18nWeb(c, "pages.nodes.fixedExits.toasts.deleted"), a.cascadeService.DeleteFixedExit(c.Request.Context(), req))
 }

@@ -460,6 +460,12 @@ export const EXAMPLES: Record<string, unknown> = {
     "strategy": "leastPing",
     "updatedAt": 0
   },
+  "CascadeFixedExit": {
+    "createdAt": 1762862400,
+    "email": "anna",
+    "id": 1,
+    "nodeId": 2
+  },
   "CascadeLink": {
     "address": "",
     "clientId": "",
