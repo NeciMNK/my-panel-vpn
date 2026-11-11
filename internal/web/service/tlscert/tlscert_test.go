@@ -266,6 +266,9 @@ func TestRenewDue(t *testing.T) {
 
 func TestDeleteRefusesWhileInUse(t *testing.T) {
 	h := setup(t)
+	if err := h.svc.settingService.SetSubCertFile("/other/sub.pem"); err != nil {
+		t.Fatal(err)
+	}
 	created, err := h.svc.Create([]string{"example.com"}, true, false)
 	if err != nil {
 		t.Fatal(err)
@@ -293,6 +296,15 @@ func TestDeleteRefusesWhileInUse(t *testing.T) {
 	}
 
 	if err := h.svc.settingService.SetCertFile(""); err != nil {
+		t.Fatal(err)
+	}
+	if err := h.svc.settingService.SetSubCertFile(cert.CertFile); err != nil {
+		t.Fatal(err)
+	}
+	if err := h.svc.Delete(cert.Id); err == nil || err.Error() != "certificate is still used by the subscription server" {
+		t.Fatalf("Delete while the sub server serves it: %v", err)
+	}
+	if err := h.svc.settingService.SetSubCertFile(""); err != nil {
 		t.Fatal(err)
 	}
 	if err := h.svc.Delete(cert.Id); err != nil {
@@ -335,5 +347,58 @@ func TestInstallValidatesNameAndPair(t *testing.T) {
 	}
 	if got, _ := os.ReadFile(files.CertFile); string(got) != string(certPEM) {
 		t.Fatal("installed certificate differs from the pushed one")
+	}
+}
+
+// The sub server takes an issued pair when its cert field is empty or the
+// certificate covers the host subscription links are built for.
+func TestIssueFillsSubscriptionCert(t *testing.T) {
+	cases := []struct {
+		name         string
+		settings     map[string]string
+		domains      []string
+		wantIssued   bool
+		wantRestarts int32
+	}{
+		{"empty field, no sub host", nil, []string{"example.com"}, true, 1},
+		{"sub domain covered by wildcard replaces old pair", map[string]string{"subDomain": "sub.example.com", "subCertFile": "/old/sub.pem", "subKeyFile": "/old/sub.key"}, []string{"*.example.com"}, true, 1},
+		{"sub URI host covered", map[string]string{"subURI": "https://sub.example.com:2096/sub/"}, []string{"sub.example.com"}, true, 1},
+		{"sub domain not covered keeps old pair", map[string]string{"subDomain": "sub.other.org", "subCertFile": "/old/sub.pem", "subKeyFile": "/old/sub.key"}, []string{"*.example.com"}, false, 0},
+		{"empty field but sub domain not covered", map[string]string{"subDomain": "a.b.example.com"}, []string{"*.example.com", "example.com"}, false, 0},
+		{"other pair without sub host is kept", map[string]string{"subCertFile": "/old/sub.pem", "subKeyFile": "/old/sub.key"}, []string{"example.com"}, false, 0},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			h := setup(t)
+			for key, val := range tc.settings {
+				if err := database.GetDB().Create(&model.Setting{Key: key, Value: val}).Error; err != nil {
+					t.Fatal(err)
+				}
+			}
+			before, _ := h.svc.settingService.GetSubCertFile()
+			created, err := h.svc.Create(tc.domains, true, false)
+			if err != nil {
+				t.Fatalf("Create: %v", err)
+			}
+			cert := h.reload(t, created.Id)
+			wantCert, wantKey := before, tc.settings["subKeyFile"]
+			if tc.wantIssued {
+				wantCert, wantKey = cert.CertFile, cert.KeyFile
+			}
+			gotCert, _ := h.svc.settingService.GetSubCertFile()
+			gotKey, _ := h.svc.settingService.GetSubKeyFile()
+			if gotCert != wantCert || gotKey != wantKey {
+				t.Fatalf("sub pair = %q, %q; want %q, %q", gotCert, gotKey, wantCert, wantKey)
+			}
+			if got := h.restarts.Load(); got != tc.wantRestarts {
+				t.Fatalf("restarts = %d, want %d", got, tc.wantRestarts)
+			}
+			if _, err := h.svc.Renew(cert.Id); err != nil {
+				t.Fatalf("Renew: %v", err)
+			}
+			if got := h.restarts.Load(); got != tc.wantRestarts {
+				t.Fatalf("restarts after renewal = %d, want still %d", got, tc.wantRestarts)
+			}
+		})
 	}
 }
