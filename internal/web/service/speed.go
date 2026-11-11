@@ -47,9 +47,12 @@ type ServerFreeSpeed struct {
 
 // SpeedOverview is everything the speed card shows.
 type SpeedOverview struct {
-	Clients []model.ClientSpeed    `json:"clients"`
-	Servers []model.ServerCapacity `json:"servers"`
-	Load    []ServerFreeSpeed      `json:"load"`
+	Clients      []model.ClientSpeed    `json:"clients"`
+	Servers      []model.ServerCapacity `json:"servers"`
+	Load         []ServerFreeSpeed      `json:"load"`
+	Testing      []int                  `json:"testing" example:"[0]"`
+	TestStats    []SpeedTestStats       `json:"testStats"`
+	TestSettings SpeedTestSettings      `json:"testSettings"`
 }
 
 // clientIPWindow is how recently an IP must have been seen to be capped.
@@ -142,16 +145,22 @@ func (w *speedWorld) online(nodeID int) []string {
 	return out
 }
 
+// used is every server's current busiest direction in Mbit/s.
+func (w *speedWorld) used() map[int]float64 {
+	out := map[int]float64{0: localThroughputMbps()}
+	for _, n := range w.nodes {
+		out[n.Id] = float64(max(n.NetUp, n.NetDown)) * 8 / 1e6
+	}
+	return out
+}
+
 // loads covers the servers with a known capacity.
 func (w *speedWorld) loads() (map[int]serverLoad, error) {
 	var caps []model.ServerCapacity
 	if err := database.GetDB().Find(&caps).Error; err != nil {
 		return nil, err
 	}
-	used := map[int]float64{0: localThroughputMbps()}
-	for _, n := range w.nodes {
-		used[n.Id] = float64(max(n.NetUp, n.NetDown)) * 8 / 1e6
-	}
+	used := w.used()
 	out := map[int]serverLoad{}
 	for _, c := range caps {
 		out[c.NodeId] = serverLoad{Capacity: float64(c.CapacityMbps), Used: used[c.NodeId], Online: len(w.online(c.NodeId))}
@@ -172,7 +181,7 @@ func minSpeeds() (map[string]int, error) {
 }
 
 func (s *SpeedService) Overview() (*SpeedOverview, error) {
-	out := &SpeedOverview{Clients: []model.ClientSpeed{}, Servers: []model.ServerCapacity{}, Load: []ServerFreeSpeed{}}
+	out := &SpeedOverview{Clients: []model.ClientSpeed{}, Servers: []model.ServerCapacity{}, Load: []ServerFreeSpeed{}, Testing: speedTestsRunning()}
 	db := database.GetDB()
 	if err := db.Order("email asc").Find(&out.Clients).Error; err != nil {
 		return nil, err
@@ -194,6 +203,12 @@ func (s *SpeedService) Overview() (*SpeedOverview, error) {
 			NodeId: c.NodeId, CapacityMbps: c.CapacityMbps, UsedMbps: math.Round(l.Used*10) / 10,
 			Online: l.Online, FreePerUserMbps: math.Round(l.freePerUser()*10) / 10,
 		})
+	}
+	if out.TestStats, err = speedTestStats(time.Now()); err != nil {
+		return nil, err
+	}
+	if out.TestSettings, err = s.TestSettings(); err != nil {
+		return nil, err
 	}
 	return out, nil
 }

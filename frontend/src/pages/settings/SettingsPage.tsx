@@ -32,7 +32,7 @@ import DiscordTab from './DiscordTab';
 import SubscriptionGeneralTab from './SubscriptionGeneralTab';
 import SubscriptionFormatsTab from './SubscriptionFormatsTab';
 import SubscriptionBalancersTab from './SubscriptionBalancersTab';
-import MigrateFromButton from './MigrateFromButton';
+import MigrateTab from './MigrateTab';
 import './SettingsPage.css';
 
 interface ApiMsg {
@@ -49,6 +49,7 @@ const tabSlugs = [
   'subscription',
   'subscription-formats',
   'subscription-balancers',
+  'migrate',
 ];
 
 function isIp(h: string): boolean {
@@ -232,6 +233,8 @@ export default function SettingsPage() {
         return <SubscriptionFormatsTab allSetting={allSetting} updateSetting={updateSetting} />;
       case 'subscription-balancers':
         return <SubscriptionBalancersTab allSetting={allSetting} updateSetting={updateSetting} />;
+      case 'migrate':
+        return <MigrateTab />;
       default:
         return <GeneralTab allSetting={allSetting} updateSetting={updateSetting} />;
     }
@@ -294,7 +297,6 @@ export default function SettingsPage() {
                               >
                                 {t('pages.settings.restartPanel')}
                               </Button>
-                              <MigrateFromButton />
                             </Space>
                           </Col>
                           <Col xs={24} sm={14} className="header-info">

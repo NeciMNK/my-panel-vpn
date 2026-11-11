@@ -102,6 +102,7 @@ func allModels() []any {
 		&model.WarpSwitch{},
 		&model.ClientSpeed{},
 		&model.ServerCapacity{},
+		&model.SpeedTestResult{},
 		&model.MasterMember{},
 		&model.TlsCertificate{},
 		&model.TelegramTag{},

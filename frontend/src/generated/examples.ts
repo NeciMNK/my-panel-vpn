@@ -1051,6 +1051,11 @@ export const EXAMPLES: Record<string, unknown> = {
     "month": "2026-11",
     "note": "1 mo"
   },
+  "LedgerNode": {
+    "address": "203.0.113.7",
+    "id": 1,
+    "name": "panel-node1"
+  },
   "LedgerNonPaying": {
     "email": "admin",
     "group": "family",
@@ -1085,6 +1090,13 @@ export const EXAMPLES: Record<string, unknown> = {
     ],
     "income": 2400,
     "month": "2026-11",
+    "nodes": [
+      {
+        "address": "203.0.113.7",
+        "id": 1,
+        "name": "panel-node1"
+      }
+    ],
     "nonPaying": [
       {
         "email": "admin",
@@ -1106,11 +1118,13 @@ export const EXAMPLES: Record<string, unknown> = {
     "serverCosts": 1500,
     "servers": [
       {
+        "address": "198.51.100.4",
         "billingDay": 15,
         "endMonth": "",
         "id": 1,
         "monthlyCost": 500,
         "name": "Hetzner DE",
+        "nodeId": 0,
         "paidThrough": "2027-02",
         "startMonth": "2026-11"
       }
@@ -1125,11 +1139,13 @@ export const EXAMPLES: Record<string, unknown> = {
     ]
   },
   "LedgerServer": {
+    "address": "198.51.100.4",
     "billingDay": 15,
     "endMonth": "",
     "id": 1,
     "monthlyCost": 500,
     "name": "Hetzner DE",
+    "nodeId": 0,
     "paidThrough": "2027-02",
     "startMonth": "2026-11"
   },
@@ -1488,7 +1504,62 @@ export const EXAMPLES: Record<string, unknown> = {
         "id": 1,
         "nodeId": 0
       }
+    ],
+    "testSettings": {
+      "autoCapacity": true,
+      "everyHours": 6,
+      "times": [
+        "03:00",
+        "13:30"
+      ],
+      "timezone": "Europe/Moscow"
+    },
+    "testStats": [
+      {
+        "avgDownloadMbps": 910.4,
+        "avgUploadMbps": 880.2,
+        "count": 12,
+        "last": null,
+        "maxDownloadMbps": 948.1,
+        "minDownloadMbps": 640,
+        "nodeId": 0
+      }
+    ],
+    "testing": [
+      0
     ]
+  },
+  "SpeedTestResult": {
+    "capacityMbps": 946,
+    "createdAt": 1762874430000,
+    "downloadMbps": 930.5,
+    "error": "",
+    "id": 1,
+    "nodeId": 0,
+    "pingMs": 4.2,
+    "provider": "speedtest",
+    "server": "Rostelecom, Moscow",
+    "trigger": "manual",
+    "uploadMbps": 910.1,
+    "usedMbps": 35.2
+  },
+  "SpeedTestSettings": {
+    "autoCapacity": true,
+    "everyHours": 6,
+    "times": [
+      "03:00",
+      "13:30"
+    ],
+    "timezone": "Europe/Moscow"
+  },
+  "SpeedTestStats": {
+    "avgDownloadMbps": 910.4,
+    "avgUploadMbps": 880.2,
+    "count": 12,
+    "last": null,
+    "maxDownloadMbps": 948.1,
+    "minDownloadMbps": 640,
+    "nodeId": 0
   },
   "SubBalancer": {
     "createdAt": 1710000000000,

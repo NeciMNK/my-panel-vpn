@@ -11,6 +11,13 @@ xui_repo="NeciMNK/my-panel-vpn"
 
 xui_folder="${XUI_MAIN_FOLDER:=/usr/local/x-ui}"
 xui_service="${XUI_SERVICE:=/etc/systemd/system}"
+xui_cli="/usr/bin/x-ui"
+xui_rc_script="/etc/init.d/x-ui"
+xui_etc="/etc/x-ui"
+xui_backup_root="/root"
+# Blitz (Hysteria2 panel) lives here; the installer never modifies it.
+blitz_dir="/etc/hysteria"
+replace_foreign_xui=0
 
 # check root
 [[ $EUID -ne 0 ]] && echo -e "${red}Fatal error: ${plain} Please run this script with root privilege \n " && exit 1
@@ -1749,6 +1756,119 @@ _install_xui_service_unit() {
     return 0
 }
 
+xui_env_file_path() {
+    case "${release}" in
+        ubuntu | debian | armbian) echo "/etc/default/x-ui" ;;
+        arch | manjaro | parch | alpine) echo "/etc/conf.d/x-ui" ;;
+        *) echo "/etc/sysconfig/x-ui" ;;
+    esac
+}
+
+# Prints none, fork or foreign. Upstream 3x-ui (and other x-ui builds) share
+# every path with this fork; only this fork's binary or CLI names its repo.
+detect_xui_install() {
+    local f found=0
+    for f in "${xui_folder}/x-ui" "${xui_cli}" "${xui_service}/x-ui.service" "${xui_rc_script}"; do
+        [[ -e "$f" ]] || continue
+        found=1
+        if [[ "$f" == "${xui_folder}/x-ui" || "$f" == "${xui_cli}" ]] && grep -aqF "${xui_repo}" "$f" 2> /dev/null; then
+            echo fork
+            return 0
+        fi
+    done
+    if [[ $found == 1 ]]; then echo foreign; else echo none; fi
+}
+
+detect_blitz() {
+    [[ -f "${blitz_dir}/menu.sh" || -d "${blitz_dir}/hysteria2_venv" ]]
+}
+
+# Runs before anything is installed: announces Blitz (left alone) and asks
+# before a foreign x-ui is replaced. Declining exits with nothing changed.
+check_existing_panels() {
+    if detect_blitz; then
+        echo -e "${green}Blitz (Hysteria2) panel found in ${blitz_dir}: it is left untouched.${plain}"
+        echo -e "${green}The panel port is picked among free TCP ports, so it will not collide with Blitz.${plain}"
+        if is_port_in_use 80; then
+            echo -e "${yellow}TCP port 80 is already in use (likely Blitz's web server). Let's Encrypt options 1 and 2 need it,${plain}"
+            echo -e "${yellow}and this installer will not stop Blitz: choose option 3 (existing certificate) or 4 when asked about SSL.${plain}"
+        fi
+    fi
+
+    [[ "$(detect_xui_install)" == foreign ]] || return 0
+    echo -e "${yellow}Another x-ui / 3x-ui panel is installed (not ${xui_repo}).${plain}"
+    echo -e "${yellow}It will be stopped, backed up to ${xui_backup_root}/3x-ui-backup-<date>/ and removed, then ${xui_repo} is installed fresh.${plain}"
+    if [[ "$NONINTERACTIVE" != 1 ]]; then
+        local answer=""
+        read -rp "Replace it? [Y/n]: " answer
+        case "${answer,,}" in
+            n | no)
+                echo -e "${red}Installation cancelled; the existing panel was not touched.${plain}"
+                exit 1
+                ;;
+        esac
+    fi
+    replace_foreign_xui=1
+}
+
+# Stops the foreign panel, copies its database, env file and unit aside, and only
+# then removes it; a failed copy restarts it and returns 1 with nothing deleted.
+remove_foreign_xui() {
+    local env_file db_folder backup
+    env_file="$(xui_env_file_path)"
+    db_folder="$(sed -n 's/^XUI_DB_FOLDER=["'\'']\{0,1\}\([^"'\'']*\).*/\1/p' "${env_file}" 2> /dev/null | tail -n1)"
+    db_folder="${db_folder:-${xui_etc}}"
+    backup="${xui_backup_root}/3x-ui-backup-$(date +%Y%m%d-%H%M%S)"
+
+    if [[ $release == "alpine" ]]; then
+        rc-service x-ui stop > /dev/null 2>&1
+    else
+        systemctl stop x-ui > /dev/null 2>&1
+    fi
+    pkill -f 'mtg-linux-[^ ]* run ' > /dev/null 2>&1 || true
+    pkill -f 'tuic-server.*-c .*bin/tuic/tuic_[0-9]+\.json' > /dev/null 2>&1 || true
+
+    local ok=1
+    mkdir -p "${backup}" || ok=0
+    if [[ $ok == 1 && -d "${db_folder}" ]]; then cp -a "${db_folder}" "${backup}/x-ui" || ok=0; fi
+    if [[ $ok == 1 && -f "${env_file}" ]]; then cp -a "${env_file}" "${backup}/x-ui.env" || ok=0; fi
+    if [[ $ok == 1 && -f "${xui_service}/x-ui.service" ]]; then cp -a "${xui_service}/x-ui.service" "${backup}/" || ok=0; fi
+    if [[ $ok == 1 && -d "${xui_service}/x-ui.service.d" ]]; then cp -a "${xui_service}/x-ui.service.d" "${backup}/" || ok=0; fi
+    if [[ $ok == 1 && -f "${xui_rc_script}" ]]; then cp -a "${xui_rc_script}" "${backup}/x-ui.rc" || ok=0; fi
+    if [[ $ok != 1 ]]; then
+        echo -e "${red}Could not back up the existing panel to ${backup}; nothing was removed. Free some disk space and run the installer again.${plain}"
+        if [[ $release == "alpine" ]]; then
+            rc-service x-ui start > /dev/null 2>&1
+        else
+            systemctl start x-ui > /dev/null 2>&1
+        fi
+        return 1
+    fi
+
+    if [[ $release == "alpine" ]]; then
+        rc-update del x-ui > /dev/null 2>&1
+        rm -f "${xui_rc_script}"
+    else
+        systemctl disable x-ui > /dev/null 2>&1
+        rm -f "${xui_service}/x-ui.service"
+        rm -rf "${xui_service}/x-ui.service.d"
+        systemctl daemon-reload > /dev/null 2>&1
+        systemctl reset-failed x-ui > /dev/null 2>&1
+    fi
+    # A custom XUI_DB_FOLDER is only backed up: the env file pointing at it goes away.
+    rm -rf "${xui_folder}" "${xui_etc}"
+    rm -f "${xui_cli}" "${env_file}"
+
+    echo -e "${green}Old panel removed. Backup: ${backup}${plain}"
+    if [[ -f "${backup}/x-ui/x-ui.db" ]]; then
+        echo -e "${green}To bring its inbounds and clients over, upload ${backup}/x-ui/x-ui.db in the new panel: Move from another panel → 3x-ui.${plain}"
+    fi
+    if grep -q '^XUI_DB_TYPE=postgres' "${backup}/x-ui.env" 2> /dev/null; then
+        echo -e "${yellow}The old panel used PostgreSQL; its database was left as is (connection settings are in ${backup}/x-ui.env).${plain}"
+    fi
+    return 0
+}
+
 # resolve_latest_tag prints the latest stable release tag. It prefers the web
 # releases/latest redirect, which is not subject to the unauthenticated API's
 # 60 req/h-per-IP limit that trips shared CI/CGNAT addresses (the install then
@@ -1888,6 +2008,13 @@ install_x-ui() {
         rm -f "${xui_script_temp}"
         echo -e "${red}Downloaded x-ui.sh is empty${plain}"
         exit 1
+    fi
+
+    if [[ "${replace_foreign_xui}" == 1 ]]; then
+        if ! remove_foreign_xui; then
+            rm -f "${xui_script_temp}" "${xui_folder}-linux-$(arch).tar.gz"
+            exit 1
+        fi
     fi
 
     # Stop x-ui service and remove old resources
@@ -2155,5 +2282,6 @@ install_x-ui() {
 }
 
 echo -e "${green}Running...${plain}"
+check_existing_panels
 install_base
 install_x-ui $1

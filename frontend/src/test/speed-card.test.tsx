@@ -21,3 +21,27 @@ describe('speedServerRows', () => {
     ]);
   });
 });
+
+describe('speedServerRows speed tests', () => {
+  it('attaches each server its own test statistics and running flag', () => {
+    const stats = {
+      nodeId: 3,
+      count: 2,
+      avgDownloadMbps: 750,
+      avgUploadMbps: 650,
+      minDownloadMbps: 600,
+      maxDownloadMbps: 900,
+    };
+    const rows = speedServerRows(
+      [
+        { value: 0, label: 'master' },
+        { value: 3, label: 'de' },
+      ],
+      { clients: null, servers: null, load: null, testing: [0], testStats: [stats] },
+    );
+    expect(rows.map((r) => [r.name, r.testing, r.test?.avgDownloadMbps])).toEqual([
+      ['master', true, undefined],
+      ['de', false, 750],
+    ]);
+  });
+});

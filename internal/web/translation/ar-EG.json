@@ -1388,8 +1388,35 @@
         "user": "User",
         "min": "Min, Mbit/s",
         "max": "Max, Mbit/s",
+        "test": "Speed test",
+        "testDesc": "A speed test measures the server's own internet link with Speedtest by Ookla, or with Yandex Internetometer when Speedtest is unreachable. With automatic link speed on, the result sets the server's link speed: the slower direction plus what users were using during the test.",
+        "autoCapacity": "Set link speed from speed tests",
+        "everyHours": "Test every, hours (0 = button only)",
+        "testNow": "Test",
+        "testing": "Testing…",
+        "testResult": "↓{down} ↑{up} Mbit/s, ping {ping} ms",
+        "testFailed": "Failed",
+        "stats": "Last 30 days",
+        "statsValue": "avg ↓{down} ↑{up}, min ↓{min}, max ↓{max} ({count} tests)",
+        "history": "History",
+        "historyTitle": "Speed tests: {name}",
+        "when": "When",
+        "provider": "Service",
+        "testServer": "Test server",
+        "ping": "Ping, ms",
+        "download": "Download, Mbit/s",
+        "upload": "Upload, Mbit/s",
+        "setCapacity": "Link speed set",
+        "trigger": "Started by",
+        "triggerManual": "Button",
+        "triggerSchedule": "Schedule",
+        "providerSpeedtest": "Speedtest",
+        "providerYandex": "Yandex Internetometer",
+        "times": "Test at (HH:MM)",
+        "timezone": "Time zone",
         "toasts": {
-          "saved": "Speed limits saved"
+          "saved": "Speed limits saved",
+          "testStarted": "Speed test started; it takes about a minute"
         }
       },
       "masters": {
@@ -1447,7 +1474,7 @@
       "save": "حفظ",
       "infoDesc": "كل تغيير هتعمله هنا لازم يتخزن. ياريت تعيد تشغيل البانل عشان التعديلات تتفعل.",
       "restartPanel": "إعادة تشغيل اللوحة",
-      "migrateFrom": "النقل من…",
+      "migrateFrom": "النقل من",
       "restartPanelDesc": "متأكد إنك عايز تعيد تشغيل البانل؟ لو ماقدرتش تدخل بعد إعادة التشغيل، شوف سجل البانل على السيرفر.",
       "restartPanelSuccess": "تم إعادة تشغيل اللوحة بنجاح",
       "actions": "إجراءات",
@@ -2889,7 +2916,11 @@
       "friendDiscountDesc": "Percent off every plan for clients an admin marked as friends (the \"🤝 Friend\" button on the client card in the bot). The term discounts above apply first.",
       "errFriendDiscount": "A whole number from 0 to 99",
       "aiExitPrice": "AI button price",
-      "aiExitPriceDesc": "One-off price of the bot's \"🤖 I will use AI\" button (a permanent exit IP). Friends always get it free. 0 hides it from everyone else. It is paid by card when a provider is connected, or by hand to the payment details with an admin's confirm in the bot. Clients who already paid keep it."
+      "aiExitPriceDesc": "One-off price of the bot's \"🤖 I will use AI\" button (a permanent exit IP). Friends always get it free. 0 hides it from everyone else. It is paid by card when a provider is connected, or by hand to the payment details with an admin's confirm in the bot. Clients who already paid keep it.",
+      "address": "IP / address",
+      "node": "Node",
+      "nodeHint": "Pick the node this server runs; its address is shown and follows the node's settings. For a server that is not a node (e.g. this panel) type the IP below.",
+      "noNode": "— not a node —"
     }
   },
   "tgbot": {

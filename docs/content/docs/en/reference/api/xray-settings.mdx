@@ -77,6 +77,15 @@ _openapi:
         interface. Called by the master; an unchanged plan is a no-op.'
       url: '#on-any-server-enforce-per-ip-speed-caps-with-tc-on-the-default-interface-called-by-the-master-an-unchanged-plan-is-a-no-op'
     - depth: 2
+      title: 'On any server: the current or last speed-test run. run counts runs since
+        the panel started, so a restart mid-run shows as a different run.'
+      url: '#on-any-server-the-current-or-last-speed-test-run-run-counts-runs-since-the-panel-started-so-a-restart-mid-run-shows-as-a-different-run'
+    - depth: 2
+      title: "On any server: start measuring this server's own internet link, or join
+        the run in progress. Called by the master, which then polls GET until
+        the run ends."
+      url: '#on-any-server-start-measuring-this-servers-own-internet-link-or-join-the-run-in-progress-called-by-the-master-which-then-polls-get-until-the-run-ends'
+    - depth: 2
       title: Ask the running core which outbound its router would pick for a synthetic
         connection (RoutingService.TestRoute). No traffic is sent.
       url: '#ask-the-running-core-which-outbound-its-router-would-pick-for-a-synthetic-connection-routingservicetestroute-no-traffic-is-sent'
@@ -188,6 +197,14 @@ _openapi:
       - content: 'On any server: enforce per-IP speed caps with tc on the default
           interface. Called by the master; an unchanged plan is a no-op.'
         id: on-any-server-enforce-per-ip-speed-caps-with-tc-on-the-default-interface-called-by-the-master-an-unchanged-plan-is-a-no-op
+      - content: 'On any server: the current or last speed-test run. run counts runs
+          since the panel started, so a restart mid-run shows as a different
+          run.'
+        id: on-any-server-the-current-or-last-speed-test-run-run-counts-runs-since-the-panel-started-so-a-restart-mid-run-shows-as-a-different-run
+      - content: "On any server: start measuring this server's own internet link, or
+          join the run in progress. Called by the master, which then polls GET
+          until the run ends."
+        id: on-any-server-start-measuring-this-servers-own-internet-link-or-join-the-run-in-progress-called-by-the-master-which-then-polls-get-until-the-run-ends
       - content: Ask the running core which outbound its router would pick for a
           synthetic connection (RoutingService.TestRoute). No traffic is sent.
         id: ask-the-running-core-which-outbound-its-router-would-pick-for-a-synthetic-connection-routingservicetestroute-no-traffic-is-sent
@@ -241,7 +258,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/xray/","method":"post"},{"path":"/panel/api/xray/getDefaultJsonConfig","method":"get"},{"path":"/panel/api/xray/getOutboundsTraffic","method":"get"},{"path":"/panel/api/xray/getXrayResult","method":"get"},{"path":"/panel/api/xray/update","method":"post"},{"path":"/panel/api/xray/warp/{action}","method":"post"},{"path":"/panel/api/xray/nord/{action}","method":"post"},{"path":"/panel/api/xray/pia/{action}","method":"post"},{"path":"/panel/api/xray/resetOutboundsTraffic","method":"post"},{"path":"/panel/api/xray/testOutbound","method":"post"},{"path":"/panel/api/xray/testOutbounds","method":"post"},{"path":"/panel/api/xray/balancerStatus","method":"post"},{"path":"/panel/api/xray/balancerOverride","method":"post"},{"path":"/panel/api/xray/homeTunnel","method":"post"},{"path":"/panel/api/xray/homeTunnel/{id}","method":"get"},{"path":"/panel/api/xray/speedPlan","method":"post"},{"path":"/panel/api/xray/routeTest","method":"post"},{"path":"/panel/api/xray/geodata/files","method":"get"},{"path":"/panel/api/xray/geodata/categories","method":"get"},{"path":"/panel/api/xray/geodata/entries","method":"get"},{"path":"/panel/api/xray/geodata/validate","method":"post"},{"path":"/panel/api/xray/outbound-subs","method":"get"},{"path":"/panel/api/xray/outbound-subs","method":"post"},{"path":"/panel/api/xray/outbound-subs/{id}","method":"post"},{"path":"/panel/api/xray/outbound-subs/{id}","method":"delete"},{"path":"/panel/api/xray/outbound-subs/{id}/del","method":"post"},{"path":"/panel/api/xray/outbound-subs/{id}/refresh","method":"post"},{"path":"/panel/api/xray/outbound-subs/{id}/move","method":"post"},{"path":"/panel/api/xray/outbound-subs/parse","method":"post"}]} showTitle />
+      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/xray/","method":"post"},{"path":"/panel/api/xray/getDefaultJsonConfig","method":"get"},{"path":"/panel/api/xray/getOutboundsTraffic","method":"get"},{"path":"/panel/api/xray/getXrayResult","method":"get"},{"path":"/panel/api/xray/update","method":"post"},{"path":"/panel/api/xray/warp/{action}","method":"post"},{"path":"/panel/api/xray/nord/{action}","method":"post"},{"path":"/panel/api/xray/pia/{action}","method":"post"},{"path":"/panel/api/xray/resetOutboundsTraffic","method":"post"},{"path":"/panel/api/xray/testOutbound","method":"post"},{"path":"/panel/api/xray/testOutbounds","method":"post"},{"path":"/panel/api/xray/balancerStatus","method":"post"},{"path":"/panel/api/xray/balancerOverride","method":"post"},{"path":"/panel/api/xray/homeTunnel","method":"post"},{"path":"/panel/api/xray/homeTunnel/{id}","method":"get"},{"path":"/panel/api/xray/speedPlan","method":"post"},{"path":"/panel/api/xray/speedTest","method":"get"},{"path":"/panel/api/xray/speedTest","method":"post"},{"path":"/panel/api/xray/routeTest","method":"post"},{"path":"/panel/api/xray/geodata/files","method":"get"},{"path":"/panel/api/xray/geodata/categories","method":"get"},{"path":"/panel/api/xray/geodata/entries","method":"get"},{"path":"/panel/api/xray/geodata/validate","method":"post"},{"path":"/panel/api/xray/outbound-subs","method":"get"},{"path":"/panel/api/xray/outbound-subs","method":"post"},{"path":"/panel/api/xray/outbound-subs/{id}","method":"post"},{"path":"/panel/api/xray/outbound-subs/{id}","method":"delete"},{"path":"/panel/api/xray/outbound-subs/{id}/del","method":"post"},{"path":"/panel/api/xray/outbound-subs/{id}/refresh","method":"post"},{"path":"/panel/api/xray/outbound-subs/{id}/move","method":"post"},{"path":"/panel/api/xray/outbound-subs/parse","method":"post"}]} showTitle />
     </>
   );
 }

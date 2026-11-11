@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { createElement, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Button,
@@ -21,6 +21,7 @@ import {
   Statistic,
   Table,
   Tag,
+  Tooltip,
   message,
 } from 'antd';
 import type { TableColumnsType } from 'antd';
@@ -28,12 +29,14 @@ import {
   CalendarOutlined,
   DeleteOutlined,
   EditOutlined,
+  EyeInvisibleOutlined,
+  EyeOutlined,
   LeftOutlined,
   PlusOutlined,
   RightOutlined,
 } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { FormProvider, useForm } from 'react-hook-form';
+import { FormProvider, useForm, useWatch } from 'react-hook-form';
 import dayjs from 'dayjs';
 
 import { useTheme } from '@/hooks/useTheme';
@@ -45,6 +48,7 @@ import AppSidebar from '@/layouts/AppSidebar';
 import { FormField, rhfZodValidate } from '@/components/form/rhf';
 import { selectTagRender } from '@/components/form/SelectTag';
 import { keys } from '@/api/queryKeys';
+import { activateOnKey } from '@/utils/a11y';
 import { parseMsg } from '@/utils/zodValidate';
 import { GroupSummaryListSchema, ClientRecordSchema } from '@/schemas/client';
 import {
@@ -62,7 +66,11 @@ import {
 } from '@/schemas/ledger';
 import { z } from 'zod';
 
-const JSON_HEADERS = { headers: { 'Content-Type': 'application/json' } } as const;
+import './LedgerPage.css';
+
+const JSON_HEADERS = {
+  headers: { 'Content-Type': 'application/json' },
+} as const;
 const MONTH_FORMAT = 'YYYY-MM';
 const EXTEND_MONTHS = [1, 2, 3, 6, 12] as const;
 const ClientEmailsSchema = z
@@ -107,14 +115,18 @@ export default function LedgerPage() {
   const groupsQuery = useQuery({
     queryKey: keys.clients.groups(),
     queryFn: async () => {
-      const msg = await HttpUtil.get('/panel/api/clients/groups', undefined, { silent: true });
+      const msg = await HttpUtil.get('/panel/api/clients/groups', undefined, {
+        silent: true,
+      });
       return parseMsg(msg, GroupSummaryListSchema, 'clients/groups').obj ?? [];
     },
   });
   const emailsQuery = useQuery({
     queryKey: [...keys.ledger.root(), 'emails'],
     queryFn: async () => {
-      const msg = await HttpUtil.get('/panel/api/clients/list', undefined, { silent: true });
+      const msg = await HttpUtil.get('/panel/api/clients/list', undefined, {
+        silent: true,
+      });
       return parseMsg(msg, ClientEmailsSchema, 'clients/list').obj ?? [];
     },
     staleTime: 30_000,
@@ -133,6 +145,9 @@ export default function LedgerPage() {
   const [entryOpen, setEntryOpen] = useState(false);
   const entryForm = useForm<LedgerEntryFormValues>();
   const [markEmail, setMarkEmail] = useState<string | undefined>();
+  const [showAddress, setShowAddress] = useState(false);
+  const boundNodeId = useWatch({ control: serverForm.control, name: 'nodeId' });
+  const nodes = report?.nodes ?? [];
   const paymentForm = useForm<LedgerPayment>();
   const savedPayment = report?.payment;
   useEffect(() => {
@@ -145,7 +160,16 @@ export default function LedgerPage() {
 
   function openServer(server?: LedgerServer) {
     serverForm.reset(
-      server ?? { id: 0, name: '', monthlyCost: 0, billingDay: 1, startMonth: month, endMonth: '' },
+      server ?? {
+        id: 0,
+        name: '',
+        monthlyCost: 0,
+        billingDay: 1,
+        startMonth: month,
+        endMonth: '',
+        nodeId: 0,
+        address: '',
+      },
     );
     setServerOpen(true);
   }
@@ -153,10 +177,15 @@ export default function LedgerPage() {
   async function submitServer(values: LedgerServerFormValues) {
     const parsed = LedgerServerFormSchema.safeParse(values);
     if (!parsed.success) {
-      serverForm.setError('endMonth', { message: parsed.error.issues[0]?.message });
+      serverForm.setError('endMonth', {
+        message: parsed.error.issues[0]?.message,
+      });
       return;
     }
-    const msg = await post.mutateAsync({ path: 'servers/save', body: parsed.data });
+    const msg = await post.mutateAsync({
+      path: 'servers/save',
+      body: parsed.data,
+    });
     if (msg?.success) setServerOpen(false);
   }
 
@@ -188,8 +217,41 @@ export default function LedgerPage() {
   const currency = report?.currency ?? '';
   const money = (amount: number) => `${amount} ${currency}`.trim();
 
+  const toggleAddress = () => setShowAddress((shown) => !shown);
   const serverColumns: TableColumnsType<LedgerServer> = [
     { title: t('pages.ledger.serverName'), dataIndex: 'name' },
+    {
+      title: (
+        <span className="address-header">
+          {t('pages.ledger.address')}
+          <Tooltip title={t('pages.index.toggleIpVisibility')}>
+            {createElement(showAddress ? EyeOutlined : EyeInvisibleOutlined, {
+              className: 'ip-toggle-icon',
+              role: 'button',
+              tabIndex: 0,
+              'aria-label': t('pages.index.toggleIpVisibility'),
+              onClick: toggleAddress,
+              onKeyDown: activateOnKey(toggleAddress),
+            })}
+          </Tooltip>
+        </span>
+      ),
+      key: 'address',
+      render: (_, server) => {
+        const node = nodes.find((n) => n.id === server.nodeId);
+        const address = node?.address ?? server.address;
+        return (
+          <Space size={4} wrap>
+            {node && <Tag>{node.name}</Tag>}
+            {address ? (
+              <span className={showAddress ? undefined : 'address-hidden'}>{address}</span>
+            ) : (
+              !node && '—'
+            )}
+          </Space>
+        );
+      },
+    },
     {
       title: t('pages.ledger.monthlyCost'),
       dataIndex: 'monthlyCost',
@@ -274,7 +336,11 @@ export default function LedgerPage() {
           <Tag color="red">{t('pages.ledger.expense')}</Tag>
         ),
     },
-    { title: t('pages.ledger.amount'), dataIndex: 'amount', render: (a: number) => money(a) },
+    {
+      title: t('pages.ledger.amount'),
+      dataIndex: 'amount',
+      render: (a: number) => money(a),
+    },
     { title: t('pages.ledger.client'), dataIndex: 'email' },
     { title: t('pages.ledger.note'), dataIndex: 'note' },
     {
@@ -573,7 +639,10 @@ export default function LedgerPage() {
                           placeholder={t('pages.ledger.markClient')}
                           aria-label={t('pages.ledger.markClient')}
                           value={markEmail}
-                          options={markable.map((email) => ({ value: email, label: email }))}
+                          options={markable.map((email) => ({
+                            value: email,
+                            label: email,
+                          }))}
                           onChange={(email: string) => markClient(email, true)}
                         />
                         <Table
@@ -606,14 +675,40 @@ export default function LedgerPage() {
             <FormField
               name="name"
               label={t('pages.ledger.serverName')}
-              rules={{ validate: rhfZodValidate(LedgerServerFormSchema.shape.name) }}
+              rules={{
+                validate: rhfZodValidate(LedgerServerFormSchema.shape.name),
+              }}
             >
               <Input />
             </FormField>
             <FormField
+              name="nodeId"
+              label={t('pages.ledger.node')}
+              tooltip={t('pages.ledger.nodeHint')}
+            >
+              <Select
+                showSearch
+                optionFilterProp="label"
+                options={[
+                  { value: 0, label: t('pages.ledger.noNode') },
+                  ...nodes.map((node) => ({
+                    value: node.id,
+                    label: node.name,
+                  })),
+                ]}
+              />
+            </FormField>
+            {!boundNodeId && (
+              <FormField name="address" label={t('pages.ledger.address')}>
+                <Input placeholder="203.0.113.7" />
+              </FormField>
+            )}
+            <FormField
               name="monthlyCost"
               label={t('pages.ledger.monthlyCost')}
-              rules={{ validate: rhfZodValidate(LedgerServerFormSchema.shape.monthlyCost) }}
+              rules={{
+                validate: rhfZodValidate(LedgerServerFormSchema.shape.monthlyCost),
+              }}
             >
               <InputNumber min={1} style={{ width: '100%' }} addonAfter={currency || undefined} />
             </FormField>
@@ -621,14 +716,18 @@ export default function LedgerPage() {
               name="billingDay"
               label={t('pages.ledger.billingDay')}
               tooltip={t('pages.ledger.billingDayHint')}
-              rules={{ validate: rhfZodValidate(LedgerServerFormSchema.shape.billingDay) }}
+              rules={{
+                validate: rhfZodValidate(LedgerServerFormSchema.shape.billingDay),
+              }}
             >
               <InputNumber min={1} max={31} precision={0} style={{ width: '100%' }} />
             </FormField>
             <FormField
               name="startMonth"
               label={t('pages.ledger.startMonth')}
-              rules={{ validate: rhfZodValidate(LedgerServerFormSchema.shape.startMonth) }}
+              rules={{
+                validate: rhfZodValidate(LedgerServerFormSchema.shape.startMonth),
+              }}
             >
               <Input placeholder={MONTH_FORMAT} />
             </FormField>
@@ -636,7 +735,9 @@ export default function LedgerPage() {
               name="endMonth"
               label={t('pages.ledger.endMonth')}
               tooltip={t('pages.ledger.endMonthHint')}
-              rules={{ validate: rhfZodValidate(LedgerServerFormSchema.shape.endMonth) }}
+              rules={{
+                validate: rhfZodValidate(LedgerServerFormSchema.shape.endMonth),
+              }}
             >
               <Input placeholder={MONTH_FORMAT} />
             </FormField>
@@ -665,14 +766,18 @@ export default function LedgerPage() {
             <FormField
               name="amount"
               label={t('pages.ledger.amount')}
-              rules={{ validate: rhfZodValidate(LedgerEntryFormSchema.shape.amount) }}
+              rules={{
+                validate: rhfZodValidate(LedgerEntryFormSchema.shape.amount),
+              }}
             >
               <InputNumber min={1} style={{ width: '100%' }} addonAfter={currency || undefined} />
             </FormField>
             <FormField
               name="month"
               label={t('pages.ledger.month')}
-              rules={{ validate: rhfZodValidate(LedgerEntryFormSchema.shape.month) }}
+              rules={{
+                validate: rhfZodValidate(LedgerEntryFormSchema.shape.month),
+              }}
             >
               <Input placeholder={MONTH_FORMAT} />
             </FormField>
@@ -680,7 +785,10 @@ export default function LedgerPage() {
               <Select
                 allowClear
                 showSearch
-                options={(emailsQuery.data ?? []).map((email) => ({ value: email, label: email }))}
+                options={(emailsQuery.data ?? []).map((email) => ({
+                  value: email,
+                  label: email,
+                }))}
               />
             </FormField>
             <FormField name="note" label={t('pages.ledger.note')}>

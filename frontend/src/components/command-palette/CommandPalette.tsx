@@ -456,6 +456,13 @@ export default function CommandPalette() {
         icon: <ApartmentOutlined aria-hidden />,
       },
       {
+        path: '/settings#migrate',
+        title: `${t('menu.settings')} · ${t('pages.settings.migrateFrom')}`,
+        subtitle: t('pages.settings.migrateFrom'),
+        keywords: ['migrate', 'import', 'remnawave', '3x-ui', 'move', 'transfer'],
+        icon: <SwapOutlined aria-hidden />,
+      },
+      {
         path: '/xray#basic',
         title: `${t('menu.xray')} · ${t('pages.xray.basicTemplate')}`,
         subtitle: t('pages.xray.basicTemplate'),

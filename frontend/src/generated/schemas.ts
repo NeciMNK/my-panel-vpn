@@ -4038,6 +4038,29 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "LedgerNode": {
+    "description": "LedgerNode is a node a server cost can be bound to, with the address it is reached at.",
+    "properties": {
+      "address": {
+        "example": "203.0.113.7",
+        "type": "string"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "name": {
+        "example": "panel-node1",
+        "type": "string"
+      }
+    },
+    "required": [
+      "address",
+      "id",
+      "name"
+    ],
+    "type": "object"
+  },
   "LedgerNonPaying": {
     "description": "LedgerNonPaying is a client kept out of the expected income, with the reason.",
     "properties": {
@@ -4140,6 +4163,12 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": "2026-11",
         "type": "string"
       },
+      "nodes": {
+        "items": {
+          "$ref": "#/components/schemas/LedgerNode"
+        },
+        "type": "array"
+      },
       "nonPaying": {
         "items": {
           "$ref": "#/components/schemas/LedgerNonPaying"
@@ -4187,6 +4216,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "freeGroups",
       "income",
       "month",
+      "nodes",
       "nonPaying",
       "otherExpenses",
       "payingClients",
@@ -4201,6 +4231,11 @@ export const SCHEMAS: Record<string, unknown> = {
   "LedgerServer": {
     "description": "LedgerServer is a recurring monthly server cost, charged to every month from\nStartMonth through EndMonth (YYYY-MM; empty EndMonth means still running).",
     "properties": {
+      "address": {
+        "description": "Address is the typed IP of a server that is not a node (e.g. the master itself).",
+        "example": "198.51.100.4",
+        "type": "string"
+      },
       "billingDay": {
         "description": "BillingDay is the day of the month the bill is due; short months move it to their last day.",
         "example": 15,
@@ -4221,6 +4256,11 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": "Hetzner DE",
         "type": "string"
       },
+      "nodeId": {
+        "description": "NodeId binds the cost to a node, whose address is shown live; 0 = not a node.",
+        "example": 0,
+        "type": "integer"
+      },
       "paidThrough": {
         "description": "PaidThrough is the last YYYY-MM whose bill the admin paid ahead with Extend.",
         "example": "2027-02",
@@ -4232,11 +4272,13 @@ export const SCHEMAS: Record<string, unknown> = {
       }
     },
     "required": [
+      "address",
       "billingDay",
       "endMonth",
       "id",
       "monthlyCost",
       "name",
+      "nodeId",
       "paidThrough",
       "startMonth"
     ],
@@ -5745,12 +5787,181 @@ export const SCHEMAS: Record<string, unknown> = {
           "$ref": "#/components/schemas/ServerCapacity"
         },
         "type": "array"
+      },
+      "testSettings": {
+        "$ref": "#/components/schemas/SpeedTestSettings"
+      },
+      "testStats": {
+        "items": {
+          "$ref": "#/components/schemas/SpeedTestStats"
+        },
+        "type": "array"
+      },
+      "testing": {
+        "example": [
+          0
+        ],
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
       }
     },
     "required": [
       "clients",
       "load",
-      "servers"
+      "servers",
+      "testSettings",
+      "testStats",
+      "testing"
+    ],
+    "type": "object"
+  },
+  "SpeedTestResult": {
+    "description": "SpeedTestResult is one measurement of a server's own internet link; a\nfailed run keeps its Error and no speeds.",
+    "properties": {
+      "capacityMbps": {
+        "example": 946,
+        "type": "integer"
+      },
+      "createdAt": {
+        "example": 1762874430000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "downloadMbps": {
+        "example": 930.5,
+        "type": "number"
+      },
+      "error": {
+        "type": "string"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "nodeId": {
+        "example": 0,
+        "type": "integer"
+      },
+      "pingMs": {
+        "example": 4.2,
+        "type": "number"
+      },
+      "provider": {
+        "example": "speedtest",
+        "type": "string"
+      },
+      "server": {
+        "example": "Rostelecom, Moscow",
+        "type": "string"
+      },
+      "trigger": {
+        "example": "manual",
+        "type": "string"
+      },
+      "uploadMbps": {
+        "example": 910.1,
+        "type": "number"
+      },
+      "usedMbps": {
+        "example": 35.2,
+        "type": "number"
+      }
+    },
+    "required": [
+      "capacityMbps",
+      "createdAt",
+      "downloadMbps",
+      "error",
+      "id",
+      "nodeId",
+      "pingMs",
+      "provider",
+      "server",
+      "trigger",
+      "uploadMbps",
+      "usedMbps"
+    ],
+    "type": "object"
+  },
+  "SpeedTestSettings": {
+    "description": "SpeedTestSettings: AutoCapacity makes every successful test set the server's\nlink speed; EveryHours \u003e 0 and Times (HH:MM in Timezone) also schedule tests.",
+    "properties": {
+      "autoCapacity": {
+        "example": true,
+        "type": "boolean"
+      },
+      "everyHours": {
+        "example": 6,
+        "type": "integer"
+      },
+      "times": {
+        "example": [
+          "03:00",
+          "13:30"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "timezone": {
+        "example": "Europe/Moscow",
+        "type": "string"
+      }
+    },
+    "required": [
+      "autoCapacity",
+      "everyHours",
+      "times",
+      "timezone"
+    ],
+    "type": "object"
+  },
+  "SpeedTestStats": {
+    "description": "SpeedTestStats sums up one server's successful tests over the last 30 days.",
+    "properties": {
+      "avgDownloadMbps": {
+        "example": 910.4,
+        "type": "number"
+      },
+      "avgUploadMbps": {
+        "example": 880.2,
+        "type": "number"
+      },
+      "count": {
+        "example": 12,
+        "type": "integer"
+      },
+      "last": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SpeedTestResult"
+          }
+        ],
+        "nullable": true
+      },
+      "maxDownloadMbps": {
+        "example": 948.1,
+        "type": "number"
+      },
+      "minDownloadMbps": {
+        "example": 640,
+        "type": "number"
+      },
+      "nodeId": {
+        "example": 0,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "avgDownloadMbps",
+      "avgUploadMbps",
+      "count",
+      "maxDownloadMbps",
+      "minDownloadMbps",
+      "nodeId"
     ],
     "type": "object"
   },

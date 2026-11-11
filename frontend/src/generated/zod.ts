@@ -975,6 +975,13 @@ export const LedgerEntrySchema = z.object({
 });
 export type LedgerEntry = z.infer<typeof LedgerEntrySchema>;
 
+export const LedgerNodeSchema = z.object({
+  address: z.string(),
+  id: z.number().int(),
+  name: z.string(),
+});
+export type LedgerNode = z.infer<typeof LedgerNodeSchema>;
+
 export const LedgerNonPayingSchema = z.object({
   email: z.string(),
   group: z.string(),
@@ -1001,6 +1008,7 @@ export const LedgerReportSchema = z.object({
   freeGroups: z.array(z.string()),
   income: z.number().int(),
   month: z.string(),
+  nodes: z.array(z.lazy(() => LedgerNodeSchema)),
   nonPaying: z.array(z.lazy(() => LedgerNonPayingSchema)),
   otherExpenses: z.number().int(),
   payingClients: z.number().int(),
@@ -1013,11 +1021,13 @@ export const LedgerReportSchema = z.object({
 export type LedgerReport = z.infer<typeof LedgerReportSchema>;
 
 export const LedgerServerSchema = z.object({
+  address: z.string(),
   billingDay: z.number().int(),
   endMonth: z.string(),
   id: z.number().int(),
   monthlyCost: z.number().int(),
   name: z.string(),
+  nodeId: z.number().int(),
   paidThrough: z.string(),
   startMonth: z.string(),
 });
@@ -1389,8 +1399,46 @@ export const SpeedOverviewSchema = z.object({
   clients: z.array(z.lazy(() => ClientSpeedSchema)),
   load: z.array(z.lazy(() => ServerFreeSpeedSchema)),
   servers: z.array(z.lazy(() => ServerCapacitySchema)),
+  testSettings: z.lazy(() => SpeedTestSettingsSchema),
+  testStats: z.array(z.lazy(() => SpeedTestStatsSchema)),
+  testing: z.array(z.number().int()),
 });
 export type SpeedOverview = z.infer<typeof SpeedOverviewSchema>;
+
+export const SpeedTestResultSchema = z.object({
+  capacityMbps: z.number().int(),
+  createdAt: z.number().int(),
+  downloadMbps: z.number(),
+  error: z.string(),
+  id: z.number().int(),
+  nodeId: z.number().int(),
+  pingMs: z.number(),
+  provider: z.string(),
+  server: z.string(),
+  trigger: z.string(),
+  uploadMbps: z.number(),
+  usedMbps: z.number(),
+});
+export type SpeedTestResult = z.infer<typeof SpeedTestResultSchema>;
+
+export const SpeedTestSettingsSchema = z.object({
+  autoCapacity: z.boolean(),
+  everyHours: z.number().int(),
+  times: z.array(z.string()),
+  timezone: z.string(),
+});
+export type SpeedTestSettings = z.infer<typeof SpeedTestSettingsSchema>;
+
+export const SpeedTestStatsSchema = z.object({
+  avgDownloadMbps: z.number(),
+  avgUploadMbps: z.number(),
+  count: z.number().int(),
+  last: z.lazy(() => SpeedTestResultSchema).nullable().optional(),
+  maxDownloadMbps: z.number(),
+  minDownloadMbps: z.number(),
+  nodeId: z.number().int(),
+});
+export type SpeedTestStats = z.infer<typeof SpeedTestStatsSchema>;
 
 export const SubBalancerSchema = z.object({
   createdAt: z.number().int(),
