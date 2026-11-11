@@ -147,6 +147,7 @@ var nodeXrayScopeAllow = map[string]map[string]struct{}{
 	"/xray/homeTunnel":                {http.MethodPost: {}},
 	"/xray/homeTunnel/:id":            {http.MethodGet: {}},
 	"/xray/speedPlan":                 {http.MethodPost: {}},
+	"/xray/speedTest":                 {http.MethodGet: {}, http.MethodPost: {}},
 	"/xray/geodata/files":             {http.MethodGet: {}},
 	"/xray/geodata/categories":        {http.MethodGet: {}},
 	"/xray/geodata/entries":           {http.MethodGet: {}},

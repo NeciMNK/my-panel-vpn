@@ -1,0 +1,20 @@
+.ledger-page .address-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ledger-page .ip-toggle-icon {
+  cursor: pointer;
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.ledger-page .ip-toggle-icon:hover {
+  opacity: 1;
+}
+
+.ledger-page .address-hidden {
+  filter: blur(5px);
+  transition: filter 0.2s ease;
+}

@@ -1197,6 +1197,10 @@ type LedgerServer struct {
 	RemindedFor string `json:"-" gorm:"column:reminded_for;default:''"`
 	// PaidThrough is the last YYYY-MM whose bill the admin paid ahead with Extend.
 	PaidThrough string `json:"paidThrough" gorm:"column:paid_through;default:''" example:"2027-02"`
+	// NodeId binds the cost to a node, whose address is shown live; 0 = not a node.
+	NodeId int `json:"nodeId" gorm:"column:node_id;default:0;index" example:"0"`
+	// Address is the typed IP of a server that is not a node (e.g. the master itself).
+	Address string `json:"address" gorm:"column:address;default:''" example:"198.51.100.4"`
 }
 
 func (LedgerServer) TableName() string { return "ledger_servers" }

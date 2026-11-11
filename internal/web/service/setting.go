@@ -67,6 +67,11 @@ var defaultValueMap = map[string]string{
 	// token never reaches the settings UI/export.
 	"tlsCloudflareToken": "",
 	"tlsAcmeAccountKey":  "",
+	// Edited from the speed card, not the settings page, so kept out of entity.AllSetting.
+	"speedTestAutoCapacity": "true",
+	"speedTestEveryHours":   "0",
+	"speedTestTimes":        "",
+	"speedTestTimezone":     "Europe/Moscow",
 	// Node mTLS material (opt-in). All default empty: the CA + master client
 	// cert are minted lazily on first use, and the node-side trust CA is pasted
 	// in by the operator. Kept out of entity.AllSetting so private keys never
@@ -687,6 +692,38 @@ func (s *SettingService) GetTgPaymentCurrency() (string, error) {
 
 func (s *SettingService) GetTgPaymentDiscounts() (string, error) {
 	return s.getString("tgPaymentDiscounts")
+}
+
+func (s *SettingService) GetSpeedTestAutoCapacity() (bool, error) {
+	return s.getBool("speedTestAutoCapacity")
+}
+
+func (s *SettingService) SetSpeedTestAutoCapacity(v bool) error {
+	return s.setBool("speedTestAutoCapacity", v)
+}
+
+func (s *SettingService) GetSpeedTestEveryHours() (int, error) {
+	return s.getInt("speedTestEveryHours")
+}
+
+func (s *SettingService) SetSpeedTestEveryHours(v int) error {
+	return s.setInt("speedTestEveryHours", v)
+}
+
+func (s *SettingService) GetSpeedTestTimes() (string, error) {
+	return s.getString("speedTestTimes")
+}
+
+func (s *SettingService) SetSpeedTestTimes(v string) error {
+	return s.setString("speedTestTimes", v)
+}
+
+func (s *SettingService) GetSpeedTestTimezone() (string, error) {
+	return s.getString("speedTestTimezone")
+}
+
+func (s *SettingService) SetSpeedTestTimezone(v string) error {
+	return s.setString("speedTestTimezone", v)
 }
 
 func (s *SettingService) GetTgBotVpnFallback() (bool, error) {

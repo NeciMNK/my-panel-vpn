@@ -1900,6 +1900,37 @@ export const sections: readonly Section[] = [
         summary: "Set one server's link speed in Mbit/s (node id 0 = this panel); 0 removes it.",
         body: '{\n  "nodeId": 0,\n  "capacityMbps": 1000\n}',
       },
+      {
+        method: 'POST',
+        path: '/panel/api/speed/test',
+        summary:
+          "Measure one server's own internet link in the background (node id 0 = this panel): Speedtest by Ookla, or Yandex Internetometer when Speedtest is unreachable. The result lands in the history and, with autoCapacity on, sets the server's link speed to the slower direction plus the load during the test.",
+        body: '{\n  "nodeId": 0\n}',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/speed/tests',
+        summary: "One server's speed-test history, newest first; results are kept for 180 days.",
+        params: [
+          { name: 'nodeId', in: 'query', type: 'number', desc: 'Server: node ID, 0 = this panel.' },
+          {
+            name: 'limit',
+            in: 'query',
+            type: 'number',
+            desc: 'At most this many results (default 100, max 500).',
+            optional: true,
+          },
+        ],
+        responseSchema: 'SpeedTestResult',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/speed/testSettings',
+        summary:
+          'Whether speed tests set link speeds automatically, and when every server is tested: every N hours (0 = off, max 168) and/or at clock times HH:MM in an IANA time zone. A clock time missed by more than 15 minutes is skipped.',
+        body: '{\n  "autoCapacity": true,\n  "everyHours": 0,\n  "times": ["03:00", "08:00", "13:30"],\n  "timezone": "Europe/Moscow"\n}',
+      },
     ],
   },
 
@@ -2129,8 +2160,8 @@ export const sections: readonly Section[] = [
         method: 'POST',
         path: '/panel/api/ledger/servers/save',
         summary:
-          'Create (id 0) or update a recurring server cost. It is charged to every month from startMonth through endMonth; an empty endMonth means the server is still paid for.',
-        body: '{\n  "id": 0,\n  "name": "Hetzner DE",\n  "monthlyCost": 500,\n  "startMonth": "2026-11",\n  "endMonth": ""\n}',
+          "Create (id 0) or update a recurring server cost. It is charged to every month from startMonth through endMonth; an empty endMonth means the server is still paid for. nodeId binds it to a node (the report shows that node's address); for a server that is not a node, set nodeId 0 and type its IP in address.",
+        body: '{\n  "id": 0,\n  "name": "Hetzner DE",\n  "monthlyCost": 500,\n  "startMonth": "2026-11",\n  "endMonth": "",\n  "nodeId": 1,\n  "address": ""\n}',
         responseSchema: 'LedgerServer',
       },
       {
@@ -2946,6 +2977,18 @@ export const sections: readonly Section[] = [
         summary:
           'On any server: enforce per-IP speed caps with tc on the default interface. Called by the master; an unchanged plan is a no-op.',
         body: '{\n  "limits": [{ "ip": "203.0.113.7", "mbps": 100 }]\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/xray/speedTest',
+        summary:
+          "On any server: start measuring this server's own internet link, or join the run in progress. Called by the master, which then polls GET until the run ends.",
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/xray/speedTest',
+        summary:
+          'On any server: the current or last speed-test run. run counts runs since the panel started, so a restart mid-run shows as a different run.',
       },
       {
         method: 'POST',

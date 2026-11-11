@@ -70,6 +70,9 @@ func (t *Tgbot) screenClientHome(chatID, userID int64, delivery ...screenDeliver
 		body.WriteString(t.paymentBlock(info, traffics))
 		rows = append(rows, t.paymentRows(info, traffics)...)
 	}
+	if len(t.trustedEmails(userID)) > 0 {
+		rows = append(rows, tu.InlineKeyboardRow(t.btn("tgbot.buttons.aiExit", cbAIExit)))
+	}
 	if t.levelOf(userID) == levelAdmin {
 		rows = append(rows, t.backRow())
 		t.renderScreen(chatID, t.newScreen("main", body.String(), rows...), delivery...)

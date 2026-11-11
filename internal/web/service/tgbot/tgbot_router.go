@@ -1063,6 +1063,10 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 		t.reportClientPayment(callbackQuery, months)
 		return
 	}
+	if isAIExitCallback(callbackQuery.Data) {
+		t.answerAIExit(callbackQuery)
+		return
+	}
 
 	switch callbackQuery.Data {
 	case "home":
@@ -1360,6 +1364,9 @@ func isClientSelfCallback(data string) bool {
 		return true
 	}
 	if _, isReport := strings.CutPrefix(data, cbClientPaid+" "); isReport {
+		return true
+	}
+	if isAIExitCallback(data) {
 		return true
 	}
 	_, _, ok := splitClientLinkCallback(data)

@@ -914,6 +914,12 @@ export interface LedgerEntry {
   note: string;
 }
 
+export interface LedgerNode {
+  address: string;
+  id: number;
+  name: string;
+}
+
 export interface LedgerNonPaying {
   email: string;
   group: string;
@@ -937,6 +943,7 @@ export interface LedgerReport {
   freeGroups: string[];
   income: number;
   month: string;
+  nodes: LedgerNode[];
   nonPaying: LedgerNonPaying[];
   otherExpenses: number;
   payingClients: number;
@@ -948,11 +955,13 @@ export interface LedgerReport {
 }
 
 export interface LedgerServer {
+  address: string;
   billingDay: number;
   endMonth: string;
   id: number;
   monthlyCost: number;
   name: string;
+  nodeId: number;
   paidThrough: string;
   startMonth: string;
 }
@@ -1297,6 +1306,41 @@ export interface SpeedOverview {
   clients: ClientSpeed[];
   load: ServerFreeSpeed[];
   servers: ServerCapacity[];
+  testSettings: SpeedTestSettings;
+  testStats: SpeedTestStats[];
+  testing: number[];
+}
+
+export interface SpeedTestResult {
+  capacityMbps: number;
+  createdAt: number;
+  downloadMbps: number;
+  error: string;
+  id: number;
+  nodeId: number;
+  pingMs: number;
+  provider: string;
+  server: string;
+  trigger: string;
+  uploadMbps: number;
+  usedMbps: number;
+}
+
+export interface SpeedTestSettings {
+  autoCapacity: boolean;
+  everyHours: number;
+  times: string[];
+  timezone: string;
+}
+
+export interface SpeedTestStats {
+  avgDownloadMbps: number;
+  avgUploadMbps: number;
+  count: number;
+  last?: SpeedTestResult | null;
+  maxDownloadMbps: number;
+  minDownloadMbps: number;
+  nodeId: number;
 }
 
 export interface SubBalancer {

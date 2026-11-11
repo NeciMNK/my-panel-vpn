@@ -22,6 +22,23 @@ _openapi:
       title: Set one server's link speed in Mbit/s (node id 0 = this panel); 0 removes
         it.
       url: '#set-one-servers-link-speed-in-mbits-node-id-0--this-panel-0-removes-it'
+    - depth: 2
+      title: "Measure one server's own internet link in the background (node id 0 =
+        this panel): Speedtest by Ookla, or Yandex Internetometer when Speedtest
+        is unreachable. The result lands in the history and, with autoCapacity
+        on, sets the server's link speed to the slower direction plus the load
+        during the test."
+      url: '#measure-one-servers-own-internet-link-in-the-background-node-id-0--this-panel-speedtest-by-ookla-or-yandex-internetometer-when-speedtest-is-unreachable-the-result-lands-in-the-history-and-with-autocapacity-on-sets-the-servers-link-speed-to-the-slower-direction-plus-the-load-during-the-test'
+    - depth: 2
+      title: One server's speed-test history, newest first; results are kept for 180
+        days.
+      url: '#one-servers-speed-test-history-newest-first-results-are-kept-for-180-days'
+    - depth: 2
+      title: 'Whether speed tests set link speeds automatically, and when every server
+        is tested: every N hours (0 = off, max 168) and/or at clock times HH:MM
+        in an IANA time zone. A clock time missed by more than 15 minutes is
+        skipped.'
+      url: '#whether-speed-tests-set-link-speeds-automatically-and-when-every-server-is-tested-every-n-hours-0--off-max-168-andor-at-clock-times-hhmm-in-an-iana-time-zone-a-clock-time-missed-by-more-than-15-minutes-is-skipped'
   structuredData:
     headings:
       - content: User limits, server link speeds, and the live load of every server with
@@ -33,6 +50,20 @@ _openapi:
       - content: Set one server's link speed in Mbit/s (node id 0 = this panel); 0
           removes it.
         id: set-one-servers-link-speed-in-mbits-node-id-0--this-panel-0-removes-it
+      - content: "Measure one server's own internet link in the background (node id 0 =
+          this panel): Speedtest by Ookla, or Yandex Internetometer when
+          Speedtest is unreachable. The result lands in the history and, with
+          autoCapacity on, sets the server's link speed to the slower direction
+          plus the load during the test."
+        id: measure-one-servers-own-internet-link-in-the-background-node-id-0--this-panel-speedtest-by-ookla-or-yandex-internetometer-when-speedtest-is-unreachable-the-result-lands-in-the-history-and-with-autocapacity-on-sets-the-servers-link-speed-to-the-slower-direction-plus-the-load-during-the-test
+      - content: One server's speed-test history, newest first; results are kept for 180
+          days.
+        id: one-servers-speed-test-history-newest-first-results-are-kept-for-180-days
+      - content: 'Whether speed tests set link speeds automatically, and when every
+          server is tested: every N hours (0 = off, max 168) and/or at clock
+          times HH:MM in an IANA time zone. A clock time missed by more than 15
+          minutes is skipped.'
+        id: whether-speed-tests-set-link-speeds-automatically-and-when-every-server-is-tested-every-n-hours-0--off-max-168-andor-at-clock-times-hhmm-in-an-iana-time-zone-a-clock-time-missed-by-more-than-15-minutes-is-skipped
     contents: []
 ---
 
@@ -43,7 +74,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/speed/overview","method":"get"},{"path":"/panel/api/speed/client","method":"post"},{"path":"/panel/api/speed/capacity","method":"post"}]} showTitle />
+      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/speed/overview","method":"get"},{"path":"/panel/api/speed/client","method":"post"},{"path":"/panel/api/speed/capacity","method":"post"},{"path":"/panel/api/speed/test","method":"post"},{"path":"/panel/api/speed/tests","method":"get"},{"path":"/panel/api/speed/testSettings","method":"post"}]} showTitle />
     </>
   );
 }

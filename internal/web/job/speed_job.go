@@ -107,3 +107,19 @@ func (j *SpeedJob) alert() {
 		})
 	}
 }
+
+// SpeedTestJob measures the servers whose scheduled speed test is due.
+type SpeedTestJob struct {
+	speed   service.SpeedService
+	running sync.Mutex
+}
+
+func NewSpeedTestJob() *SpeedTestJob { return &SpeedTestJob{} }
+
+func (j *SpeedTestJob) Run() {
+	if !j.running.TryLock() {
+		return
+	}
+	defer j.running.Unlock()
+	j.speed.RunScheduled(time.Now())
+}
