@@ -1617,7 +1617,7 @@
       "subTitle": "Subscription Title",
       "subTitleDesc": "Title shown in VPN client. Supports client identity tokens: {{EMAIL}}, {{ID}}, {{SHORT_ID}}, {{SUB_ID}}, {{TELEGRAM_ID}}.",
       "subSupportUrl": "Support URL",
-      "subSupportUrlDesc": "Technical support link shown in the VPN client. Supports client identity tokens: {{EMAIL}}, {{ID}}, {{SHORT_ID}}, {{SUB_ID}}, {{TELEGRAM_ID}}.",
+      "subSupportUrlDesc": "Support link shown in every VPN client and on the subscription page. Leave empty to link to the panel's Telegram bot. Supports client identity tokens: {{EMAIL}}, {{ID}}, {{SHORT_ID}}, {{SUB_ID}}, {{TELEGRAM_ID}}.",
       "subProfileMode": "Profile page",
       "subProfileModeDesc": "Choose which website link is shown in the VPN client.",
       "subProfileModeNone": "No link",

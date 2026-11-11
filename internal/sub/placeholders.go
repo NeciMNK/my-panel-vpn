@@ -100,10 +100,26 @@ func (a *SUBController) metadataForSubRequest(getSubReq func() *SubService, subI
 	data := subPlaceholderData{SubID: subID, Context: context, HasCtx: hasContext}
 	return renderedSubMetadata{
 		Title:      renderSubPlaceholders(a.subTitle, data),
-		SupportURL: renderSubPlaceholders(a.subSupportUrl, subPlaceholderData{SubID: subID, Context: context, HasCtx: hasContext, Escape: true}),
+		SupportURL: a.supportURL(renderSubPlaceholders(a.subSupportUrl, subPlaceholderData{SubID: subID, Context: context, HasCtx: hasContext, Escape: true})),
 		ProfileURL: profileURL,
 		Announce:   renderSubPlaceholders(a.subAnnounce, data),
 	}
+}
+
+// supportURL falls back to the panel's Telegram bot when no support link is
+// set, so every client's support button and the sub page reach the bot.
+func (a *SUBController) supportURL(configured string) string {
+	if configured != "" {
+		return configured
+	}
+	if enabled, err := a.settingService.GetTgbotEnabled(); err != nil || !enabled {
+		return ""
+	}
+	username, err := a.settingService.GetTgBotUsername()
+	if err != nil || username == "" {
+		return ""
+	}
+	return "https://t.me/" + url.PathEscape(username)
 }
 
 func (s *SubService) subscriptionTemplateContextBySubID(subID string) (remarkContext, bool, error) {

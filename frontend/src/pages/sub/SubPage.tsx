@@ -153,6 +153,7 @@ export default function SubPage() {
               sId={sId}
               email={clientEmail}
               lang={lang}
+              supportUrl={subSupportUrl}
               onLangChange={onLangChange}
             />
             {announce && <Alert type="info" showIcon title={announce} className="sub-announce" />}
