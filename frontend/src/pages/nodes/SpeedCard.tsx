@@ -199,6 +199,7 @@ export default function SpeedCard({ nodes }: { nodes: NodeRecord[] }) {
         <InputNumber
           aria-label={t('pages.nodes.speed.min')}
           prefix={t('pages.nodes.speed.min')}
+          style={{ width: 200 }}
           min={0}
           value={draft.minMbps}
           onChange={(v) => setDraft({ ...draft, minMbps: v ?? 0 })}
@@ -206,6 +207,7 @@ export default function SpeedCard({ nodes }: { nodes: NodeRecord[] }) {
         <InputNumber
           aria-label={t('pages.nodes.speed.max')}
           prefix={t('pages.nodes.speed.max')}
+          style={{ width: 200 }}
           min={0}
           value={draft.maxMbps}
           onChange={(v) => setDraft({ ...draft, maxMbps: v ?? 0 })}
