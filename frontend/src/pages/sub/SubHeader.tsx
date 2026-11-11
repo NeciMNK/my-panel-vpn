@@ -2,8 +2,10 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Menu, Popover, Space } from 'antd';
 import {
+  CustomerServiceOutlined,
   MoonFilled,
   MoonOutlined,
+  SendOutlined,
   SunOutlined,
   TranslationOutlined,
   WifiOutlined,
@@ -17,10 +19,26 @@ interface SubHeaderProps {
   sId: string;
   email: string;
   lang: string;
+  supportUrl: string;
   onLangChange: (lang: string) => void;
 }
 
-export default function SubHeader({ title, sId, email, lang, onLangChange }: SubHeaderProps) {
+function isTelegramLink(url: string): boolean {
+  try {
+    return ['t.me', 'telegram.me'].includes(new URL(url).hostname);
+  } catch {
+    return false;
+  }
+}
+
+export default function SubHeader({
+  title,
+  sId,
+  email,
+  lang,
+  supportUrl,
+  onLangChange,
+}: SubHeaderProps) {
   const { t } = useTranslation();
   const { isDark, isUltra, toggleTheme, toggleUltra } = useTheme();
 
@@ -78,6 +96,25 @@ export default function SubHeader({ title, sId, email, lang, onLangChange }: Sub
         </div>
       </div>
       <div className="sub-toolbar">
+        {supportUrl && (
+          <Button
+            shape="circle"
+            size="large"
+            className="toolbar-btn"
+            href={supportUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={t('subscription.support')}
+            title={t('subscription.support')}
+            icon={
+              isTelegramLink(supportUrl) ? (
+                <SendOutlined aria-hidden />
+              ) : (
+                <CustomerServiceOutlined aria-hidden />
+              )
+            }
+          />
+        )}
         <Button
           id="sub-theme-cycle"
           shape="circle"

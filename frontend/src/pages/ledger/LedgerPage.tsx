@@ -6,6 +6,7 @@ import {
   Col,
   ConfigProvider,
   DatePicker,
+  Dropdown,
   Form,
   Input,
   InputNumber,
@@ -24,6 +25,7 @@ import {
 } from 'antd';
 import type { TableColumnsType } from 'antd';
 import {
+  CalendarOutlined,
   DeleteOutlined,
   EditOutlined,
   LeftOutlined,
@@ -47,11 +49,13 @@ import { parseMsg } from '@/utils/zodValidate';
 import { GroupSummaryListSchema, ClientRecordSchema } from '@/schemas/client';
 import {
   LedgerEntryFormSchema,
+  LedgerPaymentSchema,
   LedgerReportSchema,
   LedgerServerFormSchema,
   type LedgerEntry,
   type LedgerEntryFormValues,
   type LedgerNonPaying,
+  type LedgerPayment,
   type LedgerReport,
   type LedgerServer,
   type LedgerServerFormValues,
@@ -60,6 +64,7 @@ import { z } from 'zod';
 
 const JSON_HEADERS = { headers: { 'Content-Type': 'application/json' } } as const;
 const MONTH_FORMAT = 'YYYY-MM';
+const EXTEND_MONTHS = [1, 2, 3, 6, 12] as const;
 const ClientEmailsSchema = z
   .array(ClientRecordSchema.pick({ email: true }))
   .nullable()
@@ -128,10 +133,19 @@ export default function LedgerPage() {
   const [entryOpen, setEntryOpen] = useState(false);
   const entryForm = useForm<LedgerEntryFormValues>();
   const [markEmail, setMarkEmail] = useState<string | undefined>();
+  const paymentForm = useForm<LedgerPayment>();
+  const savedPayment = report?.payment;
+  useEffect(() => {
+    if (savedPayment) paymentForm.reset(savedPayment);
+  }, [savedPayment, paymentForm]);
+
+  function submitPayment(values: LedgerPayment) {
+    post.mutate({ path: 'payment', body: values });
+  }
 
   function openServer(server?: LedgerServer) {
     serverForm.reset(
-      server ?? { id: 0, name: '', monthlyCost: 0, startMonth: month, endMonth: '' },
+      server ?? { id: 0, name: '', monthlyCost: 0, billingDay: 1, startMonth: month, endMonth: '' },
     );
     setServerOpen(true);
   }
@@ -181,6 +195,19 @@ export default function LedgerPage() {
       dataIndex: 'monthlyCost',
       render: (cost: number) => money(cost),
     },
+    { title: t('pages.ledger.billingDay'), dataIndex: 'billingDay' },
+    {
+      title: t('pages.ledger.nextPayment'),
+      key: 'next',
+      render: (_, server) => (
+        <Space size={4} wrap>
+          {report?.upcoming.find((due) => due.serverId === server.id)?.date ?? '—'}
+          {server.paidThrough >= dayjs().format(MONTH_FORMAT) && (
+            <Tag color="green">{t('pages.ledger.paidThrough', { month: server.paidThrough })}</Tag>
+          )}
+        </Space>
+      ),
+    },
     {
       title: t('pages.ledger.period'),
       key: 'period',
@@ -196,6 +223,24 @@ export default function LedgerPage() {
       align: 'right',
       render: (_, server) => (
         <Space>
+          <Dropdown
+            trigger={['click']}
+            menu={{
+              items: EXTEND_MONTHS.map((count) => ({
+                key: count,
+                label: t('pages.ledger.extendMonths', { count }),
+              })),
+              onClick: ({ key }) =>
+                post.mutate({
+                  path: 'servers/extend',
+                  body: { id: server.id, months: Number(key) },
+                }),
+            }}
+          >
+            <Button size="small" icon={<CalendarOutlined aria-hidden />}>
+              {t('pages.ledger.extend')}
+            </Button>
+          </Dropdown>
           <Button
             size="small"
             icon={<EditOutlined aria-hidden />}
@@ -417,6 +462,64 @@ export default function LedgerPage() {
                     </Card>
                   </Col>
                   <Col span={24}>
+                    <Card
+                      size="small"
+                      title={t('pages.ledger.payment')}
+                      extra={
+                        <Button
+                          size="small"
+                          type="primary"
+                          loading={post.isPending}
+                          onClick={paymentForm.handleSubmit(submitPayment)}
+                        >
+                          {t('save')}
+                        </Button>
+                      }
+                    >
+                      <FormProvider {...paymentForm}>
+                        <Form layout="vertical" component="div">
+                          <Row gutter={16}>
+                            <Col xs={14} md={6}>
+                              <FormField
+                                name="price"
+                                label={t('pages.ledger.price')}
+                                tooltip={t('pages.ledger.priceDesc')}
+                                rules={{
+                                  validate: rhfZodValidate(LedgerPaymentSchema.shape.price),
+                                }}
+                              >
+                                <InputNumber min={0} precision={0} style={{ width: '100%' }} />
+                              </FormField>
+                            </Col>
+                            <Col xs={10} md={4}>
+                              <FormField name="currency" label={t('pages.ledger.currency')}>
+                                <Input placeholder="RUB" />
+                              </FormField>
+                            </Col>
+                            <Col xs={24} md={14}>
+                              <FormField
+                                name="discounts"
+                                label={t('pages.ledger.discounts')}
+                                tooltip={t('pages.ledger.discountsDesc')}
+                              >
+                                <Input placeholder="3:10, 6:15, 12:20" />
+                              </FormField>
+                            </Col>
+                            <Col span={24}>
+                              <FormField
+                                name="details"
+                                label={t('pages.ledger.details')}
+                                tooltip={t('pages.ledger.detailsDesc')}
+                              >
+                                <Input.TextArea autoSize={{ minRows: 2, maxRows: 6 }} />
+                              </FormField>
+                            </Col>
+                          </Row>
+                        </Form>
+                      </FormProvider>
+                    </Card>
+                  </Col>
+                  <Col span={24}>
                     <Card size="small" title={t('pages.ledger.nonPaying')}>
                       <Space direction="vertical" style={{ width: '100%' }}>
                         <Select
@@ -481,6 +584,14 @@ export default function LedgerPage() {
               rules={{ validate: rhfZodValidate(LedgerServerFormSchema.shape.monthlyCost) }}
             >
               <InputNumber min={1} style={{ width: '100%' }} addonAfter={currency || undefined} />
+            </FormField>
+            <FormField
+              name="billingDay"
+              label={t('pages.ledger.billingDay')}
+              tooltip={t('pages.ledger.billingDayHint')}
+              rules={{ validate: rhfZodValidate(LedgerServerFormSchema.shape.billingDay) }}
+            >
+              <InputNumber min={1} max={31} precision={0} style={{ width: '100%' }} />
             </FormField>
             <FormField
               name="startMonth"

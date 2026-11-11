@@ -246,6 +246,9 @@ func resetThrottles(t *testing.T) {
 		th.last = map[int64]time.Time{}
 		th.mu.Unlock()
 	}
+	paymentNotices.mu.Lock()
+	paymentNotices.byEmail = map[string]*paymentReport{}
+	paymentNotices.mu.Unlock()
 }
 
 func billingOf(t *testing.T, email string) *model.ClientBilling {
@@ -282,13 +285,13 @@ func TestConfirmPaymentLiftsFreePlanAndNotifiesClient(t *testing.T) {
 	setTestAdmins(t, 9001)
 	seedBilledClient(t, 5656, "freebie@x")
 	freeSettings := fmt.Sprintf(`{"clients":[{"id":%q,"email":"freebie@x","tgId":5656,"subId":"sub-freebie@x","enable":true,"totalGB":%d}]}`,
-		uuid.NewSHA1(uuid.NameSpaceOID, []byte("freebie@x")).String(), int64(freePlanGB)<<30)
+		uuid.NewSHA1(uuid.NameSpaceOID, []byte("freebie@x")).String(), int64(defaultFreePlanGB)<<30)
 	if err := database.GetDB().Model(&model.Inbound{}).Where("tag = ?", "tg-freebie@x").
 		Update("settings", freeSettings).Error; err != nil {
 		t.Fatal(err)
 	}
 	if err := database.GetDB().Model(&xray.ClientTraffic{}).Where("email = ?", "freebie@x").
-		Update("total", int64(freePlanGB)<<30).Error; err != nil {
+		Update("total", int64(defaultFreePlanGB)<<30).Error; err != nil {
 		t.Fatal(err)
 	}
 	billing := billingOf(t, "freebie@x")
@@ -453,12 +456,13 @@ func TestStrangerRequestsFreePlan(t *testing.T) {
 }
 
 // Approving opens the wizard prefilled for the free plan; submitting it must
-// create a 10 GB, monthly-reset client marked free, and greet the user.
+// create a client with the admin-set quota (not the 10 GB default), reset monthly.
 func TestApprovedFreePlanCreatesLimitedClient(t *testing.T) {
 	tb, calls := newScreenTgbot(t, false)
 	initReportDB(t)
 	localizeWithRealBundle(t)
 	setTestAdmins(t, 9001)
+	seedSettings(t, map[string]string{"tgFreePlanGB": "25"})
 	inbound := model.Inbound{
 		UserId: 1, Tag: "free-in", Remark: "free", Port: 8443,
 		Protocol: model.VLESS, Enable: true, Settings: `{"clients":[]}`,
@@ -483,8 +487,8 @@ func TestApprovedFreePlanCreatesLimitedClient(t *testing.T) {
 	tap(tb, 9001, "add_client_submit_enable", true)
 
 	traffic := trafficOf(t, "new.user")
-	if traffic.Total != int64(freePlanGB)<<30 {
-		t.Errorf("total = %d, want %d GB", traffic.Total, freePlanGB)
+	if traffic.Total != 25<<30 {
+		t.Errorf("total = %d, want 25 GB", traffic.Total)
 	}
 	rec, err := (&service.ClientService{}).GetRecordByEmail(nil, "new.user")
 	if err != nil {
@@ -496,8 +500,13 @@ func TestApprovedFreePlanCreatesLimitedClient(t *testing.T) {
 	if !billingOf(t, "new.user").FreePlan {
 		t.Error("the new client is not marked as free, so a payment could not lift its quota")
 	}
-	if len(adminMessages(calls(), 6161)) == 0 {
-		t.Errorf("the approved user was not told (calls: %v)", methods(calls()))
+	greeted := false
+	for _, msg := range adminMessages(calls(), 6161) {
+		text, _ := msg.Payload["text"].(string)
+		greeted = greeted || strings.Contains(text, "25")
+	}
+	if !greeted {
+		t.Errorf("the approved user was not told about the 25 GB quota (calls: %v)", methods(calls()))
 	}
 }
 
@@ -527,4 +536,86 @@ func TestConfirmPaymentAppliesOnceForOneReport(t *testing.T) {
 	if n := len(adminMessages(calls(), 5757)); n != 1 {
 		t.Errorf("client confirmations = %d, want 1", n)
 	}
+}
+
+// Every admin's copy kept its live "Confirm" button after one admin confirmed,
+// so the report read as unhandled; all copies must say who confirmed and drop it.
+func TestConfirmPaymentClosesEveryAdminsNotice(t *testing.T) {
+	tb, calls := newScreenTgbot(t, false)
+	initReportDB(t)
+	localizeWithRealBundle(t)
+	setTestAdmins(t, 9001, 9002)
+	resetThrottles(t)
+	seedBilledClient(t, 5858, "closed@x")
+	seedPaymentSettings(t, "300", "card")
+	setClientExpiry(t, "closed@x", time.Now().Add(5*24*time.Hour))
+
+	tap(tb, 5858, "client_paid 1", false)
+	notices := map[int64]bool{}
+	for _, admin := range []int64{9001, 9002} {
+		if len(adminMessages(calls(), admin)) != 1 {
+			t.Fatalf("admin %d got %d reports, want 1", admin, len(adminMessages(calls(), admin)))
+		}
+		notices[admin] = true
+	}
+	tb.answerCallback(&telego.CallbackQuery{
+		ID: "q", From: telego.User{ID: 9001, Username: "boss"}, Data: "pay_ok closed@x 1",
+		Message: &telego.Message{Chat: telego.Chat{ID: 9001}},
+	}, true)
+
+	until := time.UnixMilli(trafficOf(t, "closed@x").ExpiryTime).Format(paymentDate)
+	edited := map[int64]bool{}
+	for _, c := range calls() {
+		if c.Method != "editMessageText" {
+			continue
+		}
+		chat := int64(c.Payload["chat_id"].(float64))
+		if !notices[chat] || !strings.Contains(c.text(), "@boss") || !strings.Contains(c.text(), until) {
+			continue
+		}
+		if strings.Contains(fmt.Sprint(c.Payload["reply_markup"]), "pay_ok") {
+			t.Errorf("admin %d's notice still offers a confirm button: %v", chat, c.Payload["reply_markup"])
+		}
+		edited[chat] = true
+	}
+	if !edited[9001] || !edited[9002] {
+		t.Errorf("notices rewritten with the confirmer and new expiry = %v, want both admins", edited)
+	}
+
+	tap(tb, 9002, "pay_ok closed@x 1", true)
+	last := ""
+	for _, c := range calls() {
+		if c.Method == "answerCallbackQuery" {
+			last, _ = c.Payload["text"].(string)
+		}
+	}
+	if want := tb.I18nBot("tgbot.answers.paymentAlreadyConfirmed", "Email==closed@x"); last != want {
+		t.Errorf("repeat confirm answered %q, want %q", last, want)
+	}
+}
+
+// A notice sent before a panel restart is not tracked, so its button stayed live
+// after the payment was settled; a tap must at least strip that button.
+func TestRepeatConfirmOnAStaleNoticeStripsItsButton(t *testing.T) {
+	tb, calls := newScreenTgbot(t, false)
+	initReportDB(t)
+	localizeWithRealBundle(t)
+	setTestAdmins(t, 9001)
+	resetThrottles(t)
+	seedBilledClient(t, 5959, "stale@x")
+	seedPaymentSettings(t, "300", "card")
+
+	tb.answerCallback(&telego.CallbackQuery{
+		ID: "q", From: telego.User{ID: 9001}, Data: "pay_ok stale@x 1",
+		Message: &telego.Message{Chat: telego.Chat{ID: 9001}, MessageID: 77},
+	}, true)
+	for _, c := range calls() {
+		if c.Method == "editMessageReplyMarkup" && c.Payload["message_id"] == float64(77) {
+			if strings.Contains(fmt.Sprint(c.Payload["reply_markup"]), "pay_ok") {
+				t.Errorf("stale notice kept its confirm button: %v", c.Payload["reply_markup"])
+			}
+			return
+		}
+	}
+	t.Error("the stale notice's confirm button was left untouched")
 }

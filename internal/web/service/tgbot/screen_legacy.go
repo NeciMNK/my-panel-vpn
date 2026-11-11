@@ -59,30 +59,6 @@ func (t *Tgbot) resetAllConfirm() *screen {
 	)
 }
 
-// screenInbounds summarises the inbounds; the browsable, searchable list is the
-// inline query, so the screen carries only the summary and the way back.
-func (t *Tgbot) screenInbounds(chatID, userID int64) {
-	_ = userID
-	body := t.getInboundUsages()
-	body += t.I18nBot("tgbot.messages.inlineHint")
-	rows := [][]telego.InlineKeyboardButton{
-		t.launchRow(scopeQuery(inlineScopeInbounds, ""), "tgbot.buttons.searchInbounds"),
-		t.backRow(),
-	}
-	t.renderScreen(chatID, t.newScreen("inbounds", body, rows...))
-}
-
-// browseInboundsScreen is the pick-an-inbound step: the list itself is the
-// inline browser, so the screen carries the hint and the search launcher.
-func (t *Tgbot) browseInboundsScreen(chatID, userID int64) {
-	_ = userID
-	rows := [][]telego.InlineKeyboardButton{
-		t.launchRow(scopeQuery(inlineScopeInbounds, ""), "tgbot.buttons.searchInbounds"),
-		t.backRow(),
-	}
-	t.renderScreen(chatID, t.newScreen("inbounds", t.I18nBot("tgbot.answers.chooseInbound"), rows...))
-}
-
 // screenAddClientStart opens the add-client wizard on a fresh draft: filling the
 // draft is the first step, and inbounds are picked on "➕ Attach inbound".
 func (t *Tgbot) screenAddClientStart(chatID, userID int64) {
@@ -119,12 +95,12 @@ func (t *Tgbot) searchClientScreen(chatID int64, email string, delivery ...scree
 		return
 	}
 	body := t.clientInfoMsg(traffic, true, true, true, true, true, true)
-	t.renderScreen(chatID, t.newScreen("client", body, t.clientRows(email)...), delivery...)
+	t.renderScreen(chatID, t.newScreen("client", body, t.clientRows(chatID, email)...), delivery...)
 }
 
 // clientRows is the client card's keyboard, in one place so every entry point
 // draws an identical card.
-func (t *Tgbot) clientRows(email string) [][]telego.InlineKeyboardButton {
+func (t *Tgbot) clientRows(chatID int64, email string) [][]telego.InlineKeyboardButton {
 	return [][]telego.InlineKeyboardButton{
 		tu.InlineKeyboardRow(t.btn("tgbot.buttons.refresh", t.encodeQuery("client_refresh "+email))),
 		tu.InlineKeyboardRow(
@@ -149,6 +125,6 @@ func (t *Tgbot) clientRows(email string) [][]telego.InlineKeyboardButton {
 		tu.InlineKeyboardRow(t.btn("tgbot.buttons.toggle", t.encodeQuery("toggle_enable "+email))),
 		t.trustedRow(email),
 		t.nonPayingRow(email),
-		t.backRow(),
+		t.backTo(t.clientListOrigin(chatID)),
 	}
 }

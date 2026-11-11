@@ -1168,6 +1168,12 @@ type LedgerServer struct {
 	MonthlyCost int    `json:"monthlyCost" gorm:"column:monthly_cost;not null" example:"500"`
 	StartMonth  string `json:"startMonth" gorm:"column:start_month;not null" example:"2026-11"`
 	EndMonth    string `json:"endMonth" gorm:"column:end_month;default:''" example:""`
+	// BillingDay is the day of the month the bill is due; short months move it to their last day.
+	BillingDay int `json:"billingDay" gorm:"column:billing_day;default:1" example:"15"`
+	// RemindedFor is the YYYY-MM whose bill the admins were already reminded of.
+	RemindedFor string `json:"-" gorm:"column:reminded_for;default:''"`
+	// PaidThrough is the last YYYY-MM whose bill the admin paid ahead with Extend.
+	PaidThrough string `json:"paidThrough" gorm:"column:paid_through;default:''" example:"2027-02"`
 }
 
 func (LedgerServer) TableName() string { return "ledger_servers" }

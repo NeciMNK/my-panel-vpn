@@ -132,7 +132,6 @@
     "routing": "Yönlendirme",
     "outbounds": "Giden Bağlantılar",
     "apiDocs": "API Belgeleri",
-    "donate": "Bağış Yap",
     "hosts": "Host'lar",
     "docs": "Belgeler",
     "openMenu": "Menüyü aç",
@@ -1286,7 +1285,22 @@
         "exitModeServers": "Picked servers",
         "exitModeCountry": "All servers of a country",
         "country": "Exit country",
-        "countryHint": "Traffic leaves through the fastest server of this country. New nodes of the country join automatically."
+        "countryHint": "Traffic leaves through the fastest server of this country. New nodes of the country join automatically.",
+        "split": "Split traffic",
+        "splitHint": "Sites and IPs of the entry server's country (Russia: .ru, .su, .рф, geosite:category-ru, geoip:ru) and the entries below leave the internet from the entry itself; everything else goes through the exit.",
+        "relay": "Pure relay",
+        "relayHint": "The entry only forwards traffic: everything goes through the exit.",
+        "relayInbounds": "Inbounds that only relay",
+        "relayInboundsHint": "With both switches on these entry inbounds relay everything; the other chained inbounds split.",
+        "directDomains": "Also direct: sites",
+        "directDomainsHint": "Added to the country template: example.com, domain:, full:, regexp:, geosite: entries.",
+        "directIps": "Also direct: IPs",
+        "directIpsHint": "Added to the country template: an IP, a CIDR or geoip: entries.",
+        "modes": {
+          "split": "split",
+          "relay": "relay",
+          "both": "split + relay"
+        }
       },
       "country": "Country",
       "countryHint": "Two-letter country code (DE, NL, FI). Nodes of one country together join \"by country\" cascades.",
@@ -1432,7 +1446,7 @@
       "telegramProxy": "SOCKS Proxy",
       "telegramProxyDesc": "Telegram'a bağlanmak için SOCKS5 proxy'sini etkinleştirir. (ayarları kılavuzda belirtilen şekilde ayarlayın)",
       "telegramVpnFallback": "Telegram engelliyse VPN'im üzerinden",
-      "telegramVpnFallbackDesc": "Bu sunucu Telegram'a doğrudan ulaşamazsa panel, düğümlerde тех grubunda kendi panel-tech istemcisini oluşturur ve botu onun üzerinden bağlar. SOCKS proxy, API sunucusu veya panel çıkışı ayarlıysa yok sayılır.",
+      "telegramVpnFallbackDesc": "Bu sunucu Telegram'a doğrudan ulaşamazsa panel, düğümlerde тех grubunda kendi panel-tech istemcisini oluşturur ve botu onun üzerinden bağlar. SOCKS proxy, API sunucusu veya panel çıkışı ayarlıysa yok sayılır. Yalnızca en az bir düğüm Telegram'a ulaşabiliyorsa işe yarar: aynı filtrenin arkasındaki düğümler yardımcı olmaz.",
       "telegramAPIServer": "Telegram API Sunucusu",
       "telegramAPIServerDesc": "Kullanılacak Telegram API sunucusu. Varsayılan sunucuyu kullanmak için boş bırakın.",
       "telegramChatId": "Yönetici Sohbet Kimliği",
@@ -2022,15 +2036,10 @@
       "subHostSortHosts": "Ana bilgisayar sırası",
       "subHostSortModeDesc": "Farklı gelen bağlantılarda Ana Bilgisayarlar sayfasının sırasını izler. Sunucunun çıktı sırasını belirler; istemci uygulamaları kendi sıralamalarını uygulayabilir.",
       "tgPayment": "Payment",
-      "tgPaymentDetails": "Where to pay",
-      "tgPaymentDetailsDesc": "Card number, phone for transfers or a payment link. Clients see it in the bot next to the date their subscription ends, and can tell you they have paid.",
-      "tgPaymentPrice": "Monthly price",
-      "tgPaymentPriceDesc": "Price of one month. Longer terms are offered with the discounts below. 0 hides prices; leave the payment details empty too to hide payment from clients.",
-      "tgPaymentCurrency": "Currency",
-      "tgPaymentDiscounts": "Discounts for longer terms",
-      "tgPaymentDiscountsDesc": "months:percent, comma-separated, e.g. 3:10, 6:15, 12:20. Each becomes a term clients can pay for.",
       "tgFreePlan": "Free plan",
-      "tgFreePlanDesc": "Let unknown Telegram users ask for a free subscription (10 GB a month). Every request must be approved by an admin in the bot; paying for any term removes the limit.",
+      "tgFreePlanDesc": "Let unknown Telegram users ask for a free subscription with a monthly traffic quota (set below). Every request must be approved by an admin in the bot; paying for any term removes the limit.",
+      "tgFreePlanGB": "Free plan traffic (GB)",
+      "tgFreePlanGBDesc": "How many gigabytes a month a new free client gets. Clients that already exist keep their current limit.",
       "panelProxy": {
         "setup": "Through my VPN",
         "title": "Route the panel through a proxy",
@@ -2092,7 +2101,8 @@
         }
       },
       "eventSpeedLow": "Speed below user minimum",
-      "eventMasterLeader": "Another master took over"
+      "eventMasterLeader": "Another master took over",
+      "tgPaymentMoved": "The price, discounts and where to pay are set on the Finance page."
     },
     "xray": {
       "save": "Kaydet",
@@ -2792,7 +2802,23 @@
       "toasts": {
         "deleted": "Deleted",
         "saved": "Saved"
-      }
+      },
+      "price": "Monthly price",
+      "priceDesc": "Price of one month. Longer terms are offered with the discounts below. 0 hides prices; leave the payment details empty too to hide payment from clients.",
+      "currency": "Currency",
+      "discounts": "Discounts for longer terms",
+      "discountsDesc": "months:percent, comma-separated, e.g. 3:10, 6:15, 12:20. Each becomes a term clients can pay for.",
+      "details": "Where to pay",
+      "detailsDesc": "Card number, phone for transfers or a payment link. Clients see it in the bot next to the date their subscription ends, and can tell you they have paid.",
+      "payment": "Prices and payment",
+      "errPrice": "Price must be a whole number from 0",
+      "billingDay": "Payment day",
+      "billingDayHint": "Day of the month the bill is due (1–31). In shorter months it moves to the last day. Admins get a Telegram reminder the day before.",
+      "nextPayment": "Next payment",
+      "extend": "Extend",
+      "extendMonths": "by {count} mo",
+      "paidThrough": "paid through {month}",
+      "errDay": "Day must be 1–31"
     }
   },
   "tgbot": {
@@ -2912,7 +2938,6 @@
       "category_clients": "👥 İstemciler",
       "category_traffic": "🚦 Trafik",
       "category_maintenance": "⚙️ Bakım",
-      "inlineHint": "\r\n🔍 The list opens through search: tap Find and start typing.",
       "subURL": "🔗 Subscription: <code>{{ .URL }}</code>\r\n",
       "jsonURL": "🧩 JSON: <code>{{ .URL }}</code>\r\n",
       "inviteHint": "Send this link to the client: the first Telegram account to open it is bound to the client.",
@@ -2924,13 +2949,17 @@
       "privateOnly": "🤖 Bu bot yalnızca özel sohbette çalışır. Lütfen doğrudan mesajda açın.",
       "paymentReported": "💳 {{ .User }} paid for {{ .Months }} mo ({{ .Total }}): ",
       "paymentConfirmed": "✅ Payment confirmed: {{ .Email }} is active until {{ .Date }}.",
+      "paymentConfirmedBy": "✅ {{ .Email }}: confirmed by {{ .Admin }}, active until {{ .Date }}",
       "graceTaken": "⏳ {{ .User }} deferred payment by {{ .Days }} days for: ",
       "freeRequested": "🆓 {{ .User }} asks for a free subscription ({{ .GB }} GB a month).",
       "freeApproved": "🎉 Your free subscription is ready: {{ .GB }} GB a month. Pay for any term to remove the limit.",
       "freeDeclined": "❌ Your request for a free subscription was declined.",
       "speedLow": "Server {{ .Server }} has {{ .Free }} Mbit/s free per user, below the {{ .Min }} Mbit/s minimum of {{ .Users }}, and no other server has room. Add a server or raise its link speed.",
       "masterLeader": "Master {{ .Master }} now leads the panel cluster.",
-      "masterLeaderPrevious": "It took over from {{ .Previous }}."
+      "masterLeaderPrevious": "It took over from {{ .Previous }}.",
+      "attachedInbounds": "🔗 Inbounds: {{ .Inbounds }}\r\n",
+      "clientSearchPrompt": "🔍 Send part of a client's email to find it.",
+      "clientSearchQuery": "🔍 Search: {{ .Query }}"
     },
     "buttons": {
       "closeKeyboard": "❌ Klavyeyi Kapat",
@@ -2983,8 +3012,6 @@
       "page": "Page {{ .Page }} of {{ .Pages }}",
       "searchInbounds": "🔍 Find inbound…",
       "searchClients": "🔍 Find client…",
-      "inlineDisabled": "⚠️ Inline mode is off",
-      "clientCard": "⬅️ Client card",
       "links": "🔗 Links",
       "individualLinks": "🔗 Individual links",
       "qrCode": "🔳 QR code",
@@ -3005,7 +3032,9 @@
       "ledgerAddServer": "🖥 Add server cost",
       "ledgerDelete": "🗑 Delete",
       "ledgerFreeGroups": "🆓 Non-paying groups",
-      "nonPaying": "🆓 Does not pay: {{ .State }}"
+      "nonPaying": "🆓 Does not pay: {{ .State }}",
+      "mySubscription": "👤 My subscription",
+      "clearSearch": "✖️ Clear search"
     },
     "answers": {
       "broadcastStarted": "🚀 Toplu gönderim başladı.",
@@ -3031,7 +3060,6 @@
       "disableSuccess": "✅ {{ .Email }}: Başarıyla devre dışı bırakıldı.",
       "askToAddUserId": "Yapılandırmanız bulunamadı!\r\nLütfen yöneticinizden Telegram Chat ID'nizi yapılandırmanıza eklemesini isteyin.\r\n\r\nSizin Chat ID'niz: <code>{{ .TgUserID }}</code>",
       "chooseClient": "Gelen Bağlantı {{ .Inbound }} için bir Kullanıcı Seçin",
-      "chooseInbound": "Bir Gelen Bağlantı Seçin",
       "qrCodeForClient": "{{ .Email }} istemcisi için QR Kodu:",
       "paymentReported": "✅ The admin has been notified. Your subscription will be extended once the payment is confirmed.",
       "paymentAlreadyReported": "⏳ You have already reported this payment. Please wait for the admin to confirm it.",
@@ -3090,13 +3118,25 @@
       "serversTitle": "\r\n🖥 <b>Servers</b>\r\n",
       "entriesTitle": "\r\n📒 <b>Entries</b>\r\n",
       "nonPayingTitle": "\r\n🆓 Not paying: ",
-      "prompt_server": "🖥 Send the server and its monthly cost, e.g.\r\n<code>Hetzner DE 500</code>\r\nAdd a first month to start earlier than {{ .Month }}: <code>Hetzner DE 500 2026-09</code>",
+      "prompt_server": "🖥 Send the server, its monthly cost and the day of the month you pay, e.g.\r\n<code>Hetzner DE 500 15</code>\r\nAdd a first month to start earlier than {{ .Month }}: <code>Hetzner DE 500 15 2026-09</code>",
       "prompt_income": "➕ Send the amount received in {{ .Month }}, optionally the client and a note, e.g.\r\n<code>300 alice for November</code>",
       "prompt_expense": "➖ Send a one-off cost for {{ .Month }} and a note, e.g.\r\n<code>150 domain</code>",
       "badInput": "⚠️ Not saved: {{ .Error }}. Try again or tap Cancel.",
       "deleteTitle": "🗑 Tap a row to delete it ({{ .Month }} entries and all servers).",
       "groupsTitle": "🆓 Tap a group to switch it between paying 💰 and non-paying 🆓.",
-      "paymentNote": "{{ .Months }} mo"
+      "paymentNote": "{{ .Months }} mo",
+      "billingDay": " · day {{ .Day }}",
+      "reminder": "🔔 <b>Server bills due soon</b>\r\n"
+    },
+    "draft": {
+      "title": "📝 <b>New client draft</b>\r\n",
+      "email": "📧 Email: <code>{{ .Email }}</code>\r\n",
+      "attached": "🔗 Attached: {{ .Inbounds }}\r\n",
+      "traffic": "📊 Traffic: {{ .Traffic }}\r\n",
+      "expire": "📅 Expire: {{ .Time }}\r\n",
+      "ipLimit": "🔢 IP limit: {{ .Limit }}\r\n",
+      "tgUser": "👤 TG user: {{ .User }}\r\n",
+      "comment": "💬 Comment: {{ .Comment }}\r\n"
     }
   },
   "discord": {

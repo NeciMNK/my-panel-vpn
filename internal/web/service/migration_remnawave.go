@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"reflect"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -377,6 +378,7 @@ func buildRemnawavePlan(snap *RemnawaveSnapshot) (*migrationPlan, error) {
 	withHost := map[string]bool{}
 	hosts := append([]remnawaveHost{}, snap.Hosts...)
 	sort.SliceStable(hosts, func(i, j int) bool { return hosts[i].ViewPosition < hosts[j].ViewPosition })
+	var hostFilters []remnawaveSquadFilter
 	for i, h := range hosts {
 		candidates := keysByProfileInbound[h.Inbound.ConfigProfileInboundUUID]
 		if len(candidates) == 0 {
@@ -390,6 +392,7 @@ func buildRemnawavePlan(snap *RemnawaveSnapshot) (*migrationPlan, error) {
 			group.FinalMask = ""
 		}
 		plan.hosts = append(plan.hosts, migrationHost{inboundKey: key, group: group})
+		hostFilters = append(hostFilters, remnawaveHostFilter(h, plan))
 		if !h.IsDisabled {
 			withHost[key] = true
 		}
@@ -406,7 +409,7 @@ func buildRemnawavePlan(snap *RemnawaveSnapshot) (*migrationPlan, error) {
 		}
 	}
 
-	conflicts := 0
+	conflicts, hiddenInbounds := 0, 0
 	for _, u := range snap.Users {
 		mc, conflict, convErr := remnawaveClient(u, squadInbounds, keysByProfileInbound, protocolByKey)
 		if convErr != nil {
@@ -416,6 +419,7 @@ func buildRemnawavePlan(snap *RemnawaveSnapshot) (*migrationPlan, error) {
 		if conflict {
 			conflicts++
 		}
+		hiddenInbounds += bindVisibleHosts(&mc, u, plan.hosts, hostFilters)
 		plan.clients = append(plan.clients, mc)
 		if plan.sub.Path == "" {
 			if info, ok := subInfoFromURL(u.SubscriptionURL, u.ShortUUID); ok {
@@ -424,6 +428,9 @@ func buildRemnawavePlan(snap *RemnawaveSnapshot) (*migrationPlan, error) {
 				plan.sub = info
 			}
 		}
+	}
+	if hiddenInbounds > 0 {
+		plan.warnf("%d user inbounds are left out: every enabled host of the inbound is hidden from the user's internal squads, so Remnawave gave them no config there", hiddenInbounds)
 	}
 	if conflicts > 0 {
 		plan.warnf("%d users have both Trojan and Shadowsocks access with different passwords; their Shadowsocks link changes and needs a subscription refresh", conflicts)
@@ -527,10 +534,81 @@ func remnawaveHostGroup(h remnawaveHost, order int, plan *migrationPlan) entity.
 	if rawJSONOrEmpty(h.XhttpExtraParams) != "" {
 		plan.warnf("host %q: xhttp extra params are not imported", h.Remark)
 	}
-	if h.InternalSquads != nil && len(h.InternalSquads.Squads) > 0 {
-		plan.warnf("host %q: its internal-squad filter is not imported, every user of the inbound sees it", h.Remark)
-	}
 	return g
+}
+
+// remnawaveSquadFilter is a host's internal-squad filter; a nil squads set lets every user see it.
+type remnawaveSquadFilter struct {
+	allowOnly bool
+	squads    map[string]bool
+}
+
+func (f remnawaveSquadFilter) visibleTo(u remnawaveUser) bool {
+	if f.squads == nil {
+		return true
+	}
+	member := false
+	for _, sq := range u.ActiveInternalSquads {
+		member = member || f.squads[sq.UUID]
+	}
+	return member == f.allowOnly
+}
+
+func remnawaveHostFilter(h remnawaveHost, plan *migrationPlan) remnawaveSquadFilter {
+	if h.InternalSquads == nil || len(h.InternalSquads.Squads) == 0 {
+		return remnawaveSquadFilter{}
+	}
+	f := remnawaveSquadFilter{squads: map[string]bool{}}
+	for _, sq := range h.InternalSquads.Squads {
+		f.squads[sq] = true
+	}
+	switch strings.ToUpper(h.InternalSquads.Mode) {
+	case "ALLOW_ONLY":
+		f.allowOnly = true
+	case "EXCLUDE":
+	default:
+		plan.warnf("host %q: internal-squad filter mode %q is unknown, every user of the inbound sees it", h.Remark, h.InternalSquads.Mode)
+		return remnawaveSquadFilter{}
+	}
+	return f
+}
+
+// bindVisibleHosts binds the client to the hosts its squads may see wherever a
+// filter hides some, and drops inbounds whose enabled hosts are all hidden.
+func bindVisibleHosts(mc *migrationClient, u remnawaveUser, hosts []migrationHost, filters []remnawaveSquadFilter) int {
+	type inboundHosts struct{ visible, all, hiddenEnabled int }
+	perKey := map[string]*inboundHosts{}
+	var visible []int
+	for i, h := range hosts {
+		st := perKey[h.inboundKey]
+		if st == nil {
+			st = &inboundHosts{}
+			perKey[h.inboundKey] = st
+		}
+		st.all++
+		if filters[i].visibleTo(u) {
+			st.visible++
+			visible = append(visible, i)
+		} else if !h.group.IsDisabled {
+			st.hiddenEnabled++
+		}
+	}
+	dropped := 0
+	keys := mc.inboundKeys[:0]
+	for _, k := range mc.inboundKeys {
+		if st := perKey[k]; st != nil && st.visible == 0 && st.hiddenEnabled > 0 {
+			dropped++
+			continue
+		}
+		keys = append(keys, k)
+	}
+	mc.inboundKeys = keys
+	for _, i := range visible {
+		if st := perKey[hosts[i].inboundKey]; st.visible < st.all && slices.Contains(keys, hosts[i].inboundKey) {
+			mc.hostIdx = append(mc.hostIdx, i)
+		}
+	}
+	return dropped
 }
 
 func remnawaveClient(u remnawaveUser, squadInbounds, keysByProfileInbound map[string][]string, protocolByKey map[string]model.Protocol) (migrationClient, bool, error) {

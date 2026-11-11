@@ -98,6 +98,7 @@ var defaultValueMap = map[string]string{
 	"tgBotVpnFallback":            "true",
 	"tgBotAPIServer":              "",
 	"tgBotChatId":                 "",
+	"tgBotUsername":               "",
 	"tgRunTime":                   "@daily",
 	"tgBotBackup":                 "false",
 	"tgCpu":                       "80",
@@ -108,6 +109,7 @@ var defaultValueMap = map[string]string{
 	"tgPaymentDiscounts":          "",
 	"tgPaymentDetails":            "",
 	"tgFreePlanEnable":            "false",
+	"tgFreePlanGB":                "10",
 	"twoFactorEnable":             "false",
 	"twoFactorToken":              "",
 	"happLinkEnable":              "false",
@@ -574,18 +576,11 @@ func (s *SettingService) SetPanelOutbound(tag string) error {
 	return s.setString("panelOutbound", tag)
 }
 
-// PanelEgressProxyURL resolves the loopback SOCKS bridge that the generated
-// config exposes when a panel outbound is configured (see injectPanelEgress).
-// It returns "" — meaning a direct connection — when the feature is off or
-// the bridge is not present in the running core yet.
+// PanelEgressProxyURL returns the running loopback bridge of the quick panel proxy
+// or panelOutbound (see injectPanelEgress), or "" for a direct connection.
 func (s *SettingService) PanelEgressProxyURL() string {
-	tag, err := s.GetPanelOutbound()
-	if err != nil || tag == "" {
-		return ""
-	}
 	proc := XrayProcess()
 	if proc == nil || !proc.IsRunning() {
-		logger.Warning("panel outbound [", tag, "] is set but Xray is not running, using a direct connection")
 		return ""
 	}
 	cfg := proc.GetConfig()
@@ -597,7 +592,9 @@ func (s *SettingService) PanelEgressProxyURL() string {
 			return fmt.Sprintf("socks5://127.0.0.1:%d", cfg.InboundConfigs[i].Port)
 		}
 	}
-	logger.Warning("panel outbound [", tag, "] is set but the egress bridge is not in the running config, using a direct connection")
+	if tag, err := s.GetPanelOutbound(); err == nil && tag != "" {
+		logger.Warning("panel outbound [", tag, "] is set but the egress bridge is not in the running config, using a direct connection")
+	}
 	return ""
 }
 
@@ -689,6 +686,10 @@ func (s *SettingService) GetTgBotVpnFallback() (bool, error) {
 
 func (s *SettingService) GetTgFreePlanEnable() (bool, error) {
 	return s.getBool("tgFreePlanEnable")
+}
+
+func (s *SettingService) GetTgFreePlanGB() (int, error) {
+	return s.getInt("tgFreePlanGB")
 }
 
 func (s *SettingService) GetTgPaymentDetails() (string, error) {
@@ -942,6 +943,16 @@ func (s *SettingService) GetSubClashUserAgentRegex() (string, error) {
 
 func (s *SettingService) GetSubTitle() (string, error) {
 	return s.getString("subTitle")
+}
+
+// GetTgBotUsername is the bot's @username as last reported by Telegram; the
+// bot records it on start so the sub server can link to it while Telegram is down.
+func (s *SettingService) GetTgBotUsername() (string, error) {
+	return s.getString("tgBotUsername")
+}
+
+func (s *SettingService) SetTgBotUsername(username string) error {
+	return s.setString("tgBotUsername", username)
 }
 
 func (s *SettingService) GetSubSupportUrl() (string, error) {

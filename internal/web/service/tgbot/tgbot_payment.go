@@ -27,7 +27,7 @@ const (
 	// graceDays is how far one deferral moves the expiry; at most one per graceCooldownDays.
 	graceDays         = 15
 	graceCooldownDays = 30
-	freePlanGB        = 10
+	defaultFreePlanGB = 10
 	dayMillis         = int64(24 * time.Hour / time.Millisecond)
 	paymentDate       = "2006-01-02 15:04"
 	freeEmailMax      = 32
@@ -118,7 +118,7 @@ func (t *Tgbot) paymentBlock(info paymentInfo, traffics []*xray.ClientTraffic) s
 		deferred = deferred || billing.GraceDays > 0
 	}
 	if free {
-		b.WriteString(t.I18nBot("tgbot.payment.freePlan", "GB=="+strconv.Itoa(freePlanGB)))
+		b.WriteString(t.I18nBot("tgbot.payment.freePlan", "GB=="+strconv.Itoa(t.freePlanGB())))
 	}
 	if due, ok := nextPaymentDue(traffics); ok {
 		switch {
@@ -277,7 +277,17 @@ func (t *Tgbot) reportClientPayment(callbackQuery *telego.CallbackQuery, monthsT
 	rows = append(rows, t.hideButton().InlineKeyboard...)
 	msg := t.I18nBot("tgbot.messages.paymentReported",
 		"User=="+userLabel(from), "Months=="+monthsText, "Total=="+total) + strings.Join(emails, ", ")
-	t.SendMsgToTgbotAdmins(msg, tu.InlineKeyboard(rows...))
+	report := &paymentReport{text: msg, months: monthsText}
+	for _, traffic := range traffics {
+		report.emails = append(report.emails, traffic.Email)
+	}
+	for _, admin := range adminSnapshot() {
+		if id := t.SendMsgToTgbot(admin, msg, tu.InlineKeyboard(rows...)); id != 0 {
+			report.notices = append(report.notices, paymentNotice{chatID: admin, msgID: id})
+		}
+	}
+	paymentNotices.track(report)
+	logger.Infof("tgbot: %s reported paying %d mo (%s) for %s", userLabel(from), months, total, strings.Join(report.emails, ", "))
 	t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.paymentReported"))
 	t.screenClientHome(callbackQuery.Message.GetChat().ID, from.ID)
 }
@@ -294,6 +304,7 @@ func (t *Tgbot) confirmPayment(callbackQuery *telego.CallbackQuery, email, month
 	}
 	claimed, err := t.clientService.ClaimPendingPayment(billing.ClientId, months)
 	if err != nil || !claimed {
+		t.retireStaleConfirm(callbackQuery)
 		t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.paymentAlreadyConfirmed", "Email=="+email))
 		return
 	}
@@ -307,15 +318,104 @@ func (t *Tgbot) confirmPayment(callbackQuery *telego.CallbackQuery, email, month
 	}
 	tgID := t.clientTgID(email)
 	paymentReports.forget(tgID)
+	until := t.I18nBot("tgbot.unlimited")
+	if result.ExpiryTime > 0 {
+		until = time.UnixMilli(result.ExpiryTime).Format(paymentDate)
+	}
+	logger.Infof("tgbot: admin %s confirmed %d mo for %s, expiry now %s", userLabel(callbackQuery.From), months, email, until)
+	t.closePaymentNotices(email, t.I18nBot("tgbot.messages.paymentConfirmedBy",
+		"Email=="+email, "Admin=="+userLabel(callbackQuery.From), "Date=="+until))
 	if tgID != 0 {
-		until := t.I18nBot("tgbot.unlimited")
-		if result.ExpiryTime > 0 {
-			until = time.UnixMilli(result.ExpiryTime).Format(paymentDate)
-		}
 		t.sendNotice(tgID, t.I18nBot("tgbot.messages.paymentConfirmed", "Email=="+email, "Date=="+until))
 	}
 	t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.paymentConfirmed", "Email=="+email))
 	t.searchClientScreen(chatID, email)
+}
+
+type paymentNotice struct {
+	chatID int64
+	msgID  int
+}
+
+// paymentReport is one "I have paid" as every admin received it, so the first
+// confirm can take its button off all their copies.
+type paymentReport struct {
+	text    string
+	months  string
+	emails  []string
+	notices []paymentNotice
+}
+
+type paymentNoticeBook struct {
+	mu      sync.Mutex
+	byEmail map[string]*paymentReport
+}
+
+var paymentNotices = &paymentNoticeBook{byEmail: map[string]*paymentReport{}}
+
+func (b *paymentNoticeBook) track(report *paymentReport) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	for _, email := range report.emails {
+		b.byEmail[email] = report
+	}
+}
+
+// settle drops email from its report and returns the report's notices, text and
+// the emails still awaiting a confirm; ok is false when no copy is tracked.
+func (b *paymentNoticeBook) settle(email, line string) (report paymentReport, ok bool) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	r, found := b.byEmail[email]
+	if !found {
+		return paymentReport{}, false
+	}
+	delete(b.byEmail, email)
+	r.emails = slices.DeleteFunc(r.emails, func(e string) bool { return e == email })
+	r.text += "\n" + line
+	return paymentReport{text: r.text, months: r.months, emails: slices.Clone(r.emails), notices: slices.Clone(r.notices)}, true
+}
+
+func (b *paymentNoticeBook) covers(chatID int64, msgID int) bool {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	for _, r := range b.byEmail {
+		if slices.Contains(r.notices, paymentNotice{chatID: chatID, msgID: msgID}) {
+			return true
+		}
+	}
+	return false
+}
+
+// retireStaleConfirm strips a confirm button no tracked report owns, such as a
+// notice sent before a restart, so a settled payment stops looking open.
+func (t *Tgbot) retireStaleConfirm(query *telego.CallbackQuery) {
+	if query.Message == nil || query.Message.GetMessageID() == 0 {
+		return
+	}
+	chatID, msgID := query.Message.GetChat().ID, query.Message.GetMessageID()
+	if !paymentNotices.covers(chatID, msgID) {
+		t.editMessageCallbackTgBot(chatID, msgID, t.hideButton())
+	}
+}
+
+// closePaymentNotices rewrites every admin's copy of the report: who confirmed
+// what, and only the buttons for subscriptions still unconfirmed.
+func (t *Tgbot) closePaymentNotices(email, line string) {
+	report, ok := paymentNotices.settle(email, line)
+	if !ok {
+		return
+	}
+	rows := make([][]telego.InlineKeyboardButton, 0, len(report.emails)+1)
+	for _, pending := range report.emails {
+		rows = append(rows, tu.InlineKeyboardRow(t.btn2(
+			t.I18nBot("tgbot.buttons.confirmPayment", "Email=="+pending, "Months=="+report.months),
+			t.encodeQuery("pay_ok "+pending+" "+report.months))))
+	}
+	rows = append(rows, t.hideButton().InlineKeyboard...)
+	for _, notice := range report.notices {
+		t.editMessageTgBot(notice.chatID, notice.msgID, report.text, tu.InlineKeyboard(rows...))
+	}
 }
 
 // restorePendingPayment re-arms a claimed report whose term was not applied, so an admin can retry it.
@@ -406,6 +506,15 @@ func (t *Tgbot) toggleTrusted(callbackQuery *telego.CallbackQuery, email string)
 	t.searchClientScreen(callbackQuery.Message.GetChat().ID, email)
 }
 
+// freePlanGB is the admin-set free quota; a broken value falls back to the default.
+func (t *Tgbot) freePlanGB() int {
+	gb, err := t.settingService.GetTgFreePlanGB()
+	if err != nil || gb <= 0 {
+		return defaultFreePlanGB
+	}
+	return gb
+}
+
 func (t *Tgbot) freePlanEnabled() bool {
 	enabled, err := t.settingService.GetTgFreePlanEnable()
 	return err == nil && enabled
@@ -420,7 +529,7 @@ func (t *Tgbot) sendStrangerWelcome(chatID, userID int64) {
 		return
 	}
 	rows := append([][]telego.InlineKeyboardButton{
-		tu.InlineKeyboardRow(t.btn2(t.I18nBot("tgbot.buttons.requestFree", "GB=="+strconv.Itoa(freePlanGB)), cbFreeRequest)),
+		tu.InlineKeyboardRow(t.btn2(t.I18nBot("tgbot.buttons.requestFree", "GB=="+strconv.Itoa(t.freePlanGB())), cbFreeRequest)),
 	}, t.hideButton().InlineKeyboard...)
 	t.SendMsgToTgbot(chatID, text, tu.InlineKeyboard(rows...))
 }
@@ -451,7 +560,7 @@ func (t *Tgbot) requestFreePlan(callbackQuery *telego.CallbackQuery) {
 		t.btn("tgbot.buttons.decline", "free_no "+id),
 	)}, t.hideButton().InlineKeyboard...)
 	t.SendMsgToTgbotAdmins(t.I18nBot("tgbot.messages.freeRequested",
-		"User=="+userLabel(from), "GB=="+strconv.Itoa(freePlanGB)), tu.InlineKeyboard(rows...))
+		"User=="+userLabel(from), "GB=="+strconv.Itoa(t.freePlanGB())), tu.InlineKeyboard(rows...))
 	t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.freeRequested"))
 }
 
@@ -482,7 +591,7 @@ func (t *Tgbot) approveFreePlan(chatID int64, actor chatUser, tgIDText string) b
 	t.resetDraft(draft)
 	draft.email = freeEmail(username, tgID)
 	draft.tgID = tgIDText
-	draft.totalGB = freePlanGB * 1024 * 1024 * 1024
+	draft.totalGB = int64(t.freePlanGB()) << 30
 	draft.freePlan = true
 	t.addClient(chatID, draft, t.BuildClientDraftMessage(draft))
 	return true

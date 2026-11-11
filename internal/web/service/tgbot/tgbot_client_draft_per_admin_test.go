@@ -13,6 +13,7 @@ import (
 // admins of a group chat filling in one client between them.
 func TestAddClientDraftIsPerAdminInGroupChat(t *testing.T) {
 	dbtest.InitDB(t, filepath.Join(t.TempDir(), "x-ui.db"))
+	localizeWithRealBundle(t)
 
 	const (
 		groupChat = int64(-1001234567890)

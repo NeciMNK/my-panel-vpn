@@ -24,8 +24,8 @@ working; nobody has to refresh anything.
 | Config names in apps | host remarks (`{{HOST}}` template) | this panel's remark template |
 
 Not imported: routing, outbounds and DNS of Remnawave config profiles (set them
-in the Xray template of the panel and nodes), host filters by internal squad,
-external squads, host xhttp extra params. HWID device lists
+in the Xray template of the panel and nodes), external squads, host xhttp
+extra params. HWID device lists
 are not imported: the limit is kept and devices register again on their next
 subscription refresh. A Remnawave user with both Trojan and Shadowsocks under
 different passwords gets the Trojan password for Shadowsocks too, so that one
@@ -38,6 +38,14 @@ every such file: copy it to the same path on the server the inbound moves to
 before importing, or that inbound fails to start. An inbound whose Remnawave
 hosts are all disabled is imported with "Exclude from subscription" on, as
 Remnawave did not list it either.
+
+Host filters by internal squad carry over as client host bindings: where a
+filter hides some hosts of an inbound from a user, that user is bound to the
+hosts their squads could see, so the subscription lists the same configs as
+before. When every enabled host of an inbound is hidden from a user, the user
+is not added to that inbound, since Remnawave gave them no config for it. A
+host added to such an inbound later is not shown to bound users until you add
+it to their binding.
 
 The source panel is never modified. To roll back, start it again.
 
@@ -87,6 +95,9 @@ cd /opt/remnanode && docker compose down
 
 Then press **Import**. The inbounds go to the nodes and Xray takes the same
 ports with the same keys. The outage is the seconds between stop and import.
+Stop every remnanode first and import once: a second import skips clients
+that already exist, so it would not add them to inbounds of a node imported
+later.
 </Step>
 <Step>
 ### Move the subscription domain
@@ -95,10 +106,23 @@ Point the Remnawave subscription domain (e.g. `sub.example.com`) at this
 panel's subscription server: change the DNS record or the nginx/Caddy
 `proxy_pass` to the panel's subscription port (`2096` by default), or run the
 subscription server on `443` with that domain's certificate. The import already
-set the path (`/` for Remnawave). Then stop the Remnawave and
-`subscription-page` containers.
+set the path (`/` for Remnawave). Until the record changes, Remnawave keeps
+serving the same configs, so this step has no deadline; lower the record's TTL
+to 60 seconds a day ahead so the switch takes a minute. Then stop the Remnawave
+and `subscription-page` containers.
 </Step>
 </Steps>
+
+### Rolling back
+
+Until you stop the Remnawave containers, rolling back takes one command per
+server: stop this panel's node and start remnanode again.
+
+```bash
+systemctl stop x-ui && cd /opt/remnanode && docker compose up -d
+```
+
+If the subscription domain already points here, point it back.
 
 ### Remnawave snapshot file
 

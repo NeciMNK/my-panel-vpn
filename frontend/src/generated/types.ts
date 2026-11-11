@@ -178,12 +178,9 @@ export interface AllSetting {
   tgCpu: number;
   tgEnabledEvents: string;
   tgFreePlanEnable: boolean;
+  tgFreePlanGB: number;
   tgLang: string;
   tgMemory: number;
-  tgPaymentCurrency: string;
-  tgPaymentDetails: string;
-  tgPaymentDiscounts: string;
-  tgPaymentPrice: number;
   tgRunTime: string;
   timeLocation: string;
   trafficDiff: number;
@@ -375,12 +372,9 @@ export interface AllSettingView {
   tgCpu: number;
   tgEnabledEvents: string;
   tgFreePlanEnable: boolean;
+  tgFreePlanGB: number;
   tgLang: string;
   tgMemory: number;
-  tgPaymentCurrency: string;
-  tgPaymentDetails: string;
-  tgPaymentDiscounts: string;
-  tgPaymentPrice: number;
   tgRunTime: string;
   timeLocation: string;
   trafficDiff: number;
@@ -429,6 +423,8 @@ export interface Blocker {
 
 export interface Cascade {
   createdAt: number;
+  directDomains: string[];
+  directIps: string[];
   enable: boolean;
   entryInboundTags: string[];
   entryNodeId: number;
@@ -437,7 +433,9 @@ export interface Cascade {
   id: number;
   lastError: string;
   links: CascadeLink[];
+  mode: string;
   name: string;
+  relayInboundTags: string[];
   strategy: string;
   updatedAt: number;
 }
@@ -902,6 +900,13 @@ export interface LedgerNonPaying {
   reason: string;
 }
 
+export interface LedgerPayment {
+  currency: string;
+  details: string;
+  discounts: string;
+  price: number;
+}
+
 export interface LedgerReport {
   balance: number;
   currency: string;
@@ -914,17 +919,28 @@ export interface LedgerReport {
   nonPaying: LedgerNonPaying[];
   otherExpenses: number;
   payingClients: number;
+  payment: LedgerPayment;
   price: number;
   serverCosts: number;
   servers: LedgerServer[];
+  upcoming: LedgerServerDue[];
 }
 
 export interface LedgerServer {
+  billingDay: number;
   endMonth: string;
   id: number;
   monthlyCost: number;
   name: string;
+  paidThrough: string;
   startMonth: string;
+}
+
+export interface LedgerServerDue {
+  amount: number;
+  date: string;
+  name: string;
+  serverId: number;
 }
 
 export interface LogEntry {

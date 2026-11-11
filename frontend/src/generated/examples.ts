@@ -168,12 +168,9 @@ export const EXAMPLES: Record<string, unknown> = {
     "tgCpu": 0,
     "tgEnabledEvents": "",
     "tgFreePlanEnable": false,
+    "tgFreePlanGB": 1,
     "tgLang": "",
     "tgMemory": 0,
-    "tgPaymentCurrency": "RUB",
-    "tgPaymentDetails": "Card 2200 0000 0000 0000",
-    "tgPaymentDiscounts": "3:10, 6:15, 12:20",
-    "tgPaymentPrice": 300,
     "tgRunTime": "",
     "timeLocation": "",
     "trafficDiff": 0,
@@ -364,12 +361,9 @@ export const EXAMPLES: Record<string, unknown> = {
     "tgCpu": 0,
     "tgEnabledEvents": "",
     "tgFreePlanEnable": false,
+    "tgFreePlanGB": 1,
     "tgLang": "",
     "tgMemory": 0,
-    "tgPaymentCurrency": "RUB",
-    "tgPaymentDetails": "Card 2200 0000 0000 0000",
-    "tgPaymentDiscounts": "3:10, 6:15, 12:20",
-    "tgPaymentPrice": 300,
     "tgRunTime": "",
     "timeLocation": "",
     "trafficDiff": 0,
@@ -428,6 +422,12 @@ export const EXAMPLES: Record<string, unknown> = {
   },
   "Cascade": {
     "createdAt": 0,
+    "directDomains": [
+      ""
+    ],
+    "directIps": [
+      ""
+    ],
     "enable": true,
     "entryInboundTags": [
       ""
@@ -452,7 +452,11 @@ export const EXAMPLES: Record<string, unknown> = {
         "shortId": ""
       }
     ],
+    "mode": "split",
     "name": "RU → DE",
+    "relayInboundTags": [
+      ""
+    ],
     "strategy": "leastPing",
     "updatedAt": 0
   },
@@ -1033,6 +1037,12 @@ export const EXAMPLES: Record<string, unknown> = {
     "group": "family",
     "reason": "group"
   },
+  "LedgerPayment": {
+    "currency": "RUB",
+    "details": "Card 2200 0000 0000 0000",
+    "discounts": "3:10, 6:15, 12:20",
+    "price": 300
+  },
   "LedgerReport": {
     "balance": 900,
     "currency": "RUB",
@@ -1063,24 +1073,48 @@ export const EXAMPLES: Record<string, unknown> = {
     ],
     "otherExpenses": 0,
     "payingClients": 10,
+    "payment": {
+      "currency": "RUB",
+      "details": "Card 2200 0000 0000 0000",
+      "discounts": "3:10, 6:15, 12:20",
+      "price": 300
+    },
     "price": 300,
     "serverCosts": 1500,
     "servers": [
       {
+        "billingDay": 15,
         "endMonth": "",
         "id": 1,
         "monthlyCost": 500,
         "name": "Hetzner DE",
+        "paidThrough": "2027-02",
         "startMonth": "2026-11"
+      }
+    ],
+    "upcoming": [
+      {
+        "amount": 500,
+        "date": "2026-11-15",
+        "name": "Hetzner DE",
+        "serverId": 1
       }
     ]
   },
   "LedgerServer": {
+    "billingDay": 15,
     "endMonth": "",
     "id": 1,
     "monthlyCost": 500,
     "name": "Hetzner DE",
+    "paidThrough": "2027-02",
     "startMonth": "2026-11"
+  },
+  "LedgerServerDue": {
+    "amount": 500,
+    "date": "2026-11-15",
+    "name": "Hetzner DE",
+    "serverId": 1
   },
   "LogEntry": {
     "DateTime": "2025-01-01T12:00:00Z",

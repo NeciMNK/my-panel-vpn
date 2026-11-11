@@ -24,6 +24,10 @@ _openapi:
       title: Delete a server cost from every month.
       url: '#delete-a-server-cost-from-every-month'
     - depth: 2
+      title: 'Pay a server ahead for 1-36 months: its next payment date and reminder
+        move past them, and a stopped server runs again until then.'
+      url: '#pay-a-server-ahead-for-1-36-months-its-next-payment-date-and-reminder-move-past-them-and-a-stopped-server-runs-again-until-then'
+    - depth: 2
       title: Book an income (a payment received) or a one-off expense to a month.
         Confirmed Telegram payments are booked automatically.
       url: '#book-an-income-a-payment-received-or-a-one-off-expense-to-a-month-confirmed-telegram-payments-are-booked-automatically'
@@ -35,6 +39,11 @@ _openapi:
         family) as non-paying, or clear the mark. Non-paying clients are left
         out of the expected income.
       url: '#mark-one-client-by-email-eg-the-admin-or-a-whole-client-group-eg-family-as-non-paying-or-clear-the-mark-non-paying-clients-are-left-out-of-the-expected-income'
+    - depth: 2
+      title: 'Set what clients pay: the monthly price, the currency, the longer-term
+        discounts (months:percent pairs) and where to pay. The Telegram bot
+        bills by these. A bad discount list is refused and nothing is changed.'
+      url: '#set-what-clients-pay-the-monthly-price-the-currency-the-longer-term-discounts-monthspercent-pairs-and-where-to-pay-the-telegram-bot-bills-by-these-a-bad-discount-list-is-refused-and-nothing-is-changed'
   structuredData:
     headings:
       - content: "One month of the ledger: income, server and other expenses, the
@@ -48,6 +57,9 @@ _openapi:
         id: create-id-0-or-update-a-recurring-server-cost-it-is-charged-to-every-month-from-startmonth-through-endmonth-an-empty-endmonth-means-the-server-is-still-paid-for
       - content: Delete a server cost from every month.
         id: delete-a-server-cost-from-every-month
+      - content: 'Pay a server ahead for 1-36 months: its next payment date and reminder
+          move past them, and a stopped server runs again until then.'
+        id: pay-a-server-ahead-for-1-36-months-its-next-payment-date-and-reminder-move-past-them-and-a-stopped-server-runs-again-until-then
       - content: Book an income (a payment received) or a one-off expense to a month.
           Confirmed Telegram payments are booked automatically.
         id: book-an-income-a-payment-received-or-a-one-off-expense-to-a-month-confirmed-telegram-payments-are-booked-automatically
@@ -57,6 +69,11 @@ _openapi:
           (e.g. family) as non-paying, or clear the mark. Non-paying clients are
           left out of the expected income.
         id: mark-one-client-by-email-eg-the-admin-or-a-whole-client-group-eg-family-as-non-paying-or-clear-the-mark-non-paying-clients-are-left-out-of-the-expected-income
+      - content: 'Set what clients pay: the monthly price, the currency, the longer-term
+          discounts (months:percent pairs) and where to pay. The Telegram bot
+          bills by these. A bad discount list is refused and nothing is
+          changed.'
+        id: set-what-clients-pay-the-monthly-price-the-currency-the-longer-term-discounts-monthspercent-pairs-and-where-to-pay-the-telegram-bot-bills-by-these-a-bad-discount-list-is-refused-and-nothing-is-changed
     contents: []
 ---
 
@@ -67,7 +84,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/ledger/report","method":"get"},{"path":"/panel/api/ledger/servers/save","method":"post"},{"path":"/panel/api/ledger/servers/delete","method":"post"},{"path":"/panel/api/ledger/entries/add","method":"post"},{"path":"/panel/api/ledger/entries/delete","method":"post"},{"path":"/panel/api/ledger/nonPaying","method":"post"}]} showTitle />
+      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/ledger/report","method":"get"},{"path":"/panel/api/ledger/servers/save","method":"post"},{"path":"/panel/api/ledger/servers/delete","method":"post"},{"path":"/panel/api/ledger/servers/extend","method":"post"},{"path":"/panel/api/ledger/entries/add","method":"post"},{"path":"/panel/api/ledger/entries/delete","method":"post"},{"path":"/panel/api/ledger/nonPaying","method":"post"},{"path":"/panel/api/ledger/payment","method":"post"}]} showTitle />
     </>
   );
 }

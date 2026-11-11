@@ -389,6 +389,7 @@ func (t *Tgbot) Start(i18nFS embed.FS) error {
 	// Off the start path: with Telegram unreachable these block for a minute,
 	// holding the panel's signal loop and the sub server behind them.
 	go func(b *telego.Bot) {
+		t.rememberBotUsername(b)
 		t.resolveScreenArt()
 		t.trySetBotCommands(b)
 		t.backfillTelegramTags()
@@ -404,6 +405,22 @@ func (t *Tgbot) Start(i18nFS embed.FS) error {
 	}
 
 	return nil
+}
+
+// rememberBotUsername stores the bot's @username for the sub server's support
+// link; a failed lookup keeps the last known one rather than dropping the link.
+func (t *Tgbot) rememberBotUsername(b *telego.Bot) {
+	me, err := b.GetMe(context.Background())
+	if err != nil {
+		logger.Warning("tgbot: get bot username:", err)
+		return
+	}
+	if stored, _ := t.settingService.GetTgBotUsername(); stored == me.Username {
+		return
+	}
+	if err := t.settingService.SetTgBotUsername(me.Username); err != nil {
+		logger.Warning("tgbot: store bot username:", err)
+	}
 }
 
 func (t *Tgbot) trySetBotCommands(bot *telego.Bot) {

@@ -102,12 +102,12 @@ func (f *TgVpnFallback) isCandidate(mode string) (bool, error) {
 	return true, nil
 }
 
-// ensureTechClient puts the tech client on every usable node inbound, in the
-// non-paying tech group, and reports whether it was attached anywhere new.
+// ensureTechClient puts the tech client, in the non-paying tech group, on every node
+// exit inbound (never the panel's own mp-* links); true if attached anywhere new.
 func (f *TgVpnFallback) ensureTechClient() (bool, error) {
 	var inboundIds []int
 	if err := database.GetDB().Model(&model.Inbound{}).
-		Where("enable = ? AND node_id IS NOT NULL AND protocol IN ?", true, panelTechProtocols).
+		Where("enable = ? AND node_id IS NOT NULL AND protocol IN ? AND tag NOT LIKE ?", true, panelTechProtocols, managedTagPrefix+"%").
 		Order("id").Pluck("id", &inboundIds).Error; err != nil {
 		return false, err
 	}

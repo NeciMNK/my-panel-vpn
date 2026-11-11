@@ -19,10 +19,6 @@ import (
 // automatic reconnect comes back out of the same IP.
 const CascadePinHold = 15 * time.Minute
 
-func cascadePinTag(cascadeID, nodeID int) string {
-	return fmt.Sprintf("%spin-n%d", cascadePrefix(cascadeID), nodeID)
-}
-
 // stickyView is what one pin pass knows about the world.
 type stickyView struct {
 	Now             int64
@@ -102,9 +98,9 @@ func nextCascadePins(pins []model.CascadePin, v stickyView) ([]model.CascadePin,
 	return kept, changed
 }
 
-// cascadePinRules routes each pinned user of the cascade to their exit; they
-// sit right before the cascade's catch-all, so the user's own rules still win.
-func cascadePinRules(c *model.Cascade, pins []model.CascadePin) []map[string]any {
+// cascadePinRules routes each pinned user of inbounds to their exit; they sit
+// right before the rule they refine, so the user's own rules still win.
+func cascadePinRules(c *model.Cascade, pins []model.CascadePin, tagPrefix string, inbounds []string) []map[string]any {
 	byNode := map[int][]string{}
 	for _, p := range pins {
 		byNode[p.NodeId] = append(byNode[p.NodeId], p.Email)
@@ -118,12 +114,12 @@ func cascadePinRules(c *model.Cascade, pins []model.CascadePin) []map[string]any
 		slices.Sort(emails)
 		rule := map[string]any{
 			"type":        "field",
-			"ruleTag":     cascadePinTag(c.Id, l.NodeId),
+			"ruleTag":     fmt.Sprintf("%spin-n%d", tagPrefix, l.NodeId),
 			"user":        emails,
 			"outboundTag": cascadeLinkTag(c.Id, l.NodeId),
 		}
-		if len(c.EntryInboundTags) > 0 {
-			rule["inboundTag"] = c.EntryInboundTags
+		if len(inbounds) > 0 {
+			rule["inboundTag"] = inbounds
 		}
 		rules = append(rules, rule)
 	}

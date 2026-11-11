@@ -10,6 +10,7 @@ import (
 	"io"
 	"log"
 	"math"
+	"net/url"
 	"os"
 	"os/exec"
 	"path"
@@ -1930,14 +1931,61 @@ func fail2banEnforcementState() (fail2banState, error) {
 	return fail2banEnforcing, nil
 }
 
+// clearLegacyProxySettings moves a dialable legacy proxy into the quick panel
+// proxy's link mode, so a bot that only reached Telegram through it keeps working.
 func clearLegacyProxySettings() error {
 	return db.Transaction(func(tx *gorm.DB) error {
+		var rows []model.Setting
+		if err := tx.Where("key IN ?", []string{"tgBotProxy", "panelProxy", "panelOutbound", "panelProxyMode"}).
+			Find(&rows).Error; err != nil {
+			return err
+		}
+		stored := make(map[string]string, len(rows))
+		for _, r := range rows {
+			stored[r.Key] = strings.TrimSpace(r.Value)
+		}
+		legacy := stored["tgBotProxy"]
+		if legacy == "" {
+			legacy = stored["panelProxy"]
+		}
+		switch {
+		case legacy == "":
+		case stored["panelOutbound"] != "" || stored["panelProxyMode"] != "":
+			log.Printf("Dropping legacy proxy setting: the panel already routes through its own outbound or proxy")
+		case !dialableLegacyProxy(legacy):
+			log.Printf("Dropping legacy proxy setting: only socks5:// and http(s):// with a host and port can be carried over")
+		default:
+			if err := tx.Where("key IN ?", []string{"panelProxyMode", "panelProxySource"}).Delete(&model.Setting{}).Error; err != nil {
+				return err
+			}
+			if err := tx.Create(&[]model.Setting{{Key: "panelProxyMode", Value: "link"}, {Key: "panelProxySource", Value: legacy}}).Error; err != nil {
+				return err
+			}
+			log.Printf("Legacy proxy setting moved to Settings > General > panel proxy (link mode)")
+		}
 		if err := tx.Where("key IN ?", []string{"panelProxy", "tgBotProxy"}).
 			Delete(&model.Setting{}).Error; err != nil {
 			return err
 		}
 		return tx.Create(&model.HistoryOfSeeders{SeederName: "LegacyProxySettingsCleanup"}).Error
 	})
+}
+
+// dialableLegacyProxy accepts exactly what the panel proxy's link mode turns into an outbound.
+func dialableLegacyProxy(raw string) bool {
+	u, err := url.Parse(raw)
+	if err != nil || u.Hostname() == "" {
+		return false
+	}
+	port, err := strconv.Atoi(u.Port())
+	if err != nil || port < 1 || port > 65535 {
+		return false
+	}
+	switch strings.ToLower(u.Scheme) {
+	case "socks", "socks5", "socks5h", "http", "https":
+		return true
+	}
+	return false
 }
 
 // The client editor fills forwardedPorts from the record, which kept the value it was created

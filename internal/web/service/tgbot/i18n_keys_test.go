@@ -129,3 +129,58 @@ func repoRootForTest(t *testing.T) string {
 		dir = parent
 	}
 }
+
+// flattenLocale reads one locale file into dotted keys, so two locales compare key by key.
+func flattenLocale(t *testing.T, name string) map[string]string {
+	t.Helper()
+	data, err := os.ReadFile(filepath.Join(repoRootForTest(t), "internal/web/translation", name))
+	if err != nil {
+		t.Fatalf("read %s: %v", name, err)
+	}
+	var tree map[string]any
+	if err := json.Unmarshal(data, &tree); err != nil {
+		t.Fatalf("parse %s: %v", name, err)
+	}
+	out := map[string]string{}
+	var walk func(prefix string, node map[string]any)
+	walk = func(prefix string, node map[string]any) {
+		for k, v := range node {
+			switch v := v.(type) {
+			case map[string]any:
+				walk(prefix+k+".", v)
+			case string:
+				out[prefix+k] = v
+			}
+		}
+	}
+	walk("", tree)
+	return out
+}
+
+// languageNeutralBotKeys read the same in every language (addresses, protocol
+// names, a command), so an English-equal value there is not a missed translation.
+var languageNeutralBotKeys = map[string]bool{
+	"tgbot.messages.ip": true, "tgbot.messages.ipv4": true, "tgbot.messages.ipv6": true,
+	"tgbot.messages.tcpCount": true, "tgbot.messages.udpCount": true, "tgbot.messages.jsonURL": true,
+	"tgbot.messages.email": true, "tgbot.commands.restartUsage": true, "tgbot.noValue": true,
+	"tgbot.buttons.change_email": true, "tgbot.draft.email": true,
+}
+
+// A ru-RU bot showed "Panel › Main", "Back", "QR code" and the inline notice in
+// English because those keys were copied from en-US and never translated.
+func TestRussianBotStringsAreTranslated(t *testing.T) {
+	en, ru := flattenLocale(t, "en-US.json"), flattenLocale(t, "ru-RU.json")
+	var untranslated []string
+	for key, value := range en {
+		if !strings.HasPrefix(key, "tgbot.") || languageNeutralBotKeys[key] {
+			continue
+		}
+		if got, ok := ru[key]; !ok || got == value {
+			untranslated = append(untranslated, key)
+		}
+	}
+	sort.Strings(untranslated)
+	if len(untranslated) > 0 {
+		t.Errorf("ru-RU bot keys left in English:\n%s", strings.Join(untranslated, "\n"))
+	}
+}

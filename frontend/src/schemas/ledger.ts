@@ -6,8 +6,10 @@ export const LedgerServerSchema = z.object({
   id: z.number(),
   name: z.string(),
   monthlyCost: z.number(),
+  billingDay: z.number(),
   startMonth: z.string(),
   endMonth: z.string(),
+  paidThrough: z.string(),
 });
 export type LedgerServer = z.infer<typeof LedgerServerSchema>;
 
@@ -31,10 +33,29 @@ export const LedgerNonPayingSchema = z.object({
 });
 export type LedgerNonPaying = z.infer<typeof LedgerNonPayingSchema>;
 
+export const LedgerPaymentSchema = z.object({
+  price: z
+    .number({ error: 'pages.ledger.errPrice' })
+    .int('pages.ledger.errPrice')
+    .min(0, 'pages.ledger.errPrice'),
+  currency: z.string(),
+  discounts: z.string(),
+  details: z.string(),
+});
+export type LedgerPayment = z.infer<typeof LedgerPaymentSchema>;
+
+export const LedgerServerDueSchema = z.object({
+  serverId: z.number(),
+  name: z.string(),
+  amount: z.number(),
+  date: z.string(),
+});
+
 export const LedgerReportSchema = z.object({
   month: z.string(),
   currency: z.string(),
   price: z.number(),
+  payment: LedgerPaymentSchema,
   income: z.number(),
   serverCosts: z.number(),
   otherExpenses: z.number(),
@@ -45,6 +66,7 @@ export const LedgerReportSchema = z.object({
   nonPaying: z.array(LedgerNonPayingSchema),
   freeGroups: z.array(z.string()),
   servers: z.array(LedgerServerSchema),
+  upcoming: z.array(LedgerServerDueSchema),
   entries: z.array(LedgerEntrySchema),
 });
 export type LedgerReport = z.infer<typeof LedgerReportSchema>;
@@ -57,6 +79,11 @@ export const LedgerServerFormSchema = z
       .number({ error: 'pages.ledger.errAmount' })
       .int('pages.ledger.errAmount')
       .positive('pages.ledger.errAmount'),
+    billingDay: z
+      .number({ error: 'pages.ledger.errDay' })
+      .int('pages.ledger.errDay')
+      .min(1, 'pages.ledger.errDay')
+      .max(31, 'pages.ledger.errDay'),
     startMonth: z.string().regex(MONTH_PATTERN, 'pages.ledger.errMonth'),
     endMonth: z.string().regex(MONTH_PATTERN, 'pages.ledger.errMonth').or(z.literal('')),
   })

@@ -171,7 +171,8 @@ func TestResetAllTrafficsAnswersWithNoClients(t *testing.T) {
 // stores for its inbound: filled into a template unescaped, they became markup.
 func TestClientInfoEscapesNodeValues(t *testing.T) {
 	tb := initReportDB(t)
-	draftLocalizer(t, &i18n.Message{ID: "tgbot.messages.email", Other: "📧 Email: {{ .Email }}\r\n"})
+	draftLocalizer(t, &i18n.Message{ID: "tgbot.messages.email", Other: "📧 Email: {{ .Email }}\r\n"},
+		&i18n.Message{ID: "tgbot.messages.attachedInbounds", Other: "🔗 Inbounds: {{ .Inbounds }}\r\n"})
 	remark := `<a href="https://evil.example/">Panel session expired</a>`
 	email := "<b>zz</b>"
 	seedReportClients(t, remark, []string{email})

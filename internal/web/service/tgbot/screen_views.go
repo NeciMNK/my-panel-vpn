@@ -28,7 +28,14 @@ func (t *Tgbot) screenHome(chatID, userID int64, delivery ...screenDelivery) {
 		return
 	}
 	body := t.homeSummary()
-	t.renderScreen(chatID, t.newScreen("main", body, t.homeRows()...), delivery...)
+	rows := t.homeRows()
+	// An admin bound as a client also pays: its own view is one tap away.
+	if traffics, err := t.inboundService.GetClientTrafficTgBot(userID); err == nil && len(traffics) > 0 {
+		rows = append([][]telego.InlineKeyboardButton{
+			tu.InlineKeyboardRow(t.btn("tgbot.buttons.mySubscription", cbMySubscription)),
+		}, rows...)
+	}
+	t.renderScreen(chatID, t.newScreen("main", body, rows...), delivery...)
 }
 
 // screenClientHome is a client's own entry point: its usage, then links and QR.
@@ -62,6 +69,11 @@ func (t *Tgbot) screenClientHome(chatID, userID int64, delivery ...screenDeliver
 	if info := t.loadPaymentInfo(); info.billed() {
 		body.WriteString(t.paymentBlock(info, traffics))
 		rows = append(rows, t.paymentRows(traffics)...)
+	}
+	if t.levelOf(userID) == levelAdmin {
+		rows = append(rows, t.backRow())
+		t.renderScreen(chatID, t.newScreen("main", body.String(), rows...), delivery...)
+		return
 	}
 	t.renderScreen(chatID, t.rootScreen("main", body.String(), rows...), delivery...)
 }
@@ -99,7 +111,7 @@ func (t *Tgbot) screenServer(chatID int64, delivery ...screenDelivery) {
 	body := strings.TrimRight(t.prepareServerUsageInfo(), "\r\n")
 	rows := [][]telego.InlineKeyboardButton{
 		tu.InlineKeyboardRow(t.btn("tgbot.buttons.refresh", cbServer)),
-		t.backRow(),
+		t.backTo(cbCatServer),
 	}
 	t.renderScreen(chatID, t.newScreen("status", body, rows...), delivery...)
 }
@@ -110,7 +122,7 @@ func (t *Tgbot) screenOnlines(chatID int64) {
 	process := xrayProcessOrNil()
 	if process == nil {
 		t.renderScreen(chatID, t.newScreen("onlines", t.I18nBot("tgbot.wentWrong"),
-			tu.InlineKeyboardRow(t.btn("tgbot.buttons.refresh", cbOnlines)), t.backRow()))
+			tu.InlineKeyboardRow(t.btn("tgbot.buttons.refresh", cbOnlines)), t.backTo(cbCatServer)))
 		return
 	}
 	onlines := process.GetOnlineClients()
@@ -125,7 +137,7 @@ func (t *Tgbot) screenOnlines(chatID int64) {
 	body += t.I18nBot("tgbot.messages.refreshedOn", "Time=="+time.Now().Format("2006-01-02 15:04:05"))
 	rows := [][]telego.InlineKeyboardButton{
 		tu.InlineKeyboardRow(t.btn("tgbot.buttons.refresh", cbOnlines)),
-		t.backRow(),
+		t.backTo(cbCatServer),
 	}
 	t.renderScreen(chatID, t.newScreen("onlines", body, rows...))
 }
@@ -136,7 +148,7 @@ func (t *Tgbot) screenDeplete(chatID int64) {
 	body := t.depleteReport()
 	rows := [][]telego.InlineKeyboardButton{
 		tu.InlineKeyboardRow(t.btn("tgbot.buttons.refresh", cbDeplete)),
-		t.backRow(),
+		t.backTo(cbCatTraffic),
 	}
 	t.renderScreen(chatID, t.newScreen("deplete", body, rows...))
 }
@@ -213,12 +225,12 @@ func (t *Tgbot) depletionThresholds() (traffic, expire int64) {
 func (t *Tgbot) screenReport(chatID int64) {
 	emails, err := t.inboundService.GetAllEmails()
 	if err != nil {
-		t.renderScreen(chatID, t.newScreen("reports", t.I18nBot("tgbot.answers.errorOperation"), t.backRow()))
+		t.renderScreen(chatID, t.newScreen("reports", t.I18nBot("tgbot.answers.errorOperation"), t.backTo(cbCatTraffic)))
 		return
 	}
 	validEmails, missingEmails, err := t.inboundService.FilterAndSortClientEmails(emails)
 	if err != nil {
-		t.renderScreen(chatID, t.newScreen("reports", t.I18nBot("tgbot.answers.errorOperation"), t.backRow()))
+		t.renderScreen(chatID, t.newScreen("reports", t.I18nBot("tgbot.answers.errorOperation"), t.backTo(cbCatTraffic)))
 		return
 	}
 
@@ -237,7 +249,7 @@ func (t *Tgbot) screenReport(chatID int64) {
 	}
 	rows := [][]telego.InlineKeyboardButton{
 		tu.InlineKeyboardRow(t.btn("tgbot.buttons.refresh", cbReport)),
-		t.backRow(),
+		t.backTo(cbCatTraffic),
 	}
 	t.renderScreen(chatID, t.newScreen("reports", report.String(), rows...))
 }

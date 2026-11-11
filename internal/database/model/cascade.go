@@ -10,9 +10,14 @@ type Cascade struct {
 	EntryNodeId int    `json:"entryNodeId" gorm:"column:entry_node_id" example:"1"`
 	ExitNodeIds []int  `json:"exitNodeIds" gorm:"serializer:json;column:exit_node_ids"`
 	// ExitCountry, when set, makes every enabled node of that country an exit.
-	ExitCountry      string        `json:"exitCountry" gorm:"column:exit_country" example:"DE"`
-	EntryInboundTags []string      `json:"entryInboundTags" gorm:"serializer:json;column:entry_inbound_tags"`
-	Strategy         string        `json:"strategy" gorm:"default:leastPing" example:"leastPing"`
+	ExitCountry      string   `json:"exitCountry" gorm:"column:exit_country" example:"DE"`
+	EntryInboundTags []string `json:"entryInboundTags" gorm:"serializer:json;column:entry_inbound_tags"`
+	Strategy         string   `json:"strategy" gorm:"default:leastPing" example:"leastPing"`
+	// Mode is split, relay or both; empty is a cascade saved before modes, a relay.
+	Mode             string        `json:"mode" example:"split"`
+	DirectDomains    []string      `json:"directDomains" gorm:"serializer:json;column:direct_domains"`
+	DirectIPs        []string      `json:"directIps" gorm:"serializer:json;column:direct_ips"`
+	RelayInboundTags []string      `json:"relayInboundTags" gorm:"serializer:json;column:relay_inbound_tags"`
 	Links            []CascadeLink `json:"links" gorm:"serializer:json"`
 	LastError        string        `json:"lastError" gorm:"column:last_error"`
 	CreatedAt        int64         `json:"createdAt" gorm:"autoCreateTime"`

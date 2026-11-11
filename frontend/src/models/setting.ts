@@ -36,11 +36,8 @@ export class AllSetting {
   tgCpu = 80;
   tgMemory = 80;
   tgLang = 'en-US';
-  tgPaymentPrice = 0;
-  tgPaymentCurrency = '';
-  tgPaymentDiscounts = '';
-  tgPaymentDetails = '';
   tgFreePlanEnable = false;
+  tgFreePlanGB = 10;
   twoFactorEnable = false;
   twoFactorToken = '';
   xrayTemplateConfig = '';

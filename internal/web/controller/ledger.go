@@ -24,9 +24,11 @@ func (a *LedgerController) initRouter(g *gin.RouterGroup) {
 	g.GET("/report", a.report)
 	g.POST("/servers/save", a.saveServer)
 	g.POST("/servers/delete", a.deleteServer)
+	g.POST("/servers/extend", a.extendServer)
 	g.POST("/entries/add", a.addEntry)
 	g.POST("/entries/delete", a.deleteEntry)
 	g.POST("/nonPaying", a.setNonPaying)
+	g.POST("/payment", a.savePayment)
 }
 
 func (a *LedgerController) report(c *gin.Context) {
@@ -66,6 +68,25 @@ func (a *LedgerController) deleteServer(c *gin.Context) {
 		return
 	}
 	jsonMsg(c, I18nWeb(c, "pages.ledger.toasts.deleted"), a.ledgerService.DeleteServer(body.Id))
+}
+
+type ledgerExtendBody struct {
+	Id     int `json:"id"`
+	Months int `json:"months"`
+}
+
+func (a *LedgerController) extendServer(c *gin.Context) {
+	var body ledgerExtendBody
+	if err := c.ShouldBindJSON(&body); err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	server, err := a.ledgerService.ExtendServer(body.Id, body.Months, time.Now())
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	jsonObj(c, server, nil)
 }
 
 func (a *LedgerController) addEntry(c *gin.Context) {
@@ -110,4 +131,13 @@ func (a *LedgerController) setNonPaying(c *gin.Context) {
 		err = a.ledgerService.SetGroupNonPaying(body.Group, body.NonPaying)
 	}
 	jsonMsg(c, I18nWeb(c, "pages.ledger.toasts.saved"), err)
+}
+
+func (a *LedgerController) savePayment(c *gin.Context) {
+	var payment service.LedgerPayment
+	if err := c.ShouldBindJSON(&payment); err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	jsonMsg(c, I18nWeb(c, "pages.ledger.toasts.saved"), a.ledgerService.SavePayment(payment))
 }

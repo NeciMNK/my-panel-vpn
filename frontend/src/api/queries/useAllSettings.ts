@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { HttpUtil, Msg } from '@/utils';
@@ -42,9 +42,13 @@ export function useAllSettings() {
     (left, right) => left.equals(right),
   );
   const allSetting = draft ?? server;
+  // The server keeps every field a save leaves out, so only what was edited here is
+  // sent: a field this page never touched cannot be reset from a stale copy.
+  const editedKeys = useRef(new Set<string>());
 
   const updateSetting = useCallback(
     (patch: Partial<AllSetting>) => {
+      for (const key of Object.keys(patch)) editedKeys.current.add(key);
       setDraft((prev) => {
         const next = new AllSetting(prev ?? server);
         Object.assign(next, patch);
@@ -81,17 +85,24 @@ export function useAllSettings() {
     },
   });
 
-  const saveAll = useCallback(async () => {
-    const saved = new AllSetting(allSetting);
-    return (await saveMut.mutateAsync({ payload: { ...saved }, saved })).msg;
-  }, [allSetting, saveMut]);
-  const savePayload = useCallback(
-    async (payload: SettingSavePayload) => {
+  const saveEdited = useCallback(
+    async (extra: SettingSavePayload) => {
       const saved = new AllSetting(allSetting);
-      Object.assign(saved, payload);
-      return (await saveMut.mutateAsync({ payload, saved })).msg;
+      Object.assign(saved, extra);
+      const sent = [...editedKeys.current];
+      const edited = Object.fromEntries(
+        sent.map((key) => [key, (saved as unknown as Record<string, unknown>)[key]]),
+      );
+      const { msg } = await saveMut.mutateAsync({ payload: { ...edited, ...extra }, saved });
+      if (msg?.success) for (const key of sent) editedKeys.current.delete(key);
+      return msg;
     },
     [allSetting, saveMut],
+  );
+  const saveAll = useCallback(() => saveEdited({}), [saveEdited]);
+  const savePayload = useCallback(
+    (payload: SettingSavePayload) => saveEdited(payload),
+    [saveEdited],
   );
   const saveDisabled = !isDirty;
 

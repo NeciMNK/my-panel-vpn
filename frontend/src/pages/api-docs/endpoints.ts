@@ -2104,6 +2104,14 @@ export const sections: readonly Section[] = [
       },
       {
         method: 'POST',
+        path: '/panel/api/ledger/servers/extend',
+        summary:
+          'Pay a server ahead for 1-36 months: its next payment date and reminder move past them, and a stopped server runs again until then.',
+        body: '{\n  "id": 1,\n  "months": 3\n}',
+        responseSchema: 'LedgerServer',
+      },
+      {
+        method: 'POST',
         path: '/panel/api/ledger/entries/add',
         summary:
           'Book an income (a payment received) or a one-off expense to a month. Confirmed Telegram payments are booked automatically.',
@@ -2122,6 +2130,13 @@ export const sections: readonly Section[] = [
         summary:
           'Mark one client (by email, e.g. the admin) or a whole client group (e.g. family) as non-paying, or clear the mark. Non-paying clients are left out of the expected income.',
         body: '{\n  "group": "family",\n  "nonPaying": true\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/ledger/payment',
+        summary:
+          'Set what clients pay: the monthly price, the currency, the longer-term discounts (months:percent pairs) and where to pay. The Telegram bot bills by these. A bad discount list is refused and nothing is changed.',
+        body: '{\n  "price": 300,\n  "currency": "RUB",\n  "discounts": "3:10, 6:15, 12:20",\n  "details": "Card 2200 0000 0000 0000"\n}',
       },
     ],
   },
@@ -2401,7 +2416,7 @@ export const sections: readonly Section[] = [
         method: 'POST',
         path: '/panel/api/setting/update',
         summary:
-          'Persist every setting at once. The body mirrors the shape returned by /all. Invalid values (bad ports, missing cert pairs, etc.) are rejected before write.',
+          'Persist settings. The body mirrors the shape returned by /all; a field it leaves out keeps its stored value, and a secret left out or blank stays unchanged unless its clear flag is set. Invalid values (bad ports, missing cert pairs, etc.) are rejected before write.',
         body: '{\n  "webPort": 2053,\n  "webBasePath": "/",\n  "subPort": 10882,\n  "subPath": "/sub/",\n  "subClashAutoDetect": false,\n  "subClashUserAgentRegex": "",\n  "subJsonEnable": false,\n  "subJsonAutoDetect": false,\n  "subJsonAlwaysArray": false,\n  "subJsonUserAgentRegex": "",\n  "subJsonPath": "/json/",\n  "subJsonURI": "https://sub.example.com/json/",\n  "subClashEnable": true,\n  "subClashPath": "/clash/",\n  "subClashURI": "https://sub.example.com/clash/",\n  "tgBotEnable": false,\n  ...\n}',
       },
       {

@@ -31,6 +31,7 @@ const (
 	cbCatMaintenance = "cat:maintenance"
 	cbResetAll       = "rst_all"
 	cbRestartXry     = "xray_restart"
+	cbMySubscription = "my_sub"
 )
 
 // homeRows is the admin's menu: four categories and a refresh, one row per
@@ -107,7 +108,11 @@ func (t *Tgbot) btn(labelKey, data string) telego.InlineKeyboardButton {
 	return tu.InlineKeyboardButton(t.I18nBot(labelKey)).WithCallbackData(data)
 }
 
-// backRow is the single "up" control a non-root screen carries.
-func (t *Tgbot) backRow() []telego.InlineKeyboardButton {
-	return tu.InlineKeyboardRow(t.btn("tgbot.buttons.back", cbHome))
+// backRow is the "up" control of a screen whose parent is the main menu.
+func (t *Tgbot) backRow() []telego.InlineKeyboardButton { return t.backTo(cbHome) }
+
+// backTo is the single "up" control of a deeper screen: it leads one level up,
+// so an admin deep in a client is not thrown back to the main menu.
+func (t *Tgbot) backTo(parent string) []telego.InlineKeyboardButton {
+	return tu.InlineKeyboardRow(t.btn("tgbot.buttons.back", parent))
 }

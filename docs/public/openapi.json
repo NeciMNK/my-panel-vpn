@@ -561,31 +561,19 @@
             "type": "string"
           },
           "tgFreePlanEnable": {
+            "description": "Prices and discounts are edited on the Finance page (LedgerService.SavePayment), not here.",
             "type": "boolean"
+          },
+          "tgFreePlanGB": {
+            "maximum": 100000,
+            "minimum": 1,
+            "type": "integer"
           },
           "tgLang": {
             "type": "string"
           },
           "tgMemory": {
             "maximum": 100,
-            "minimum": 0,
-            "type": "integer"
-          },
-          "tgPaymentCurrency": {
-            "example": "RUB",
-            "type": "string"
-          },
-          "tgPaymentDetails": {
-            "example": "Card 2200 0000 0000 0000",
-            "type": "string"
-          },
-          "tgPaymentDiscounts": {
-            "example": "3:10, 6:15, 12:20",
-            "type": "string"
-          },
-          "tgPaymentPrice": {
-            "description": "Monthly price, multi-month discounts and payment details shown to clients in the bot.",
-            "example": 300,
             "minimum": 0,
             "type": "integer"
           },
@@ -802,12 +790,9 @@
           "tgCpu",
           "tgEnabledEvents",
           "tgFreePlanEnable",
+          "tgFreePlanGB",
           "tgLang",
           "tgMemory",
-          "tgPaymentCurrency",
-          "tgPaymentDetails",
-          "tgPaymentDiscounts",
-          "tgPaymentPrice",
           "tgRunTime",
           "timeLocation",
           "trafficDiff",
@@ -1383,31 +1368,19 @@
             "type": "string"
           },
           "tgFreePlanEnable": {
+            "description": "Prices and discounts are edited on the Finance page (LedgerService.SavePayment), not here.",
             "type": "boolean"
+          },
+          "tgFreePlanGB": {
+            "maximum": 100000,
+            "minimum": 1,
+            "type": "integer"
           },
           "tgLang": {
             "type": "string"
           },
           "tgMemory": {
             "maximum": 100,
-            "minimum": 0,
-            "type": "integer"
-          },
-          "tgPaymentCurrency": {
-            "example": "RUB",
-            "type": "string"
-          },
-          "tgPaymentDetails": {
-            "example": "Card 2200 0000 0000 0000",
-            "type": "string"
-          },
-          "tgPaymentDiscounts": {
-            "example": "3:10, 6:15, 12:20",
-            "type": "string"
-          },
-          "tgPaymentPrice": {
-            "description": "Monthly price, multi-month discounts and payment details shown to clients in the bot.",
-            "example": 300,
             "minimum": 0,
             "type": "integer"
           },
@@ -1632,12 +1605,9 @@
           "tgCpu",
           "tgEnabledEvents",
           "tgFreePlanEnable",
+          "tgFreePlanGB",
           "tgLang",
           "tgMemory",
-          "tgPaymentCurrency",
-          "tgPaymentDetails",
-          "tgPaymentDiscounts",
-          "tgPaymentPrice",
           "tgRunTime",
           "timeLocation",
           "trafficDiff",
@@ -1789,6 +1759,18 @@
             "format": "int64",
             "type": "integer"
           },
+          "directDomains": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "directIps": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
           "enable": {
             "example": true,
             "type": "boolean"
@@ -1827,9 +1809,20 @@
             },
             "type": "array"
           },
+          "mode": {
+            "description": "Mode is split, relay or both; empty is a cascade saved before modes, a relay.",
+            "example": "split",
+            "type": "string"
+          },
           "name": {
             "example": "RU → DE",
             "type": "string"
+          },
+          "relayInboundTags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           },
           "strategy": {
             "example": "leastPing",
@@ -1842,6 +1835,8 @@
         },
         "required": [
           "createdAt",
+          "directDomains",
+          "directIps",
           "enable",
           "entryInboundTags",
           "entryNodeId",
@@ -1850,7 +1845,9 @@
           "id",
           "lastError",
           "links",
+          "mode",
           "name",
+          "relayInboundTags",
           "strategy",
           "updatedAt"
         ],
@@ -3989,6 +3986,34 @@
         ],
         "type": "object"
       },
+      "LedgerPayment": {
+        "description": "LedgerPayment is what clients pay: the bot bills by it and the Finance page edits it.",
+        "properties": {
+          "currency": {
+            "example": "RUB",
+            "type": "string"
+          },
+          "details": {
+            "example": "Card 2200 0000 0000 0000",
+            "type": "string"
+          },
+          "discounts": {
+            "example": "3:10, 6:15, 12:20",
+            "type": "string"
+          },
+          "price": {
+            "example": 300,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "currency",
+          "details",
+          "discounts",
+          "price"
+        ],
+        "type": "object"
+      },
       "LedgerReport": {
         "description": "LedgerReport is one month of the book. Money is in whole units of Currency.",
         "properties": {
@@ -4042,6 +4067,9 @@
             "example": 10,
             "type": "integer"
           },
+          "payment": {
+            "$ref": "#/components/schemas/LedgerPayment"
+          },
           "price": {
             "example": 300,
             "type": "integer"
@@ -4053,6 +4081,12 @@
           "servers": {
             "items": {
               "$ref": "#/components/schemas/LedgerServer"
+            },
+            "type": "array"
+          },
+          "upcoming": {
+            "items": {
+              "$ref": "#/components/schemas/LedgerServerDue"
             },
             "type": "array"
           }
@@ -4069,15 +4103,22 @@
           "nonPaying",
           "otherExpenses",
           "payingClients",
+          "payment",
           "price",
           "serverCosts",
-          "servers"
+          "servers",
+          "upcoming"
         ],
         "type": "object"
       },
       "LedgerServer": {
         "description": "LedgerServer is a recurring monthly server cost, charged to every month from\nStartMonth through EndMonth (YYYY-MM; empty EndMonth means still running).",
         "properties": {
+          "billingDay": {
+            "description": "BillingDay is the day of the month the bill is due; short months move it to their last day.",
+            "example": 15,
+            "type": "integer"
+          },
           "endMonth": {
             "type": "string"
           },
@@ -4093,17 +4134,52 @@
             "example": "Hetzner DE",
             "type": "string"
           },
+          "paidThrough": {
+            "description": "PaidThrough is the last YYYY-MM whose bill the admin paid ahead with Extend.",
+            "example": "2027-02",
+            "type": "string"
+          },
           "startMonth": {
             "example": "2026-11",
             "type": "string"
           }
         },
         "required": [
+          "billingDay",
           "endMonth",
           "id",
           "monthlyCost",
           "name",
+          "paidThrough",
           "startMonth"
+        ],
+        "type": "object"
+      },
+      "LedgerServerDue": {
+        "description": "LedgerServerDue is a server's next bill.",
+        "properties": {
+          "amount": {
+            "example": 500,
+            "type": "integer"
+          },
+          "date": {
+            "example": "2026-11-15",
+            "type": "string"
+          },
+          "name": {
+            "example": "Hetzner DE",
+            "type": "string"
+          },
+          "serverId": {
+            "example": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "amount",
+          "date",
+          "name",
+          "serverId"
         ],
         "type": "object"
       },
@@ -12407,6 +12483,12 @@
                   "obj": [
                     {
                       "createdAt": 0,
+                      "directDomains": [
+                        ""
+                      ],
+                      "directIps": [
+                        ""
+                      ],
                       "enable": true,
                       "entryInboundTags": [
                         ""
@@ -12431,7 +12513,11 @@
                           "shortId": ""
                         }
                       ],
+                      "mode": "split",
                       "name": "RU → DE",
+                      "relayInboundTags": [
+                        ""
+                      ],
                       "strategy": "leastPing",
                       "updatedAt": 0
                     }
@@ -12494,6 +12580,12 @@
                   "success": true,
                   "obj": {
                     "createdAt": 0,
+                    "directDomains": [
+                      ""
+                    ],
+                    "directIps": [
+                      ""
+                    ],
                     "enable": true,
                     "entryInboundTags": [
                       ""
@@ -12518,7 +12610,11 @@
                         "shortId": ""
                       }
                     ],
+                    "mode": "split",
                     "name": "RU → DE",
+                    "relayInboundTags": [
+                      ""
+                    ],
                     "strategy": "leastPing",
                     "updatedAt": 0
                   }
@@ -12591,6 +12687,12 @@
                   "success": true,
                   "obj": {
                     "createdAt": 0,
+                    "directDomains": [
+                      ""
+                    ],
+                    "directIps": [
+                      ""
+                    ],
                     "enable": true,
                     "entryInboundTags": [
                       ""
@@ -12615,7 +12717,11 @@
                         "shortId": ""
                       }
                     ],
+                    "mode": "split",
                     "name": "RU → DE",
+                    "relayInboundTags": [
+                      ""
+                    ],
                     "strategy": "leastPing",
                     "updatedAt": 0
                   }
@@ -14521,15 +14627,31 @@
                     ],
                     "otherExpenses": 0,
                     "payingClients": 10,
+                    "payment": {
+                      "currency": "RUB",
+                      "details": "Card 2200 0000 0000 0000",
+                      "discounts": "3:10, 6:15, 12:20",
+                      "price": 300
+                    },
                     "price": 300,
                     "serverCosts": 1500,
                     "servers": [
                       {
+                        "billingDay": 15,
                         "endMonth": "",
                         "id": 1,
                         "monthlyCost": 500,
                         "name": "Hetzner DE",
+                        "paidThrough": "2027-02",
                         "startMonth": "2026-11"
+                      }
+                    ],
+                    "upcoming": [
+                      {
+                        "amount": 500,
+                        "date": "2026-11-15",
+                        "name": "Hetzner DE",
+                        "serverId": 1
                       }
                     ]
                   }
@@ -14586,10 +14708,12 @@
                 "example": {
                   "success": true,
                   "obj": {
+                    "billingDay": 15,
                     "endMonth": "",
                     "id": 1,
                     "monthlyCost": 500,
                     "name": "Hetzner DE",
+                    "paidThrough": "2027-02",
                     "startMonth": "2026-11"
                   }
                 }
@@ -14634,6 +14758,64 @@
                       "type": "string"
                     },
                     "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/ledger/servers/extend": {
+      "post": {
+        "tags": [
+          "Ledger"
+        ],
+        "summary": "Pay a server ahead for 1-36 months: its next payment date and reminder move past them, and a stopped server runs again until then.",
+        "operationId": "post_panel_api_ledger_servers_extend",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "id": 1,
+                "months": 3
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/LedgerServer"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "billingDay": 15,
+                    "endMonth": "",
+                    "id": 1,
+                    "monthlyCost": 500,
+                    "name": "Hetzner DE",
+                    "paidThrough": "2027-02",
+                    "startMonth": "2026-11"
                   }
                 }
               }
@@ -14763,6 +14945,52 @@
               "example": {
                 "group": "family",
                 "nonPaying": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/ledger/payment": {
+      "post": {
+        "tags": [
+          "Ledger"
+        ],
+        "summary": "Set what clients pay: the monthly price, the currency, the longer-term discounts (months:percent pairs) and where to pay. The Telegram bot bills by these. A bad discount list is refused and nothing is changed.",
+        "operationId": "post_panel_api_ledger_payment",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "price": 300,
+                "currency": "RUB",
+                "discounts": "3:10, 6:15, 12:20",
+                "details": "Card 2200 0000 0000 0000"
               }
             }
           }
@@ -16199,7 +16427,7 @@
         "tags": [
           "Settings"
         ],
-        "summary": "Persist every setting at once. The body mirrors the shape returned by /all. Invalid values (bad ports, missing cert pairs, etc.) are rejected before write.",
+        "summary": "Persist settings. The body mirrors the shape returned by /all; a field it leaves out keeps its stored value, and a secret left out or blank stays unchanged unless its clear flag is set. Invalid values (bad ports, missing cert pairs, etc.) are rejected before write.",
         "operationId": "post_panel_api_setting_update",
         "requestBody": {
           "required": true,

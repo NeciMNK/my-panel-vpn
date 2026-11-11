@@ -535,31 +535,19 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "string"
       },
       "tgFreePlanEnable": {
+        "description": "Prices and discounts are edited on the Finance page (LedgerService.SavePayment), not here.",
         "type": "boolean"
+      },
+      "tgFreePlanGB": {
+        "maximum": 100000,
+        "minimum": 1,
+        "type": "integer"
       },
       "tgLang": {
         "type": "string"
       },
       "tgMemory": {
         "maximum": 100,
-        "minimum": 0,
-        "type": "integer"
-      },
-      "tgPaymentCurrency": {
-        "example": "RUB",
-        "type": "string"
-      },
-      "tgPaymentDetails": {
-        "example": "Card 2200 0000 0000 0000",
-        "type": "string"
-      },
-      "tgPaymentDiscounts": {
-        "example": "3:10, 6:15, 12:20",
-        "type": "string"
-      },
-      "tgPaymentPrice": {
-        "description": "Monthly price, multi-month discounts and payment details shown to clients in the bot.",
-        "example": 300,
         "minimum": 0,
         "type": "integer"
       },
@@ -776,12 +764,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgCpu",
       "tgEnabledEvents",
       "tgFreePlanEnable",
+      "tgFreePlanGB",
       "tgLang",
       "tgMemory",
-      "tgPaymentCurrency",
-      "tgPaymentDetails",
-      "tgPaymentDiscounts",
-      "tgPaymentPrice",
       "tgRunTime",
       "timeLocation",
       "trafficDiff",
@@ -1357,31 +1342,19 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "string"
       },
       "tgFreePlanEnable": {
+        "description": "Prices and discounts are edited on the Finance page (LedgerService.SavePayment), not here.",
         "type": "boolean"
+      },
+      "tgFreePlanGB": {
+        "maximum": 100000,
+        "minimum": 1,
+        "type": "integer"
       },
       "tgLang": {
         "type": "string"
       },
       "tgMemory": {
         "maximum": 100,
-        "minimum": 0,
-        "type": "integer"
-      },
-      "tgPaymentCurrency": {
-        "example": "RUB",
-        "type": "string"
-      },
-      "tgPaymentDetails": {
-        "example": "Card 2200 0000 0000 0000",
-        "type": "string"
-      },
-      "tgPaymentDiscounts": {
-        "example": "3:10, 6:15, 12:20",
-        "type": "string"
-      },
-      "tgPaymentPrice": {
-        "description": "Monthly price, multi-month discounts and payment details shown to clients in the bot.",
-        "example": 300,
         "minimum": 0,
         "type": "integer"
       },
@@ -1606,12 +1579,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgCpu",
       "tgEnabledEvents",
       "tgFreePlanEnable",
+      "tgFreePlanGB",
       "tgLang",
       "tgMemory",
-      "tgPaymentCurrency",
-      "tgPaymentDetails",
-      "tgPaymentDiscounts",
-      "tgPaymentPrice",
       "tgRunTime",
       "timeLocation",
       "trafficDiff",
@@ -1763,6 +1733,18 @@ export const SCHEMAS: Record<string, unknown> = {
         "format": "int64",
         "type": "integer"
       },
+      "directDomains": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "directIps": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
       "enable": {
         "example": true,
         "type": "boolean"
@@ -1801,9 +1783,20 @@ export const SCHEMAS: Record<string, unknown> = {
         },
         "type": "array"
       },
+      "mode": {
+        "description": "Mode is split, relay or both; empty is a cascade saved before modes, a relay.",
+        "example": "split",
+        "type": "string"
+      },
       "name": {
         "example": "RU → DE",
         "type": "string"
+      },
+      "relayInboundTags": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
       },
       "strategy": {
         "example": "leastPing",
@@ -1816,6 +1809,8 @@ export const SCHEMAS: Record<string, unknown> = {
     },
     "required": [
       "createdAt",
+      "directDomains",
+      "directIps",
       "enable",
       "entryInboundTags",
       "entryNodeId",
@@ -1824,7 +1819,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "id",
       "lastError",
       "links",
+      "mode",
       "name",
+      "relayInboundTags",
       "strategy",
       "updatedAt"
     ],
@@ -3963,6 +3960,34 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "LedgerPayment": {
+    "description": "LedgerPayment is what clients pay: the bot bills by it and the Finance page edits it.",
+    "properties": {
+      "currency": {
+        "example": "RUB",
+        "type": "string"
+      },
+      "details": {
+        "example": "Card 2200 0000 0000 0000",
+        "type": "string"
+      },
+      "discounts": {
+        "example": "3:10, 6:15, 12:20",
+        "type": "string"
+      },
+      "price": {
+        "example": 300,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "currency",
+      "details",
+      "discounts",
+      "price"
+    ],
+    "type": "object"
+  },
   "LedgerReport": {
     "description": "LedgerReport is one month of the book. Money is in whole units of Currency.",
     "properties": {
@@ -4016,6 +4041,9 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": 10,
         "type": "integer"
       },
+      "payment": {
+        "$ref": "#/components/schemas/LedgerPayment"
+      },
       "price": {
         "example": 300,
         "type": "integer"
@@ -4027,6 +4055,12 @@ export const SCHEMAS: Record<string, unknown> = {
       "servers": {
         "items": {
           "$ref": "#/components/schemas/LedgerServer"
+        },
+        "type": "array"
+      },
+      "upcoming": {
+        "items": {
+          "$ref": "#/components/schemas/LedgerServerDue"
         },
         "type": "array"
       }
@@ -4043,15 +4077,22 @@ export const SCHEMAS: Record<string, unknown> = {
       "nonPaying",
       "otherExpenses",
       "payingClients",
+      "payment",
       "price",
       "serverCosts",
-      "servers"
+      "servers",
+      "upcoming"
     ],
     "type": "object"
   },
   "LedgerServer": {
     "description": "LedgerServer is a recurring monthly server cost, charged to every month from\nStartMonth through EndMonth (YYYY-MM; empty EndMonth means still running).",
     "properties": {
+      "billingDay": {
+        "description": "BillingDay is the day of the month the bill is due; short months move it to their last day.",
+        "example": 15,
+        "type": "integer"
+      },
       "endMonth": {
         "type": "string"
       },
@@ -4067,17 +4108,52 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": "Hetzner DE",
         "type": "string"
       },
+      "paidThrough": {
+        "description": "PaidThrough is the last YYYY-MM whose bill the admin paid ahead with Extend.",
+        "example": "2027-02",
+        "type": "string"
+      },
       "startMonth": {
         "example": "2026-11",
         "type": "string"
       }
     },
     "required": [
+      "billingDay",
       "endMonth",
       "id",
       "monthlyCost",
       "name",
+      "paidThrough",
       "startMonth"
+    ],
+    "type": "object"
+  },
+  "LedgerServerDue": {
+    "description": "LedgerServerDue is a server's next bill.",
+    "properties": {
+      "amount": {
+        "example": 500,
+        "type": "integer"
+      },
+      "date": {
+        "example": "2026-11-15",
+        "type": "string"
+      },
+      "name": {
+        "example": "Hetzner DE",
+        "type": "string"
+      },
+      "serverId": {
+        "example": 1,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "amount",
+      "date",
+      "name",
+      "serverId"
     ],
     "type": "object"
   },
