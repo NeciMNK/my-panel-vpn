@@ -177,6 +177,47 @@ func TestIKEv2FilesRejects(t *testing.T) {
 	}
 }
 
+// Debian 13 ships no strongswan-starter: charon-systemd runs charon there as
+// strongswan.service, and the unit must follow it or the tunnel never starts.
+func TestApplyIKEv2WithoutStarterUsesCharonSystemd(t *testing.T) {
+	root := ikev2Paths(t)
+	baseDir, unitDir = filepath.Join(root, "home"), filepath.Join(root, "units")
+	var cmds []string
+	run = func(name string, args ...string) error {
+		cmds = append(cmds, name+" "+strings.Join(args, " "))
+		if name == "swanctl" {
+			return os.ErrNotExist
+		}
+		return nil
+	}
+	installed := false
+	lookPath = func(bin string) (string, error) {
+		if bin == "ipsec" || !installed && (bin == "swanctl" || bin == "charon-systemd") {
+			return "", os.ErrNotExist
+		}
+		return "/usr/sbin/" + bin, nil
+	}
+	t.Cleanup(func() { run, lookPath = runCommand, exec.LookPath })
+
+	tun := &Tunnel{Id: 8, Kind: KindIKEv2, Enable: true, Server: "1.2.3.4", PSK: "key", Routes: []string{"192.168.1.0/24"}}
+	if err := Apply(tun); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{
+		"apt-get update -qq",
+		"env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq charon-systemd strongswan-swanctl",
+		"swanctl --stats", "systemctl restart strongswan",
+		"systemctl daemon-reload", "systemctl enable x-ui-home-8", "systemctl restart x-ui-home-8",
+	}
+	if !reflect.DeepEqual(cmds, want) {
+		t.Fatalf("commands =\n%v\nwant\n%v", cmds, want)
+	}
+	unit, _ := os.ReadFile(filepath.Join(unitDir, "x-ui-home-8.service"))
+	if !strings.Contains(string(unit), "Wants=network-online.target strongswan.service\nPartOf=strongswan.service\n") {
+		t.Fatalf("unit does not follow charon-systemd:\n%s", unit)
+	}
+}
+
 func TestApplyIKEv2InstallsLoadsAndTearsDown(t *testing.T) {
 	root := ikev2Paths(t)
 	baseDir, unitDir = filepath.Join(root, "home"), filepath.Join(root, "units")

@@ -267,25 +267,35 @@ func writeFiles(files map[string]string) error {
 	return nil
 }
 
+// charonUnit is the systemd unit running charon: strongswan-starter where the
+// legacy ipsec tools are installed, else charon-systemd (Debian 13 has no starter).
+func charonUnit() string {
+	if _, err := lookPath("ipsec"); err == nil {
+		return "strongswan-starter"
+	}
+	return "strongswan"
+}
+
 func unitFile(t *Tunnel, dir string) string {
 	if t.Kind == KindIKEv2 {
+		daemon := charonUnit()
 		return fmt.Sprintf(`[Unit]
-Description=x-ui home network %d
-After=network-online.target strongswan-starter.service
-Wants=network-online.target strongswan-starter.service
-PartOf=strongswan-starter.service
+Description=x-ui home network %[1]d
+After=network-online.target %[4]s.service
+Wants=network-online.target %[4]s.service
+PartOf=%[4]s.service
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=%s
-ExecStop=-/usr/sbin/swanctl --terminate --ike %s --timeout 10
+ExecStart=%[2]s
+ExecStop=-/usr/sbin/swanctl --terminate --ike %[3]s --timeout 10
 Restart=on-failure
 RestartSec=10s
 
 [Install]
 WantedBy=multi-user.target
-`, t.Id, filepath.Join(dir, "start"), unitName(t.Id))
+`, t.Id, filepath.Join(dir, "start"), unitName(t.Id), daemon)
 	}
 	var exec string
 	switch t.Kind {
@@ -378,7 +388,10 @@ func Apply(t *Tunnel) error {
 			}
 		}
 	case KindIKEv2:
-		bins := map[string]string{"ipsec": "strongswan", "swanctl": "strongswan-swanctl"}
+		bins := map[string]string{"swanctl": "strongswan-swanctl"}
+		if charonUnit() == "strongswan" {
+			bins["charon-systemd"] = "charon-systemd"
+		}
 		if t.PSK == "" {
 			bins[eapPlugin] = "libcharon-extra-plugins"
 		}
@@ -393,7 +406,7 @@ func Apply(t *Tunnel) error {
 		files[filepath.Join(dir, "start")] = ikev2Start(t.Id)
 		// charon loads the vici plugin swanctl talks to only when it starts.
 		if run("swanctl", "--stats") != nil {
-			if err := run("systemctl", "restart", "strongswan-starter"); err != nil {
+			if err := run("systemctl", "restart", charonUnit()); err != nil {
 				return err
 			}
 		}

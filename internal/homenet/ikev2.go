@@ -193,7 +193,7 @@ exit 0
 	return b.String()
 }
 
-// ikev2Start loads the connection into charon (run by strongswan-starter) and
+// ikev2Start loads the connection into the running charon and
 // starts it; charon itself retries and restarts it from then on.
 func ikev2Start(id int) string {
 	return fmt.Sprintf(`#!/bin/sh
