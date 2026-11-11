@@ -2,7 +2,6 @@ package tgbot
 
 import (
 	"context"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -13,11 +12,7 @@ import (
 	tu "github.com/mymmrac/telego/telegoutil"
 )
 
-// The bot owns only a leading "@name" or "tg:<id> (Name)" ended by the
-// separator or the comment's end; anything else is the admin's note.
 const tagSeparator = " · "
-
-var ownTagPattern = regexp.MustCompile(`^(?:@[A-Za-z0-9_]+|tg:\d+(?: \([^()]*\))?)(?: · |$)`)
 
 // telegramTag names an account the way the admin searches for it: @username,
 // else the id with the display name, since a name alone is not unique.
@@ -33,9 +28,21 @@ func telegramTag(id int64, username, firstName, lastName string) string {
 	return tag
 }
 
-func mergeTelegramTag(comment, tag string) string {
-	rest := strings.TrimSpace(ownTagPattern.ReplaceAllString(comment, ""))
-	if rest == "" {
+// mergeTelegramTag puts tag in front of comment, dropping only the bot's own
+// earlier tag prev; any other leading "@name" is the admin's.
+func mergeTelegramTag(comment, prev, tag string) string {
+	rest := comment
+	for _, own := range []string{tag, prev} {
+		if own == "" {
+			continue
+		}
+		if rest == own {
+			rest = ""
+		} else if after, ok := strings.CutPrefix(rest, own+tagSeparator); ok {
+			rest = after
+		}
+	}
+	if rest = strings.TrimSpace(rest); rest == "" {
 		return tag
 	}
 	return tag + tagSeparator + rest
@@ -56,8 +63,13 @@ func (t *Tgbot) applyTelegramTag(tgID int64, tag string) {
 		logger.Warning("tgbot: load clients for tag sync failed:", err)
 		return
 	}
+	prev, err := t.clientService.GetTelegramTag(tgID)
+	if err != nil {
+		logger.Warning("tgbot: load the last telegram tag failed:", err)
+		return
+	}
 	for _, record := range records {
-		comment := mergeTelegramTag(record.Comment, tag)
+		comment := mergeTelegramTag(record.Comment, prev, tag)
 		if comment == record.Comment {
 			continue
 		}
@@ -67,6 +79,13 @@ func (t *Tgbot) applyTelegramTag(tgID int64, tag string) {
 		}
 		if err != nil {
 			logger.Warning("tgbot: write telegram tag for", record.Email, "failed:", err)
+		}
+	}
+	// Recorded after the writes: until then the old tag is still prev, and a comment
+	// already rewritten carries the new tag, which merge also treats as its own.
+	if prev != tag {
+		if err := t.clientService.SetTelegramTag(tgID, tag); err != nil {
+			logger.Warning("tgbot: record the telegram tag failed:", err)
 		}
 	}
 }

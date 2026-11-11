@@ -28,20 +28,25 @@ func TestTelegramTagFallsBackFromUsername(t *testing.T) {
 	}
 }
 
-// The admin's own note must survive every rewrite; only the bot's tag moves.
+// The admin's own note must survive every rewrite; only the tag the bot last
+// wrote moves, so an admin comment that merely looks like a tag is kept (#31).
 func TestMergeTelegramTag(t *testing.T) {
-	cases := []struct{ name, comment, tag, want string }{
-		{"empty comment", "", "@necimnk", "@necimnk"},
-		{"admin note is kept", "pays cash", "@necimnk", "@necimnk · pays cash"},
-		{"same tag is idempotent", "@necimnk · pays cash", "@necimnk", "@necimnk · pays cash"},
-		{"renamed username replaces old", "@oldname · pays cash", "@necimnk", "@necimnk · pays cash"},
-		{"username replaces id fallback", "tg:7 (Nikita O) · pays cash", "@necimnk", "@necimnk · pays cash"},
-		{"bare old tag replaced", "@oldname", "@necimnk", "@necimnk"},
-		{"admin mention without separator is not ours", "@friend invited him", "@necimnk", "@necimnk · @friend invited him"},
+	cases := []struct{ name, comment, prev, tag, want string }{
+		{"empty comment", "", "", "@necimnk", "@necimnk"},
+		{"admin note is kept", "pays cash", "", "@necimnk", "@necimnk · pays cash"},
+		{"same tag is idempotent", "@necimnk · pays cash", "@necimnk", "@necimnk", "@necimnk · pays cash"},
+		{"same tag is idempotent without a record", "@necimnk · pays cash", "", "@necimnk", "@necimnk · pays cash"},
+		{"renamed username replaces old", "@oldname · pays cash", "@oldname", "@necimnk", "@necimnk · pays cash"},
+		{"username replaces id fallback", "tg:7 (Nikita O) · pays cash", "tg:7 (Nikita O)", "@necimnk", "@necimnk · pays cash"},
+		{"bare old tag replaced", "@oldname", "@oldname", "@necimnk", "@necimnk"},
+		{"admin's bare mention is not ours", "@friend", "", "@necimnk", "@necimnk · @friend"},
+		{"admin's mention with a note is not ours", "@friend · vip", "@oldname", "@necimnk", "@necimnk · @friend · vip"},
+		{"admin mention without separator is not ours", "@friend invited him", "", "@necimnk", "@necimnk · @friend invited him"},
+		{"tag the admin deleted comes back in front", "vip", "@oldname", "@necimnk", "@necimnk · vip"},
 	}
 	for _, c := range cases {
-		if got := mergeTelegramTag(c.comment, c.tag); got != c.want {
-			t.Errorf("%s: mergeTelegramTag(%q) = %q, want %q", c.name, c.comment, got, c.want)
+		if got := mergeTelegramTag(c.comment, c.prev, c.tag); got != c.want {
+			t.Errorf("%s: mergeTelegramTag(%q, %q) = %q, want %q", c.name, c.comment, c.prev, got, c.want)
 		}
 	}
 }
@@ -86,8 +91,16 @@ func TestSyncTelegramTagWritesClientComment(t *testing.T) {
 		t.Errorf("comment after rename = record %q, settings %q; want @necimnk in both", rec, js)
 	}
 
+	if _, err := (&service.ClientService{}).SetClientCommentByEmail(&service.InboundService{}, ownerMail, "@friend"); err != nil {
+		t.Fatalf("admin comment: %v", err)
+	}
+	tb.syncTelegramTag(&telego.User{ID: ownerTgID, Username: "necimnk"})
+	if rec, _ := ownerComment(t); rec != "@necimnk · @friend" {
+		t.Errorf("comment after the admin wrote @friend = %q, want %q", rec, "@necimnk · @friend")
+	}
+
 	tb.syncTelegramTag(&telego.User{ID: 999, Username: "stranger"})
-	if rec, _ := ownerComment(t); rec != "@necimnk" {
+	if rec, _ := ownerComment(t); rec != "@necimnk · @friend" {
 		t.Errorf("another account's sync touched the owner: %q", rec)
 	}
 }

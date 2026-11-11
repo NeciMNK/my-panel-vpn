@@ -1802,6 +1802,13 @@ func MergeClientRecord(existing *ClientRecord, incoming *ClientRecord) []ClientM
 	return conflicts
 }
 
+// TelegramTag is the comment tag the bot last wrote for a Telegram account, so
+// it replaces only its own text and never an admin note that looks like a tag.
+type TelegramTag struct {
+	TgID int64  `json:"tgId" gorm:"primaryKey;autoIncrement:false;column:tg_id"`
+	Tag  string `json:"tag" gorm:"column:tag"`
+}
+
 // TlsCertificate is an ACME certificate the panel issued over Cloudflare DNS-01
 // and keeps renewed; NodeInstalls records where each node stored its copy.
 type TlsCertificate struct {
