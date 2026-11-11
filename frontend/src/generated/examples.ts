@@ -1134,6 +1134,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "seed": "mlkem768-seed"
   },
   "MasterSetup": {
+    "dbLocal": false,
     "env": "XUI_DB_TYPE=postgres\nXUI_MASTER_NAME=master-3\n",
     "keyFile": "/etc/x-ui/node_token_key.json",
     "name": "master-3",

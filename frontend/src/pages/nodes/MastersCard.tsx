@@ -30,11 +30,12 @@ export type MastersLock = {
 } | null;
 
 // Mirrors the server rule: change only on the leading primary while every
-// master but the one being forgotten (spare) is online.
+// joined master but spare is online; pending masters never block.
 export function mastersLock(masters: MasterStatusRecord[], spare = ''): MastersLock {
-  const down = masters.find((m) => !m.alive && m.name !== spare);
+  const joined = masters.filter((m) => !m.pending);
+  const down = joined.find((m) => !m.alive && m.name !== spare);
   if (down) return { reason: 'offline', name: down.name };
-  const primary = masters[0];
+  const primary = joined.find((m) => m.alive);
   if (primary && !(primary.self && primary.leader)) {
     return { reason: 'notPrimary', name: primary.name };
   }
@@ -46,6 +47,12 @@ export function moveMaster(names: string[], from: number, to: number): string[] 
   const [moved] = next.splice(from, 1);
   next.splice(to, 0, moved);
   return next;
+}
+
+interface AddMasterBody {
+  name: string;
+  url?: string;
+  dbHost?: string;
 }
 
 const MASTERS_KEY = ['masters', 'list'] as const;
@@ -71,7 +78,7 @@ export default function MastersCard() {
   const queryClient = useQueryClient();
   const [adding, setAdding] = useState(false);
   const [setup, setSetup] = useState<MasterSetup | null>(null);
-  const [form] = Form.useForm<{ name: string; url: string }>();
+  const [form] = Form.useForm<AddMasterBody>();
   const { data: masters = [] } = useQuery({
     queryKey: MASTERS_KEY,
     queryFn: fetchMasters,
@@ -89,7 +96,7 @@ export default function MastersCard() {
     onSettled: refresh,
   });
   const add = useMutation({
-    mutationFn: (body: { name: string; url: string }) =>
+    mutationFn: (body: AddMasterBody) =>
       HttpUtil.post<MasterSetup>('/panel/api/masters/add', body, JSON_HEADERS),
     onSuccess: (msg) => {
       if (msg?.success && msg.obj) setSetup(msg.obj);
@@ -144,29 +151,32 @@ export default function MastersCard() {
       title: '',
       key: 'actions',
       render: (_: unknown, m: MasterStatusRecord, index: number) => {
-        if (!m.alive) {
-          return (
-            <Button
-              size="small"
-              danger
-              disabled={busy || mastersLock(masters, m.name) !== null}
-              onClick={() => forget.mutate(m.name)}
-            >
-              {t('pages.nodes.masters.forget')}
-            </Button>
-          );
-        }
+        const forgetButton = (
+          <Button
+            size="small"
+            danger
+            disabled={busy || mastersLock(masters, m.name) !== null}
+            onClick={() => forget.mutate(m.name)}
+          >
+            {t('pages.nodes.masters.forget')}
+          </Button>
+        );
+        if (!m.alive && !m.pending) return forgetButton;
         const locked = busy || lock !== null;
         return (
           <Space size={4}>
-            <Button
-              size="small"
-              icon={<CrownOutlined aria-hidden />}
-              disabled={locked || index === 0}
-              onClick={() => reorder.mutate(moveMaster(names, index, 0))}
-            >
-              {t('pages.nodes.masters.makePrimary')}
-            </Button>
+            {m.pending ? (
+              forgetButton
+            ) : (
+              <Button
+                size="small"
+                icon={<CrownOutlined aria-hidden />}
+                disabled={locked || index === 0}
+                onClick={() => reorder.mutate(moveMaster(names, index, 0))}
+              >
+                {t('pages.nodes.masters.makePrimary')}
+              </Button>
+            )}
             <Button
               size="small"
               icon={<ArrowUpOutlined aria-hidden />}
@@ -241,6 +251,9 @@ export default function MastersCard() {
         {setup ? (
           <Space direction="vertical" style={{ width: '100%' }}>
             <Typography.Paragraph>{t('pages.nodes.masters.setupHint')}</Typography.Paragraph>
+            {setup.dbLocal && (
+              <Alert type="warning" showIcon title={t('pages.nodes.masters.setupDbLocal')} />
+            )}
             {setup.keyFile && (
               <Alert
                 type="info"
@@ -281,6 +294,14 @@ export default function MastersCard() {
               rules={[{ type: 'url', max: 255 }]}
             >
               <Input placeholder="https://10.0.0.3:2053" />
+            </Form.Item>
+            <Form.Item
+              name="dbHost"
+              label={t('pages.nodes.masters.addDbHost')}
+              extra={t('pages.nodes.masters.addDbHostHint')}
+              rules={[{ max: 255, whitespace: true }]}
+            >
+              <Input placeholder="10.0.0.1" />
             </Form.Item>
             <Button type="primary" htmlType="submit" loading={add.isPending}>
               {t('pages.nodes.masters.addSubmit')}

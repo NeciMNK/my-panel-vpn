@@ -23,11 +23,23 @@ describe('mastersLock', () => {
     expect(mastersLock([primary, master('b')])).toBeNull();
   });
 
-  it('locks while any master is offline or still pending', () => {
-    expect(mastersLock([primary, master('b', { alive: false, pending: true })])).toEqual({
+  it('locks while a joined master is offline', () => {
+    expect(mastersLock([primary, master('b', { alive: false })])).toEqual({
       reason: 'offline',
       name: 'b',
     });
+  });
+
+  it('does not lock for a master that was added but has not joined, even ranked first', () => {
+    const pending = master('p', { alive: false, pending: true });
+    expect(mastersLock([primary, pending])).toBeNull();
+    expect(mastersLock([pending, primary])).toBeNull();
+  });
+
+  it('lets the new leader forget a primary that died for good', () => {
+    const dead = master('a', { alive: false });
+    const b = master('b', { self: true, leader: true });
+    expect(mastersLock([dead, b], 'a')).toBeNull();
   });
 
   it('lets the offline master itself be forgotten, but not while another is down', () => {

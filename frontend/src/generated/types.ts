@@ -964,6 +964,7 @@ export interface MLKEM768Response {
 }
 
 export interface MasterSetup {
+  dbLocal: boolean;
   env: string;
   keyFile?: string;
   name: string;

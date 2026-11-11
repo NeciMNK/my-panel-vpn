@@ -110,7 +110,7 @@ func clusterOf(t *testing.T, self string, names []string, down ...string) *Maste
 	t.Setenv("XUI_MASTER_NAME", self)
 	t.Setenv("XUI_MASTER_PRIORITY", "1")
 	t.Setenv("XUI_DB_TYPE", "postgres")
-	t.Setenv("XUI_DB_DSN", "postgres://xui:secret@10.0.0.1:5432,10.0.0.2:5432/xui")
+	t.Setenv("XUI_DB_DSN", "postgres://xui:secret@127.0.0.1:5432/xui")
 	clusterLeader.Store(true)
 	t.Cleanup(func() { clusterLeader.Store(true) })
 	now, err := dbNow(database.GetDB())
@@ -155,7 +155,7 @@ func wantRefusal(t *testing.T, err error, reason, master string) {
 func TestMasterChangesNeedEveryMasterOnline(t *testing.T) {
 	s := clusterOf(t, "a", []string{"a", "b", "c"}, "c")
 	wantRefusal(t, s.Reorder([]string{"b", "a", "c"}), MasterChangeOffline, "c")
-	_, err := s.Add("d", "https://d:2053")
+	_, err := s.Add("d", "https://d:2053", "")
 	wantRefusal(t, err, MasterChangeOffline, "c")
 	if got := priorities(t); got["b"] != 2 || len(got) != 3 {
 		t.Fatalf("a refused change still wrote: %v", got)
@@ -171,6 +171,17 @@ func TestForgetNeedsEveryOtherMasterOnline(t *testing.T) {
 	}
 	if got := priorities(t); len(got) != 1 {
 		t.Fatalf("masters left = %v, want only a", got)
+	}
+}
+
+// A primary that died for good must be forgettable from the master leading now.
+func TestForgetADeadPrimaryFromTheNewLeader(t *testing.T) {
+	s := clusterOf(t, "b", []string{"a", "b"}, "a")
+	if err := s.Forget("a"); err != nil {
+		t.Fatal(err)
+	}
+	if got := priorities(t); len(got) != 1 || got["b"] != 2 {
+		t.Fatalf("masters left = %v, want only b", got)
 	}
 }
 
@@ -204,13 +215,13 @@ func TestReorderHandsTheLeadToTheNewPrimary(t *testing.T) {
 
 func TestAddedMasterWaitsAndKeepsItsPriorityWhenItJoins(t *testing.T) {
 	s := clusterOf(t, "a", []string{"a", "b"})
-	_, err := s.Add("b", "")
+	_, err := s.Add("b", "", "")
 	wantRefusal(t, err, MasterChangeNameTaken, "b")
-	setup, err := s.Add(" c ", "https://c:2053")
+	setup, err := s.Add(" c ", "https://c:2053", "10.0.0.1")
 	if err != nil {
 		t.Fatal(err)
 	}
-	wantEnv := "XUI_DB_TYPE=postgres\nXUI_DB_DSN=postgres://xui:secret@10.0.0.1:5432,10.0.0.2:5432/xui\n" +
+	wantEnv := "XUI_DB_TYPE=postgres\nXUI_DB_DSN=postgres://xui:secret@10.0.0.1:5432/xui\n" +
 		"XUI_MASTER_PRIORITY=3\nXUI_MASTER_NAME=c\nXUI_MASTER_URL=https://c:2053\n"
 	if setup.Env != wantEnv {
 		t.Fatalf("env =\n%s\nwant\n%s", setup.Env, wantEnv)
@@ -222,7 +233,16 @@ func TestAddedMasterWaitsAndKeepsItsPriorityWhenItJoins(t *testing.T) {
 	if last := list[2]; last.Name != "c" || !last.Pending || last.Alive {
 		t.Fatalf("added master listed as %+v, want pending", last)
 	}
-	wantRefusal(t, s.Reorder([]string{"b", "a", "c"}), MasterChangeOffline, "c")
+	if setup.DBLocal {
+		t.Fatal("a DSN moved to the given host is still flagged as local")
+	}
+	// A master that never joined cannot miss a change: it reads its rank on join.
+	if err := s.Reorder([]string{"c", "a", "b"}); err != nil {
+		t.Fatalf("pending master blocked a reorder: %v", err)
+	}
+	if err := s.Reorder([]string{"a", "c", "b"}); err != nil {
+		t.Fatalf("a pending master ranked first blocked the joined primary: %v", err)
+	}
 
 	t.Setenv("XUI_MASTER_URL", "")
 	if _, err := s.beat("c", 1); err != nil {
@@ -230,8 +250,8 @@ func TestAddedMasterWaitsAndKeepsItsPriorityWhenItJoins(t *testing.T) {
 	}
 	var c model.MasterMember
 	database.GetDB().Where("name = ?", "c").First(&c)
-	if c.Priority != 3 || c.Url != "https://c:2053" {
-		t.Fatalf("joined master: priority %d url %q, want 3 and the added url", c.Priority, c.Url)
+	if c.Priority != 2 || c.Url != "https://c:2053" {
+		t.Fatalf("joined master: priority %d url %q, want 2 and the added url", c.Priority, c.Url)
 	}
 }
 
@@ -246,5 +266,30 @@ func TestUnknownMasterWithATakenPriorityJoinsLast(t *testing.T) {
 	}
 	if got := priorities(t); got["old"] != 3 || got["new"] != 7 {
 		t.Fatalf("priorities = %v, want old last (3) and new keeping its free 7", got)
+	}
+}
+
+// The first master's DSN usually points at 127.0.0.1, which on the new
+// master is a database that does not exist.
+func TestRemoteMasterDSN(t *testing.T) {
+	cases := []struct {
+		name, dsn, dbHost, want string
+		local                   bool
+	}{
+		{"loopback url gets the given host", "postgres://xui:p%40ss@127.0.0.1:5432/xui?sslmode=disable", "10.0.0.1", "postgres://xui:p%40ss@10.0.0.1:5432/xui?sslmode=disable", false},
+		{"loopback url without a host stays and is flagged", "postgres://xui:p@127.0.0.1:5432/xui", "", "postgres://xui:p@127.0.0.1:5432/xui", true},
+		{"localhost without port", "postgresql://xui@localhost/xui", "db.lan", "postgresql://xui@db.lan/xui", false},
+		{"ipv6 loopback and ipv6 host", "postgres://xui@[::1]:5432/xui", "fd00::1", "postgres://xui@[fd00::1]:5432/xui", false},
+		{"remote hosts are kept", "postgres://xui@10.0.0.1:5432,10.0.0.2:5432/xui", "10.9.9.9", "postgres://xui@10.0.0.1:5432,10.0.0.2:5432/xui", false},
+		{"keyword form", "host=127.0.0.1 port=5432 user=xui", "db.lan", "host=db.lan port=5432 user=xui", false},
+		{"keyword form on a unix socket", "host=/var/run/postgresql user=xui", "", "host=/var/run/postgresql user=xui", true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, local := remoteMasterDSN(tc.dsn, tc.dbHost)
+			if got != tc.want || local != tc.local {
+				t.Fatalf("remoteMasterDSN = %q local %v, want %q local %v", got, local, tc.want, tc.local)
+			}
+		})
 	}
 }

@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
+	"net"
 	"os"
 	"slices"
 	"sort"
@@ -95,6 +96,8 @@ type MasterSetup struct {
 	Env      string `json:"env" example:"XUI_DB_TYPE=postgres\nXUI_MASTER_NAME=master-3\n"`
 	// KeyFile must be copied from this master when node tokens are encrypted.
 	KeyFile string `json:"keyFile,omitempty" example:"/etc/x-ui/node_token_key.json"`
+	// DBLocal warns that XUI_DB_DSN still names this machine's database.
+	DBLocal bool `json:"dbLocal" example:"false"`
 }
 
 // Reasons a change to the masters list is refused.
@@ -244,8 +247,8 @@ func (s *MasterClusterService) List() ([]MasterStatus, error) {
 	return out, nil
 }
 
-// change runs edit on the masters list only on the leading primary and only
-// while every master except spare is online, so no master misses the change.
+// change runs edit only on the leading primary while every joined master but
+// spare is online; a pending master reads its rank when it joins.
 func (s *MasterClusterService) change(spare string, edit func(tx *gorm.DB, members []model.MasterMember, now int64) error) error {
 	if !ClusterEnabled() {
 		return &MasterChangeError{Reason: MasterChangeNotCluster}
@@ -261,16 +264,22 @@ func (s *MasterClusterService) change(spare string, edit func(tx *gorm.DB, membe
 		if err := tx.Order("priority asc, name asc").Find(&members).Error; err != nil {
 			return err
 		}
+		primary := ""
 		for _, m := range members {
-			if m.Name != spare && now-m.LastSeen > masterAliveSeconds {
-				return &MasterChangeError{Reason: MasterChangeOffline, Master: m.Name}
+			if m.LastSeen == 0 {
+				continue
+			}
+			if now-m.LastSeen > masterAliveSeconds {
+				if m.Name != spare {
+					return &MasterChangeError{Reason: MasterChangeOffline, Master: m.Name}
+				}
+				continue
+			}
+			if primary == "" {
+				primary = m.Name
 			}
 		}
-		if len(members) == 0 || members[0].Name != config.GetMasterName() || !IsClusterLeader() {
-			primary := ""
-			if len(members) > 0 {
-				primary = members[0].Name
-			}
+		if primary != config.GetMasterName() || !IsClusterLeader() {
 			return &MasterChangeError{Reason: MasterChangeNotPrimary, Master: primary}
 		}
 		return edit(tx, members, now)
@@ -304,9 +313,9 @@ func (s *MasterClusterService) Reorder(names []string) error {
 }
 
 // Add lists a new master last in priority; it shows as pending until it
-// starts with the returned env.
-func (s *MasterClusterService) Add(name, url string) (MasterSetup, error) {
-	name, url = strings.TrimSpace(name), strings.TrimSpace(url)
+// starts with the returned env. dbHost replaces a DSN host naming this machine.
+func (s *MasterClusterService) Add(name, panelURL, dbHost string) (MasterSetup, error) {
+	name, panelURL, dbHost = strings.TrimSpace(name), strings.TrimSpace(panelURL), strings.TrimSpace(dbHost)
 	var setup MasterSetup
 	err := s.change("", func(tx *gorm.DB, members []model.MasterMember, _ int64) error {
 		last := 0
@@ -316,11 +325,12 @@ func (s *MasterClusterService) Add(name, url string) (MasterSetup, error) {
 			}
 			last = max(last, m.Priority)
 		}
-		added := model.MasterMember{Name: name, Url: url, Priority: last + 1}
+		added := model.MasterMember{Name: name, Url: panelURL, Priority: last + 1}
 		if err := tx.Create(&added).Error; err != nil {
 			return err
 		}
-		setup = MasterSetup{Name: name, Priority: added.Priority, Env: masterEnv(name, url, added.Priority)}
+		setup = MasterSetup{Name: name, Priority: added.Priority}
+		setup.Env, setup.DBLocal = masterEnv(name, panelURL, dbHost, added.Priority)
 		if config.GetNodeTokenEncryptionMode() != "" {
 			setup.KeyFile = config.GetNodeTokenKeyFile()
 		}
@@ -329,20 +339,84 @@ func (s *MasterClusterService) Add(name, url string) (MasterSetup, error) {
 	return setup, err
 }
 
-func masterEnv(name, url string, priority int) string {
+func masterEnv(name, panelURL, dbHost string, priority int) (env string, dbLocal bool) {
 	var b strings.Builder
 	fmt.Fprintf(&b, "XUI_DB_TYPE=%s\n", config.GetDBKind())
 	if dsn := config.GetDBDSN(); dsn != "" {
+		dsn, dbLocal = remoteMasterDSN(dsn, dbHost)
 		fmt.Fprintf(&b, "XUI_DB_DSN=%s\n", dsn)
 	}
 	if mode := config.GetNodeTokenEncryptionMode(); mode != "" {
 		fmt.Fprintf(&b, "NODE_TOKEN_ENCRYPTION=%s\nXUI_NODE_TOKEN_KEY_FILE=%s\n", mode, config.GetNodeTokenKeyFile())
 	}
 	fmt.Fprintf(&b, "XUI_MASTER_PRIORITY=%d\nXUI_MASTER_NAME=%s\n", priority, name)
-	if url != "" {
-		fmt.Fprintf(&b, "XUI_MASTER_URL=%s\n", url)
+	if panelURL != "" {
+		fmt.Fprintf(&b, "XUI_MASTER_URL=%s\n", panelURL)
 	}
-	return b.String()
+	return b.String(), dbLocal
+}
+
+// remoteMasterDSN swaps hosts naming this machine (loopback, unix socket) for
+// dbHost; local reports a DSN that still cannot work from another server.
+func remoteMasterDSN(dsn, dbHost string) (out string, local bool) {
+	swap := func(hosts string, withPort bool) string {
+		parts := strings.Split(hosts, ",")
+		for i, part := range parts {
+			host, port := part, ""
+			if withPort {
+				if h, p, err := net.SplitHostPort(part); err == nil {
+					host, port = h, p
+				} else {
+					host = strings.Trim(part, "[]")
+				}
+			}
+			if !localDBHost(host) {
+				continue
+			}
+			if dbHost == "" {
+				local = true
+				continue
+			}
+			switch {
+			case port != "":
+				parts[i] = net.JoinHostPort(dbHost, port)
+			case withPort && strings.Contains(dbHost, ":"):
+				parts[i] = "[" + dbHost + "]"
+			default:
+				parts[i] = dbHost
+			}
+		}
+		return strings.Join(parts, ",")
+	}
+	if scheme := strings.Index(dsn, "://"); scheme >= 0 {
+		rest := dsn[scheme+3:]
+		end := strings.IndexAny(rest, "/?")
+		if end < 0 {
+			end = len(rest)
+		}
+		start := strings.LastIndex(rest[:end], "@") + 1
+		return dsn[:scheme+3] + rest[:start] + swap(rest[start:end], true) + rest[end:], local
+	}
+	fields := strings.Fields(dsn)
+	sawHost := false
+	for i, f := range fields {
+		if hosts, ok := strings.CutPrefix(f, "host="); ok {
+			sawHost = true
+			fields[i] = "host=" + swap(hosts, false)
+		}
+	}
+	if !sawHost {
+		return dsn, true
+	}
+	return strings.Join(fields, " "), local
+}
+
+func localDBHost(host string) bool {
+	if host == "" || host == "localhost" || strings.HasPrefix(host, "/") {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
 }
 
 // Forget drops a master that is down for good from the list.

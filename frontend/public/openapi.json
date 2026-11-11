@@ -4263,6 +4263,11 @@
       "MasterSetup": {
         "description": "MasterSetup is what a newly added master needs in its env file.",
         "properties": {
+          "dbLocal": {
+            "description": "DBLocal warns that XUI_DB_DSN still names this machine's database.",
+            "example": false,
+            "type": "boolean"
+          },
           "env": {
             "example": "XUI_DB_TYPE=postgres\nXUI_MASTER_NAME=master-3\n",
             "type": "string"
@@ -4282,6 +4287,7 @@
           }
         },
         "required": [
+          "dbLocal",
           "env",
           "name",
           "priority"
@@ -13252,7 +13258,7 @@
         "tags": [
           "Masters"
         ],
-        "summary": "Rank every master, the new primary first; it takes the lead within about two heartbeats. Allowed only on the leading primary while every master is online.",
+        "summary": "Rank every master, the new primary first; it takes the lead within about two heartbeats. Allowed only on the leading primary while every joined master is online (pending masters do not block).",
         "operationId": "post_panel_api_masters_reorder",
         "requestBody": {
           "required": true,
@@ -13298,7 +13304,7 @@
         "tags": [
           "Masters"
         ],
-        "summary": "List a new master last in priority and return the env file it must start with. It shows as pending until its first heartbeat. Allowed only on the leading primary while every master is online.",
+        "summary": "List a new master last in priority and return the env file it must start with. It shows as pending until its first heartbeat and blocks nothing meanwhile. dbHost replaces a DSN host that names this machine (127.0.0.1, localhost, a socket); dbLocal in the response flags a DSN that still does. Allowed only on the leading primary while every joined master is online.",
         "operationId": "post_panel_api_masters_add",
         "requestBody": {
           "required": true,
@@ -13309,7 +13315,8 @@
               },
               "example": {
                 "name": "master-3",
-                "url": "https://panel-3.example.com:2053"
+                "url": "https://panel-3.example.com:2053",
+                "dbHost": "10.0.0.1"
               }
             }
           }
@@ -13336,6 +13343,7 @@
                 "example": {
                   "success": true,
                   "obj": {
+                    "dbLocal": false,
                     "env": "XUI_DB_TYPE=postgres\nXUI_MASTER_NAME=master-3\n",
                     "keyFile": "/etc/x-ui/node_token_key.json",
                     "name": "master-3",
