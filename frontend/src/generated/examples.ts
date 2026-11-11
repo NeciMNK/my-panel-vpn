@@ -1071,20 +1071,36 @@ export const EXAMPLES: Record<string, unknown> = {
     "serverCosts": 1500,
     "servers": [
       {
+        "billingDay": 15,
         "endMonth": "",
         "id": 1,
         "monthlyCost": 500,
         "name": "Hetzner DE",
         "startMonth": "2026-11"
       }
+    ],
+    "upcoming": [
+      {
+        "amount": 500,
+        "date": "2026-11-15",
+        "name": "Hetzner DE",
+        "serverId": 1
+      }
     ]
   },
   "LedgerServer": {
+    "billingDay": 15,
     "endMonth": "",
     "id": 1,
     "monthlyCost": 500,
     "name": "Hetzner DE",
     "startMonth": "2026-11"
+  },
+  "LedgerServerDue": {
+    "amount": 500,
+    "date": "2026-11-15",
+    "name": "Hetzner DE",
+    "serverId": 1
   },
   "LogEntry": {
     "DateTime": "2025-01-01T12:00:00Z",

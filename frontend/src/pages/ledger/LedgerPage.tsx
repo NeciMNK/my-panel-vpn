@@ -142,7 +142,7 @@ export default function LedgerPage() {
 
   function openServer(server?: LedgerServer) {
     serverForm.reset(
-      server ?? { id: 0, name: '', monthlyCost: 0, startMonth: month, endMonth: '' },
+      server ?? { id: 0, name: '', monthlyCost: 0, billingDay: 1, startMonth: month, endMonth: '' },
     );
     setServerOpen(true);
   }
@@ -191,6 +191,13 @@ export default function LedgerPage() {
       title: t('pages.ledger.monthlyCost'),
       dataIndex: 'monthlyCost',
       render: (cost: number) => money(cost),
+    },
+    { title: t('pages.ledger.billingDay'), dataIndex: 'billingDay' },
+    {
+      title: t('pages.ledger.nextPayment'),
+      key: 'next',
+      render: (_, server) =>
+        report?.upcoming.find((due) => due.serverId === server.id)?.date ?? '—',
     },
     {
       title: t('pages.ledger.period'),
@@ -550,6 +557,14 @@ export default function LedgerPage() {
               rules={{ validate: rhfZodValidate(LedgerServerFormSchema.shape.monthlyCost) }}
             >
               <InputNumber min={1} style={{ width: '100%' }} addonAfter={currency || undefined} />
+            </FormField>
+            <FormField
+              name="billingDay"
+              label={t('pages.ledger.billingDay')}
+              tooltip={t('pages.ledger.billingDayHint')}
+              rules={{ validate: rhfZodValidate(LedgerServerFormSchema.shape.billingDay) }}
+            >
+              <InputNumber min={1} max={31} precision={0} style={{ width: '100%' }} />
             </FormField>
             <FormField
               name="startMonth"

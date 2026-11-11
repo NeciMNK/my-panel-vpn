@@ -917,14 +917,23 @@ export interface LedgerReport {
   price: number;
   serverCosts: number;
   servers: LedgerServer[];
+  upcoming: LedgerServerDue[];
 }
 
 export interface LedgerServer {
+  billingDay: number;
   endMonth: string;
   id: number;
   monthlyCost: number;
   name: string;
   startMonth: string;
+}
+
+export interface LedgerServerDue {
+  amount: number;
+  date: string;
+  name: string;
+  serverId: number;
 }
 
 export interface LogEntry {

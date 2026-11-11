@@ -4018,6 +4018,12 @@ export const SCHEMAS: Record<string, unknown> = {
           "$ref": "#/components/schemas/LedgerServer"
         },
         "type": "array"
+      },
+      "upcoming": {
+        "items": {
+          "$ref": "#/components/schemas/LedgerServerDue"
+        },
+        "type": "array"
       }
     },
     "required": [
@@ -4035,13 +4041,19 @@ export const SCHEMAS: Record<string, unknown> = {
       "payment",
       "price",
       "serverCosts",
-      "servers"
+      "servers",
+      "upcoming"
     ],
     "type": "object"
   },
   "LedgerServer": {
     "description": "LedgerServer is a recurring monthly server cost, charged to every month from\nStartMonth through EndMonth (YYYY-MM; empty EndMonth means still running).",
     "properties": {
+      "billingDay": {
+        "description": "BillingDay is the day of the month the bill is due; short months move it to their last day.",
+        "example": 15,
+        "type": "integer"
+      },
       "endMonth": {
         "type": "string"
       },
@@ -4063,11 +4075,40 @@ export const SCHEMAS: Record<string, unknown> = {
       }
     },
     "required": [
+      "billingDay",
       "endMonth",
       "id",
       "monthlyCost",
       "name",
       "startMonth"
+    ],
+    "type": "object"
+  },
+  "LedgerServerDue": {
+    "description": "LedgerServerDue is a server's next bill.",
+    "properties": {
+      "amount": {
+        "example": 500,
+        "type": "integer"
+      },
+      "date": {
+        "example": "2026-11-15",
+        "type": "string"
+      },
+      "name": {
+        "example": "Hetzner DE",
+        "type": "string"
+      },
+      "serverId": {
+        "example": 1,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "amount",
+      "date",
+      "name",
+      "serverId"
     ],
     "type": "object"
   },

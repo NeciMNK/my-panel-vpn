@@ -979,10 +979,12 @@ export const LedgerReportSchema = z.object({
   price: z.number().int(),
   serverCosts: z.number().int(),
   servers: z.array(z.lazy(() => LedgerServerSchema)),
+  upcoming: z.array(z.lazy(() => LedgerServerDueSchema)),
 });
 export type LedgerReport = z.infer<typeof LedgerReportSchema>;
 
 export const LedgerServerSchema = z.object({
+  billingDay: z.number().int(),
   endMonth: z.string(),
   id: z.number().int(),
   monthlyCost: z.number().int(),
@@ -990,6 +992,14 @@ export const LedgerServerSchema = z.object({
   startMonth: z.string(),
 });
 export type LedgerServer = z.infer<typeof LedgerServerSchema>;
+
+export const LedgerServerDueSchema = z.object({
+  amount: z.number().int(),
+  date: z.string(),
+  name: z.string(),
+  serverId: z.number().int(),
+});
+export type LedgerServerDue = z.infer<typeof LedgerServerDueSchema>;
 
 export const LogEntrySchema = z.object({
   DateTime: z.string(),

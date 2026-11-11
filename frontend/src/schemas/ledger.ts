@@ -6,6 +6,7 @@ export const LedgerServerSchema = z.object({
   id: z.number(),
   name: z.string(),
   monthlyCost: z.number(),
+  billingDay: z.number(),
   startMonth: z.string(),
   endMonth: z.string(),
 });
@@ -42,6 +43,13 @@ export const LedgerPaymentSchema = z.object({
 });
 export type LedgerPayment = z.infer<typeof LedgerPaymentSchema>;
 
+export const LedgerServerDueSchema = z.object({
+  serverId: z.number(),
+  name: z.string(),
+  amount: z.number(),
+  date: z.string(),
+});
+
 export const LedgerReportSchema = z.object({
   month: z.string(),
   currency: z.string(),
@@ -57,6 +65,7 @@ export const LedgerReportSchema = z.object({
   nonPaying: z.array(LedgerNonPayingSchema),
   freeGroups: z.array(z.string()),
   servers: z.array(LedgerServerSchema),
+  upcoming: z.array(LedgerServerDueSchema),
   entries: z.array(LedgerEntrySchema),
 });
 export type LedgerReport = z.infer<typeof LedgerReportSchema>;
@@ -69,6 +78,11 @@ export const LedgerServerFormSchema = z
       .number({ error: 'pages.ledger.errAmount' })
       .int('pages.ledger.errAmount')
       .positive('pages.ledger.errAmount'),
+    billingDay: z
+      .number({ error: 'pages.ledger.errDay' })
+      .int('pages.ledger.errDay')
+      .min(1, 'pages.ledger.errDay')
+      .max(31, 'pages.ledger.errDay'),
     startMonth: z.string().regex(MONTH_PATTERN, 'pages.ledger.errMonth'),
     endMonth: z.string().regex(MONTH_PATTERN, 'pages.ledger.errMonth').or(z.literal('')),
   })

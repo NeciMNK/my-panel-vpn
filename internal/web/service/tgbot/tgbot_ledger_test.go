@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
@@ -18,8 +19,11 @@ func TestParseLedgerServer(t *testing.T) {
 		want    model.LedgerServer
 		wantErr error
 	}{
-		{"Hetzner DE 500", model.LedgerServer{Name: "Hetzner DE", MonthlyCost: 500, StartMonth: "2026-11"}, nil},
-		{"Hetzner DE 500 2026-09", model.LedgerServer{Name: "Hetzner DE", MonthlyCost: 500, StartMonth: "2026-09"}, nil},
+		{"Hetzner DE 500", model.LedgerServer{Name: "Hetzner DE", MonthlyCost: 500, StartMonth: "2026-11", BillingDay: 1}, nil},
+		{"Hetzner DE 500 2026-09", model.LedgerServer{Name: "Hetzner DE", MonthlyCost: 500, StartMonth: "2026-09", BillingDay: 1}, nil},
+		{"Hetzner DE 500 15", model.LedgerServer{Name: "Hetzner DE", MonthlyCost: 500, StartMonth: "2026-11", BillingDay: 15}, nil},
+		{"Hetzner DE 500 15 2026-09", model.LedgerServer{Name: "Hetzner DE", MonthlyCost: 500, StartMonth: "2026-09", BillingDay: 15}, nil},
+		{"Server 2 500", model.LedgerServer{Name: "Server 2", MonthlyCost: 500, StartMonth: "2026-11", BillingDay: 1}, nil},
 		{"500", model.LedgerServer{}, errLedgerInput},
 		{"Hetzner cheap", model.LedgerServer{}, errLedgerInput},
 	}
@@ -127,5 +131,30 @@ func TestAdminTogglesNonPayingGroup(t *testing.T) {
 	tap(tb, 9001, "ledger_grp 2026-11 my family", true)
 	if got := ledgerReport(t, "2026-11").FreeGroups; len(got) != 0 {
 		t.Errorf("free groups = %v, want none after the second tap", got)
+	}
+}
+
+// Admins must hear about tomorrow's server bill once, not on every hourly run.
+func TestRemindServerBillsOnce(t *testing.T) {
+	tb, calls := newScreenTgbot(t, false)
+	initReportDB(t)
+	localizeWithRealBundle(t)
+	setTestAdmins(t, 9001)
+	setBroadcastRunning(t, true)
+	server := model.LedgerServer{Name: "Hetzner DE", MonthlyCost: 500, StartMonth: "2026-01", BillingDay: 15}
+	if err := (&service.LedgerService{}).SaveServer(&server); err != nil {
+		t.Fatal(err)
+	}
+
+	now := time.Date(2026, 11, 14, 9, 0, 0, 0, time.Local)
+	tb.RemindServerBills(now)
+	tb.RemindServerBills(now.Add(time.Hour))
+
+	sent := adminMessages(calls(), 9001)
+	if len(sent) != 1 {
+		t.Fatalf("admin got %d reminders, want 1", len(sent))
+	}
+	if text, _ := sent[0].Payload["text"].(string); !strings.Contains(text, "Hetzner DE") || !strings.Contains(text, "2026-11-15") {
+		t.Errorf("reminder = %q, want the server and its due date", text)
 	}
 }

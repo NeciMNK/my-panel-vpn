@@ -134,6 +134,7 @@ func run(root, outDir string) error {
 				"LedgerReport",
 				"LedgerNonPaying",
 				"LedgerPayment",
+				"LedgerServerDue",
 				"ClientBillingView",
 				"PaymentPlanPrice",
 				"PaymentResult",
