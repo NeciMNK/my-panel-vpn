@@ -38,7 +38,7 @@ var (
 	ErrLedgerRange    = errors.New("end month is before start month")
 	ErrLedgerDay      = errors.New("billing day must be 1-31")
 	ErrLedgerMonths   = errors.New("extend by 1-36 months")
-	ErrLedgerNode   = errors.New("node not found")
+	ErrLedgerNode     = errors.New("node not found")
 )
 
 // LedgerService is the admin's profit/loss book: recurring server costs,
