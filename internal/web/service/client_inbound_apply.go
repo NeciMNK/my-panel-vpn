@@ -414,6 +414,9 @@ func (s *ClientService) AddInboundClient(inboundSvc *InboundService, data *model
 	if err != nil {
 		return false, err
 	}
+	if err := refuseRegularClientsOnManagedInbound(inbound, clients); err != nil {
+		return false, err
+	}
 	existingClients, err := inboundSvc.GetClients(inbound)
 	if err != nil {
 		return false, err
