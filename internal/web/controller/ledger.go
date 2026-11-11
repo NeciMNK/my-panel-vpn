@@ -24,6 +24,7 @@ func (a *LedgerController) initRouter(g *gin.RouterGroup) {
 	g.GET("/report", a.report)
 	g.POST("/servers/save", a.saveServer)
 	g.POST("/servers/delete", a.deleteServer)
+	g.POST("/servers/extend", a.extendServer)
 	g.POST("/entries/add", a.addEntry)
 	g.POST("/entries/delete", a.deleteEntry)
 	g.POST("/nonPaying", a.setNonPaying)
@@ -67,6 +68,25 @@ func (a *LedgerController) deleteServer(c *gin.Context) {
 		return
 	}
 	jsonMsg(c, I18nWeb(c, "pages.ledger.toasts.deleted"), a.ledgerService.DeleteServer(body.Id))
+}
+
+type ledgerExtendBody struct {
+	Id     int `json:"id"`
+	Months int `json:"months"`
+}
+
+func (a *LedgerController) extendServer(c *gin.Context) {
+	var body ledgerExtendBody
+	if err := c.ShouldBindJSON(&body); err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	server, err := a.ledgerService.ExtendServer(body.Id, body.Months, time.Now())
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	jsonObj(c, server, nil)
 }
 
 func (a *LedgerController) addEntry(c *gin.Context) {

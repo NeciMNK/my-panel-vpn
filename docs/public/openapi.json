@@ -4095,6 +4095,11 @@
             "example": "Hetzner DE",
             "type": "string"
           },
+          "paidThrough": {
+            "description": "PaidThrough is the last YYYY-MM whose bill the admin paid ahead with Extend.",
+            "example": "2027-02",
+            "type": "string"
+          },
           "startMonth": {
             "example": "2026-11",
             "type": "string"
@@ -4106,6 +4111,7 @@
           "id",
           "monthlyCost",
           "name",
+          "paidThrough",
           "startMonth"
         ],
         "type": "object"
@@ -14567,6 +14573,7 @@
                         "id": 1,
                         "monthlyCost": 500,
                         "name": "Hetzner DE",
+                        "paidThrough": "2027-02",
                         "startMonth": "2026-11"
                       }
                     ],
@@ -14637,6 +14644,7 @@
                     "id": 1,
                     "monthlyCost": 500,
                     "name": "Hetzner DE",
+                    "paidThrough": "2027-02",
                     "startMonth": "2026-11"
                   }
                 }
@@ -14681,6 +14689,64 @@
                       "type": "string"
                     },
                     "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/ledger/servers/extend": {
+      "post": {
+        "tags": [
+          "Ledger"
+        ],
+        "summary": "Pay a server ahead for 1-36 months: its next payment date and reminder move past them, and a stopped server runs again until then.",
+        "operationId": "post_panel_api_ledger_servers_extend",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "id": 1,
+                "months": 3
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/LedgerServer"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "billingDay": 15,
+                    "endMonth": "",
+                    "id": 1,
+                    "monthlyCost": 500,
+                    "name": "Hetzner DE",
+                    "paidThrough": "2027-02",
+                    "startMonth": "2026-11"
                   }
                 }
               }

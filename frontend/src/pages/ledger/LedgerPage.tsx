@@ -6,6 +6,7 @@ import {
   Col,
   ConfigProvider,
   DatePicker,
+  Dropdown,
   Form,
   Input,
   InputNumber,
@@ -24,6 +25,7 @@ import {
 } from 'antd';
 import type { TableColumnsType } from 'antd';
 import {
+  CalendarOutlined,
   DeleteOutlined,
   EditOutlined,
   LeftOutlined,
@@ -62,6 +64,7 @@ import { z } from 'zod';
 
 const JSON_HEADERS = { headers: { 'Content-Type': 'application/json' } } as const;
 const MONTH_FORMAT = 'YYYY-MM';
+const EXTEND_MONTHS = [1, 2, 3, 6, 12] as const;
 const ClientEmailsSchema = z
   .array(ClientRecordSchema.pick({ email: true }))
   .nullable()
@@ -196,8 +199,14 @@ export default function LedgerPage() {
     {
       title: t('pages.ledger.nextPayment'),
       key: 'next',
-      render: (_, server) =>
-        report?.upcoming.find((due) => due.serverId === server.id)?.date ?? '—',
+      render: (_, server) => (
+        <Space size={4} wrap>
+          {report?.upcoming.find((due) => due.serverId === server.id)?.date ?? '—'}
+          {server.paidThrough >= dayjs().format(MONTH_FORMAT) && (
+            <Tag color="green">{t('pages.ledger.paidThrough', { month: server.paidThrough })}</Tag>
+          )}
+        </Space>
+      ),
     },
     {
       title: t('pages.ledger.period'),
@@ -214,6 +223,24 @@ export default function LedgerPage() {
       align: 'right',
       render: (_, server) => (
         <Space>
+          <Dropdown
+            trigger={['click']}
+            menu={{
+              items: EXTEND_MONTHS.map((count) => ({
+                key: count,
+                label: t('pages.ledger.extendMonths', { count }),
+              })),
+              onClick: ({ key }) =>
+                post.mutate({
+                  path: 'servers/extend',
+                  body: { id: server.id, months: Number(key) },
+                }),
+            }}
+          >
+            <Button size="small" icon={<CalendarOutlined aria-hidden />}>
+              {t('pages.ledger.extend')}
+            </Button>
+          </Dropdown>
           <Button
             size="small"
             icon={<EditOutlined aria-hidden />}

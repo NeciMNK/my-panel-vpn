@@ -926,6 +926,7 @@ export interface LedgerServer {
   id: number;
   monthlyCost: number;
   name: string;
+  paidThrough: string;
   startMonth: string;
 }
 

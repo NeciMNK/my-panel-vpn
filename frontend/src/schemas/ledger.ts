@@ -9,6 +9,7 @@ export const LedgerServerSchema = z.object({
   billingDay: z.number(),
   startMonth: z.string(),
   endMonth: z.string(),
+  paidThrough: z.string(),
 });
 export type LedgerServer = z.infer<typeof LedgerServerSchema>;
 

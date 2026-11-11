@@ -1076,6 +1076,7 @@ export const EXAMPLES: Record<string, unknown> = {
         "id": 1,
         "monthlyCost": 500,
         "name": "Hetzner DE",
+        "paidThrough": "2027-02",
         "startMonth": "2026-11"
       }
     ],
@@ -1094,6 +1095,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "id": 1,
     "monthlyCost": 500,
     "name": "Hetzner DE",
+    "paidThrough": "2027-02",
     "startMonth": "2026-11"
   },
   "LedgerServerDue": {
