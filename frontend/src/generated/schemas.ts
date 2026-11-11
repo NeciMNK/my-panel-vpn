@@ -1721,6 +1721,18 @@ export const SCHEMAS: Record<string, unknown> = {
         "format": "int64",
         "type": "integer"
       },
+      "directDomains": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "directIps": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
       "enable": {
         "example": true,
         "type": "boolean"
@@ -1759,9 +1771,20 @@ export const SCHEMAS: Record<string, unknown> = {
         },
         "type": "array"
       },
+      "mode": {
+        "description": "Mode is split, relay or both; empty is a cascade saved before modes, a relay.",
+        "example": "split",
+        "type": "string"
+      },
       "name": {
         "example": "RU → DE",
         "type": "string"
+      },
+      "relayInboundTags": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
       },
       "strategy": {
         "example": "leastPing",
@@ -1774,6 +1797,8 @@ export const SCHEMAS: Record<string, unknown> = {
     },
     "required": [
       "createdAt",
+      "directDomains",
+      "directIps",
       "enable",
       "entryInboundTags",
       "entryNodeId",
@@ -1782,7 +1807,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "id",
       "lastError",
       "links",
+      "mode",
       "name",
+      "relayInboundTags",
       "strategy",
       "updatedAt"
     ],
