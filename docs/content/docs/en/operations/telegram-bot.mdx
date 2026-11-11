@@ -116,7 +116,12 @@ Set the price, discounts and where to pay in **Finance → Prices and payment** 
   through the VPN (then which IP) or lets them pick a server or have the least
   loaded one chosen. Servers whose known capacity has no speed left for the
   client (below their minimum speed, or none at all) are never offered. Pins
-  show up in **Pinned exits** on the Nodes page.
+  show up in **Pinned exits** on the Nodes page. When the client's exits span
+  several countries, the bot first asks where they use AI: **Only in NL** (or another of
+  their countries) pins an NL server at once (the least loaded one, which the quiz can
+  still change), and in a cascade mixing countries — the automatic server
+  choice — that pin wins over the client's other pins, so AI always sees the
+  same NL IP. **In every country** keeps one pin per country as above.
 - **Free plan**: with it on, a Telegram account that is not a client gets a
   **Request a free subscription** button. Admins approve it in the bot, which
   opens the add-client wizard prefilled with the user's Telegram ID, the free

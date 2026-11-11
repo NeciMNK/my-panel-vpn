@@ -25,6 +25,9 @@ const (
 	cbAIExitList    = "ai_l"
 	cbAIExitAuto    = "ai_a"
 	cbAIExitPin     = "ai_p"
+	cbAIExitWhere   = "ai_k"
+	// anyCountry in cbAIExitWhere data drops the user's one AI country.
+	anyCountry = "*"
 	// noCountry stands in callback data for exits without a country code.
 	noCountry = "-"
 )
@@ -63,7 +66,12 @@ func (t *Tgbot) answerAIExit(callbackQuery *telego.CallbackQuery) {
 	}
 	if action == cbAIExitHome {
 		t.answerSilent(callbackQuery.ID)
-		t.screenAIExitOverview(chatID, t.aiExitGroups(emails))
+		t.screenAIExitOverview(chatID, emails, "")
+		return
+	}
+	if action == cbAIExitWhere {
+		t.answerSilent(callbackQuery.ID)
+		t.answerAIExitWhere(chatID, emails, arg)
 		return
 	}
 	if action == cbAIExitPin {
@@ -75,7 +83,7 @@ func (t *Tgbot) answerAIExit(callbackQuery *telego.CallbackQuery) {
 		t.pinAIExit(callbackQuery, chatID, emails, nodeID)
 		return
 	}
-	groups := t.aiExitGroups(emails)
+	groups, aiCountry := t.aiExitGroups(emails)
 	group, ok := findExitGroup(groups, arg)
 	if !ok {
 		t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
@@ -84,7 +92,7 @@ func (t *Tgbot) answerAIExit(callbackQuery *telego.CallbackQuery) {
 	switch action {
 	case cbAIExitCountry:
 		t.answerSilent(callbackQuery.ID)
-		t.screenAIExitQuiz(chatID, group, groups)
+		t.screenAIExitQuiz(chatID, group, groups, aiCountry)
 	case cbAIExitUsed:
 		t.answerSilent(callbackQuery.ID)
 		t.screenAIExitServers(chatID, group, "tgbot.messages.aiExitWhichUsed", true)
@@ -106,12 +114,23 @@ func (t *Tgbot) answerAIExit(callbackQuery *telego.CallbackQuery) {
 	}
 }
 
-func (t *Tgbot) aiExitGroups(emails []string) []service.UserExitGroup {
+func (t *Tgbot) allAIExitGroups(emails []string) []service.UserExitGroup {
 	groups, err := (&service.CascadeService{}).UserExitGroups(emails)
 	if err != nil {
 		logger.Warning("AI exit: list exits:", err)
 	}
 	return groups
+}
+
+// aiExitGroups are the countries the user may pin in: only their AI country
+// when they named one that is still among their exits.
+func (t *Tgbot) aiExitGroups(emails []string) ([]service.UserExitGroup, string) {
+	groups := t.allAIExitGroups(emails)
+	country := (&service.CascadeService{}).AICountry(emails)
+	if g, ok := findExitGroup(groups, country); ok && country != "" {
+		return []service.UserExitGroup{g}, country
+	}
+	return groups, ""
 }
 
 func findExitGroup(groups []service.UserExitGroup, country string) (service.UserExitGroup, bool) {
@@ -123,13 +142,82 @@ func findExitGroup(groups []service.UserExitGroup, country string) (service.User
 	return service.UserExitGroup{}, false
 }
 
-// startAIExit pins sole servers, then opens the quiz when exactly one country
-// still needs a choice, or the overview of every country otherwise.
+// startAIExit keeps the user's AI country pinned, or asks for one when their
+// exits span several countries.
 func (t *Tgbot) startAIExit(chatID int64, emails []string) {
+	if country := (&service.CascadeService{}).AICountry(emails); country != "" {
+		t.useAIIn(chatID, emails, country, false)
+		return
+	}
+	if groups := t.allAIExitGroups(emails); len(groups) > 1 {
+		t.screenAIExitWhere(chatID, groups)
+		return
+	}
+	t.startAIExitAnywhere(chatID, emails)
+}
+
+func (t *Tgbot) answerAIExitWhere(chatID int64, emails []string, arg string) {
+	switch arg {
+	case "":
+		t.screenAIExitWhere(chatID, t.allAIExitGroups(emails))
+	case anyCountry:
+		if _, _, err := (&service.CascadeService{}).SetAICountry(context.Background(), emails, ""); err != nil {
+			logger.Warning("AI exit: clear AI country:", err)
+		}
+		t.startAIExitAnywhere(chatID, emails)
+	default:
+		t.useAIIn(chatID, emails, arg, true)
+	}
+}
+
+// useAIIn makes country the user's only AI country, which pins its best server
+// at once; a fresh choice among several servers still goes through the quiz.
+func (t *Tgbot) useAIIn(chatID int64, emails []string, country string, chosen bool) {
+	_, pinned, err := (&service.CascadeService{}).SetAICountry(context.Background(), emails, country)
+	if err != nil {
+		logger.Warning("AI exit: use AI in", country, ":", err)
+		t.screenAIExitWhere(chatID, t.allAIExitGroups(emails))
+		return
+	}
+	groups, aiCountry := t.aiExitGroups(emails)
+	if !pinned {
+		t.screenAIExitOverview(chatID, emails, t.I18nBot("tgbot.answers.aiExitAllBusy"))
+		return
+	}
+	if chosen && len(groups) == 1 && len(groups[0].Exits) > 1 {
+		t.screenAIExitQuiz(chatID, groups[0], groups, aiCountry)
+		return
+	}
+	t.screenAIExitOverview(chatID, emails, "")
+}
+
+// screenAIExitWhere asks which country the user uses AI from.
+func (t *Tgbot) screenAIExitWhere(chatID int64, groups []service.UserExitGroup) {
+	if len(groups) == 0 {
+		t.renderScreen(chatID, t.newScreen("main", t.I18nBot("tgbot.messages.aiExitNoServers")))
+		return
+	}
+	var rows [][]telego.InlineKeyboardButton
+	for _, g := range groups {
+		if g.Country == "" {
+			continue
+		}
+		rows = append(rows, tu.InlineKeyboardRow(t.btn2(
+			t.I18nBot("tgbot.buttons.aiExitOnlyIn", "Country=="+countryLabel(g.Country)),
+			cbAIExitWhere+" "+countryToken(g.Country))))
+	}
+	rows = append(rows, tu.InlineKeyboardRow(t.btn("tgbot.buttons.aiExitAnyCountry", cbAIExitWhere+" "+anyCountry)), t.backRow())
+	body := t.aiExitStatus(groups, "") + t.I18nBot("tgbot.messages.aiExitWhere")
+	t.renderScreen(chatID, t.newScreen("main", body, rows...))
+}
+
+// startAIExitAnywhere pins sole servers, then opens the quiz when exactly one
+// country still needs a choice, or the overview of every country otherwise.
+func (t *Tgbot) startAIExitAnywhere(chatID int64, emails []string) {
 	if _, err := (&service.CascadeService{}).PinSoleExits(context.Background(), emails); err != nil {
 		logger.Warning("AI exit: pin sole exits:", err)
 	}
-	groups := t.aiExitGroups(emails)
+	groups := t.allAIExitGroups(emails)
 	var undecided []service.UserExitGroup
 	for _, g := range groups {
 		if _, pinned := g.Pinned(); !pinned && len(g.Exits) > 1 {
@@ -137,13 +225,15 @@ func (t *Tgbot) startAIExit(chatID int64, emails []string) {
 		}
 	}
 	if len(undecided) == 1 {
-		t.screenAIExitQuiz(chatID, undecided[0], groups)
+		t.screenAIExitQuiz(chatID, undecided[0], groups, "")
 		return
 	}
-	t.screenAIExitOverview(chatID, groups)
+	t.screenAIExitOverview(chatID, emails, "")
 }
 
-func (t *Tgbot) screenAIExitOverview(chatID int64, groups []service.UserExitGroup) {
+// screenAIExitOverview shows the pins and, below them, an optional note.
+func (t *Tgbot) screenAIExitOverview(chatID int64, emails []string, note string) {
+	groups, aiCountry := t.aiExitGroups(emails)
 	if len(groups) == 0 {
 		t.renderScreen(chatID, t.newScreen("main", t.I18nBot("tgbot.messages.aiExitNoServers")))
 		return
@@ -156,14 +246,25 @@ func (t *Tgbot) screenAIExitOverview(chatID int64, groups []service.UserExitGrou
 				cbAIExitCountry+" "+countryToken(g.Country))))
 		}
 	}
+	if aiCountry != "" || len(groups) > 1 {
+		rows = append(rows, tu.InlineKeyboardRow(t.btn("tgbot.buttons.aiExitCountry", cbAIExitWhere)))
+	}
 	rows = append(rows, t.backRow())
-	t.renderScreen(chatID, t.newScreen("main", t.aiExitStatus(groups), rows...))
+	body := t.aiExitStatus(groups, aiCountry)
+	if note != "" {
+		body += "\r\n" + note
+	}
+	t.renderScreen(chatID, t.newScreen("main", body, rows...))
 }
 
-// aiExitStatus is the intro and, per country, the exit the user is pinned to.
-func (t *Tgbot) aiExitStatus(groups []service.UserExitGroup) string {
+// aiExitStatus is the intro, the user's AI country if any and, per country,
+// the exit the user is pinned to.
+func (t *Tgbot) aiExitStatus(groups []service.UserExitGroup, aiCountry string) string {
 	var body strings.Builder
 	body.WriteString(t.I18nBot("tgbot.messages.aiExitIntro"))
+	if aiCountry != "" {
+		body.WriteString(t.I18nBot("tgbot.messages.aiExitOnlyIn", "Country=="+countryLabel(aiCountry)))
+	}
 	for _, g := range groups {
 		if exit, ok := g.Pinned(); ok {
 			body.WriteString(t.I18nBot("tgbot.messages.aiExitPinnedLine", "Country=="+countryLabel(g.Country), "Server=="+exitLabel(exit)))
@@ -174,9 +275,9 @@ func (t *Tgbot) aiExitStatus(groups []service.UserExitGroup) string {
 	return body.String()
 }
 
-func (t *Tgbot) screenAIExitQuiz(chatID int64, g service.UserExitGroup, groups []service.UserExitGroup) {
+func (t *Tgbot) screenAIExitQuiz(chatID int64, g service.UserExitGroup, groups []service.UserExitGroup, aiCountry string) {
 	token := countryToken(g.Country)
-	body := t.aiExitStatus(groups) + t.I18nBot("tgbot.messages.aiExitUsedBefore", "Country=="+countryLabel(g.Country))
+	body := t.aiExitStatus(groups, aiCountry) + t.I18nBot("tgbot.messages.aiExitUsedBefore", "Country=="+countryLabel(g.Country))
 	t.renderScreen(chatID, t.newScreen("main", body,
 		tu.InlineKeyboardRow(
 			t.btn("tgbot.buttons.aiExitYes", cbAIExitUsed+" "+token),
@@ -221,11 +322,11 @@ func (t *Tgbot) pinAIExit(callbackQuery *telego.CallbackQuery, chatID int64, ema
 	if err != nil {
 		logger.Warning("AI exit: pin", nodeID, "for", emails, ":", err)
 		t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.aiExitUnavailable"))
-		t.screenAIExitOverview(chatID, t.aiExitGroups(emails))
+		t.screenAIExitOverview(chatID, emails, "")
 		return
 	}
 	t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.aiExitPinned", "Server=="+exitLabel(exit)))
-	t.screenAIExitOverview(chatID, t.aiExitGroups(emails))
+	t.screenAIExitOverview(chatID, emails, "")
 }
 
 func countryToken(country string) string {

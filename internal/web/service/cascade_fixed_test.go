@@ -81,7 +81,7 @@ func TestFixedExitsInCascadePrefersTheLatestPin(t *testing.T) {
 		{Id: 2, Email: "bob", NodeId: 9},
 		{Id: 3, Email: "anna", NodeId: 4},
 	}
-	got := fixedExitsIn(rows, []int{2, 3, 4})
+	got := fixedExitsIn(rows, []int{2, 3, 4}, nil)
 	if want := map[string]int{"anna": 4}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("fixed = %v, want %v", got, want)
 	}

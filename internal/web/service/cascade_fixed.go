@@ -66,13 +66,18 @@ func fixedExitEmail(req *CascadeFixedExitRequest) (string, error) {
 }
 
 // fixedExitsIn maps each user to their pinned exit among exits; with several
-// (a cascade mixing countries) the latest pin wins.
-func fixedExitsIn(rows []model.CascadeFixedExit, exits []int) map[string]int {
+// (a cascade mixing countries) the AI-country pin wins, else the latest one.
+func fixedExitsIn(rows []model.CascadeFixedExit, exits []int, aiExits map[string]int) map[string]int {
 	out := map[string]int{}
 	best := map[string]int{}
 	for _, r := range rows {
 		if slices.Contains(exits, r.NodeId) && r.Id >= best[r.Email] {
 			out[r.Email], best[r.Email] = r.NodeId, r.Id
+		}
+	}
+	for email, id := range aiExits {
+		if _, pinnedHere := out[email]; pinnedHere && slices.Contains(exits, id) {
+			out[email] = id
 		}
 	}
 	return out

@@ -3007,6 +3007,8 @@
       "aiExitHow": "Pin a specific server, or let the panel choose the least loaded one?",
       "aiExitBusyHidden": "\r\n\r\nServers with no free speed left are not shown.",
       "aiExitNoServers": "🤖 None of your subscriptions goes through an exit server, so there is no IP to pin.",
+      "aiExitWhere": "\r\nWhere will you use AI? Pick one country and your IP there is pinned for good: whenever your app chooses a server automatically, you still leave through that IP.",
+      "aiExitOnlyIn": "AI only in {{ .Country }}: automatic server choice always keeps this IP.\r\n",
       "freeRequested": "🆓 {{ .User }} asks for a free subscription ({{ .GB }} GB a month).",
       "freeApproved": "🎉 Your free subscription is ready: {{ .GB }} GB a month. Pay for any term to remove the limit.",
       "freeDeclined": "❌ Your request for a free subscription was declined.",
@@ -3097,6 +3099,9 @@
       "aiExitForgot": "🤷 I don't remember",
       "aiExitPickFromList": "📋 Pick a server from the list",
       "aiExitAuto": "✨ Choose for me",
+      "aiExitOnlyIn": "🤖 Only in {{ .Country }}",
+      "aiExitAnyCountry": "🌍 In every country",
+      "aiExitCountry": "🌍 Country for AI",
       "clearSearch": "✖️ Clear search"
     },
     "answers": {

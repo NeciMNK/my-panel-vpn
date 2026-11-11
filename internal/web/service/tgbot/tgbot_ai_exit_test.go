@@ -62,8 +62,9 @@ func TestTrustedClientPinsAnAIExitThroughTheQuiz(t *testing.T) {
 	}
 
 	tap(tb, 6060, cbAIExit, false)
+	tap(tb, 6060, "ai_k *", false)
 	if got := pinnedExits(t, "ai@x"); !reflect.DeepEqual(got, []int{4}) {
-		t.Fatalf("after the AI button pins = %v, want NL's only server 4 pinned at once", got)
+		t.Fatalf("after AI in any country pins = %v, want NL's only server 4 pinned at once", got)
 	}
 	if _, markup := screenMarkup(t, tb, 6060); !strings.Contains(markup, `"ai_y DE"`) || !strings.Contains(markup, `"ai_n DE"`) {
 		t.Fatalf("DE has two servers, so the quiz must ask about it: %s", markup)
@@ -82,5 +83,45 @@ func TestTrustedClientPinsAnAIExitThroughTheQuiz(t *testing.T) {
 	tap(tb, 6060, "ai_a DE", false)
 	if got := pinnedExits(t, "ai@x"); !reflect.DeepEqual(got, []int{2, 4}) {
 		t.Fatalf("auto pick pinned %v, want DE node 2 (node 3 is full) and NL node 4", got)
+	}
+}
+
+func TestTrustedClientUsesAIOnlyInOneCountry(t *testing.T) {
+	tb, _ := newScreenTgbot(t, false)
+	initReportDB(t)
+	localizeWithRealBundle(t)
+	setTestAdmins(t, 9001)
+	seedBilledClient(t, 6060, "ai@x")
+	seedAIExitWorld(t)
+	tap(tb, 9001, "trust ai@x", true)
+
+	tap(tb, 6060, cbAIExit, false)
+	if got := pinnedExits(t, "ai@x"); len(got) != 0 {
+		t.Fatalf("pins = %v before the client said where they use AI", got)
+	}
+	_, markup := screenMarkup(t, tb, 6060)
+	for _, cb := range []string{`"ai_k DE"`, `"ai_k NL"`, `"ai_k *"`} {
+		if !strings.Contains(markup, cb) {
+			t.Fatalf("country question lacks %s: %s", cb, markup)
+		}
+	}
+
+	tap(tb, 6060, "ai_k DE", false)
+	if got := pinnedExits(t, "ai@x"); !reflect.DeepEqual(got, []int{2}) {
+		t.Fatalf("AI only in DE pinned %v, want DE node 2 at once (node 3 is full, NL untouched)", got)
+	}
+	if _, markup := screenMarkup(t, tb, 6060); !strings.Contains(markup, `"ai_y DE"`) {
+		t.Fatalf("DE has two servers, so the quiz must still ask: %s", markup)
+	}
+
+	tap(tb, 6060, cbAIExit, false)
+	body, markup := screenMarkup(t, tb, 6060)
+	if strings.Contains(markup, `"ai_k NL"`) || strings.Contains(markup, `"ai_c NL"`) || strings.Contains(body, "NL") {
+		t.Fatalf("with AI only in DE the screen still offers NL: %s %s", body, markup)
+	}
+
+	tap(tb, 6060, "ai_k *", false)
+	if got := pinnedExits(t, "ai@x"); !reflect.DeepEqual(got, []int{2, 4}) {
+		t.Fatalf("any country pins = %v, want NL's only server 4 added", got)
 	}
 }
