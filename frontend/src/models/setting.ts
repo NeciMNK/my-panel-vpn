@@ -37,6 +37,7 @@ export class AllSetting {
   tgMemory = 80;
   tgLang = 'en-US';
   tgFreePlanEnable = false;
+  tgFreePlanGB = 10;
   twoFactorEnable = false;
   twoFactorToken = '';
   xrayTemplateConfig = '';

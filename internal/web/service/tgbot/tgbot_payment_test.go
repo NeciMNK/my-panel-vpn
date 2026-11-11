@@ -285,13 +285,13 @@ func TestConfirmPaymentLiftsFreePlanAndNotifiesClient(t *testing.T) {
 	setTestAdmins(t, 9001)
 	seedBilledClient(t, 5656, "freebie@x")
 	freeSettings := fmt.Sprintf(`{"clients":[{"id":%q,"email":"freebie@x","tgId":5656,"subId":"sub-freebie@x","enable":true,"totalGB":%d}]}`,
-		uuid.NewSHA1(uuid.NameSpaceOID, []byte("freebie@x")).String(), int64(freePlanGB)<<30)
+		uuid.NewSHA1(uuid.NameSpaceOID, []byte("freebie@x")).String(), int64(defaultFreePlanGB)<<30)
 	if err := database.GetDB().Model(&model.Inbound{}).Where("tag = ?", "tg-freebie@x").
 		Update("settings", freeSettings).Error; err != nil {
 		t.Fatal(err)
 	}
 	if err := database.GetDB().Model(&xray.ClientTraffic{}).Where("email = ?", "freebie@x").
-		Update("total", int64(freePlanGB)<<30).Error; err != nil {
+		Update("total", int64(defaultFreePlanGB)<<30).Error; err != nil {
 		t.Fatal(err)
 	}
 	billing := billingOf(t, "freebie@x")
@@ -456,12 +456,13 @@ func TestStrangerRequestsFreePlan(t *testing.T) {
 }
 
 // Approving opens the wizard prefilled for the free plan; submitting it must
-// create a 10 GB, monthly-reset client marked free, and greet the user.
+// create a client with the admin-set quota (not the 10 GB default), reset monthly.
 func TestApprovedFreePlanCreatesLimitedClient(t *testing.T) {
 	tb, calls := newScreenTgbot(t, false)
 	initReportDB(t)
 	localizeWithRealBundle(t)
 	setTestAdmins(t, 9001)
+	seedSettings(t, map[string]string{"tgFreePlanGB": "25"})
 	inbound := model.Inbound{
 		UserId: 1, Tag: "free-in", Remark: "free", Port: 8443,
 		Protocol: model.VLESS, Enable: true, Settings: `{"clients":[]}`,
@@ -486,8 +487,8 @@ func TestApprovedFreePlanCreatesLimitedClient(t *testing.T) {
 	tap(tb, 9001, "add_client_submit_enable", true)
 
 	traffic := trafficOf(t, "new.user")
-	if traffic.Total != int64(freePlanGB)<<30 {
-		t.Errorf("total = %d, want %d GB", traffic.Total, freePlanGB)
+	if traffic.Total != 25<<30 {
+		t.Errorf("total = %d, want 25 GB", traffic.Total)
 	}
 	rec, err := (&service.ClientService{}).GetRecordByEmail(nil, "new.user")
 	if err != nil {
@@ -499,8 +500,13 @@ func TestApprovedFreePlanCreatesLimitedClient(t *testing.T) {
 	if !billingOf(t, "new.user").FreePlan {
 		t.Error("the new client is not marked as free, so a payment could not lift its quota")
 	}
-	if len(adminMessages(calls(), 6161)) == 0 {
-		t.Errorf("the approved user was not told (calls: %v)", methods(calls()))
+	greeted := false
+	for _, msg := range adminMessages(calls(), 6161) {
+		text, _ := msg.Payload["text"].(string)
+		greeted = greeted || strings.Contains(text, "25")
+	}
+	if !greeted {
+		t.Errorf("the approved user was not told about the 25 GB quota (calls: %v)", methods(calls()))
 	}
 }
 

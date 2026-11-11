@@ -2022,7 +2022,9 @@
       "subHostSortModeDesc": "ترتیب میزبان‌ها در صفحهٔ میزبان‌ها، میان همهٔ ورودی‌ها اعمال می‌شود. این تنظیم ترتیب خروجی سرور را تعیین می‌کند؛ برنامهٔ کلاینت ممکن است ترتیب دیگری اعمال کند.",
       "tgPayment": "Payment",
       "tgFreePlan": "Free plan",
-      "tgFreePlanDesc": "Let unknown Telegram users ask for a free subscription (10 GB a month). Every request must be approved by an admin in the bot; paying for any term removes the limit.",
+      "tgFreePlanDesc": "Let unknown Telegram users ask for a free subscription with a monthly traffic quota (set below). Every request must be approved by an admin in the bot; paying for any term removes the limit.",
+      "tgFreePlanGB": "Free plan traffic (GB)",
+      "tgFreePlanGBDesc": "How many gigabytes a month a new free client gets. Clients that already exist keep their current limit.",
       "panelProxy": {
         "setup": "Through my VPN",
         "title": "Route the panel through a proxy",

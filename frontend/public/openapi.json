@@ -564,6 +564,11 @@
             "description": "Prices and discounts are edited on the Finance page (LedgerService.SavePayment), not here.",
             "type": "boolean"
           },
+          "tgFreePlanGB": {
+            "maximum": 100000,
+            "minimum": 1,
+            "type": "integer"
+          },
           "tgLang": {
             "type": "string"
           },
@@ -785,6 +790,7 @@
           "tgCpu",
           "tgEnabledEvents",
           "tgFreePlanEnable",
+          "tgFreePlanGB",
           "tgLang",
           "tgMemory",
           "tgRunTime",
@@ -1365,6 +1371,11 @@
             "description": "Prices and discounts are edited on the Finance page (LedgerService.SavePayment), not here.",
             "type": "boolean"
           },
+          "tgFreePlanGB": {
+            "maximum": 100000,
+            "minimum": 1,
+            "type": "integer"
+          },
           "tgLang": {
             "type": "string"
           },
@@ -1594,6 +1605,7 @@
           "tgCpu",
           "tgEnabledEvents",
           "tgFreePlanEnable",
+          "tgFreePlanGB",
           "tgLang",
           "tgMemory",
           "tgRunTime",

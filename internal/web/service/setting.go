@@ -109,6 +109,7 @@ var defaultValueMap = map[string]string{
 	"tgPaymentDiscounts":          "",
 	"tgPaymentDetails":            "",
 	"tgFreePlanEnable":            "false",
+	"tgFreePlanGB":                "10",
 	"twoFactorEnable":             "false",
 	"twoFactorToken":              "",
 	"happLinkEnable":              "false",
@@ -690,6 +691,10 @@ func (s *SettingService) GetTgBotVpnFallback() (bool, error) {
 
 func (s *SettingService) GetTgFreePlanEnable() (bool, error) {
 	return s.getBool("tgFreePlanEnable")
+}
+
+func (s *SettingService) GetTgFreePlanGB() (int, error) {
+	return s.getInt("tgFreePlanGB")
 }
 
 func (s *SettingService) GetTgPaymentDetails() (string, error) {

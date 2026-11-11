@@ -27,7 +27,7 @@ const (
 	// graceDays is how far one deferral moves the expiry; at most one per graceCooldownDays.
 	graceDays         = 15
 	graceCooldownDays = 30
-	freePlanGB        = 10
+	defaultFreePlanGB = 10
 	dayMillis         = int64(24 * time.Hour / time.Millisecond)
 	paymentDate       = "2006-01-02 15:04"
 	freeEmailMax      = 32
@@ -118,7 +118,7 @@ func (t *Tgbot) paymentBlock(info paymentInfo, traffics []*xray.ClientTraffic) s
 		deferred = deferred || billing.GraceDays > 0
 	}
 	if free {
-		b.WriteString(t.I18nBot("tgbot.payment.freePlan", "GB=="+strconv.Itoa(freePlanGB)))
+		b.WriteString(t.I18nBot("tgbot.payment.freePlan", "GB=="+strconv.Itoa(t.freePlanGB())))
 	}
 	if due, ok := nextPaymentDue(traffics); ok {
 		switch {
@@ -506,6 +506,15 @@ func (t *Tgbot) toggleTrusted(callbackQuery *telego.CallbackQuery, email string)
 	t.searchClientScreen(callbackQuery.Message.GetChat().ID, email)
 }
 
+// freePlanGB is the admin-set free quota; a broken value falls back to the default.
+func (t *Tgbot) freePlanGB() int {
+	gb, err := t.settingService.GetTgFreePlanGB()
+	if err != nil || gb <= 0 {
+		return defaultFreePlanGB
+	}
+	return gb
+}
+
 func (t *Tgbot) freePlanEnabled() bool {
 	enabled, err := t.settingService.GetTgFreePlanEnable()
 	return err == nil && enabled
@@ -520,7 +529,7 @@ func (t *Tgbot) sendStrangerWelcome(chatID, userID int64) {
 		return
 	}
 	rows := append([][]telego.InlineKeyboardButton{
-		tu.InlineKeyboardRow(t.btn2(t.I18nBot("tgbot.buttons.requestFree", "GB=="+strconv.Itoa(freePlanGB)), cbFreeRequest)),
+		tu.InlineKeyboardRow(t.btn2(t.I18nBot("tgbot.buttons.requestFree", "GB=="+strconv.Itoa(t.freePlanGB())), cbFreeRequest)),
 	}, t.hideButton().InlineKeyboard...)
 	t.SendMsgToTgbot(chatID, text, tu.InlineKeyboard(rows...))
 }
@@ -551,7 +560,7 @@ func (t *Tgbot) requestFreePlan(callbackQuery *telego.CallbackQuery) {
 		t.btn("tgbot.buttons.decline", "free_no "+id),
 	)}, t.hideButton().InlineKeyboard...)
 	t.SendMsgToTgbotAdmins(t.I18nBot("tgbot.messages.freeRequested",
-		"User=="+userLabel(from), "GB=="+strconv.Itoa(freePlanGB)), tu.InlineKeyboard(rows...))
+		"User=="+userLabel(from), "GB=="+strconv.Itoa(t.freePlanGB())), tu.InlineKeyboard(rows...))
 	t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.freeRequested"))
 }
 
@@ -582,7 +591,7 @@ func (t *Tgbot) approveFreePlan(chatID int64, actor chatUser, tgIDText string) b
 	t.resetDraft(draft)
 	draft.email = freeEmail(username, tgID)
 	draft.tgID = tgIDText
-	draft.totalGB = freePlanGB * 1024 * 1024 * 1024
+	draft.totalGB = int64(t.freePlanGB()) << 30
 	draft.freePlan = true
 	t.addClient(chatID, draft, t.BuildClientDraftMessage(draft))
 	return true

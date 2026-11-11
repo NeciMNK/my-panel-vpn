@@ -178,6 +178,7 @@ export interface AllSetting {
   tgCpu: number;
   tgEnabledEvents: string;
   tgFreePlanEnable: boolean;
+  tgFreePlanGB: number;
   tgLang: string;
   tgMemory: number;
   tgRunTime: string;
@@ -371,6 +372,7 @@ export interface AllSettingView {
   tgCpu: number;
   tgEnabledEvents: string;
   tgFreePlanEnable: boolean;
+  tgFreePlanGB: number;
   tgLang: string;
   tgMemory: number;
   tgRunTime: string;
