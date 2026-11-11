@@ -70,6 +70,7 @@ func migrationModels() []any {
 		&model.Cascade{},
 		&model.CascadePin{},
 		&model.CascadeFixedExit{},
+		&model.CascadeAICountry{},
 		&model.HomeNetwork{},
 		&model.WarpSwitch{},
 		&model.ClientSpeed{},

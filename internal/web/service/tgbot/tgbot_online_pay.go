@@ -184,6 +184,13 @@ func (t *Tgbot) announceOrder(out service.OrderOutcome) {
 		return
 	}
 	email := html.EscapeString(order.Email)
+	if order.Kind == service.OrderAI {
+		logger.Infof("tgbot: %s bought the AI button (%s) for %s", user, total, order.Email)
+		t.SendMsgToTgbotAdmins(t.I18nBot("tgbot.messages.aiExitBoughtAdmin", "User=="+user, "Email=="+email, "Total=="+total), t.hideButton())
+		t.sendNotice(order.TgID, t.I18nBot("tgbot.messages.aiExitBought"))
+		t.screenClientHome(order.TgID, order.TgID, screenSendNew)
+		return
+	}
 	if order.Kind == service.OrderFree {
 		logger.Infof("tgbot: %s bought the free plan online (%s) as %s", user, total, order.Email)
 		t.SendMsgToTgbotAdmins(t.I18nBot("tgbot.messages.onlineFreeAdmin", "User=="+user, "Email=="+email, "Total=="+total), t.hideButton())

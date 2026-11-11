@@ -2918,7 +2918,9 @@
       "address": "IP / адреса",
       "node": "Нода",
       "nodeHint": "Оберіть ноду на цьому сервері: її адреса показуватиметься тут і змінюватиметься разом із налаштуваннями ноди. Для сервера без ноди (наприклад, самої панелі) впишіть IP нижче.",
-      "noNode": "— не нода —"
+      "noNode": "— не нода —",
+      "aiExitPrice": "AI button price",
+      "aiExitPriceDesc": "One-off price of the bot's \"🤖 I will use AI\" button (a permanent exit IP). Friends always get it free. 0 hides it from everyone else. It is paid by card when a provider is connected, or by hand to the payment details with an admin's confirm in the bot. Clients who already paid keep it."
     }
   },
   "tgbot": {
@@ -3074,7 +3076,12 @@
       "onlineFreeAdmin": "💳 Безкоштовний тариф куплено онлайн: {{ .User }} → {{ .Email }}, {{ .Total }}",
       "freePaid": "✅ Оплату отримано! Ваш безкоштовний тариф ({{ .GB }} ГБ на місяць) готовий.",
       "paidOnlineLine": "💳 {{ .Email }} сплачено онлайн, активна до {{ .Date }}",
-      "onlinePaymentAdmin": "💳 Онлайн-оплата: {{ .User }} — {{ .Email }}, {{ .Months }} міс, {{ .Total }}"
+      "onlinePaymentAdmin": "💳 Онлайн-оплата: {{ .User }} — {{ .Email }}, {{ .Months }} міс, {{ .Total }}",
+      "aiExitWhere": "\r\nWhere will you use AI? Pick one country and your IP there is pinned for good: whenever your app chooses a server automatically, you still leave through that IP.",
+      "aiExitOnlyIn": "AI only in {{ .Country }}: automatic server choice always keeps this IP.\r\n",
+      "aiExitBoughtAdmin": "🤖 AI button bought online: {{ .User }} → {{ .Email }}, {{ .Total }}",
+      "aiExitReported": "🤖 {{ .User }} says they paid {{ .Total }} for the AI button: {{ .Email }}",
+      "aiExitBought": "✅ Payment received. The 🤖 I will use AI button is yours for good."
     },
     "buttons": {
       "closeKeyboard": "❌ Закрити клавіатуру",
@@ -3161,7 +3168,13 @@
       "aiExitNo": "❌ No",
       "aiExitForgot": "🤷 I don't remember",
       "aiExitPickFromList": "📋 Pick a server from the list",
-      "aiExitAuto": "✨ Choose for me"
+      "aiExitAuto": "✨ Choose for me",
+      "aiExitBuy": "🤖 I will use AI · {{ .Total }}",
+      "aiExitIPaid": "✅ I paid",
+      "aiExitConfirm": "✅ Confirm AI button: {{ .Email }}",
+      "aiExitOnlyIn": "🤖 Only in {{ .Country }}",
+      "aiExitAnyCountry": "🌍 In every country",
+      "aiExitCountry": "🌍 Country for AI"
     },
     "answers": {
       "broadcastStarted": "🚀 Розсилку запущено.",
@@ -3194,7 +3207,6 @@
       "paymentConfirmed": "✅ Оплату {{ .Email }} підтверджено",
       "graceGranted": "⏳ Продовжено на {{ .Days }} днів. Сплатіть до {{ .Date }}.",
       "graceUnavailable": "Відстрочка зараз недоступна.",
-      "aiExitTrustedOnly": "Pinning an IP is available to trusted users only.",
       "aiExitAllBusy": "Every server of this country is out of free speed right now. Please try again later.",
       "aiExitUnavailable": "This server cannot be pinned right now. Please choose again.",
       "aiExitPinned": "📌 Pinned: {{ .Server }}",
@@ -3203,7 +3215,8 @@
       "paymentUnavailable": "⚠️ Оплата карткою зараз недоступна, спробуйте пізніше.",
       "paymentPending": "Оплата ще не надійшла. Вона перевіряється й автоматично.",
       "paymentAlreadyApplied": "✅ Цю оплату вже враховано.",
-      "paymentCanceled": "Цей рахунок закрито. Якщо хочете сплатити, відкрийте новий."
+      "paymentCanceled": "Цей рахунок закрито. Якщо хочете сплатити, відкрийте новий.",
+      "aiExitLocked": "The AI button is not available on your subscription."
     },
     "screens": {
       "panel": "Панель",
@@ -3254,7 +3267,10 @@
       "invoice": "🧾 <b>Рахунок</b>: {{ .Email }}, {{ .Months }} міс — {{ .Total }}\r\nСплатіть на сторінці: підписка продовжиться автоматично протягом хвилини.",
       "freeDescription": "VPN безкоштовний тариф {{ .GB }} ГБ/міс",
       "freeInvoice": "🧾 <b>Безкоштовний тариф</b>: {{ .GB }} ГБ на місяць, без терміну — разово {{ .Total }}.\r\nОплата захищає від спам-ботів, а {{ .Total }} віднімемо з першої платної підписки. Доступ створиться автоматично після оплати.",
-      "orderDescription": "VPN {{ .Email }}, {{ .Months }} міс"
+      "orderDescription": "VPN {{ .Email }}, {{ .Months }} міс",
+      "aiExitDescription": "VPN: permanent exit IP for AI services",
+      "aiExitInvoice": "🧾 <b>🤖 I will use AI</b>: a permanent exit IP, so AI services do not block your account — {{ .Total }} once, yours for good.\r\nThe button unlocks automatically after payment.",
+      "aiExitManual": "🧾 <b>🤖 I will use AI</b>: a permanent exit IP, so AI services do not block your account — {{ .Total }} once, yours for good.\r\n🏦 Where to pay:\r\n{{ .Details }}\r\n\r\nThen tap \"I paid\": the button opens once an admin confirms the payment."
     },
     "ledger": {
       "summary": "💰 <b>Finance for {{ .Month }}</b>\r\n\r\n➕ Income: {{ .Income }}\r\n➖ Expenses: {{ .Expenses }} (servers {{ .Servers }})\r\n{{ .Sign }} <b>Result: {{ .Balance }}</b>\r\n👥 Paying clients: {{ .Paying }}, expected {{ .Expected }}\r\n",

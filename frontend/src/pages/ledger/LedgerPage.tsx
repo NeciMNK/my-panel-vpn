@@ -591,6 +591,18 @@ export default function LedgerPage() {
                                 />
                               </FormField>
                             </Col>
+                            <Col xs={24} md={6}>
+                              <FormField
+                                name="aiExitPrice"
+                                label={t('pages.ledger.aiExitPrice')}
+                                tooltip={t('pages.ledger.aiExitPriceDesc')}
+                                rules={{
+                                  validate: rhfZodValidate(LedgerPaymentSchema.shape.aiExitPrice),
+                                }}
+                              >
+                                <InputNumber min={0} precision={0} style={{ width: '100%' }} />
+                              </FormField>
+                            </Col>
                             <Col xs={24} md={18}>
                               <FormField
                                 name="details"

@@ -56,3 +56,11 @@ type CascadeFixedExit struct {
 	NodeId    int    `json:"nodeId" gorm:"column:node_id;uniqueIndex:idx_cascade_fixed_exit" example:"2"`
 	CreatedAt int64  `json:"createdAt" gorm:"autoCreateTime" example:"1762862400"`
 }
+
+// CascadeAICountry is the one country a user uses AI services from: their pin
+// there beats their other pins in a cascade mixing countries.
+type CascadeAICountry struct {
+	Id      int    `json:"id" gorm:"primaryKey;autoIncrement"`
+	Email   string `json:"email" gorm:"uniqueIndex"`
+	Country string `json:"country"`
+}

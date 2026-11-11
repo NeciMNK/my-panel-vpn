@@ -927,6 +927,7 @@ export interface LedgerNonPaying {
 }
 
 export interface LedgerPayment {
+  aiExitPrice: number;
   currency: string;
   details: string;
   discounts: string;

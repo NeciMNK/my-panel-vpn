@@ -119,6 +119,7 @@ var defaultValueMap = map[string]string{
 	"tgFreePlanPrice":             "0",
 	"tgFreePlanInbounds":          "",
 	"tgFriendDiscount":            "0",
+	"tgAIExitPrice":               "0",
 	"tgPayProvider":               "",
 	"tgPayShopId":                 "",
 	"tgPaySecret":                 "",
@@ -752,6 +753,10 @@ func (s *SettingService) GetTgFreePlanInbounds() []int {
 		}
 	}
 	return ids
+}
+
+func (s *SettingService) GetTgAIExitPrice() (int, error) {
+	return s.getInt("tgAIExitPrice")
 }
 
 func (s *SettingService) GetTgFriendDiscount() (int, error) {

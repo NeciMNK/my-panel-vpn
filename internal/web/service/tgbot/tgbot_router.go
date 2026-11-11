@@ -455,6 +455,8 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 				t.toggleTrusted(callbackQuery, email)
 			case "friend":
 				t.toggleFriend(callbackQuery, email)
+			case cbAIExitConfirm:
+				t.confirmAIExit(callbackQuery, email)
 			case "nonpay":
 				t.toggleNonPaying(callbackQuery, email)
 			case "ledger":

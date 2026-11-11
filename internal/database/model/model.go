@@ -1162,10 +1162,13 @@ type ClientBilling struct {
 	Friend bool `json:"friend" gorm:"column:friend;default:false"`
 	// Credit is money paid online for the free plan; the first paid plan is that much cheaper.
 	Credit int `json:"credit" gorm:"column:credit;default:0"`
+	// AIPaid is the one-off purchase of the bot's AI button (a permanent exit IP).
+	AIPaid bool `json:"aiPaid" gorm:"column:ai_paid;default:false"`
 }
 
 // PaymentOrder is one online payment through the acquiring provider: a plan term
-// for a client, or the paid free plan that creates the client once the money arrives.
+// for a client, the paid free plan that creates the client once the money arrives,
+// or the AI button.
 type PaymentOrder struct {
 	Id        int    `json:"id" gorm:"primaryKey;autoIncrement"`
 	Provider  string `json:"provider" gorm:"not null"`

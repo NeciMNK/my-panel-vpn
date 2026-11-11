@@ -990,6 +990,7 @@ export const LedgerNonPayingSchema = z.object({
 export type LedgerNonPaying = z.infer<typeof LedgerNonPayingSchema>;
 
 export const LedgerPaymentSchema = z.object({
+  aiExitPrice: z.number().int(),
   currency: z.string(),
   details: z.string(),
   discounts: z.string(),

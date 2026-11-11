@@ -20,6 +20,7 @@ import (
 const (
 	OrderPlan = "plan"
 	OrderFree = "free"
+	OrderAI   = "ai"
 
 	OrderPending  = "pending"
 	OrderPaid     = "paid"
@@ -70,6 +71,49 @@ func (s *PaymentOrderService) FreePlanPrice() int {
 	return price
 }
 
+// AIExitPrice is what the AI button costs a client who is not a friend; 0
+// means it is not for sale.
+func (s *PaymentOrderService) AIExitPrice() int {
+	price, _ := s.settingService.GetTgAIExitPrice()
+	return max(price, 0)
+}
+
+// ConfirmAIExit is an admin's confirm of a manual AI button payment: it unlocks
+// the button and books amount once; false means it was already unlocked.
+func (s *PaymentOrderService) ConfirmAIExit(email string, amount int, note string, now time.Time) (bool, error) {
+	claimed, err := s.markAIPaid(email)
+	if err != nil || !claimed {
+		return false, err
+	}
+	if err := s.ledgerService.RecordPayment(email, amount, note, now); err != nil {
+		logger.Warning("ledger: booking the AI button of", email, "failed:", err)
+	}
+	return true, nil
+}
+
+// CreateAIExitOrder opens the payment page for the AI button of email's owner;
+// an unpaid order of the same user is reused.
+func (s *PaymentOrderService) CreateAIExitOrder(ctx context.Context, tgID int64, email, description, returnURL string) (*model.PaymentOrder, error) {
+	price := s.AIExitPrice()
+	if price <= 0 {
+		return nil, ErrNothingToPay
+	}
+	if open, ok := s.openOrder(OrderAI, tgID, price); ok {
+		return open, nil
+	}
+	order := &model.PaymentOrder{Kind: OrderAI, TgID: tgID, Email: email, Amount: price}
+	return s.open(ctx, order, description, returnURL)
+}
+
+// openOrder is the user's still-payable invoice of kind and amount, if any.
+func (s *PaymentOrderService) openOrder(kind string, tgID int64, amount int) (*model.PaymentOrder, bool) {
+	var open model.PaymentOrder
+	err := database.GetDB().Where("kind = ? AND tg_id = ? AND status = ? AND amount = ? AND created_at > ?",
+		kind, tgID, OrderPending, amount, time.Now().Add(-orderLifetime).UnixMilli()).
+		Order("id DESC").Limit(1).Find(&open).Error
+	return &open, err == nil && open.Id > 0 && open.PayURL != ""
+}
+
 // VerifyProvider checks the saved provider credentials against the provider.
 func (s *PaymentOrderService) VerifyProvider(ctx context.Context) (payment.Account, error) {
 	provider, err := s.provider()
@@ -109,12 +153,8 @@ func (s *PaymentOrderService) CreateFreePlanOrder(ctx context.Context, tgID int6
 	if price <= 0 {
 		return nil, ErrFreePlanOffline
 	}
-	var open model.PaymentOrder
-	err := database.GetDB().Where("kind = ? AND tg_id = ? AND status = ? AND amount = ? AND created_at > ?",
-		OrderFree, tgID, OrderPending, price, time.Now().Add(-orderLifetime).UnixMilli()).
-		Order("id DESC").Limit(1).Find(&open).Error
-	if err == nil && open.Id > 0 && open.PayURL != "" {
-		return &open, nil
+	if open, ok := s.openOrder(OrderFree, tgID, price); ok {
+		return open, nil
 	}
 	order := &model.PaymentOrder{Kind: OrderFree, TgID: tgID, Email: email, Amount: price}
 	return s.open(ctx, order, description, returnURL)
@@ -235,8 +275,11 @@ func (s *PaymentOrderService) move(order *model.PaymentOrder, from, to string) b
 
 func (s *PaymentOrderService) fulfil(order *model.PaymentOrder, now time.Time) (*PaymentResult, error) {
 	note := fmt.Sprintf("%s #%s", order.Provider, order.InvoiceId)
-	if order.Kind == OrderPlan {
+	switch order.Kind {
+	case OrderPlan:
 		return s.billingService.ApplyOnlinePayment(order.Email, order.Months, order.Amount, note, now)
+	case OrderAI:
+		return s.unlockAIExit(order, note, now)
 	}
 	email, err := s.createFreeClient(order)
 	if err != nil {
@@ -248,6 +291,33 @@ func (s *PaymentOrderService) fulfil(order *model.PaymentOrder, now time.Time) (
 		logger.Warning("ledger: booking the free plan of", email, "failed:", err)
 	}
 	return &PaymentResult{Email: email, Amount: order.Amount, Currency: order.Currency}, nil
+}
+
+// markAIPaid sets AIPaid with a guarded UPDATE, which SaveBilling never touches,
+// so a stale billing save cannot take a bought button back; false: already set.
+func (s *PaymentOrderService) markAIPaid(email string) (bool, error) {
+	billing, err := s.clientService.GetBillingByEmail(email)
+	if err != nil {
+		return false, err
+	}
+	if billing.Id == 0 {
+		if err := s.clientService.SaveBilling(billing); err != nil {
+			return false, err
+		}
+	}
+	res := database.GetDB().Model(&model.ClientBilling{}).
+		Where("client_id = ? AND ai_paid = ?", billing.ClientId, false).Update("ai_paid", true)
+	return res.RowsAffected == 1, res.Error
+}
+
+func (s *PaymentOrderService) unlockAIExit(order *model.PaymentOrder, note string, now time.Time) (*PaymentResult, error) {
+	if _, err := s.markAIPaid(order.Email); err != nil {
+		return nil, err
+	}
+	if err := s.ledgerService.RecordPayment(order.Email, order.Amount, note, now); err != nil {
+		logger.Warning("ledger: booking the AI button of", order.Email, "failed:", err)
+	}
+	return &PaymentResult{Email: order.Email, Amount: order.Amount, Currency: order.Currency}, nil
 }
 
 // createFreeClient makes the paid free-plan client on the configured inbounds
