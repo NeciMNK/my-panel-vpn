@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Card, InputNumber, Select, Space, Table, Typography } from 'antd';
+import { Button, Card, Form, InputNumber, Select, Space, Table, Typography } from 'antd';
 import { DeleteOutlined, ThunderboltOutlined } from '@ant-design/icons';
 
 import { HttpUtil } from '@/utils';
@@ -36,6 +36,7 @@ export interface SpeedServerRow {
 }
 
 const SPEED_KEY = ['speed', 'overview'] as const;
+const SPEED_INPUT_WIDTH = 140;
 const JSON_HEADERS = { headers: { 'Content-Type': 'application/json' } };
 
 // Every server gets a row; one without a capacity has no load to show yet.
@@ -101,6 +102,7 @@ export default function SpeedCard({ nodes }: { nodes: NodeRecord[] }) {
         <Space.Compact>
           <InputNumber
             aria-label={`${t('pages.nodes.speed.capacity')} ${r.name}`}
+            style={{ width: SPEED_INPUT_WIDTH }}
             min={0}
             value={capDrafts[r.nodeId] ?? r.capacityMbps}
             onChange={(v) => setCapDrafts({ ...capDrafts, [r.nodeId]: v ?? 0 })}
@@ -186,43 +188,51 @@ export default function SpeedCard({ nodes }: { nodes: NodeRecord[] }) {
         pagination={false}
         scroll={{ x: 'max-content' }}
       />
-      <Space wrap style={{ margin: '16px 0 8px' }}>
-        <Select
-          aria-label={t('pages.nodes.speed.user')}
-          showSearch
-          style={{ minWidth: 200 }}
-          placeholder={t('pages.nodes.speed.user')}
-          value={draft.email || undefined}
-          options={emails.map((e) => ({ value: e, label: e }))}
-          onChange={(email: string) => setDraft({ ...draft, email })}
-        />
-        <InputNumber
-          aria-label={t('pages.nodes.speed.min')}
-          prefix={t('pages.nodes.speed.min')}
-          min={0}
-          value={draft.minMbps}
-          onChange={(v) => setDraft({ ...draft, minMbps: v ?? 0 })}
-        />
-        <InputNumber
-          aria-label={t('pages.nodes.speed.max')}
-          prefix={t('pages.nodes.speed.max')}
-          min={0}
-          value={draft.maxMbps}
-          onChange={(v) => setDraft({ ...draft, maxMbps: v ?? 0 })}
-        />
-        <Button
-          type="primary"
-          disabled={!draft.email}
-          loading={setClient.isPending}
-          onClick={() =>
-            setClient.mutate(draft, {
-              onSuccess: () => setDraft({ email: '', minMbps: 0, maxMbps: 0 }),
-            })
-          }
-        >
-          {t('save')}
-        </Button>
-      </Space>
+      <Form layout="inline" style={{ margin: '16px 0 8px', rowGap: 8 }}>
+        <Form.Item label={t('pages.nodes.speed.user')} htmlFor="speed-user">
+          <Select
+            id="speed-user"
+            showSearch
+            style={{ minWidth: 200 }}
+            placeholder={t('pages.nodes.speed.user')}
+            value={draft.email || undefined}
+            options={emails.map((e) => ({ value: e, label: e }))}
+            onChange={(email: string) => setDraft({ ...draft, email })}
+          />
+        </Form.Item>
+        <Form.Item label={t('pages.nodes.speed.min')} htmlFor="speed-min">
+          <InputNumber
+            id="speed-min"
+            style={{ width: SPEED_INPUT_WIDTH }}
+            min={0}
+            value={draft.minMbps}
+            onChange={(v) => setDraft({ ...draft, minMbps: v ?? 0 })}
+          />
+        </Form.Item>
+        <Form.Item label={t('pages.nodes.speed.max')} htmlFor="speed-max">
+          <InputNumber
+            id="speed-max"
+            style={{ width: SPEED_INPUT_WIDTH }}
+            min={0}
+            value={draft.maxMbps}
+            onChange={(v) => setDraft({ ...draft, maxMbps: v ?? 0 })}
+          />
+        </Form.Item>
+        <Form.Item>
+          <Button
+            type="primary"
+            disabled={!draft.email}
+            loading={setClient.isPending}
+            onClick={() =>
+              setClient.mutate(draft, {
+                onSuccess: () => setDraft({ email: '', minMbps: 0, maxMbps: 0 }),
+              })
+            }
+          >
+            {t('save')}
+          </Button>
+        </Form.Item>
+      </Form>
       <Table
         rowKey="email"
         size="small"
