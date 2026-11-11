@@ -92,7 +92,8 @@ A bot without a profile photo sends its screens as plain text.
 
 ## Client payments
 
-Set **Settings → Telegram → Payment** to bill clients through the bot:
+Set the price, discounts and where to pay in **Finance → Prices and payment** to bill clients through the bot
+(the free plan switch stays under **Settings → Telegram → Payment**):
 
 - **Monthly price**, currency and **discounts for longer terms** (`months:percent`,
   e.g. `3:10, 6:15, 12:20`). The client's screen lists every term with its total,
@@ -120,7 +121,7 @@ With no price and no payment details, clients see no payment block.
 
 Admins get **💰 Finance** in the bot menu and a **Finance** page in the panel. It shows whether selling VPN made or lost money in a month.
 
-- **Servers.** Enter a server and its monthly cost, e.g. `Hetzner DE 500`. It is charged every month until you set its last month.
+- **Servers.** Enter a server, its monthly cost and the day of the month you pay, e.g. `Hetzner DE 500 15`. It is charged every month until you set its last month; the page shows the next payment date, and admins get a Telegram reminder the day before.
 - **Income.** A payment an admin confirms is booked automatically, as the chosen term's discounted total. Other income and one-off costs are added by hand, e.g. `300 alice for November` or `150 domain`.
 - **Who does not pay.** Mark a client (e.g. yourself as admin) with "🆓 Does not pay" on the client card, and a group (e.g. family) under "Non-paying groups". They and free-plan clients are left out of the expected income.
 - **Result.** Income minus servers and one-off costs, plus what the paying clients should bring at the monthly price.

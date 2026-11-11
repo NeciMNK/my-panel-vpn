@@ -2021,13 +2021,6 @@
       "subHostSortHosts": "Порядок хостів",
       "subHostSortModeDesc": "Використовується порядок зі сторінки хостів для всіх вхідних підключень. Це визначає порядок видачі сервером; клієнтські застосунки можуть сортувати вузли самостійно.",
       "tgPayment": "Оплата",
-      "tgPaymentDetails": "Куди платити",
-      "tgPaymentDetailsDesc": "Номер картки, телефон для переказу або посилання на оплату. Клієнт бачить це в боті поруч із датою закінчення підписки й може повідомити вам, що сплатив.",
-      "tgPaymentPrice": "Ціна за місяць",
-      "tgPaymentPriceDesc": "Вартість одного місяця. Довші терміни пропонуються зі знижками нижче. 0 приховує ціни; якщо реквізити теж порожні, блок оплати клієнтам не показується.",
-      "tgPaymentCurrency": "Валюта",
-      "tgPaymentDiscounts": "Знижки за довший термін",
-      "tgPaymentDiscountsDesc": "місяці:відсоток через кому, наприклад 3:10, 6:15, 12:20. Кожна пара — термін, який клієнт може сплатити.",
       "tgFreePlan": "Безкоштовний тариф",
       "tgFreePlanDesc": "Дозволити незнайомим користувачам Telegram запросити безкоштовну підписку (10 ГБ на місяць). Кожен запит схвалює адміністратор у боті; оплата будь-якого терміну знімає ліміт.",
       "panelProxy": {
@@ -2091,7 +2084,8 @@
         }
       },
       "eventSpeedLow": "Speed below user minimum",
-      "eventMasterLeader": "Another master took over"
+      "eventMasterLeader": "Another master took over",
+      "tgPaymentMoved": "The price, discounts and where to pay are set on the Finance page."
     },
     "xray": {
       "save": "Зберегти",
@@ -2791,7 +2785,20 @@
       "toasts": {
         "deleted": "Deleted",
         "saved": "Saved"
-      }
+      },
+      "price": "Ціна за місяць",
+      "priceDesc": "Вартість одного місяця. Довші терміни пропонуються зі знижками нижче. 0 приховує ціни; якщо реквізити теж порожні, блок оплати клієнтам не показується.",
+      "currency": "Валюта",
+      "discounts": "Знижки за довший термін",
+      "discountsDesc": "місяці:відсоток через кому, наприклад 3:10, 6:15, 12:20. Кожна пара — термін, який клієнт може сплатити.",
+      "details": "Куди платити",
+      "detailsDesc": "Номер картки, телефон для переказу або посилання на оплату. Клієнт бачить це в боті поруч із датою закінчення підписки й може повідомити вам, що сплатив.",
+      "payment": "Prices and payment",
+      "errPrice": "Price must be a whole number from 0",
+      "billingDay": "Payment day",
+      "billingDayHint": "Day of the month the bill is due (1–31). In shorter months it moves to the last day. Admins get a Telegram reminder the day before.",
+      "nextPayment": "Next payment",
+      "errDay": "Day must be 1–31"
     }
   },
   "tgbot": {
@@ -3091,13 +3098,15 @@
       "serversTitle": "\r\n🖥 <b>Servers</b>\r\n",
       "entriesTitle": "\r\n📒 <b>Entries</b>\r\n",
       "nonPayingTitle": "\r\n🆓 Not paying: ",
-      "prompt_server": "🖥 Send the server and its monthly cost, e.g.\r\n<code>Hetzner DE 500</code>\r\nAdd a first month to start earlier than {{ .Month }}: <code>Hetzner DE 500 2026-09</code>",
+      "prompt_server": "🖥 Send the server, its monthly cost and the day of the month you pay, e.g.\r\n<code>Hetzner DE 500 15</code>\r\nAdd a first month to start earlier than {{ .Month }}: <code>Hetzner DE 500 15 2026-09</code>",
       "prompt_income": "➕ Send the amount received in {{ .Month }}, optionally the client and a note, e.g.\r\n<code>300 alice for November</code>",
       "prompt_expense": "➖ Send a one-off cost for {{ .Month }} and a note, e.g.\r\n<code>150 domain</code>",
       "badInput": "⚠️ Not saved: {{ .Error }}. Try again or tap Cancel.",
       "deleteTitle": "🗑 Tap a row to delete it ({{ .Month }} entries and all servers).",
       "groupsTitle": "🆓 Tap a group to switch it between paying 💰 and non-paying 🆓.",
-      "paymentNote": "{{ .Months }} mo"
+      "paymentNote": "{{ .Months }} mo",
+      "billingDay": " · day {{ .Day }}",
+      "reminder": "🔔 <b>Server bills due soon</b>\r\n"
     },
     "draft": {
       "title": "📝 <b>Новий клієнт (чернетка)</b>\r\n",

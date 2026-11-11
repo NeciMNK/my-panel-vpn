@@ -430,6 +430,8 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 
 		// check for Telegram bot callback query hash storage reset
 		_, _ = s.cron.AddJob(cadenceCheckHash, job.NewCheckHashStorageJob())
+		// Hourly so a restart cannot skip a day; each bill is announced once.
+		_, _ = s.cron.AddJob("@hourly", job.LeaderOnly(job.NewLedgerReminderJob()))
 	}
 
 	// Discord-bot-dependent jobs: periodic stats report + database backup.

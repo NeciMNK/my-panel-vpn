@@ -166,3 +166,103 @@ func TestLedgerFreeGroupFollowsRenameAndDelete(t *testing.T) {
 		t.Errorf("after delete: free groups %v, paying %d; want [], 1", report.FreeGroups, report.PayingClients)
 	}
 }
+
+// Prices now live on the Finance page: a save must reach what the bot bills by,
+// and a bad discount list must be refused before any of the four values change.
+func TestLedgerSavePayment(t *testing.T) {
+	setupBulkDB(t)
+	ledger := &LedgerService{}
+	want := LedgerPayment{Price: 300, Currency: "RUB", Discounts: "3:10, 6:15", Details: "Card 2200"}
+	if err := ledger.SavePayment(want); err != nil {
+		t.Fatalf("SavePayment: %v", err)
+	}
+	report, err := ledger.Report("2026-11")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.Payment != want {
+		t.Errorf("report payment = %+v, want %+v", report.Payment, want)
+	}
+	if amount, _ := (&BillingService{}).PaymentAmount(3); amount != 810 {
+		t.Errorf("bot bills 3 months at %d, want 810", amount)
+	}
+
+	for _, bad := range []LedgerPayment{
+		{Price: 500, Currency: "USD", Discounts: "3:150"},
+		{Price: -1, Currency: "USD"},
+	} {
+		if err := ledger.SavePayment(bad); err == nil {
+			t.Errorf("SavePayment(%+v) accepted", bad)
+		}
+	}
+	report, _ = ledger.Report("2026-11")
+	if report.Payment != want {
+		t.Errorf("after rejected saves payment = %+v, want %+v unchanged", report.Payment, want)
+	}
+}
+
+func TestNextServerBill(t *testing.T) {
+	at := func(day string) time.Time {
+		d, _ := time.ParseInLocation(time.DateOnly, day, time.Local)
+		return d.Add(10 * time.Hour)
+	}
+	cases := []struct {
+		name   string
+		server model.LedgerServer
+		now    string
+		want   string
+	}{
+		{"later this month", model.LedgerServer{BillingDay: 15, StartMonth: "2026-01"}, "2026-11-10", "2026-11-15"},
+		{"due today", model.LedgerServer{BillingDay: 15, StartMonth: "2026-01"}, "2026-11-15", "2026-11-15"},
+		{"passed, next month", model.LedgerServer{BillingDay: 5, StartMonth: "2026-01"}, "2026-11-10", "2026-12-05"},
+		{"31st in a short month", model.LedgerServer{BillingDay: 31, StartMonth: "2026-01"}, "2027-02-10", "2027-02-28"},
+		{"not started yet", model.LedgerServer{BillingDay: 3, StartMonth: "2027-01"}, "2026-11-10", "2027-01-03"},
+		{"last month already paid", model.LedgerServer{BillingDay: 5, StartMonth: "2026-01", EndMonth: "2026-11"}, "2026-11-10", ""},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			due, ok := nextServerBill(tc.server, at(tc.now))
+			got := ""
+			if ok {
+				got = due.Format(time.DateOnly)
+			}
+			if got != tc.want {
+				t.Errorf("nextServerBill(day %d, now %s) = %q, want %q", tc.server.BillingDay, tc.now, got, tc.want)
+			}
+		})
+	}
+}
+
+// A bill due tomorrow is announced once: after MarkReminded the same month stays
+// quiet, and next month's bill is announced again.
+func TestServersToRemindOncePerBill(t *testing.T) {
+	setupBulkDB(t)
+	ledger := &LedgerService{}
+	for _, server := range []model.LedgerServer{
+		{Name: "DE", MonthlyCost: 500, StartMonth: "2026-01", BillingDay: 15},
+		{Name: "NL", MonthlyCost: 400, StartMonth: "2026-01", BillingDay: 25},
+	} {
+		if err := ledger.SaveServer(&server); err != nil {
+			t.Fatal(err)
+		}
+	}
+	now := time.Date(2026, 11, 14, 9, 0, 0, 0, time.Local)
+
+	due, err := ledger.ServersToRemind(now, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(due) != 1 || due[0].Name != "DE" || due[0].Date != "2026-11-15" || due[0].Amount != 500 {
+		t.Fatalf("due = %+v, want only DE on 2026-11-15", due)
+	}
+	if err := ledger.MarkReminded(due[0]); err != nil {
+		t.Fatal(err)
+	}
+	if again, _ := ledger.ServersToRemind(now.Add(time.Hour), 1); len(again) != 0 {
+		t.Errorf("reminded again in the same month: %+v", again)
+	}
+	next, _ := ledger.ServersToRemind(time.Date(2026, 12, 14, 9, 0, 0, 0, time.Local), 1)
+	if len(next) != 1 || next[0].Date != "2026-12-15" {
+		t.Errorf("next month = %+v, want DE on 2026-12-15", next)
+	}
+}

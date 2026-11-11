@@ -38,12 +38,20 @@ func parseLedgerState(state string) (kind, month string, ok bool) {
 	return kind, month, ok
 }
 
-// parseLedgerServer reads "<name> <cost> [YYYY-MM]"; a missing start month means month.
+// parseLedgerServer reads "<name> <cost> [day] [YYYY-MM]"; a missing day is the 1st, a missing month is month.
 func parseLedgerServer(text, month string) (model.LedgerServer, error) {
 	fields := strings.Fields(text)
 	start := month
 	if n := len(fields); n >= 3 && strings.Count(fields[n-1], "-") == 1 {
 		start, fields = fields[n-1], fields[:n-1]
+	}
+	day := 1
+	if n := len(fields); n >= 3 {
+		last, lastErr := strconv.Atoi(fields[n-1])
+		_, costErr := strconv.Atoi(fields[n-2])
+		if lastErr == nil && costErr == nil && last >= 1 && last <= 31 {
+			day, fields = last, fields[:n-1]
+		}
 	}
 	if len(fields) < 2 {
 		return model.LedgerServer{}, errLedgerInput
@@ -52,7 +60,9 @@ func parseLedgerServer(text, month string) (model.LedgerServer, error) {
 	if err != nil {
 		return model.LedgerServer{}, errLedgerInput
 	}
-	return model.LedgerServer{Name: strings.Join(fields[:len(fields)-1], " "), MonthlyCost: cost, StartMonth: start}, nil
+	return model.LedgerServer{
+		Name: strings.Join(fields[:len(fields)-1], " "), MonthlyCost: cost, StartMonth: start, BillingDay: day,
+	}, nil
 }
 
 // parseLedgerAmount reads "<amount> [rest...]".
@@ -87,7 +97,8 @@ func (t *Tgbot) ledgerBody(report *service.LedgerReport) string {
 	var servers []string
 	for _, server := range report.Servers {
 		if server.StartMonth <= report.Month && (server.EndMonth == "" || report.Month <= server.EndMonth) {
-			servers = append(servers, "• "+html.EscapeString(server.Name)+" — "+t.ledgerMoney(report, server.MonthlyCost))
+			servers = append(servers, "• "+html.EscapeString(server.Name)+" — "+t.ledgerMoney(report, server.MonthlyCost)+
+				t.I18nBot("tgbot.ledger.billingDay", "Day=="+strconv.Itoa(server.BillingDay)))
 		}
 	}
 	if len(servers) > 0 {
@@ -294,3 +305,26 @@ func (t *Tgbot) toggleNonPaying(callbackQuery *telego.CallbackQuery, email strin
 }
 
 func currentLedgerMonth() string { return service.LedgerMonthOf(time.Now()) }
+
+// RemindServerBills tells admins about server bills due by tomorrow, once per bill.
+func (t *Tgbot) RemindServerBills(now time.Time) {
+	if !t.IsRunning() {
+		return
+	}
+	due, err := t.ledgerService.ServersToRemind(now, 1)
+	if err != nil || len(due) == 0 {
+		return
+	}
+	currency, _ := t.settingService.GetTgPaymentCurrency()
+	lines := make([]string, 0, len(due))
+	for _, bill := range due {
+		lines = append(lines, "• "+html.EscapeString(bill.Name)+" — "+
+			strings.TrimSpace(strconv.Itoa(bill.Amount)+" "+html.EscapeString(currency))+" · "+bill.Date)
+	}
+	t.SendMsgToTgbotAdmins(t.I18nBot("tgbot.ledger.reminder")+strings.Join(lines, "\r\n"), t.hideButton())
+	for _, bill := range due {
+		if err := t.ledgerService.MarkReminded(bill); err != nil {
+			logger.Warning("ledger: marking reminder for", bill.Name, "failed:", err)
+		}
+	}
+}

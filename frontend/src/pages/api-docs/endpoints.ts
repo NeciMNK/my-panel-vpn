@@ -2123,6 +2123,13 @@ export const sections: readonly Section[] = [
           'Mark one client (by email, e.g. the admin) or a whole client group (e.g. family) as non-paying, or clear the mark. Non-paying clients are left out of the expected income.',
         body: '{\n  "group": "family",\n  "nonPaying": true\n}',
       },
+      {
+        method: 'POST',
+        path: '/panel/api/ledger/payment',
+        summary:
+          'Set what clients pay: the monthly price, the currency, the longer-term discounts (months:percent pairs) and where to pay. The Telegram bot bills by these. A bad discount list is refused and nothing is changed.',
+        body: '{\n  "price": 300,\n  "currency": "RUB",\n  "discounts": "3:10, 6:15, 12:20",\n  "details": "Card 2200 0000 0000 0000"\n}',
+      },
     ],
   },
 

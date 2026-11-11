@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/entity"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -32,6 +34,7 @@ var (
 	ErrLedgerKind   = errors.New("kind must be income or expense")
 	ErrLedgerName   = errors.New("name is required")
 	ErrLedgerRange  = errors.New("end month is before start month")
+	ErrLedgerDay    = errors.New("billing day must be 1-31")
 )
 
 // LedgerService is the admin's profit/loss book: recurring server costs,
@@ -48,11 +51,20 @@ type LedgerNonPaying struct {
 	Group  string `json:"group" example:"family"`
 }
 
+// LedgerServerDue is a server's next bill.
+type LedgerServerDue struct {
+	ServerId int    `json:"serverId" example:"1"`
+	Name     string `json:"name" example:"Hetzner DE"`
+	Amount   int    `json:"amount" example:"500"`
+	Date     string `json:"date" example:"2026-11-15"`
+}
+
 // LedgerReport is one month of the book. Money is in whole units of Currency.
 type LedgerReport struct {
 	Month          string               `json:"month" example:"2026-11"`
 	Currency       string               `json:"currency" example:"RUB"`
 	Price          int                  `json:"price" example:"300"`
+	Payment        LedgerPayment        `json:"payment"`
 	Income         int                  `json:"income" example:"2400"`
 	ServerCosts    int                  `json:"serverCosts" example:"1500"`
 	OtherExpenses  int                  `json:"otherExpenses" example:"0"`
@@ -63,7 +75,16 @@ type LedgerReport struct {
 	NonPaying      []LedgerNonPaying    `json:"nonPaying"`
 	FreeGroups     []string             `json:"freeGroups"`
 	Servers        []model.LedgerServer `json:"servers"`
+	Upcoming       []LedgerServerDue    `json:"upcoming"`
 	Entries        []model.LedgerEntry  `json:"entries"`
+}
+
+// LedgerPayment is what clients pay: the bot bills by it and the Finance page edits it.
+type LedgerPayment struct {
+	Price     int    `json:"price" example:"300"`
+	Currency  string `json:"currency" example:"RUB"`
+	Discounts string `json:"discounts" example:"3:10, 6:15, 12:20"`
+	Details   string `json:"details" example:"Card 2200 0000 0000 0000"`
 }
 
 func LedgerMonthOf(t time.Time) string { return t.Format("2006-01") }
@@ -90,18 +111,26 @@ func (s *LedgerService) Report(month string) (*LedgerReport, error) {
 	}
 	db := database.GetDB()
 	report := &LedgerReport{Month: month, NonPaying: []LedgerNonPaying{}, FreeGroups: []string{}}
-	report.Price, _ = s.settingService.GetTgPaymentPrice()
-	currency, _ := s.settingService.GetTgPaymentCurrency()
-	report.Currency = strings.TrimSpace(currency)
+	report.Payment = s.payment()
+	report.Price = report.Payment.Price
+	report.Currency = strings.TrimSpace(report.Payment.Currency)
 
 	if err := db.Order("start_month, id").Find(&report.Servers).Error; err != nil {
 		return nil, err
 	}
+	report.Upcoming = []LedgerServerDue{}
+	today := time.Now()
 	for _, server := range report.Servers {
 		if serverChargedIn(server, month) {
 			report.ServerCosts += server.MonthlyCost
 		}
+		if due, ok := nextServerBill(server, today); ok {
+			report.Upcoming = append(report.Upcoming, LedgerServerDue{
+				ServerId: server.Id, Name: server.Name, Amount: server.MonthlyCost, Date: due.Format(time.DateOnly),
+			})
+		}
 	}
+	slices.SortStableFunc(report.Upcoming, func(a, b LedgerServerDue) int { return strings.Compare(a.Date, b.Date) })
 	if err := db.Where("month = ?", month).Order("created_at, id").Find(&report.Entries).Error; err != nil {
 		return nil, err
 	}
@@ -163,6 +192,9 @@ func (s *LedgerService) countPaying(report *LedgerReport) error {
 
 func (s *LedgerService) SaveServer(server *model.LedgerServer) error {
 	server.Name = strings.TrimSpace(server.Name)
+	if server.BillingDay == 0 {
+		server.BillingDay = 1
+	}
 	switch {
 	case server.Name == "":
 		return ErrLedgerName
@@ -172,8 +204,10 @@ func (s *LedgerService) SaveServer(server *model.LedgerServer) error {
 		return ErrLedgerMonth
 	case server.EndMonth != "" && server.EndMonth < server.StartMonth:
 		return ErrLedgerRange
+	case server.BillingDay < 1 || server.BillingDay > 31:
+		return ErrLedgerDay
 	}
-	return database.GetDB().Save(server).Error
+	return database.GetDB().Omit("reminded_for").Save(server).Error
 }
 
 func (s *LedgerService) DeleteServer(id int) error {
@@ -246,4 +280,84 @@ func moveLedgerFreeGroup(db *gorm.DB, oldName, newName string) error {
 		return fmt.Errorf("keep non-paying mark on group %q: %w", newName, err)
 	}
 	return nil
+}
+
+func (s *LedgerService) payment() LedgerPayment {
+	var p LedgerPayment
+	p.Price, _ = s.settingService.GetTgPaymentPrice()
+	p.Currency, _ = s.settingService.GetTgPaymentCurrency()
+	p.Discounts, _ = s.settingService.GetTgPaymentDiscounts()
+	p.Details, _ = s.settingService.GetTgPaymentDetails()
+	return p
+}
+
+// SavePayment validates everything before writing, so a bad discount list changes nothing.
+func (s *LedgerService) SavePayment(p LedgerPayment) error {
+	if p.Price < 0 {
+		return ErrLedgerAmount
+	}
+	if _, err := entity.ParsePaymentPlans(p.Discounts); err != nil {
+		return err
+	}
+	for key, value := range map[string]string{
+		"tgPaymentPrice":     strconv.Itoa(p.Price),
+		"tgPaymentCurrency":  strings.TrimSpace(p.Currency),
+		"tgPaymentDiscounts": strings.TrimSpace(p.Discounts),
+		"tgPaymentDetails":   strings.TrimSpace(p.Details),
+	} {
+		if err := s.settingService.setString(key, value); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// serverBillIn is the server's due date in month, clamped to the month's last day.
+func serverBillIn(server model.LedgerServer, month time.Time) time.Time {
+	first := time.Date(month.Year(), month.Month(), 1, 0, 0, 0, 0, month.Location())
+	last := first.AddDate(0, 1, -1).Day()
+	return first.AddDate(0, 0, min(max(server.BillingDay, 1), last)-1)
+}
+
+// nextServerBill is the first due date from today on, in a month the server is still paid for.
+func nextServerBill(server model.LedgerServer, now time.Time) (time.Time, bool) {
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	month := today.AddDate(0, 0, 1-today.Day())
+	if start, err := time.ParseInLocation("2006-01", server.StartMonth, now.Location()); err == nil && start.After(month) {
+		month = start
+	}
+	for range 2 {
+		if !serverChargedIn(server, LedgerMonthOf(month)) {
+			return time.Time{}, false
+		}
+		if due := serverBillIn(server, month); !due.Before(today) {
+			return due, true
+		}
+		month = month.AddDate(0, 1, 0)
+	}
+	return time.Time{}, false
+}
+
+// ServersToRemind are bills due within days from now that admins were not yet told about.
+func (s *LedgerService) ServersToRemind(now time.Time, days int) ([]LedgerServerDue, error) {
+	var servers []model.LedgerServer
+	if err := database.GetDB().Order("id").Find(&servers).Error; err != nil {
+		return nil, err
+	}
+	horizon := time.Date(now.Year(), now.Month(), now.Day()+days, 0, 0, 0, 0, now.Location())
+	var out []LedgerServerDue
+	for _, server := range servers {
+		due, ok := nextServerBill(server, now)
+		if !ok || due.After(horizon) || server.RemindedFor == LedgerMonthOf(due) {
+			continue
+		}
+		out = append(out, LedgerServerDue{ServerId: server.Id, Name: server.Name, Amount: server.MonthlyCost, Date: due.Format(time.DateOnly)})
+	}
+	return out, nil
+}
+
+// MarkReminded records that the bill due on date was announced, so it is announced once.
+func (s *LedgerService) MarkReminded(due LedgerServerDue) error {
+	return database.GetDB().Model(&model.LedgerServer{}).Where("id = ?", due.ServerId).
+		Update("reminded_for", due.Date[:len("2006-01")]).Error
 }

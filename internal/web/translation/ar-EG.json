@@ -2021,13 +2021,6 @@
       "subHostSortHosts": "ترتيب المضيفين",
       "subHostSortModeDesc": "يتبع ترتيب المضيفين صفحة المضيفين عبر جميع الاتصالات الواردة. يحدد هذا ترتيب مخرجات الخادم؛ وقد تطبق تطبيقات العميل ترتيبًا آخر.",
       "tgPayment": "Payment",
-      "tgPaymentDetails": "Where to pay",
-      "tgPaymentDetailsDesc": "Card number, phone for transfers or a payment link. Clients see it in the bot next to the date their subscription ends, and can tell you they have paid.",
-      "tgPaymentPrice": "Monthly price",
-      "tgPaymentPriceDesc": "Price of one month. Longer terms are offered with the discounts below. 0 hides prices; leave the payment details empty too to hide payment from clients.",
-      "tgPaymentCurrency": "Currency",
-      "tgPaymentDiscounts": "Discounts for longer terms",
-      "tgPaymentDiscountsDesc": "months:percent, comma-separated, e.g. 3:10, 6:15, 12:20. Each becomes a term clients can pay for.",
       "tgFreePlan": "Free plan",
       "tgFreePlanDesc": "Let unknown Telegram users ask for a free subscription (10 GB a month). Every request must be approved by an admin in the bot; paying for any term removes the limit.",
       "panelProxy": {
@@ -2091,7 +2084,8 @@
         }
       },
       "eventSpeedLow": "Speed below user minimum",
-      "eventMasterLeader": "Another master took over"
+      "eventMasterLeader": "Another master took over",
+      "tgPaymentMoved": "The price, discounts and where to pay are set on the Finance page."
     },
     "xray": {
       "save": "احفظ",
@@ -2791,7 +2785,20 @@
       "toasts": {
         "deleted": "Deleted",
         "saved": "Saved"
-      }
+      },
+      "price": "Monthly price",
+      "priceDesc": "Price of one month. Longer terms are offered with the discounts below. 0 hides prices; leave the payment details empty too to hide payment from clients.",
+      "currency": "Currency",
+      "discounts": "Discounts for longer terms",
+      "discountsDesc": "months:percent, comma-separated, e.g. 3:10, 6:15, 12:20. Each becomes a term clients can pay for.",
+      "details": "Where to pay",
+      "detailsDesc": "Card number, phone for transfers or a payment link. Clients see it in the bot next to the date their subscription ends, and can tell you they have paid.",
+      "payment": "Prices and payment",
+      "errPrice": "Price must be a whole number from 0",
+      "billingDay": "Payment day",
+      "billingDayHint": "Day of the month the bill is due (1–31). In shorter months it moves to the last day. Admins get a Telegram reminder the day before.",
+      "nextPayment": "Next payment",
+      "errDay": "Day must be 1–31"
     }
   },
   "tgbot": {
@@ -3091,13 +3098,15 @@
       "serversTitle": "\r\n🖥 <b>Servers</b>\r\n",
       "entriesTitle": "\r\n📒 <b>Entries</b>\r\n",
       "nonPayingTitle": "\r\n🆓 Not paying: ",
-      "prompt_server": "🖥 Send the server and its monthly cost, e.g.\r\n<code>Hetzner DE 500</code>\r\nAdd a first month to start earlier than {{ .Month }}: <code>Hetzner DE 500 2026-09</code>",
+      "prompt_server": "🖥 Send the server, its monthly cost and the day of the month you pay, e.g.\r\n<code>Hetzner DE 500 15</code>\r\nAdd a first month to start earlier than {{ .Month }}: <code>Hetzner DE 500 15 2026-09</code>",
       "prompt_income": "➕ Send the amount received in {{ .Month }}, optionally the client and a note, e.g.\r\n<code>300 alice for November</code>",
       "prompt_expense": "➖ Send a one-off cost for {{ .Month }} and a note, e.g.\r\n<code>150 domain</code>",
       "badInput": "⚠️ Not saved: {{ .Error }}. Try again or tap Cancel.",
       "deleteTitle": "🗑 Tap a row to delete it ({{ .Month }} entries and all servers).",
       "groupsTitle": "🆓 Tap a group to switch it between paying 💰 and non-paying 🆓.",
-      "paymentNote": "{{ .Months }} mo"
+      "paymentNote": "{{ .Months }} mo",
+      "billingDay": " · day {{ .Day }}",
+      "reminder": "🔔 <b>Server bills due soon</b>\r\n"
     },
     "draft": {
       "title": "📝 <b>New client draft</b>\r\n",

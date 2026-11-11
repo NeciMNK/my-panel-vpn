@@ -180,10 +180,6 @@ export interface AllSetting {
   tgFreePlanEnable: boolean;
   tgLang: string;
   tgMemory: number;
-  tgPaymentCurrency: string;
-  tgPaymentDetails: string;
-  tgPaymentDiscounts: string;
-  tgPaymentPrice: number;
   tgRunTime: string;
   timeLocation: string;
   trafficDiff: number;
@@ -377,10 +373,6 @@ export interface AllSettingView {
   tgFreePlanEnable: boolean;
   tgLang: string;
   tgMemory: number;
-  tgPaymentCurrency: string;
-  tgPaymentDetails: string;
-  tgPaymentDiscounts: string;
-  tgPaymentPrice: number;
   tgRunTime: string;
   timeLocation: string;
   trafficDiff: number;
@@ -902,6 +894,13 @@ export interface LedgerNonPaying {
   reason: string;
 }
 
+export interface LedgerPayment {
+  currency: string;
+  details: string;
+  discounts: string;
+  price: number;
+}
+
 export interface LedgerReport {
   balance: number;
   currency: string;
@@ -914,17 +913,27 @@ export interface LedgerReport {
   nonPaying: LedgerNonPaying[];
   otherExpenses: number;
   payingClients: number;
+  payment: LedgerPayment;
   price: number;
   serverCosts: number;
   servers: LedgerServer[];
+  upcoming: LedgerServerDue[];
 }
 
 export interface LedgerServer {
+  billingDay: number;
   endMonth: string;
   id: number;
   monthlyCost: number;
   name: string;
   startMonth: string;
+}
+
+export interface LedgerServerDue {
+  amount: number;
+  date: string;
+  name: string;
+  serverId: number;
 }
 
 export interface LogEntry {
