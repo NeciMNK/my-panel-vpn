@@ -1900,6 +1900,37 @@ export const sections: readonly Section[] = [
         summary: "Set one server's link speed in Mbit/s (node id 0 = this panel); 0 removes it.",
         body: '{\n  "nodeId": 0,\n  "capacityMbps": 1000\n}',
       },
+      {
+        method: 'POST',
+        path: '/panel/api/speed/test',
+        summary:
+          "Measure one server's own internet link in the background (node id 0 = this panel): Speedtest by Ookla, or Yandex Internetometer when Speedtest is unreachable. The result lands in the history and, with autoCapacity on, sets the server's link speed to the slower direction plus the load during the test.",
+        body: '{\n  "nodeId": 0\n}',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/speed/tests',
+        summary: "One server's speed-test history, newest first; results are kept for 180 days.",
+        params: [
+          { name: 'nodeId', in: 'query', type: 'number', desc: 'Server: node ID, 0 = this panel.' },
+          {
+            name: 'limit',
+            in: 'query',
+            type: 'number',
+            desc: 'At most this many results (default 100, max 500).',
+            optional: true,
+          },
+        ],
+        responseSchema: 'SpeedTestResult',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/speed/testSettings',
+        summary:
+          'Whether speed tests set link speeds automatically, and how often every server is tested (0 = only on demand, max 168 hours).',
+        body: '{\n  "autoCapacity": true,\n  "everyHours": 6\n}',
+      },
     ],
   },
 
@@ -2939,6 +2970,18 @@ export const sections: readonly Section[] = [
         summary:
           'On any server: enforce per-IP speed caps with tc on the default interface. Called by the master; an unchanged plan is a no-op.',
         body: '{\n  "limits": [{ "ip": "203.0.113.7", "mbps": 100 }]\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/xray/speedTest',
+        summary:
+          "On any server: start measuring this server's own internet link, or join the run in progress. Called by the master, which then polls GET until the run ends.",
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/xray/speedTest',
+        summary:
+          'On any server: the current or last speed-test run. run counts runs since the panel started, so a restart mid-run shows as a different run.',
       },
       {
         method: 'POST',

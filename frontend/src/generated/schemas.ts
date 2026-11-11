@@ -5661,12 +5661,165 @@ export const SCHEMAS: Record<string, unknown> = {
           "$ref": "#/components/schemas/ServerCapacity"
         },
         "type": "array"
+      },
+      "testSettings": {
+        "$ref": "#/components/schemas/SpeedTestSettings"
+      },
+      "testStats": {
+        "items": {
+          "$ref": "#/components/schemas/SpeedTestStats"
+        },
+        "type": "array"
+      },
+      "testing": {
+        "example": [
+          0
+        ],
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
       }
     },
     "required": [
       "clients",
       "load",
-      "servers"
+      "servers",
+      "testSettings",
+      "testStats",
+      "testing"
+    ],
+    "type": "object"
+  },
+  "SpeedTestResult": {
+    "description": "SpeedTestResult is one measurement of a server's own internet link; a\nfailed run keeps its Error and no speeds.",
+    "properties": {
+      "capacityMbps": {
+        "example": 946,
+        "type": "integer"
+      },
+      "createdAt": {
+        "example": 1762874430000,
+        "format": "int64",
+        "type": "integer"
+      },
+      "downloadMbps": {
+        "example": 930.5,
+        "type": "number"
+      },
+      "error": {
+        "type": "string"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "nodeId": {
+        "example": 0,
+        "type": "integer"
+      },
+      "pingMs": {
+        "example": 4.2,
+        "type": "number"
+      },
+      "provider": {
+        "example": "speedtest",
+        "type": "string"
+      },
+      "server": {
+        "example": "Rostelecom, Moscow",
+        "type": "string"
+      },
+      "trigger": {
+        "example": "manual",
+        "type": "string"
+      },
+      "uploadMbps": {
+        "example": 910.1,
+        "type": "number"
+      },
+      "usedMbps": {
+        "example": 35.2,
+        "type": "number"
+      }
+    },
+    "required": [
+      "capacityMbps",
+      "createdAt",
+      "downloadMbps",
+      "error",
+      "id",
+      "nodeId",
+      "pingMs",
+      "provider",
+      "server",
+      "trigger",
+      "uploadMbps",
+      "usedMbps"
+    ],
+    "type": "object"
+  },
+  "SpeedTestSettings": {
+    "description": "SpeedTestSettings: AutoCapacity makes every successful test set the server's\nlink speed; EveryHours \u003e 0 also tests each server on that schedule.",
+    "properties": {
+      "autoCapacity": {
+        "example": true,
+        "type": "boolean"
+      },
+      "everyHours": {
+        "example": 6,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "autoCapacity",
+      "everyHours"
+    ],
+    "type": "object"
+  },
+  "SpeedTestStats": {
+    "description": "SpeedTestStats sums up one server's successful tests over the last 30 days.",
+    "properties": {
+      "avgDownloadMbps": {
+        "example": 910.4,
+        "type": "number"
+      },
+      "avgUploadMbps": {
+        "example": 880.2,
+        "type": "number"
+      },
+      "count": {
+        "example": 12,
+        "type": "integer"
+      },
+      "last": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SpeedTestResult"
+          }
+        ],
+        "nullable": true
+      },
+      "maxDownloadMbps": {
+        "example": 948.1,
+        "type": "number"
+      },
+      "minDownloadMbps": {
+        "example": 640,
+        "type": "number"
+      },
+      "nodeId": {
+        "example": 0,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "avgDownloadMbps",
+      "avgUploadMbps",
+      "count",
+      "maxDownloadMbps",
+      "minDownloadMbps",
+      "nodeId"
     ],
     "type": "object"
   },

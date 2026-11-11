@@ -60,6 +60,8 @@ func (a *XraySettingController) initRouter(g *gin.RouterGroup) {
 	g.POST("/homeTunnel", a.homeTunnel)
 	g.GET("/homeTunnel/:id", a.homeTunnelStatus)
 	g.POST("/speedPlan", a.speedPlan)
+	g.POST("/speedTest", a.startSpeedTest)
+	g.GET("/speedTest", a.speedTestState)
 
 	g.GET("/geodata/files", a.geodataFiles)
 	g.GET("/geodata/categories", a.geodataCategories)

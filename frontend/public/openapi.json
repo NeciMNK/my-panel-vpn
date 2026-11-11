@@ -5687,12 +5687,165 @@
               "$ref": "#/components/schemas/ServerCapacity"
             },
             "type": "array"
+          },
+          "testSettings": {
+            "$ref": "#/components/schemas/SpeedTestSettings"
+          },
+          "testStats": {
+            "items": {
+              "$ref": "#/components/schemas/SpeedTestStats"
+            },
+            "type": "array"
+          },
+          "testing": {
+            "example": [
+              0
+            ],
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
           }
         },
         "required": [
           "clients",
           "load",
-          "servers"
+          "servers",
+          "testSettings",
+          "testStats",
+          "testing"
+        ],
+        "type": "object"
+      },
+      "SpeedTestResult": {
+        "description": "SpeedTestResult is one measurement of a server's own internet link; a\nfailed run keeps its Error and no speeds.",
+        "properties": {
+          "capacityMbps": {
+            "example": 946,
+            "type": "integer"
+          },
+          "createdAt": {
+            "example": 1762874430000,
+            "format": "int64",
+            "type": "integer"
+          },
+          "downloadMbps": {
+            "example": 930.5,
+            "type": "number"
+          },
+          "error": {
+            "type": "string"
+          },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "nodeId": {
+            "example": 0,
+            "type": "integer"
+          },
+          "pingMs": {
+            "example": 4.2,
+            "type": "number"
+          },
+          "provider": {
+            "example": "speedtest",
+            "type": "string"
+          },
+          "server": {
+            "example": "Rostelecom, Moscow",
+            "type": "string"
+          },
+          "trigger": {
+            "example": "manual",
+            "type": "string"
+          },
+          "uploadMbps": {
+            "example": 910.1,
+            "type": "number"
+          },
+          "usedMbps": {
+            "example": 35.2,
+            "type": "number"
+          }
+        },
+        "required": [
+          "capacityMbps",
+          "createdAt",
+          "downloadMbps",
+          "error",
+          "id",
+          "nodeId",
+          "pingMs",
+          "provider",
+          "server",
+          "trigger",
+          "uploadMbps",
+          "usedMbps"
+        ],
+        "type": "object"
+      },
+      "SpeedTestSettings": {
+        "description": "SpeedTestSettings: AutoCapacity makes every successful test set the server's\nlink speed; EveryHours > 0 also tests each server on that schedule.",
+        "properties": {
+          "autoCapacity": {
+            "example": true,
+            "type": "boolean"
+          },
+          "everyHours": {
+            "example": 6,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "autoCapacity",
+          "everyHours"
+        ],
+        "type": "object"
+      },
+      "SpeedTestStats": {
+        "description": "SpeedTestStats sums up one server's successful tests over the last 30 days.",
+        "properties": {
+          "avgDownloadMbps": {
+            "example": 910.4,
+            "type": "number"
+          },
+          "avgUploadMbps": {
+            "example": 880.2,
+            "type": "number"
+          },
+          "count": {
+            "example": 12,
+            "type": "integer"
+          },
+          "last": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SpeedTestResult"
+              }
+            ],
+            "nullable": true
+          },
+          "maxDownloadMbps": {
+            "example": 948.1,
+            "type": "number"
+          },
+          "minDownloadMbps": {
+            "example": 640,
+            "type": "number"
+          },
+          "nodeId": {
+            "example": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "avgDownloadMbps",
+          "avgUploadMbps",
+          "count",
+          "maxDownloadMbps",
+          "minDownloadMbps",
+          "nodeId"
         ],
         "type": "object"
       },
@@ -13571,6 +13724,24 @@
                         "id": 1,
                         "nodeId": 0
                       }
+                    ],
+                    "testSettings": {
+                      "autoCapacity": true,
+                      "everyHours": 6
+                    },
+                    "testStats": [
+                      {
+                        "avgDownloadMbps": 910.4,
+                        "avgUploadMbps": 880.2,
+                        "count": 12,
+                        "last": null,
+                        "maxDownloadMbps": 948.1,
+                        "minDownloadMbps": 640,
+                        "nodeId": 0
+                      }
+                    ],
+                    "testing": [
+                      0
                     ]
                   }
                 }
@@ -13642,6 +13813,167 @@
               "example": {
                 "nodeId": 0,
                 "capacityMbps": 1000
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/speed/test": {
+      "post": {
+        "tags": [
+          "Speed limits"
+        ],
+        "summary": "Measure one server's own internet link in the background (node id 0 = this panel): Speedtest by Ookla, or Yandex Internetometer when Speedtest is unreachable. The result lands in the history and, with autoCapacity on, sets the server's link speed to the slower direction plus the load during the test.",
+        "operationId": "post_panel_api_speed_test",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "nodeId": 0
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/speed/tests": {
+      "get": {
+        "tags": [
+          "Speed limits"
+        ],
+        "summary": "One server's speed-test history, newest first; results are kept for 180 days.",
+        "operationId": "get_panel_api_speed_tests",
+        "parameters": [
+          {
+            "name": "nodeId",
+            "in": "query",
+            "required": true,
+            "description": "Server: node ID, 0 = this panel.",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "At most this many results (default 100, max 500).",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SpeedTestResult"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "capacityMbps": 946,
+                      "createdAt": 1762874430000,
+                      "downloadMbps": 930.5,
+                      "error": "",
+                      "id": 1,
+                      "nodeId": 0,
+                      "pingMs": 4.2,
+                      "provider": "speedtest",
+                      "server": "Rostelecom, Moscow",
+                      "trigger": "manual",
+                      "uploadMbps": 910.1,
+                      "usedMbps": 35.2
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/speed/testSettings": {
+      "post": {
+        "tags": [
+          "Speed limits"
+        ],
+        "summary": "Whether speed tests set link speeds automatically, and how often every server is tested (0 = only on demand, max 168 hours).",
+        "operationId": "post_panel_api_speed_testSettings",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "autoCapacity": true,
+                "everyHours": 6
               }
             }
           }
@@ -18334,6 +18666,64 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/xray/speedTest": {
+      "post": {
+        "tags": [
+          "Xray Settings"
+        ],
+        "summary": "On any server: start measuring this server's own internet link, or join the run in progress. Called by the master, which then polls GET until the run ends.",
+        "operationId": "post_panel_api_xray_speedTest",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Xray Settings"
+        ],
+        "summary": "On any server: the current or last speed-test run. run counts runs since the panel started, so a restart mid-run shows as a different run.",
+        "operationId": "get_panel_api_xray_speedTest",
         "responses": {
           "200": {
             "description": "Successful response",

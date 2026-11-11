@@ -1471,7 +1471,52 @@ export const EXAMPLES: Record<string, unknown> = {
         "id": 1,
         "nodeId": 0
       }
+    ],
+    "testSettings": {
+      "autoCapacity": true,
+      "everyHours": 6
+    },
+    "testStats": [
+      {
+        "avgDownloadMbps": 910.4,
+        "avgUploadMbps": 880.2,
+        "count": 12,
+        "last": null,
+        "maxDownloadMbps": 948.1,
+        "minDownloadMbps": 640,
+        "nodeId": 0
+      }
+    ],
+    "testing": [
+      0
     ]
+  },
+  "SpeedTestResult": {
+    "capacityMbps": 946,
+    "createdAt": 1762874430000,
+    "downloadMbps": 930.5,
+    "error": "",
+    "id": 1,
+    "nodeId": 0,
+    "pingMs": 4.2,
+    "provider": "speedtest",
+    "server": "Rostelecom, Moscow",
+    "trigger": "manual",
+    "uploadMbps": 910.1,
+    "usedMbps": 35.2
+  },
+  "SpeedTestSettings": {
+    "autoCapacity": true,
+    "everyHours": 6
+  },
+  "SpeedTestStats": {
+    "avgDownloadMbps": 910.4,
+    "avgUploadMbps": 880.2,
+    "count": 12,
+    "last": null,
+    "maxDownloadMbps": 948.1,
+    "minDownloadMbps": 640,
+    "nodeId": 0
   },
   "SubBalancer": {
     "createdAt": 1710000000000,
