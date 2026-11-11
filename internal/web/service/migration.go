@@ -47,6 +47,8 @@ type migrationClient struct {
 	limitHwid   int
 	traffic     *ClientPortableTraffic
 	inboundKeys []string
+	// hostIdx indexes plan.hosts the client is bound to; empty shows every host.
+	hostIdx []int
 }
 
 type migrationHost struct {
@@ -343,6 +345,26 @@ func (s *MigrationService) apply(plan *migrationPlan, targets map[string]string,
 		res.InboundsCreated++
 	}
 
+	// Hosts go first so clients can be bound to the ones their source showed them.
+	hostIDs := make([][]int, len(plan.hosts))
+	for i, h := range plan.hosts {
+		id, ok := created[h.inboundKey]
+		if !ok {
+			continue
+		}
+		group := h.group
+		group.InboundIds = []int{id}
+		rows, hErr := s.hostService.AddHostGroup(&group)
+		if hErr != nil {
+			res.HostErrors = append(res.HostErrors, MigrationItemError{Name: group.Remark, Error: hErr.Error()})
+			continue
+		}
+		for _, row := range rows {
+			hostIDs[i] = append(hostIDs[i], row.Id)
+		}
+		res.HostsCreated++
+	}
+
 	payloads := make([]ClientCreatePayload, 0, len(plan.clients))
 	for _, c := range plan.clients {
 		ids := make([]int, 0, len(c.inboundKeys))
@@ -351,30 +373,20 @@ func (s *MigrationService) apply(plan *migrationPlan, targets map[string]string,
 				ids = append(ids, id)
 			}
 		}
-		payloads = append(payloads, ClientCreatePayload{Client: c.client, InboundIds: ids, LimitHwid: c.limitHwid, Traffic: c.traffic})
+		client := c.client
+		for _, hi := range c.hostIdx {
+			client.ClientHostRuleIds = append(client.ClientHostRuleIds, hostIDs[hi]...)
+		}
+		payloads = append(payloads, ClientCreatePayload{Client: client, InboundIds: ids, LimitHwid: c.limitHwid, Traffic: c.traffic})
 	}
 	clientRes, needRestart, err := s.clientService.ImportClients(&s.inboundService, payloads)
 	res.Clients = clientRes
 	res.NeedRestart = res.NeedRestart || needRestart
-	if err != nil {
-		return res, err
-	}
-
-	for _, h := range plan.hosts {
-		id, ok := created[h.inboundKey]
-		if !ok {
-			continue
-		}
-		group := h.group
-		group.InboundIds = []int{id}
-		if _, hErr := s.hostService.AddHostGroup(&group); hErr != nil {
-			res.HostErrors = append(res.HostErrors, MigrationItemError{Name: group.Remark, Error: hErr.Error()})
-			continue
-		}
-		res.HostsCreated++
-	}
 	if res.HostsCreated > 0 {
 		InvalidateSubData()
+	}
+	if err != nil {
+		return res, err
 	}
 
 	if applySub {
