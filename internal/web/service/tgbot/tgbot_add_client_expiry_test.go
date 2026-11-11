@@ -15,6 +15,7 @@ func TestAddClientExpiryPresetReplacesTheTerm(t *testing.T) {
 	draftLocalizer(t,
 		&i18n.Message{ID: "tgbot.days", Other: "Days"},
 		&i18n.Message{ID: "tgbot.unlimited", Other: "Unlimited"},
+		&i18n.Message{ID: "tgbot.draft.expire", Other: "📅 Expire: {{ .Time }}\r\n"},
 	)
 	url, textsFor := draftTexts(t)
 	swapTestBot(t, url)

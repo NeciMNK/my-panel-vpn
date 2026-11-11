@@ -1,12 +1,7 @@
 package tgbot
 
 import (
-	"bytes"
 	"context"
-	"image"
-	"image/color"
-	"image/draw"
-	"image/png"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -14,11 +9,10 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 
 	"github.com/mymmrac/telego"
-	tu "github.com/mymmrac/telego/telegoutil"
 )
 
-// Screen art: the bot's avatar serves every screen's picture, and a panel without
-// one gets a generated black tile, so a screen never fails for want of a picture.
+// Screen art: the bot's avatar serves every screen's picture; a bot without one
+// gets text screens rather than an empty picture over the text.
 
 var (
 	screenArtMu  sync.RWMutex
@@ -33,11 +27,9 @@ var (
 	rejectedAvatarID string
 	// artProbeRunning keeps a burst of renders from starting a burst of probes.
 	artProbeRunning atomic.Bool
+	artFirstProbe   atomic.Bool
 	// artProbes lets resetScreenArt outlast a probe still running against a previous bot.
 	artProbes sync.WaitGroup
-
-	blackTileOnce  sync.Once
-	blackTileBytes []byte
 )
 
 // Probes are cheap but not free: a known avatar is trusted for a while, a missing
@@ -79,11 +71,12 @@ func (t *Tgbot) resolveScreenArt() {
 	defer screenArtMu.Unlock()
 	artProbedAt = time.Now()
 	if len(photos.Photos) == 0 || len(photos.Photos[0]) == 0 {
-		// Remember the miss so the next render does not probe again, but keep
-		// any tile already cached: an avatar-less bot still shows a picture.
+		// Remember the miss so the next render does not probe again; a removed
+		// avatar must stop showing, so its cached ids go too.
 		artFromAvatar = false
 		rejectedAvatarID = ""
-		logger.Debug("Bot has no avatar; screens will use the black fallback")
+		screenArtIDs = map[string]string{}
+		logger.Debug("Bot has no avatar; screens are sent as text")
 		return
 	}
 	// The last entry is the largest size Telegram keeps.
@@ -114,6 +107,12 @@ func (t *Tgbot) ensureScreenArt() {
 	if time.Since(at) <= ttl {
 		return
 	}
+	// The first render waits for the probe once, or a bot with an avatar would
+	// open as text and swap to a picture on the next tap.
+	if at.IsZero() && artFirstProbe.CompareAndSwap(false, true) {
+		t.resolveScreenArt()
+		return
+	}
 	if !artProbeRunning.CompareAndSwap(false, true) {
 		return
 	}
@@ -123,8 +122,8 @@ func (t *Tgbot) ensureScreenArt() {
 	})
 }
 
-// artFileID returns the cached file_id for a screen kind. A fallback tile cached
-// for one kind must not answer for another, so the per-kind entry is authoritative.
+// artFileID returns the cached file_id for a screen kind: the panel's own
+// override for that kind first, then the bot's avatar.
 func artFileID(kind string) (string, bool) {
 	screenArtMu.RLock()
 	defer screenArtMu.RUnlock()
@@ -133,40 +132,6 @@ func artFileID(kind string) (string, bool) {
 	}
 	id, ok := screenArtIDs[kind]
 	return id, ok && id != ""
-}
-
-// artUpload is the last-resort picture: the generated black tile.
-func artUpload(kind string) (telego.InputFile, bool) {
-	data := blackTile()
-	return tu.FileFromBytes(data, "screen.png"), data != nil
-}
-
-// blackTile builds the 512x512 black tile once.
-func blackTile() []byte {
-	blackTileOnce.Do(func() {
-		img := image.NewRGBA(image.Rect(0, 0, 512, 512))
-		draw.Draw(img, img.Bounds(), &image.Uniform{color.RGBA{R: 13, G: 15, B: 20, A: 255}}, image.Point{}, draw.Src)
-		var buf bytes.Buffer
-		if err := png.Encode(&buf, img); err != nil {
-			logger.Warning("Failed to encode the fallback screen art:", err)
-			return
-		}
-		blackTileBytes = buf.Bytes()
-	})
-	return blackTileBytes
-}
-
-// cacheArtFileID remembers the file_id Telegram returned for an uploaded tile,
-// so that screen edits in place. It does NOT mark the art as the avatar.
-func cacheArtFileID(kind, fileID string) {
-	if kind == "" || fileID == "" {
-		return
-	}
-	screenArtMu.Lock()
-	if !artFromAvatar {
-		screenArtIDs[kind] = fileID
-	}
-	screenArtMu.Unlock()
 }
 
 // Compare before eviction: an asynchronous probe may already have installed a new avatar.
@@ -201,6 +166,7 @@ func resetScreenArt() {
 	rejectedAvatarID = ""
 	artProbedAt = time.Time{}
 	screenArtMu.Unlock()
+	artFirstProbe.Store(false)
 }
 
 // screenKinds is the catalogue of screen pictures: every kind resolves to the

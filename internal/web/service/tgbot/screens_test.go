@@ -660,19 +660,21 @@ func ord(ch rune) int { return int(ch) }
 
 // localizeWithRealBundle points the bot localizer at the shipped en-US file, so
 // a test sees the text a user would, not the bare key.
-func localizeWithRealBundle(t *testing.T) {
+func localizeWithRealBundle(t *testing.T) { localizeWithShippedLocale(t, "en-US") }
+
+func localizeWithShippedLocale(t *testing.T, tag string) {
 	t.Helper()
-	path := filepath.Join(repoRootForTest(t), "internal/web/translation/en-US.json")
+	path := filepath.Join(repoRootForTest(t), "internal/web/translation/"+tag+".json")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("read %s: %v", path, err)
 	}
-	bundle := i18n.NewBundle(language.MustParse("en-US"))
+	bundle := i18n.NewBundle(language.MustParse(tag))
 	bundle.RegisterUnmarshalFunc("json", json.Unmarshal)
 	if _, err := bundle.ParseMessageFileBytes(data, path); err != nil {
 		t.Fatalf("parse %s: %v", path, err)
 	}
-	orig := locale.SwapBotLocalizer(i18n.NewLocalizer(bundle, "en-US"))
+	orig := locale.SwapBotLocalizer(i18n.NewLocalizer(bundle, tag))
 	t.Cleanup(func() { locale.SwapBotLocalizer(orig) })
 }
 
@@ -1104,12 +1106,12 @@ func TestClientCanReachTheHideCallback(t *testing.T) {
 func TestIndividualLinksScreenHasNoDuplicateLinksButton(t *testing.T) {
 	// The ownership tests' harness seeds a client whose subscription resolves, which the links need; the
 	// keyboard is read directly because drawing the full screen needs a subscription the DB harness lacks.
-	rows := (&Tgbot{}).individualLinksRows()
+	rows := (&Tgbot{}).individualLinksRows("one@x")
 	if len(rows) != 1 || len(rows[0]) != 1 {
 		t.Fatalf("the individual-links screen has %d row(s), want exactly the back row", len(rows))
 	}
-	if got := rows[0][0].CallbackData; got != cbHome {
-		t.Errorf("the only control is %q, want the back row %q", got, cbHome)
+	if got := rows[0][0].CallbackData; got != "client_sub_links one@x" {
+		t.Errorf("the only control is %q, want Back to the links", got)
 	}
 }
 

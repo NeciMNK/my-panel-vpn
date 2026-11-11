@@ -132,7 +132,6 @@
     "routing": "Roteamento",
     "outbounds": "Saídas",
     "apiDocs": "Documentação da API",
-    "donate": "Doar",
     "hosts": "Hosts",
     "docs": "Documentação",
     "openMenu": "Abrir menu",
@@ -1432,7 +1431,7 @@
       "telegramProxy": "Proxy SOCKS",
       "telegramProxyDesc": "Ativa o proxy SOCKS5 para conectar ao Telegram. (ajuste as configurações conforme o guia)",
       "telegramVpnFallback": "Pela minha VPN se o Telegram estiver bloqueado",
-      "telegramVpnFallbackDesc": "Se este servidor não alcançar o Telegram diretamente, o painel cria seu próprio cliente panel-tech no grupo тех nos seus nós e conecta o bot por ele. Ignorado se houver proxy SOCKS, servidor de API ou saída do painel.",
+      "telegramVpnFallbackDesc": "Se este servidor não alcançar o Telegram diretamente, o painel cria seu próprio cliente panel-tech no grupo тех nos seus nós e conecta o bot por ele. Ignorado se houver proxy SOCKS, servidor de API ou saída do painel. Só ajuda se pelo menos um nó alcançar o Telegram: nós atrás do mesmo filtro não ajudam.",
       "telegramAPIServer": "Servidor API do Telegram",
       "telegramAPIServerDesc": "O servidor API do Telegram a ser usado. Deixe em branco para usar o servidor padrão.",
       "telegramChatId": "ID de Chat do Administrador",
@@ -2919,7 +2918,6 @@
       "category_clients": "👥 Clientes",
       "category_traffic": "🚦 Tráfego",
       "category_maintenance": "⚙️ Manutenção",
-      "inlineHint": "\r\n🔍 The list opens through search: tap Find and start typing.",
       "subURL": "🔗 Subscription: <code>{{ .URL }}</code>\r\n",
       "jsonURL": "🧩 JSON: <code>{{ .URL }}</code>\r\n",
       "inviteHint": "Send this link to the client: the first Telegram account to open it is bound to the client.",
@@ -2931,13 +2929,17 @@
       "privateOnly": "🤖 Este bot funciona apenas no chat privado. Abra-o em uma mensagem direta.",
       "paymentReported": "💳 {{ .User }} paid for {{ .Months }} mo ({{ .Total }}): ",
       "paymentConfirmed": "✅ Payment confirmed: {{ .Email }} is active until {{ .Date }}.",
+      "paymentConfirmedBy": "✅ {{ .Email }}: confirmed by {{ .Admin }}, active until {{ .Date }}",
       "graceTaken": "⏳ {{ .User }} deferred payment by {{ .Days }} days for: ",
       "freeRequested": "🆓 {{ .User }} asks for a free subscription ({{ .GB }} GB a month).",
       "freeApproved": "🎉 Your free subscription is ready: {{ .GB }} GB a month. Pay for any term to remove the limit.",
       "freeDeclined": "❌ Your request for a free subscription was declined.",
       "speedLow": "Server {{ .Server }} has {{ .Free }} Mbit/s free per user, below the {{ .Min }} Mbit/s minimum of {{ .Users }}, and no other server has room. Add a server or raise its link speed.",
       "masterLeader": "Master {{ .Master }} now leads the panel cluster.",
-      "masterLeaderPrevious": "It took over from {{ .Previous }}."
+      "masterLeaderPrevious": "It took over from {{ .Previous }}.",
+      "attachedInbounds": "🔗 Inbounds: {{ .Inbounds }}\r\n",
+      "clientSearchPrompt": "🔍 Send part of a client's email to find it.",
+      "clientSearchQuery": "🔍 Search: {{ .Query }}"
     },
     "buttons": {
       "closeKeyboard": "❌ Fechar teclado",
@@ -2990,8 +2992,6 @@
       "page": "Page {{ .Page }} of {{ .Pages }}",
       "searchInbounds": "🔍 Find inbound…",
       "searchClients": "🔍 Find client…",
-      "inlineDisabled": "⚠️ Inline mode is off",
-      "clientCard": "⬅️ Client card",
       "links": "🔗 Links",
       "individualLinks": "🔗 Individual links",
       "qrCode": "🔳 QR code",
@@ -3012,7 +3012,9 @@
       "ledgerAddServer": "🖥 Add server cost",
       "ledgerDelete": "🗑 Delete",
       "ledgerFreeGroups": "🆓 Non-paying groups",
-      "nonPaying": "🆓 Does not pay: {{ .State }}"
+      "nonPaying": "🆓 Does not pay: {{ .State }}",
+      "mySubscription": "👤 My subscription",
+      "clearSearch": "✖️ Clear search"
     },
     "answers": {
       "broadcastStarted": "🚀 Transmissão iniciada.",
@@ -3038,7 +3040,6 @@
       "disableSuccess": "✅ {{ .Email }}: Desativado com sucesso.",
       "askToAddUserId": "Sua configuração não foi encontrada!\r\nPeça ao seu administrador para usar seu Telegram ChatID em suas configurações.\r\n\r\nSeu ChatID: <code>{{ .TgUserID }}</code>",
       "chooseClient": "Escolha um cliente para Inbound {{ .Inbound }}",
-      "chooseInbound": "Escolha um Inbound",
       "qrCodeForClient": "QR Code para o cliente {{ .Email }}:",
       "paymentReported": "✅ The admin has been notified. Your subscription will be extended once the payment is confirmed.",
       "paymentAlreadyReported": "⏳ You have already reported this payment. Please wait for the admin to confirm it.",
@@ -3106,6 +3107,16 @@
       "paymentNote": "{{ .Months }} mo",
       "billingDay": " · day {{ .Day }}",
       "reminder": "🔔 <b>Server bills due soon</b>\r\n"
+    },
+    "draft": {
+      "title": "📝 <b>New client draft</b>\r\n",
+      "email": "📧 Email: <code>{{ .Email }}</code>\r\n",
+      "attached": "🔗 Attached: {{ .Inbounds }}\r\n",
+      "traffic": "📊 Traffic: {{ .Traffic }}\r\n",
+      "expire": "📅 Expire: {{ .Time }}\r\n",
+      "ipLimit": "🔢 IP limit: {{ .Limit }}\r\n",
+      "tgUser": "👤 TG user: {{ .User }}\r\n",
+      "comment": "💬 Comment: {{ .Comment }}\r\n"
     }
   },
   "discord": {

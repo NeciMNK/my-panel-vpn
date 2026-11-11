@@ -132,7 +132,6 @@
     "routing": "ルーティング",
     "outbounds": "アウトバウンド",
     "apiDocs": "API ドキュメント",
-    "donate": "寄付",
     "hosts": "ホスト",
     "docs": "ドキュメント",
     "openMenu": "メニューを開く",
@@ -1432,7 +1431,7 @@
       "telegramProxy": "SOCKS プロキシ",
       "telegramProxyDesc": "SOCKS5プロキシを有効にしてTelegramに接続する（ガイドに従って設定を調整）",
       "telegramVpnFallback": "Telegram がブロックされたら自分の VPN 経由",
-      "telegramVpnFallbackDesc": "このサーバーから Telegram に直接届かない場合、パネルはノード上にグループ тех のクライアント panel-tech を作成し、ボットをそれ経由で接続します。SOCKS プロキシ、API サーバー、パネルのアウトバウンドが設定されている場合は無視されます。",
+      "telegramVpnFallbackDesc": "このサーバーから Telegram に直接届かない場合、パネルはノード上にグループ тех のクライアント panel-tech を作成し、ボットをそれ経由で接続します。SOCKS プロキシ、API サーバー、パネルのアウトバウンドが設定されている場合は無視されます。 少なくとも 1 つのノードが Telegram に届く場合のみ有効です。同じフィルターの背後にあるノードでは役に立ちません。",
       "telegramAPIServer": "Telegram API サーバー",
       "telegramAPIServerDesc": "使用するTelegram APIサーバー。空白の場合はデフォルトサーバーを使用する",
       "telegramChatId": "管理者チャットID",
@@ -2919,7 +2918,6 @@
       "category_clients": "👥 クライアント",
       "category_traffic": "🚦 トラフィック",
       "category_maintenance": "⚙️ メンテナンス",
-      "inlineHint": "\r\n🔍 The list opens through search: tap Find and start typing.",
       "subURL": "🔗 Subscription: <code>{{ .URL }}</code>\r\n",
       "jsonURL": "🧩 JSON: <code>{{ .URL }}</code>\r\n",
       "inviteHint": "Send this link to the client: the first Telegram account to open it is bound to the client.",
@@ -2931,13 +2929,17 @@
       "privateOnly": "🤖 このボットは個人チャットでのみ動作します。ダイレクトメッセージで開いてください。",
       "paymentReported": "💳 {{ .User }} paid for {{ .Months }} mo ({{ .Total }}): ",
       "paymentConfirmed": "✅ Payment confirmed: {{ .Email }} is active until {{ .Date }}.",
+      "paymentConfirmedBy": "✅ {{ .Email }}: confirmed by {{ .Admin }}, active until {{ .Date }}",
       "graceTaken": "⏳ {{ .User }} deferred payment by {{ .Days }} days for: ",
       "freeRequested": "🆓 {{ .User }} asks for a free subscription ({{ .GB }} GB a month).",
       "freeApproved": "🎉 Your free subscription is ready: {{ .GB }} GB a month. Pay for any term to remove the limit.",
       "freeDeclined": "❌ Your request for a free subscription was declined.",
       "speedLow": "Server {{ .Server }} has {{ .Free }} Mbit/s free per user, below the {{ .Min }} Mbit/s minimum of {{ .Users }}, and no other server has room. Add a server or raise its link speed.",
       "masterLeader": "Master {{ .Master }} now leads the panel cluster.",
-      "masterLeaderPrevious": "It took over from {{ .Previous }}."
+      "masterLeaderPrevious": "It took over from {{ .Previous }}.",
+      "attachedInbounds": "🔗 Inbounds: {{ .Inbounds }}\r\n",
+      "clientSearchPrompt": "🔍 Send part of a client's email to find it.",
+      "clientSearchQuery": "🔍 Search: {{ .Query }}"
     },
     "buttons": {
       "closeKeyboard": "❌ キーボードを閉じる",
@@ -2990,8 +2992,6 @@
       "page": "Page {{ .Page }} of {{ .Pages }}",
       "searchInbounds": "🔍 Find inbound…",
       "searchClients": "🔍 Find client…",
-      "inlineDisabled": "⚠️ Inline mode is off",
-      "clientCard": "⬅️ Client card",
       "links": "🔗 Links",
       "individualLinks": "🔗 Individual links",
       "qrCode": "🔳 QR code",
@@ -3012,7 +3012,9 @@
       "ledgerAddServer": "🖥 Add server cost",
       "ledgerDelete": "🗑 Delete",
       "ledgerFreeGroups": "🆓 Non-paying groups",
-      "nonPaying": "🆓 Does not pay: {{ .State }}"
+      "nonPaying": "🆓 Does not pay: {{ .State }}",
+      "mySubscription": "👤 My subscription",
+      "clearSearch": "✖️ Clear search"
     },
     "answers": {
       "broadcastStarted": "🚀 一括送信を開始しました。",
@@ -3038,7 +3040,6 @@
       "disableSuccess": "✅ {{ .Email }}：正常に無効化されました。",
       "askToAddUserId": "設定が見つかりませんでした！\r\n管理者に問い合わせて、設定にTelegramユーザーのChatIDを使用してください。\r\n\r\nあなたのユーザーChatID：<code>{{ .TgUserID }}</code>",
       "chooseClient": "インバウンド {{ .Inbound }} のクライアントを選択",
-      "chooseInbound": "インバウンドを選択",
       "qrCodeForClient": "クライアント {{ .Email }} のQRコード:",
       "paymentReported": "✅ The admin has been notified. Your subscription will be extended once the payment is confirmed.",
       "paymentAlreadyReported": "⏳ You have already reported this payment. Please wait for the admin to confirm it.",
@@ -3106,6 +3107,16 @@
       "paymentNote": "{{ .Months }} mo",
       "billingDay": " · day {{ .Day }}",
       "reminder": "🔔 <b>Server bills due soon</b>\r\n"
+    },
+    "draft": {
+      "title": "📝 <b>New client draft</b>\r\n",
+      "email": "📧 Email: <code>{{ .Email }}</code>\r\n",
+      "attached": "🔗 Attached: {{ .Inbounds }}\r\n",
+      "traffic": "📊 Traffic: {{ .Traffic }}\r\n",
+      "expire": "📅 Expire: {{ .Time }}\r\n",
+      "ipLimit": "🔢 IP limit: {{ .Limit }}\r\n",
+      "tgUser": "👤 TG user: {{ .User }}\r\n",
+      "comment": "💬 Comment: {{ .Comment }}\r\n"
     }
   },
   "discord": {

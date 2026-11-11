@@ -6,7 +6,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/locale"
+	"github.com/mhsanaei/3x-ui/v3/internal/xray"
 
 	"github.com/mymmrac/telego"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
@@ -20,6 +22,7 @@ const clientDraftTestChatID = -9001
 // Regression test: the draft is sent with ParseMode HTML, so Markdown markers
 // were rendered literally and an unescaped value could break the whole message.
 func TestClientDraftMessageRendersHTML(t *testing.T) {
+	localizeWithRealBundle(t)
 	draft := addClientDrafts.forActor(chatUser{chatID: clientDraftTestChatID, userID: 1})
 	t.Cleanup(func() { addClientDrafts.reset(chatUser{chatID: clientDraftTestChatID, userID: 1}) })
 
@@ -106,5 +109,45 @@ func TestAddClientPromptsEscapeDraftValues(t *testing.T) {
 				t.Errorf("prompt = %q, want it to contain %q", got, html.EscapeString(tc.value))
 			}
 		})
+	}
+}
+
+// The ru-RU draft and client cards printed "Attached:", "Traffic:", "🔗 Inbounds:"
+// from Go literals, and labelled upload and download both "Загрузка".
+func TestRussianClientCardsCarryNoEnglishOrRepeatedLabels(t *testing.T) {
+	tb := initReportDB(t)
+	localizeWithShippedLocale(t, "ru-RU")
+	seedReportClients(t, "Вход", []string{"ru-card@x"})
+	var traffic xray.ClientTraffic
+	if err := database.GetDB().Where("email = ?", "ru-card@x").First(&traffic).Error; err != nil {
+		t.Fatalf("read traffic: %v", err)
+	}
+	actor := chatUser{chatID: clientDraftTestChatID, userID: 2}
+	draft := addClientDrafts.forActor(actor)
+	t.Cleanup(func() { addClientDrafts.reset(actor) })
+	draft.email = "ru-card@x"
+
+	cards := map[string]string{
+		"draft":  tb.BuildClientDraftMessage(draft),
+		"client": tb.clientInfoMsg(&traffic, true, true, true, true, true, false),
+	}
+	english := []string{"New client draft", "Attached", "Traffic:", "Expire:", "IP limit", "TG user", "Comment:", "Unlimited", "Inbounds:"}
+	for name, card := range cards {
+		for _, word := range english {
+			if strings.Contains(card, word) {
+				t.Errorf("%s card carries English %q:\n%s", name, word, card)
+			}
+		}
+		seen := map[string]bool{}
+		for _, line := range strings.Split(strings.ReplaceAll(card, "\r\n", "\n"), "\n") {
+			label, _, found := strings.Cut(line, ":")
+			if !found || label == "" {
+				continue
+			}
+			if seen[label] {
+				t.Errorf("%s card repeats the label %q:\n%s", name, label, card)
+			}
+			seen[label] = true
+		}
 	}
 }

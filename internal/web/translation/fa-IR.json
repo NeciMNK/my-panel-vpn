@@ -132,7 +132,6 @@
     "routing": "مسیریابی",
     "outbounds": "خروجی‌ها",
     "apiDocs": "مستندات API",
-    "donate": "حمایت مالی",
     "hosts": "میزبان‌ها",
     "docs": "مستندات",
     "openMenu": "باز کردن منو",
@@ -1436,7 +1435,7 @@
       "telegramProxy": "پراکسی SOCKS",
       "telegramProxyDesc": "را برای اتصال به تلگرام فعال می کند SOCKS5 پراکسی",
       "telegramVpnFallback": "از طریق VPN من اگر Telegram مسدود است",
-      "telegramVpnFallbackDesc": "اگر این سرور مستقیم به Telegram دسترسی نداشته باشد، پنل کلاینت panel-tech را در گروه тех روی نودها می‌سازد و ربات را از طریق آن وصل می‌کند. با تنظیم پراکسی SOCKS، سرور API یا خروجی پنل نادیده گرفته می‌شود.",
+      "telegramVpnFallbackDesc": "اگر این سرور مستقیم به Telegram دسترسی نداشته باشد، پنل کلاینت panel-tech را در گروه тех روی نودها می‌سازد و ربات را از طریق آن وصل می‌کند. با تنظیم پراکسی SOCKS، سرور API یا خروجی پنل نادیده گرفته می‌شود. فقط وقتی کمک می‌کند که دست‌کم یک نود به Telegram دسترسی داشته باشد: نودهای پشت همان فیلتر کمکی نمی‌کنند.",
       "telegramAPIServer": "سرور API تلگرام",
       "telegramAPIServerDesc": "API سرور تلگرام برای اتصال را تغییر میدهد. برای استفاده از سرور پیش فرض خالی بگذارید",
       "telegramChatId": "آی‌دی چت مدیر",
@@ -2919,7 +2918,6 @@
       "category_clients": "👥 کاربران",
       "category_traffic": "🚦 ترافیک",
       "category_maintenance": "⚙️ نگهداری",
-      "inlineHint": "\r\n🔍 The list opens through search: tap Find and start typing.",
       "subURL": "🔗 Subscription: <code>{{ .URL }}</code>\r\n",
       "jsonURL": "🧩 JSON: <code>{{ .URL }}</code>\r\n",
       "inviteHint": "Send this link to the client: the first Telegram account to open it is bound to the client.",
@@ -2931,13 +2929,17 @@
       "privateOnly": "🤖 این ربات فقط در چت خصوصی کار میکند. لطفاً آن را در پیام مستقیم باز کنید.",
       "paymentReported": "💳 {{ .User }} paid for {{ .Months }} mo ({{ .Total }}): ",
       "paymentConfirmed": "✅ Payment confirmed: {{ .Email }} is active until {{ .Date }}.",
+      "paymentConfirmedBy": "✅ {{ .Email }}: confirmed by {{ .Admin }}, active until {{ .Date }}",
       "graceTaken": "⏳ {{ .User }} deferred payment by {{ .Days }} days for: ",
       "freeRequested": "🆓 {{ .User }} asks for a free subscription ({{ .GB }} GB a month).",
       "freeApproved": "🎉 Your free subscription is ready: {{ .GB }} GB a month. Pay for any term to remove the limit.",
       "freeDeclined": "❌ Your request for a free subscription was declined.",
       "speedLow": "Server {{ .Server }} has {{ .Free }} Mbit/s free per user, below the {{ .Min }} Mbit/s minimum of {{ .Users }}, and no other server has room. Add a server or raise its link speed.",
       "masterLeader": "Master {{ .Master }} now leads the panel cluster.",
-      "masterLeaderPrevious": "It took over from {{ .Previous }}."
+      "masterLeaderPrevious": "It took over from {{ .Previous }}.",
+      "attachedInbounds": "🔗 Inbounds: {{ .Inbounds }}\r\n",
+      "clientSearchPrompt": "🔍 Send part of a client's email to find it.",
+      "clientSearchQuery": "🔍 Search: {{ .Query }}"
     },
     "buttons": {
       "closeKeyboard": "❌ بستن کیبورد",
@@ -2990,8 +2992,6 @@
       "page": "Page {{ .Page }} of {{ .Pages }}",
       "searchInbounds": "🔍 Find inbound…",
       "searchClients": "🔍 Find client…",
-      "inlineDisabled": "⚠️ Inline mode is off",
-      "clientCard": "⬅️ Client card",
       "links": "🔗 Links",
       "individualLinks": "🔗 Individual links",
       "qrCode": "🔳 QR code",
@@ -3012,7 +3012,9 @@
       "ledgerAddServer": "🖥 Add server cost",
       "ledgerDelete": "🗑 Delete",
       "ledgerFreeGroups": "🆓 Non-paying groups",
-      "nonPaying": "🆓 Does not pay: {{ .State }}"
+      "nonPaying": "🆓 Does not pay: {{ .State }}",
+      "mySubscription": "👤 My subscription",
+      "clearSearch": "✖️ Clear search"
     },
     "answers": {
       "broadcastStarted": "🚀 ارسال گروهی آغاز شد.",
@@ -3038,7 +3040,6 @@
       "disableSuccess": "✅ {{ .Email }} : با موفقیت غیرفعال شد.",
       "askToAddUserId": "پیکربندی شما یافت نشد!\r\nلطفاً از مدیر خود بخواهید که شناسه کاربر تلگرام خود را در پیکربندی (های) خود استفاده کند.\r\n\r\nشناسه کاربری شما: <code>{{ .TgUserID }}</code>",
       "chooseClient": "یک مشتری برای ورودی {{ .Inbound }} انتخاب کنید",
-      "chooseInbound": "یک ورودی انتخاب کنید",
       "qrCodeForClient": "کد QR برای کاربر {{ .Email }}:",
       "paymentReported": "✅ The admin has been notified. Your subscription will be extended once the payment is confirmed.",
       "paymentAlreadyReported": "⏳ You have already reported this payment. Please wait for the admin to confirm it.",
@@ -3106,6 +3107,16 @@
       "paymentNote": "{{ .Months }} mo",
       "billingDay": " · day {{ .Day }}",
       "reminder": "🔔 <b>Server bills due soon</b>\r\n"
+    },
+    "draft": {
+      "title": "📝 <b>New client draft</b>\r\n",
+      "email": "📧 Email: <code>{{ .Email }}</code>\r\n",
+      "attached": "🔗 Attached: {{ .Inbounds }}\r\n",
+      "traffic": "📊 Traffic: {{ .Traffic }}\r\n",
+      "expire": "📅 Expire: {{ .Time }}\r\n",
+      "ipLimit": "🔢 IP limit: {{ .Limit }}\r\n",
+      "tgUser": "👤 TG user: {{ .User }}\r\n",
+      "comment": "💬 Comment: {{ .Comment }}\r\n"
     }
   },
   "discord": {
