@@ -108,6 +108,7 @@ func run(root, outDir string) error {
 				"InboundOption",
 				"SpeedOverview",
 				"MasterStatus",
+				"MasterSetup",
 				"ServerFreeSpeed",
 				"HappLinkResult",
 				"ClientSlim",

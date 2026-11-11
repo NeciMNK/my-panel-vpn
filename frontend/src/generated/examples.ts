@@ -1133,11 +1133,18 @@ export const EXAMPLES: Record<string, unknown> = {
     "client": "mlkem768-client",
     "seed": "mlkem768-seed"
   },
+  "MasterSetup": {
+    "env": "XUI_DB_TYPE=postgres\nXUI_MASTER_NAME=master-3\n",
+    "keyFile": "/etc/x-ui/node_token_key.json",
+    "name": "master-3",
+    "priority": 3
+  },
   "MasterStatus": {
     "alive": true,
     "lastSeen": 1762736400,
     "leader": true,
     "name": "master-1",
+    "pending": false,
     "priority": 1,
     "self": true,
     "url": "https://panel-1.example.com:2053"

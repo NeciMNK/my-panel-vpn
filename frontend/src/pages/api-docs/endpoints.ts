@@ -1819,7 +1819,7 @@ export const sections: readonly Section[] = [
     id: 'masters',
     title: 'Masters',
     description:
-      'Several master panels can share one database (XUI_MASTER_PRIORITY, XUI_MASTER_NAME, XUI_MASTER_URL). Each writes a heartbeat every 5s; the best-ranked master that has been up for 30s leads and alone runs node sync, traffic resets, cascade pins and the bots. The list is empty on a single master. All endpoints under /panel/api/masters.',
+      'Several master panels can share one database (XUI_MASTER_PRIORITY, XUI_MASTER_NAME, XUI_MASTER_URL). Priorities live in the database: XUI_MASTER_PRIORITY only enables the cluster and asks for a rank on first join. Each writes a heartbeat every 5s; the best-ranked master that has been up for 30s leads and alone runs node sync, traffic resets, cascade pins and the bots. The list is empty on a single master. All endpoints under /panel/api/masters.',
     endpoints: [
       {
         method: 'GET',
@@ -1832,8 +1832,23 @@ export const sections: readonly Section[] = [
         method: 'POST',
         path: '/panel/api/masters/forget',
         summary:
-          'Remove a master that is down for good from the list. A running master is refused.',
+          'Remove a master that is down for good from the list. A running master is refused, and so is any change while another master is offline or when this panel is not the leading primary.',
         body: '{\n  "name": "master-2"\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/masters/reorder',
+        summary:
+          'Rank every master, the new primary first; it takes the lead within about two heartbeats. Allowed only on the leading primary while every master is online.',
+        body: '{\n  "names": ["master-2", "master-1"]\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/masters/add',
+        summary:
+          'List a new master last in priority and return the env file it must start with. It shows as pending until its first heartbeat. Allowed only on the leading primary while every master is online.',
+        body: '{\n  "name": "master-3",\n  "url": "https://panel-3.example.com:2053"\n}',
+        responseSchema: 'MasterSetup',
       },
     ],
   },

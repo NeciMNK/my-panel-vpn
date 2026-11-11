@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -97,5 +98,153 @@ func TestReadClusterRoleRefusesAStaleFile(t *testing.T) {
 	want := "the panel has not written its role for " + strconv.Itoa(3*MasterBeatSeconds+1) + "s"
 	if leads, err := ReadClusterRole(1000 + 3*MasterBeatSeconds + 1); leads || err == nil || err.Error() != want {
 		t.Fatalf("stale file: leads %v err %v", leads, err)
+	}
+}
+
+// clusterOf seeds a cluster seen from master self, which leads; every row
+// alive and settled unless listed in down.
+func clusterOf(t *testing.T, self string, names []string, down ...string) *MasterClusterService {
+	t.Helper()
+	dbtest.InitDB(t, filepath.Join(t.TempDir(), "x-ui.db"))
+	t.Setenv("XUI_DB_FOLDER", t.TempDir())
+	t.Setenv("XUI_MASTER_NAME", self)
+	t.Setenv("XUI_MASTER_PRIORITY", "1")
+	t.Setenv("XUI_DB_TYPE", "postgres")
+	t.Setenv("XUI_DB_DSN", "postgres://xui:secret@10.0.0.1:5432,10.0.0.2:5432/xui")
+	clusterLeader.Store(true)
+	t.Cleanup(func() { clusterLeader.Store(true) })
+	now, err := dbNow(database.GetDB())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i, name := range names {
+		m := model.MasterMember{Name: name, Priority: i + 1, UpSince: now - 3600, LastSeen: now}
+		for _, d := range down {
+			if d == name {
+				m.LastSeen = now - masterAliveSeconds - 1
+			}
+		}
+		if err := database.GetDB().Create(&m).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	return &MasterClusterService{}
+}
+
+func priorities(t *testing.T) map[string]int {
+	t.Helper()
+	var members []model.MasterMember
+	if err := database.GetDB().Find(&members).Error; err != nil {
+		t.Fatal(err)
+	}
+	out := map[string]int{}
+	for _, m := range members {
+		out[m.Name] = m.Priority
+	}
+	return out
+}
+
+func wantRefusal(t *testing.T, err error, reason, master string) {
+	t.Helper()
+	var refusal *MasterChangeError
+	if !errors.As(err, &refusal) || refusal.Reason != reason || refusal.Master != master {
+		t.Fatalf("err = %v, want refusal %s for %q", err, reason, master)
+	}
+}
+
+func TestMasterChangesNeedEveryMasterOnline(t *testing.T) {
+	s := clusterOf(t, "a", []string{"a", "b", "c"}, "c")
+	wantRefusal(t, s.Reorder([]string{"b", "a", "c"}), MasterChangeOffline, "c")
+	_, err := s.Add("d", "https://d:2053")
+	wantRefusal(t, err, MasterChangeOffline, "c")
+	if got := priorities(t); got["b"] != 2 || len(got) != 3 {
+		t.Fatalf("a refused change still wrote: %v", got)
+	}
+}
+
+func TestForgetNeedsEveryOtherMasterOnline(t *testing.T) {
+	s := clusterOf(t, "a", []string{"a", "b", "c"}, "b", "c")
+	wantRefusal(t, s.Forget("b"), MasterChangeOffline, "c")
+	database.GetDB().Where("name = ?", "c").Delete(&model.MasterMember{})
+	if err := s.Forget("b"); err != nil {
+		t.Fatal(err)
+	}
+	if got := priorities(t); len(got) != 1 {
+		t.Fatalf("masters left = %v, want only a", got)
+	}
+}
+
+func TestMasterChangesOnlyOnThePrimary(t *testing.T) {
+	s := clusterOf(t, "b", []string{"a", "b"})
+	wantRefusal(t, s.Reorder([]string{"b", "a"}), MasterChangeNotPrimary, "a")
+	clusterLeader.Store(false)
+	t.Setenv("XUI_MASTER_NAME", "a")
+	wantRefusal(t, s.Reorder([]string{"b", "a"}), MasterChangeNotPrimary, "a")
+}
+
+func TestReorderHandsTheLeadToTheNewPrimary(t *testing.T) {
+	s := clusterOf(t, "a", []string{"a", "b", "c"})
+	wantRefusal(t, s.Forget("b"), MasterChangeRunning, "b")
+	wantRefusal(t, s.Reorder([]string{"b", "a"}), MasterChangeBadOrder, "")
+	wantRefusal(t, s.Reorder([]string{"b", "a", "a"}), MasterChangeBadOrder, "")
+	if err := s.Reorder([]string{"c", "a", "b"}); err != nil {
+		t.Fatal(err)
+	}
+	if got := priorities(t); got["c"] != 1 || got["a"] != 2 || got["b"] != 3 {
+		t.Fatalf("priorities = %v", got)
+	}
+	s.elected = 2
+	if leader, flipped, err := s.Beat(); err != nil || leader != "c" || !flipped || IsClusterLeader() {
+		t.Fatalf("old primary after reorder: leader %q flipped %v leads %v err %v", leader, flipped, IsClusterLeader(), err)
+	}
+	if got := priorities(t); got["a"] != 2 {
+		t.Fatalf("the beat put back the env priority: %v", got)
+	}
+}
+
+func TestAddedMasterWaitsAndKeepsItsPriorityWhenItJoins(t *testing.T) {
+	s := clusterOf(t, "a", []string{"a", "b"})
+	_, err := s.Add("b", "")
+	wantRefusal(t, err, MasterChangeNameTaken, "b")
+	setup, err := s.Add(" c ", "https://c:2053")
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantEnv := "XUI_DB_TYPE=postgres\nXUI_DB_DSN=postgres://xui:secret@10.0.0.1:5432,10.0.0.2:5432/xui\n" +
+		"XUI_MASTER_PRIORITY=3\nXUI_MASTER_NAME=c\nXUI_MASTER_URL=https://c:2053\n"
+	if setup.Env != wantEnv {
+		t.Fatalf("env =\n%s\nwant\n%s", setup.Env, wantEnv)
+	}
+	list, err := s.List()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if last := list[2]; last.Name != "c" || !last.Pending || last.Alive {
+		t.Fatalf("added master listed as %+v, want pending", last)
+	}
+	wantRefusal(t, s.Reorder([]string{"b", "a", "c"}), MasterChangeOffline, "c")
+
+	t.Setenv("XUI_MASTER_URL", "")
+	if _, err := s.beat("c", 1); err != nil {
+		t.Fatal(err)
+	}
+	var c model.MasterMember
+	database.GetDB().Where("name = ?", "c").First(&c)
+	if c.Priority != 3 || c.Url != "https://c:2053" {
+		t.Fatalf("joined master: priority %d url %q, want 3 and the added url", c.Priority, c.Url)
+	}
+}
+
+// A master the list forgot must not come back as primary from its old env.
+func TestUnknownMasterWithATakenPriorityJoinsLast(t *testing.T) {
+	s := clusterOf(t, "a", []string{"a", "b"})
+	if _, err := s.beat("old", 1); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.beat("new", 7); err != nil {
+		t.Fatal(err)
+	}
+	if got := priorities(t); got["old"] != 3 || got["new"] != 7 {
+		t.Fatalf("priorities = %v, want old last (3) and new keeping its free 7", got)
 	}
 }

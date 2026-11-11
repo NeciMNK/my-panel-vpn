@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -16,7 +17,6 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/config"
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
-	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 )
 
 const (
@@ -84,6 +84,39 @@ type MasterStatus struct {
 	Leader   bool   `json:"leader" example:"true"`
 	Self     bool   `json:"self" example:"true"`
 	LastSeen int64  `json:"lastSeen" example:"1762736400"`
+	// Pending marks a master added in the panel that has not started yet.
+	Pending bool `json:"pending" example:"false"`
+}
+
+// MasterSetup is what a newly added master needs in its env file.
+type MasterSetup struct {
+	Name     string `json:"name" example:"master-3"`
+	Priority int    `json:"priority" example:"3"`
+	Env      string `json:"env" example:"XUI_DB_TYPE=postgres\nXUI_MASTER_NAME=master-3\n"`
+	// KeyFile must be copied from this master when node tokens are encrypted.
+	KeyFile string `json:"keyFile,omitempty" example:"/etc/x-ui/node_token_key.json"`
+}
+
+// Reasons a change to the masters list is refused.
+const (
+	MasterChangeNotCluster = "notCluster"
+	MasterChangeNotPrimary = "notPrimary"
+	MasterChangeOffline    = "offline"
+	MasterChangeUnknown    = "unknown"
+	MasterChangeRunning    = "running"
+	MasterChangeNameTaken  = "nameTaken"
+	MasterChangeBadOrder   = "badOrder"
+)
+
+// MasterChangeError refuses a change to the masters list; Master names the
+// master the reason is about.
+type MasterChangeError struct {
+	Reason string
+	Master string
+}
+
+func (e *MasterChangeError) Error() string {
+	return "masters cannot be changed: " + e.Reason + " " + e.Master
 }
 
 // ClusterEnabled reports whether XUI_MASTER_PRIORITY made this panel one of
@@ -144,19 +177,44 @@ func (s *MasterClusterService) beat(name string, priority int) (string, error) {
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			return err
 		}
+		if err := tx.Find(&members).Error; err != nil {
+			return err
+		}
+		if self.Id == 0 {
+			self.Name, self.Priority = name, joinPriority(members, priority)
+		}
 		if self.Id == 0 || now-self.LastSeen > masterAliveSeconds {
 			self.UpSince = now
 		}
-		self.Name, self.Priority, self.Url, self.LastSeen = name, priority, config.GetMasterURL(), now
+		if url := config.GetMasterURL(); url != "" {
+			self.Url = url
+		}
+		self.LastSeen = now
 		if err := tx.Save(&self).Error; err != nil {
 			return err
 		}
-		return tx.Find(&members).Error
+		members = append(slices.DeleteFunc(members, func(m model.MasterMember) bool { return m.Name == name }), self)
+		return nil
 	})
 	if err != nil {
 		return "", err
 	}
 	return electLeader(members, now), nil
+}
+
+// joinPriority is the rank a master new to the list takes: the one its env
+// asks for while free, else last, so a forgotten master cannot return as primary.
+func joinPriority(members []model.MasterMember, wanted int) int {
+	last := 0
+	free := true
+	for _, m := range members {
+		last = max(last, m.Priority)
+		free = free && m.Priority != wanted
+	}
+	if free {
+		return wanted
+	}
+	return last + 1
 }
 
 // List reports every master that ever joined, for the masters card.
@@ -180,26 +238,125 @@ func (s *MasterClusterService) List() ([]MasterStatus, error) {
 		out = append(out, MasterStatus{
 			Name: m.Name, Priority: m.Priority, Url: m.Url, LastSeen: m.LastSeen,
 			Alive: now-m.LastSeen <= masterAliveSeconds, Leader: m.Name == leader, Self: m.Name == self,
+			Pending: m.LastSeen == 0,
 		})
 	}
 	return out, nil
 }
 
+// change runs edit on the masters list only on the leading primary and only
+// while every master except spare is online, so no master misses the change.
+func (s *MasterClusterService) change(spare string, edit func(tx *gorm.DB, members []model.MasterMember, now int64) error) error {
+	if !ClusterEnabled() {
+		return &MasterChangeError{Reason: MasterChangeNotCluster}
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return database.GetDB().Transaction(func(tx *gorm.DB) error {
+		now, err := dbNow(tx)
+		if err != nil {
+			return fmt.Errorf("read database clock: %w", err)
+		}
+		var members []model.MasterMember
+		if err := tx.Order("priority asc, name asc").Find(&members).Error; err != nil {
+			return err
+		}
+		for _, m := range members {
+			if m.Name != spare && now-m.LastSeen > masterAliveSeconds {
+				return &MasterChangeError{Reason: MasterChangeOffline, Master: m.Name}
+			}
+		}
+		if len(members) == 0 || members[0].Name != config.GetMasterName() || !IsClusterLeader() {
+			primary := ""
+			if len(members) > 0 {
+				primary = members[0].Name
+			}
+			return &MasterChangeError{Reason: MasterChangeNotPrimary, Master: primary}
+		}
+		return edit(tx, members, now)
+	})
+}
+
+// Reorder ranks the masters in the given order, first = primary; the new
+// primary takes the lead on its next beats.
+func (s *MasterClusterService) Reorder(names []string) error {
+	return s.change("", func(tx *gorm.DB, members []model.MasterMember, _ int64) error {
+		known := make(map[string]bool, len(members))
+		for _, m := range members {
+			known[m.Name] = true
+		}
+		if len(names) != len(members) {
+			return &MasterChangeError{Reason: MasterChangeBadOrder}
+		}
+		for _, name := range names {
+			if !known[name] {
+				return &MasterChangeError{Reason: MasterChangeBadOrder}
+			}
+			delete(known, name)
+		}
+		for i, name := range names {
+			if err := tx.Model(&model.MasterMember{}).Where("name = ?", name).Update("priority", i+1).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+// Add lists a new master last in priority; it shows as pending until it
+// starts with the returned env.
+func (s *MasterClusterService) Add(name, url string) (MasterSetup, error) {
+	name, url = strings.TrimSpace(name), strings.TrimSpace(url)
+	var setup MasterSetup
+	err := s.change("", func(tx *gorm.DB, members []model.MasterMember, _ int64) error {
+		last := 0
+		for _, m := range members {
+			if m.Name == name {
+				return &MasterChangeError{Reason: MasterChangeNameTaken, Master: name}
+			}
+			last = max(last, m.Priority)
+		}
+		added := model.MasterMember{Name: name, Url: url, Priority: last + 1}
+		if err := tx.Create(&added).Error; err != nil {
+			return err
+		}
+		setup = MasterSetup{Name: name, Priority: added.Priority, Env: masterEnv(name, url, added.Priority)}
+		if config.GetNodeTokenEncryptionMode() != "" {
+			setup.KeyFile = config.GetNodeTokenKeyFile()
+		}
+		return nil
+	})
+	return setup, err
+}
+
+func masterEnv(name, url string, priority int) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "XUI_DB_TYPE=%s\n", config.GetDBKind())
+	if dsn := config.GetDBDSN(); dsn != "" {
+		fmt.Fprintf(&b, "XUI_DB_DSN=%s\n", dsn)
+	}
+	if mode := config.GetNodeTokenEncryptionMode(); mode != "" {
+		fmt.Fprintf(&b, "NODE_TOKEN_ENCRYPTION=%s\nXUI_NODE_TOKEN_KEY_FILE=%s\n", mode, config.GetNodeTokenKeyFile())
+	}
+	fmt.Fprintf(&b, "XUI_MASTER_PRIORITY=%d\nXUI_MASTER_NAME=%s\n", priority, name)
+	if url != "" {
+		fmt.Fprintf(&b, "XUI_MASTER_URL=%s\n", url)
+	}
+	return b.String()
+}
+
 // Forget drops a master that is down for good from the list.
 func (s *MasterClusterService) Forget(name string) error {
-	db := database.GetDB()
-	now, err := dbNow(db)
-	if err != nil {
-		return err
-	}
-	m := model.MasterMember{}
-	if err := db.Where("name = ?", name).First(&m).Error; err != nil {
-		return common.NewError("no master named ", name)
-	}
-	if now-m.LastSeen <= masterAliveSeconds {
-		return common.NewError("master ", name, " is still running; stop it first")
-	}
-	return db.Delete(&m).Error
+	return s.change(name, func(tx *gorm.DB, members []model.MasterMember, now int64) error {
+		i := slices.IndexFunc(members, func(m model.MasterMember) bool { return m.Name == name })
+		if i < 0 {
+			return &MasterChangeError{Reason: MasterChangeUnknown, Master: name}
+		}
+		if now-members[i].LastSeen <= masterAliveSeconds {
+			return &MasterChangeError{Reason: MasterChangeRunning, Master: name}
+		}
+		return tx.Delete(&members[i]).Error
+	})
 }
 
 // writeClusterRole leaves "<role> <unix time>" for `x-ui cluster is-leader`.

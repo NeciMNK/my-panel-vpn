@@ -4260,6 +4260,34 @@
         ],
         "type": "object"
       },
+      "MasterSetup": {
+        "description": "MasterSetup is what a newly added master needs in its env file.",
+        "properties": {
+          "env": {
+            "example": "XUI_DB_TYPE=postgres\nXUI_MASTER_NAME=master-3\n",
+            "type": "string"
+          },
+          "keyFile": {
+            "description": "KeyFile must be copied from this master when node tokens are encrypted.",
+            "example": "/etc/x-ui/node_token_key.json",
+            "type": "string"
+          },
+          "name": {
+            "example": "master-3",
+            "type": "string"
+          },
+          "priority": {
+            "example": 3,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "env",
+          "name",
+          "priority"
+        ],
+        "type": "object"
+      },
       "MasterStatus": {
         "description": "MasterStatus is one master as the masters card shows it.",
         "properties": {
@@ -4280,6 +4308,11 @@
             "example": "master-1",
             "type": "string"
           },
+          "pending": {
+            "description": "Pending marks a master added in the panel that has not started yet.",
+            "example": false,
+            "type": "boolean"
+          },
           "priority": {
             "example": 1,
             "type": "integer"
@@ -4298,6 +4331,7 @@
           "lastSeen",
           "leader",
           "name",
+          "pending",
           "priority",
           "self",
           "url"
@@ -6123,7 +6157,7 @@
     },
     {
       "name": "Masters",
-      "description": "Several master panels can share one database (XUI_MASTER_PRIORITY, XUI_MASTER_NAME, XUI_MASTER_URL). Each writes a heartbeat every 5s; the best-ranked master that has been up for 30s leads and alone runs node sync, traffic resets, cascade pins and the bots. The list is empty on a single master. All endpoints under /panel/api/masters."
+      "description": "Several master panels can share one database (XUI_MASTER_PRIORITY, XUI_MASTER_NAME, XUI_MASTER_URL). Priorities live in the database: XUI_MASTER_PRIORITY only enables the cluster and asks for a rank on first join. Each writes a heartbeat every 5s; the best-ranked master that has been up for 30s leads and alone runs node sync, traffic resets, cascade pins and the bots. The list is empty on a single master. All endpoints under /panel/api/masters."
     },
     {
       "name": "Speed limits",
@@ -13157,6 +13191,7 @@
                       "lastSeen": 1762736400,
                       "leader": true,
                       "name": "master-1",
+                      "pending": false,
                       "priority": 1,
                       "self": true,
                       "url": "https://panel-1.example.com:2053"
@@ -13174,7 +13209,7 @@
         "tags": [
           "Masters"
         ],
-        "summary": "Remove a master that is down for good from the list. A running master is refused.",
+        "summary": "Remove a master that is down for good from the list. A running master is refused, and so is any change while another master is offline or when this panel is not the leading primary.",
         "operationId": "post_panel_api_masters_forget",
         "requestBody": {
           "required": true,
@@ -13204,6 +13239,107 @@
                       "type": "string"
                     },
                     "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/masters/reorder": {
+      "post": {
+        "tags": [
+          "Masters"
+        ],
+        "summary": "Rank every master, the new primary first; it takes the lead within about two heartbeats. Allowed only on the leading primary while every master is online.",
+        "operationId": "post_panel_api_masters_reorder",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "names": [
+                  "master-2",
+                  "master-1"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/masters/add": {
+      "post": {
+        "tags": [
+          "Masters"
+        ],
+        "summary": "List a new master last in priority and return the env file it must start with. It shows as pending until its first heartbeat. Allowed only on the leading primary while every master is online.",
+        "operationId": "post_panel_api_masters_add",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "name": "master-3",
+                "url": "https://panel-3.example.com:2053"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/MasterSetup"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "env": "XUI_DB_TYPE=postgres\nXUI_MASTER_NAME=master-3\n",
+                    "keyFile": "/etc/x-ui/node_token_key.json",
+                    "name": "master-3",
+                    "priority": 3
                   }
                 }
               }

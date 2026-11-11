@@ -4234,6 +4234,34 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "MasterSetup": {
+    "description": "MasterSetup is what a newly added master needs in its env file.",
+    "properties": {
+      "env": {
+        "example": "XUI_DB_TYPE=postgres\nXUI_MASTER_NAME=master-3\n",
+        "type": "string"
+      },
+      "keyFile": {
+        "description": "KeyFile must be copied from this master when node tokens are encrypted.",
+        "example": "/etc/x-ui/node_token_key.json",
+        "type": "string"
+      },
+      "name": {
+        "example": "master-3",
+        "type": "string"
+      },
+      "priority": {
+        "example": 3,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "env",
+      "name",
+      "priority"
+    ],
+    "type": "object"
+  },
   "MasterStatus": {
     "description": "MasterStatus is one master as the masters card shows it.",
     "properties": {
@@ -4254,6 +4282,11 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": "master-1",
         "type": "string"
       },
+      "pending": {
+        "description": "Pending marks a master added in the panel that has not started yet.",
+        "example": false,
+        "type": "boolean"
+      },
       "priority": {
         "example": 1,
         "type": "integer"
@@ -4272,6 +4305,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "lastSeen",
       "leader",
       "name",
+      "pending",
       "priority",
       "self",
       "url"
