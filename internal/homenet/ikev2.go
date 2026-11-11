@@ -122,6 +122,7 @@ func IKEv2Files(t *Tunnel, dir string) (map[string]string, error) {
 		remote_addrs = %[2]s
 		vips = %[3]s
 		proposals = default, aes256-sha256-modp2048, aes256-sha1-modp1024
+		mobike = no
 		dpd_delay = 30s
 		keyingtries = 0
 		local {

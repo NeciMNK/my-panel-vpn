@@ -44,6 +44,7 @@ func TestIKEv2FilesWithPSK(t *testing.T) {
 		remote_addrs = home.example.net
 		vips = 0.0.0.0
 		proposals = default, aes256-sha256-modp2048, aes256-sha1-modp1024
+		mobike = no
 		dpd_delay = 30s
 		keyingtries = 0
 		local {
