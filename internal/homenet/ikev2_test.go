@@ -24,10 +24,11 @@ BAUwAwEB/zAKBggqhkjOPQQDAgNHADBEAiApkxR/a4XbcHKKI/ObjuPHQRhkCeNW
 func ikev2Paths(t *testing.T) string {
 	t.Helper()
 	root := t.TempDir()
-	prev := [2]string{swanctlDir, eapPlugin}
+	prev := [3]string{swanctlDir, eapPlugin, ipsecDir}
 	swanctlDir = filepath.Join(root, "swanctl")
 	eapPlugin = filepath.Join(root, "eap-mschapv2.so")
-	t.Cleanup(func() { swanctlDir, eapPlugin = prev[0], prev[1] })
+	ipsecDir = filepath.Join(root, "ipsec.d")
+	t.Cleanup(func() { swanctlDir, eapPlugin, ipsecDir = prev[0], prev[1], prev[2] })
 	return root
 }
 

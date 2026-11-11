@@ -148,8 +148,43 @@ exit 0
 	}
 }
 
+const l2tpSwanctl = `connections {
+	x-ui-home-2 {
+		version = 1
+		remote_addrs = 1.2.3.4
+		proposals = aes256-sha1-modp2048, aes128-sha1-modp2048, 3des-sha1-modp1024
+		dpd_delay = 30s
+		keyingtries = 0
+		local {
+			auth = psk
+		}
+		remote {
+			auth = psk
+		}
+		children {
+			x-ui-home-2 {
+				mode = transport
+				local_ts = dynamic[udp/1701]
+				remote_ts = dynamic[udp/1701]
+				esp_proposals = aes256-sha1, aes128-sha1, 3des-sha1
+				dpd_action = restart
+				close_action = start
+			}
+		}
+	}
+}
+secrets {
+	ike-x-ui-home-2 {
+		id = "1.2.3.4"
+		secret = "key"
+	}
+}
+`
+
+// The IPsec half of L2TP is a swanctl connection: the starter-era ipsec.conf
+// files do nothing on Debian 13, which ships no ipsec tool.
 func TestL2TPFiles(t *testing.T) {
-	ipsecDir = "/ipsec"
+	ikev2Paths(t)
 	tun := &Tunnel{Id: 2, Kind: KindL2TP, Server: "1.2.3.4", Username: "me", Password: "pw", PSK: "key", Routes: []string{"192.168.1.0/24"}}
 	files, err := L2TPFiles(tun, "/d")
 	if err != nil {
@@ -158,20 +193,138 @@ func TestL2TPFiles(t *testing.T) {
 	if got := files["/d/ip-up"]; got != routeUpScript(tun) {
 		t.Fatalf("ip-up = %q", got)
 	}
-	if got := files["/ipsec/x-ui-home-2.secrets"]; got != "%any 1.2.3.4 : PSK \"key\"\n" {
-		t.Fatalf("secrets = %q", got)
+	if got := files[filepath.Join(swanctlDir, "x-ui-home-2.conf")]; got != l2tpSwanctl {
+		t.Fatalf("swanctl conf =\n%s\nwant\n%s", got, l2tpSwanctl)
+	}
+	if got := files["/d/start"]; got != swanctlStart(2) {
+		t.Fatalf("start = %q", got)
 	}
 	if !strings.Contains(files["/d/options"], "ifname mph2\nname \"me\"\npassword \"pw\"\n") {
 		t.Fatalf("options = %q", files["/d/options"])
 	}
 	tun.PSK = ""
 	files, _ = L2TPFiles(tun, "/d")
-	if _, ok := files["/ipsec/x-ui-home-2.conf"]; ok || len(files) != 3 {
+	if len(files) != 3 {
 		t.Fatalf("without a PSK no IPsec files are written: %v", files)
 	}
 	tun.Password = `p"w`
 	if _, err := L2TPFiles(tun, "/d"); err == nil || !strings.HasPrefix(err.Error(), "password") {
 		t.Fatalf("err = %v", err)
+	}
+}
+
+func TestApplyL2TPWithoutStarterRunsIPsecThroughSwanctl(t *testing.T) {
+	root := ikev2Paths(t)
+	baseDir, unitDir = filepath.Join(root, "home"), filepath.Join(root, "units")
+	var cmds []string
+	run = func(name string, args ...string) error {
+		cmds = append(cmds, name+" "+strings.Join(args, " "))
+		if name == "swanctl" && args[0] == "--stats" {
+			return os.ErrNotExist
+		}
+		return nil
+	}
+	installed := false
+	lookPath = func(bin string) (string, error) {
+		if bin == "ipsec" || !installed && (bin == "swanctl" || bin == "charon-systemd") {
+			return "", os.ErrNotExist
+		}
+		return "/usr/sbin/" + bin, nil
+	}
+	t.Cleanup(func() { run, lookPath = runCommand, exec.LookPath })
+
+	tun := &Tunnel{Id: 2, Kind: KindL2TP, Enable: true, Server: "1.2.3.4", Username: "me", Password: "pw", PSK: "key", Routes: []string{"192.168.1.0/24"}}
+	if err := Apply(tun); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{
+		"apt-get update -qq",
+		"env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq charon-systemd strongswan-swanctl",
+		"swanctl --stats", "systemctl restart strongswan",
+		"systemctl daemon-reload", "systemctl enable x-ui-home-2", "systemctl restart x-ui-home-2",
+	}
+	if !reflect.DeepEqual(cmds, want) {
+		t.Fatalf("commands =\n%v\nwant\n%v", cmds, want)
+	}
+	if conf, _ := os.ReadFile(filepath.Join(swanctlDir, "x-ui-home-2.conf")); string(conf) != l2tpSwanctl {
+		t.Fatalf("swanctl conf =\n%s", conf)
+	}
+	unit, _ := os.ReadFile(filepath.Join(unitDir, "x-ui-home-2.service"))
+	for _, part := range []string{
+		"After=network-online.target strongswan.service\nWants=network-online.target strongswan.service\n",
+		"ExecStartPre=" + filepath.Join(baseDir, "2", "start") + "\nExecStart=/usr/sbin/xl2tpd ",
+		"ExecStopPost=-/usr/sbin/swanctl --terminate --ike x-ui-home-2 --timeout 10\n",
+	} {
+		if !strings.Contains(string(unit), part) {
+			t.Fatalf("unit lacks %q:\n%s", part, unit)
+		}
+	}
+	if strings.Contains(string(unit), "ipsec") {
+		t.Fatalf("unit still calls the ipsec tool:\n%s", unit)
+	}
+
+	cmds = nil
+	tun.Enable = false
+	if err := Apply(tun); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(swanctlDir, "x-ui-home-2.conf")); !os.IsNotExist(err) {
+		t.Fatalf("swanctl conf still there: %v", err)
+	}
+	want = []string{
+		"systemctl disable --now x-ui-home-2",
+		"ip -4 rule del oif mph2 lookup 28002", "ip -4 route flush table 28002",
+		"ip -6 rule del oif mph2 lookup 28002", "ip -6 route flush table 28002",
+		"swanctl --load-all --noprompt",
+		"systemctl daemon-reload",
+	}
+	if !reflect.DeepEqual(cmds, want) {
+		t.Fatalf("teardown commands =\n%v\nwant\n%v", cmds, want)
+	}
+}
+
+// A server upgraded from the ipsec.conf version still has its old connection
+// loaded in starter; left there, charon would hold two SAs for one tunnel.
+func TestApplyL2TPDropsTheStarterConnection(t *testing.T) {
+	root := ikev2Paths(t)
+	baseDir, unitDir = filepath.Join(root, "home"), filepath.Join(root, "units")
+	legacy := []string{filepath.Join(ipsecDir, "x-ui-home-3.conf"), filepath.Join(ipsecDir, "x-ui-home-3.secrets")}
+	if err := os.MkdirAll(ipsecDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	for _, p := range legacy {
+		if err := os.WriteFile(p, []byte("old"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var cmds []string
+	run = func(name string, args ...string) error {
+		cmds = append(cmds, name+" "+strings.Join(args, " "))
+		return nil
+	}
+	lookPath = func(bin string) (string, error) { return "/usr/sbin/" + bin, nil }
+	t.Cleanup(func() { run, lookPath = runCommand, exec.LookPath })
+
+	tun := &Tunnel{Id: 3, Kind: KindL2TP, Enable: true, Server: "1.2.3.4", Username: "me", Password: "pw", PSK: "key", Routes: []string{"192.168.1.0/24"}}
+	if err := Apply(tun); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{
+		"ipsec down x-ui-home-3", "ipsec reload",
+		"swanctl --stats",
+		"systemctl daemon-reload", "systemctl enable x-ui-home-3", "systemctl restart x-ui-home-3",
+	}
+	if !reflect.DeepEqual(cmds, want) {
+		t.Fatalf("commands =\n%v\nwant\n%v", cmds, want)
+	}
+	for _, p := range legacy {
+		if _, err := os.Stat(p); !os.IsNotExist(err) {
+			t.Fatalf("%s still there: %v", p, err)
+		}
+	}
+	unit, _ := os.ReadFile(filepath.Join(unitDir, "x-ui-home-3.service"))
+	if !strings.Contains(string(unit), "Wants=network-online.target strongswan-starter.service\n") {
+		t.Fatalf("unit does not follow starter's charon:\n%s", unit)
 	}
 }
 
