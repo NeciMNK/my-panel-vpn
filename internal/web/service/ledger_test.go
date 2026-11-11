@@ -172,7 +172,7 @@ func TestLedgerFreeGroupFollowsRenameAndDelete(t *testing.T) {
 func TestLedgerSavePayment(t *testing.T) {
 	setupBulkDB(t)
 	ledger := &LedgerService{}
-	want := LedgerPayment{Price: 300, Currency: "RUB", Discounts: "3:10, 6:15", Details: "Card 2200"}
+	want := LedgerPayment{Price: 300, Currency: "RUB", Discounts: "3:10, 6:15", Details: "Card 2200", FriendDiscount: 20}
 	if err := ledger.SavePayment(want); err != nil {
 		t.Fatalf("SavePayment: %v", err)
 	}
@@ -190,6 +190,7 @@ func TestLedgerSavePayment(t *testing.T) {
 	for _, bad := range []LedgerPayment{
 		{Price: 500, Currency: "USD", Discounts: "3:150"},
 		{Price: -1, Currency: "USD"},
+		{Price: 300, Currency: "RUB", FriendDiscount: 100},
 	} {
 		if err := ledger.SavePayment(bad); err == nil {
 			t.Errorf("SavePayment(%+v) accepted", bad)

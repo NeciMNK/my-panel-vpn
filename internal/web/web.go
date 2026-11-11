@@ -322,6 +322,7 @@ const (
 	cadenceXrayLogPrune  = "@every 10m"
 	cadenceTlsCertRenew  = "@every 1h"
 	cadenceCheckHash     = "@every 2m"
+	cadencePaymentOrders = "@every 15s"
 	// cpu.Percent samples over a full minute (blocking), so a finer cadence just
 	// stacks overlapping samplers; subscribers rate-limit alerts to 1/min anyway.
 	cadenceCPUAlarm    = "@every 1m"
@@ -433,6 +434,9 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 		// Hourly so a restart cannot skip a day; each bill is announced once.
 		_, _ = s.cron.AddJob("@hourly", job.LeaderOnly(job.NewLedgerReminderJob()))
 	}
+
+	// Outside the bot block: an invoice paid while the bot is off must still be applied.
+	_, _ = s.cron.AddJob(cadencePaymentOrders, job.LeaderOnly(job.NewPaymentOrdersJob()))
 
 	// Discord-bot-dependent jobs: periodic stats report + database backup.
 	isDiscordEnabled, err := s.settingService.GetDiscordBotEnable()

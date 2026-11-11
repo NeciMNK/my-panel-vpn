@@ -1,6 +1,8 @@
 package tgbot
 
 import (
+	"strings"
+
 	"github.com/mymmrac/telego"
 	tu "github.com/mymmrac/telego/telegoutil"
 )
@@ -73,9 +75,18 @@ func (t *Tgbot) gateCommand(message *telego.Message) (isAdmin bool, ok bool) {
 // no keyboard of ours, so any callback data from one is forged or stale.
 func (t *Tgbot) gateCallback(query *telego.CallbackQuery) (isAdmin bool, ok bool) {
 	level := t.levelOf(query.From.ID)
-	if level == levelStranger && query.Data == cbFreeRequest {
-		t.requestFreePlan(query)
-		return false, false
+	if level == levelStranger {
+		switch {
+		case query.Data == cbFreeRequest:
+			t.requestFreePlan(query)
+			return false, false
+		case query.Data == cbFreeBuy:
+			t.buyFreePlan(query)
+			return false, false
+		case strings.HasPrefix(query.Data, cbPayCheck+" "):
+			t.checkOnlinePayment(query, strings.Fields(query.Data)[1:])
+			return false, false
+		}
 	}
 	if level == levelStranger {
 		t.sendCallbackAnswerTgBot(query.ID, "")

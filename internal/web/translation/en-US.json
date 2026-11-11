@@ -2270,7 +2270,26 @@
       },
       "eventSpeedLow": "Speed below user minimum",
       "eventMasterLeader": "Another master took over",
-      "tgPaymentMoved": "The price, discounts and where to pay are set on the Finance page."
+      "tgPaymentMoved": "The price, discounts and where to pay are set on the Finance page.",
+      "tgFreePlanPrice": "Free plan price (online)",
+      "tgFreePlanPriceDesc": "A one-off payment that keeps spam bots out. Above 0 and with a payment provider connected, a new user pays it by card in the bot and gets the free plan automatically, with no admin approval; the amount comes off their first paid plan. 0, or no provider, keeps the free request that an admin approves.",
+      "tgFreePlanInbounds": "Inbounds for paid free plans",
+      "tgFreePlanInboundsDesc": "A free plan bought online creates the client on these inbounds. Without any, the free plan is not sold online.",
+      "tgPayOnline": "Online payment",
+      "tgPayHowTo": "Connect a payment provider and clients pay by card right in the bot: the subscription is extended automatically, no admin confirmation. Manual \"I paid\" confirmation keeps working when payment details are filled in on the Finance page. Steps: open a YooKassa shop, copy its shopId and secret key here, save, then press \"Check connection\".",
+      "tgPayProvider": "Payment provider",
+      "tgPayProviderDesc": "Who takes card payments. \"Manual\" leaves payments to admin confirmation.",
+      "tgPayManual": "Manual (admin confirms)",
+      "tgPayYooKassa": "YooKassa",
+      "tgPayShopId": "Shop ID (shopId)",
+      "tgPayShopIdDesc": "YooKassa dashboard → Integration → API keys: the number above the keys.",
+      "tgPaySecret": "Secret key",
+      "tgPaySecretDesc": "Issued on the same API keys page; starts with live_ (or test_ for a sandbox shop). Stored on the panel only and never shown again.",
+      "tgPaySecretConfigured": "Set; leave empty to keep the current key.",
+      "tgPayTest": "Check connection",
+      "tgPayTestFailed": "Payment provider check failed (save the settings first)",
+      "tgPayTestLive": "Connected to YooKassa shop {{ .Account }}: real payments.",
+      "tgPayTestSandbox": "Connected to YooKassa test shop {{ .Account }}: no real money moves. Switch to the live shop's keys when ready."
     },
     "xray": {
       "save": "Save",
@@ -2865,7 +2884,10 @@
       "extend": "Extend",
       "extendMonths": "by {count} mo",
       "paidThrough": "paid through {month}",
-      "errDay": "Day must be 1–31"
+      "errDay": "Day must be 1–31",
+      "friendDiscount": "Friends discount",
+      "friendDiscountDesc": "Percent off every plan for clients an admin marked as friends (the \"🤝 Friend\" button on the client card in the bot). The term discounts above apply first.",
+      "errFriendDiscount": "A whole number from 0 to 99"
     }
   },
   "tgbot": {
@@ -3017,7 +3039,13 @@
       "masterLeaderPrevious": "It took over from {{ .Previous }}.",
       "attachedInbounds": "🔗 Inbounds: {{ .Inbounds }}\r\n",
       "clientSearchPrompt": "🔍 Send part of a client's email to find it.",
-      "clientSearchQuery": "🔍 Search: {{ .Query }}"
+      "clientSearchQuery": "🔍 Search: {{ .Query }}",
+      "onlinePaymentFailed": "⚠️ Online payment #{{ .Id }} from {{ .User }} ({{ .Total }}) was received but not applied: {{ .Error }}\r\nApply it by hand.",
+      "onlinePaymentDelayed": "✅ Payment received. The administrator will finish setting it up shortly.",
+      "onlineFreeAdmin": "💳 Free plan bought online: {{ .User }} → {{ .Email }}, {{ .Total }}",
+      "freePaid": "✅ Payment received! Your free plan ({{ .GB }} GB a month) is ready.",
+      "paidOnlineLine": "💳 {{ .Email }} paid online, active until {{ .Date }}",
+      "onlinePaymentAdmin": "💳 Online payment: {{ .User }} — {{ .Email }}, {{ .Months }} mo, {{ .Total }}"
     },
     "buttons": {
       "closeKeyboard": "❌ Close Keyboard",
@@ -3102,7 +3130,12 @@
       "aiExitOnlyIn": "🤖 Only in {{ .Country }}",
       "aiExitAnyCountry": "🌍 In every country",
       "aiExitCountry": "🌍 Country for AI",
-      "clearSearch": "✖️ Clear search"
+      "clearSearch": "✖️ Clear search",
+      "payOnline": "💳 Pay by card",
+      "payNow": "💳 Pay {{ .Total }}",
+      "checkPayment": "🔄 I paid — check",
+      "buyFree": "🆓 Get {{ .GB }} GB/mo free for {{ .Total }}",
+      "friend": "🤝 Friend (discount): {{ .State }}"
     },
     "answers": {
       "broadcastStarted": "🚀 Broadcast started.",
@@ -3140,7 +3173,11 @@
       "aiExitUnavailable": "This server cannot be pinned right now. Please choose again.",
       "aiExitPinned": "📌 Pinned: {{ .Server }}",
       "freeRequested": "✅ Request sent. The admin will review it.",
-      "freeAlreadyRequested": "⏳ You have already sent a request. Please wait."
+      "freeAlreadyRequested": "⏳ You have already sent a request. Please wait.",
+      "paymentUnavailable": "⚠️ Card payment is unavailable right now, try again later.",
+      "paymentPending": "The payment has not arrived yet. It is checked automatically too.",
+      "paymentAlreadyApplied": "✅ This payment is already applied.",
+      "paymentCanceled": "This invoice is closed. Open a new one if you still want to pay."
     },
     "screens": {
       "panel": "Panel",
@@ -3183,7 +3220,15 @@
       "plansTitle": "💰 Price:\r\n",
       "plan": "• {{ .Months }} mo — {{ .Total }}\r\n",
       "planDiscounted": "• {{ .Months }} mo — {{ .Total }} (−{{ .Percent }}%)\r\n",
-      "choosePlan": "💳 Which term did you pay for?"
+      "choosePlan": "💳 Which term did you pay for?",
+      "friend": "🤝 Friends discount: −{{ .Percent }}%\r\n",
+      "credit": "🎁 Your first payment is {{ .Total }} cheaper: you already paid that for the free plan.\r\n",
+      "chooseSubscription": "💳 Which subscription do you pay for?",
+      "chooseOnlinePlan": "💳 {{ .Email }}: choose the term",
+      "invoice": "🧾 <b>Invoice</b>: {{ .Email }}, {{ .Months }} mo — {{ .Total }}\r\nPay on the page: the subscription is extended automatically within a minute.",
+      "freeDescription": "VPN free plan {{ .GB }} GB/mo",
+      "freeInvoice": "🧾 <b>Free plan</b>: {{ .GB }} GB a month, no end date — {{ .Total }} once.\r\nThe payment keeps spam bots out, and {{ .Total }} comes off your first paid subscription. Access is created automatically after payment.",
+      "orderDescription": "VPN {{ .Email }}, {{ .Months }} mo"
     },
     "ledger": {
       "summary": "💰 <b>Finance for {{ .Month }}</b>\r\n\r\n➕ Income: {{ .Income }}\r\n➖ Expenses: {{ .Expenses }} (servers {{ .Servers }})\r\n{{ .Sign }} <b>Result: {{ .Balance }}</b>\r\n👥 Paying clients: {{ .Paying }}, expected {{ .Expected }}\r\n",

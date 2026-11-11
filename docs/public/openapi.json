@@ -569,6 +569,16 @@
             "minimum": 1,
             "type": "integer"
           },
+          "tgFreePlanInbounds": {
+            "example": "1,2",
+            "type": "string"
+          },
+          "tgFreePlanPrice": {
+            "description": "A price above 0 sells the free plan through the provider instead of an admin request.",
+            "maximum": 100000,
+            "minimum": 0,
+            "type": "integer"
+          },
           "tgLang": {
             "type": "string"
           },
@@ -576,6 +586,20 @@
             "maximum": 100,
             "minimum": 0,
             "type": "integer"
+          },
+          "tgPayProvider": {
+            "enum": [
+              "yookassa"
+            ],
+            "example": "yookassa",
+            "type": "string"
+          },
+          "tgPaySecret": {
+            "type": "string"
+          },
+          "tgPayShopId": {
+            "example": "123456",
+            "type": "string"
           },
           "tgRunTime": {
             "type": "string"
@@ -791,8 +815,13 @@
           "tgEnabledEvents",
           "tgFreePlanEnable",
           "tgFreePlanGB",
+          "tgFreePlanInbounds",
+          "tgFreePlanPrice",
           "tgLang",
           "tgMemory",
+          "tgPayProvider",
+          "tgPaySecret",
+          "tgPayShopId",
           "tgRunTime",
           "timeLocation",
           "trafficDiff",
@@ -880,6 +909,9 @@
             "type": "boolean"
           },
           "hasTgBotToken": {
+            "type": "boolean"
+          },
+          "hasTgPaySecret": {
             "type": "boolean"
           },
           "hasTwoFactorToken": {
@@ -1376,6 +1408,16 @@
             "minimum": 1,
             "type": "integer"
           },
+          "tgFreePlanInbounds": {
+            "example": "1,2",
+            "type": "string"
+          },
+          "tgFreePlanPrice": {
+            "description": "A price above 0 sells the free plan through the provider instead of an admin request.",
+            "maximum": 100000,
+            "minimum": 0,
+            "type": "integer"
+          },
           "tgLang": {
             "type": "string"
           },
@@ -1383,6 +1425,20 @@
             "maximum": 100,
             "minimum": 0,
             "type": "integer"
+          },
+          "tgPayProvider": {
+            "enum": [
+              "yookassa"
+            ],
+            "example": "yookassa",
+            "type": "string"
+          },
+          "tgPaySecret": {
+            "type": "string"
+          },
+          "tgPayShopId": {
+            "example": "123456",
+            "type": "string"
           },
           "tgRunTime": {
             "type": "string"
@@ -1452,6 +1508,7 @@
           "hasNordSecret",
           "hasSmtpPassword",
           "hasTgBotToken",
+          "hasTgPaySecret",
           "hasTwoFactorToken",
           "hasWarpSecret",
           "ipLimitAllowlist",
@@ -1606,8 +1663,13 @@
           "tgEnabledEvents",
           "tgFreePlanEnable",
           "tgFreePlanGB",
+          "tgFreePlanInbounds",
+          "tgFreePlanPrice",
           "tgLang",
           "tgMemory",
+          "tgPayProvider",
+          "tgPaySecret",
+          "tgPayShopId",
           "tgRunTime",
           "timeLocation",
           "trafficDiff",
@@ -2120,6 +2182,10 @@
       "ClientBillingView": {
         "description": "ClientBillingView is one client's payment state for the API.",
         "properties": {
+          "credit": {
+            "example": 0,
+            "type": "integer"
+          },
           "currency": {
             "example": "RUB",
             "type": "string"
@@ -2134,6 +2200,10 @@
             "type": "integer"
           },
           "freePlan": {
+            "example": false,
+            "type": "boolean"
+          },
+          "friend": {
             "example": false,
             "type": "boolean"
           },
@@ -2161,10 +2231,12 @@
           }
         },
         "required": [
+          "credit",
           "currency",
           "email",
           "expiryTime",
           "freePlan",
+          "friend",
           "graceDays",
           "nonPaying",
           "pendingMonths",
@@ -4030,6 +4102,11 @@
             "example": "3:10, 6:15, 12:20",
             "type": "string"
           },
+          "friendDiscount": {
+            "description": "FriendDiscount is the percent off every plan for clients marked as friends.",
+            "example": 20,
+            "type": "integer"
+          },
           "price": {
             "example": 300,
             "type": "integer"
@@ -4039,6 +4116,7 @@
           "currency",
           "details",
           "discounts",
+          "friendDiscount",
           "price"
         ],
         "type": "object"
@@ -5116,7 +5194,7 @@
         "type": "object"
       },
       "PaymentPlanPrice": {
-        "description": "PaymentPlanPrice is one payable term with its total in the payment currency (0 without a price).",
+        "description": "PaymentPlanPrice is one payable term with this client's total in the payment currency (0 without a price).",
         "properties": {
           "discountPercent": {
             "example": 10,
@@ -14938,6 +15016,7 @@
                       "currency": "RUB",
                       "details": "Card 2200 0000 0000 0000",
                       "discounts": "3:10, 6:15, 12:20",
+                      "friendDiscount": 20,
                       "price": 300
                     },
                     "price": 300,
@@ -15365,10 +15444,12 @@
                 "example": {
                   "success": true,
                   "obj": {
+                    "credit": 0,
                     "currency": "RUB",
                     "email": "alice",
                     "expiryTime": 1767225600000,
                     "freePlan": false,
+                    "friend": false,
                     "graceDays": 0,
                     "nonPaying": false,
                     "pendingMonths": 0,
@@ -17053,6 +17134,40 @@
                 "example": {
                   "success": true,
                   "msg": "Test notification sent successfully"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/setting/testPayment": {
+      "post": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Check the saved acquiring provider credentials (YooKassa shop id and secret key) without charging anyone. The message says whether the shop is a sandbox or live.",
+        "operationId": "post_panel_api_setting_testPayment",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "msg": "Connected to YooKassa shop 123456 (live)"
                 }
               }
             }

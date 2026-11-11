@@ -41,6 +41,11 @@ export const LedgerPaymentSchema = z.object({
   currency: z.string(),
   discounts: z.string(),
   details: z.string(),
+  friendDiscount: z
+    .number({ error: 'pages.ledger.errFriendDiscount' })
+    .int('pages.ledger.errFriendDiscount')
+    .min(0, 'pages.ledger.errFriendDiscount')
+    .max(99, 'pages.ledger.errFriendDiscount'),
 });
 export type LedgerPayment = z.infer<typeof LedgerPaymentSchema>;
 

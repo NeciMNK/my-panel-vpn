@@ -78,6 +78,7 @@ func allModels() []any {
 		&model.ClientHwid{},
 		&model.ClientExternalLink{},
 		&model.ClientBilling{},
+		&model.PaymentOrder{},
 		&model.LedgerServer{},
 		&model.LedgerEntry{},
 		&model.LedgerFreeGroup{},

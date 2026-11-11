@@ -32,7 +32,7 @@ func (s *ClientService) GetBillingByEmail(email string) (*model.ClientBilling, e
 func (s *ClientService) SaveBilling(billing *model.ClientBilling) error {
 	return database.GetDB().Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "client_id"}},
-		DoUpdates: clause.AssignmentColumns([]string{"trusted", "free_plan", "grace_days", "last_grace_at", "non_paying"}),
+		DoUpdates: clause.AssignmentColumns([]string{"trusted", "free_plan", "grace_days", "last_grace_at", "non_paying", "friend", "credit"}),
 	}).Create(billing).Error
 }
 

@@ -543,6 +543,16 @@ export const SCHEMAS: Record<string, unknown> = {
         "minimum": 1,
         "type": "integer"
       },
+      "tgFreePlanInbounds": {
+        "example": "1,2",
+        "type": "string"
+      },
+      "tgFreePlanPrice": {
+        "description": "A price above 0 sells the free plan through the provider instead of an admin request.",
+        "maximum": 100000,
+        "minimum": 0,
+        "type": "integer"
+      },
       "tgLang": {
         "type": "string"
       },
@@ -550,6 +560,20 @@ export const SCHEMAS: Record<string, unknown> = {
         "maximum": 100,
         "minimum": 0,
         "type": "integer"
+      },
+      "tgPayProvider": {
+        "enum": [
+          "yookassa"
+        ],
+        "example": "yookassa",
+        "type": "string"
+      },
+      "tgPaySecret": {
+        "type": "string"
+      },
+      "tgPayShopId": {
+        "example": "123456",
+        "type": "string"
       },
       "tgRunTime": {
         "type": "string"
@@ -765,8 +789,13 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgEnabledEvents",
       "tgFreePlanEnable",
       "tgFreePlanGB",
+      "tgFreePlanInbounds",
+      "tgFreePlanPrice",
       "tgLang",
       "tgMemory",
+      "tgPayProvider",
+      "tgPaySecret",
+      "tgPayShopId",
       "tgRunTime",
       "timeLocation",
       "trafficDiff",
@@ -854,6 +883,9 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "boolean"
       },
       "hasTgBotToken": {
+        "type": "boolean"
+      },
+      "hasTgPaySecret": {
         "type": "boolean"
       },
       "hasTwoFactorToken": {
@@ -1350,6 +1382,16 @@ export const SCHEMAS: Record<string, unknown> = {
         "minimum": 1,
         "type": "integer"
       },
+      "tgFreePlanInbounds": {
+        "example": "1,2",
+        "type": "string"
+      },
+      "tgFreePlanPrice": {
+        "description": "A price above 0 sells the free plan through the provider instead of an admin request.",
+        "maximum": 100000,
+        "minimum": 0,
+        "type": "integer"
+      },
       "tgLang": {
         "type": "string"
       },
@@ -1357,6 +1399,20 @@ export const SCHEMAS: Record<string, unknown> = {
         "maximum": 100,
         "minimum": 0,
         "type": "integer"
+      },
+      "tgPayProvider": {
+        "enum": [
+          "yookassa"
+        ],
+        "example": "yookassa",
+        "type": "string"
+      },
+      "tgPaySecret": {
+        "type": "string"
+      },
+      "tgPayShopId": {
+        "example": "123456",
+        "type": "string"
       },
       "tgRunTime": {
         "type": "string"
@@ -1426,6 +1482,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "hasNordSecret",
       "hasSmtpPassword",
       "hasTgBotToken",
+      "hasTgPaySecret",
       "hasTwoFactorToken",
       "hasWarpSecret",
       "ipLimitAllowlist",
@@ -1580,8 +1637,13 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgEnabledEvents",
       "tgFreePlanEnable",
       "tgFreePlanGB",
+      "tgFreePlanInbounds",
+      "tgFreePlanPrice",
       "tgLang",
       "tgMemory",
+      "tgPayProvider",
+      "tgPaySecret",
+      "tgPayShopId",
       "tgRunTime",
       "timeLocation",
       "trafficDiff",
@@ -2094,6 +2156,10 @@ export const SCHEMAS: Record<string, unknown> = {
   "ClientBillingView": {
     "description": "ClientBillingView is one client's payment state for the API.",
     "properties": {
+      "credit": {
+        "example": 0,
+        "type": "integer"
+      },
       "currency": {
         "example": "RUB",
         "type": "string"
@@ -2108,6 +2174,10 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "integer"
       },
       "freePlan": {
+        "example": false,
+        "type": "boolean"
+      },
+      "friend": {
         "example": false,
         "type": "boolean"
       },
@@ -2135,10 +2205,12 @@ export const SCHEMAS: Record<string, unknown> = {
       }
     },
     "required": [
+      "credit",
       "currency",
       "email",
       "expiryTime",
       "freePlan",
+      "friend",
       "graceDays",
       "nonPaying",
       "pendingMonths",
@@ -4004,6 +4076,11 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": "3:10, 6:15, 12:20",
         "type": "string"
       },
+      "friendDiscount": {
+        "description": "FriendDiscount is the percent off every plan for clients marked as friends.",
+        "example": 20,
+        "type": "integer"
+      },
       "price": {
         "example": 300,
         "type": "integer"
@@ -4013,6 +4090,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "currency",
       "details",
       "discounts",
+      "friendDiscount",
       "price"
     ],
     "type": "object"
@@ -5090,7 +5168,7 @@ export const SCHEMAS: Record<string, unknown> = {
     "type": "object"
   },
   "PaymentPlanPrice": {
-    "description": "PaymentPlanPrice is one payable term with its total in the payment currency (0 without a price).",
+    "description": "PaymentPlanPrice is one payable term with this client's total in the payment currency (0 without a price).",
     "properties": {
       "discountPercent": {
         "example": 10,
