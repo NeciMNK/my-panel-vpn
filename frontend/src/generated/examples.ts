@@ -420,6 +420,12 @@ export const EXAMPLES: Record<string, unknown> = {
   },
   "Cascade": {
     "createdAt": 0,
+    "directDomains": [
+      ""
+    ],
+    "directIps": [
+      ""
+    ],
     "enable": true,
     "entryInboundTags": [
       ""
@@ -444,7 +450,11 @@ export const EXAMPLES: Record<string, unknown> = {
         "shortId": ""
       }
     ],
+    "mode": "split",
     "name": "RU → DE",
+    "relayInboundTags": [
+      ""
+    ],
     "strategy": "leastPing",
     "updatedAt": 0
   },

@@ -39,9 +39,15 @@ export interface CascadeRecord {
   exitCountry: string;
   entryInboundTags: string[] | null;
   strategy: string;
+  mode?: string;
+  directDomains?: string[] | null;
+  directIps?: string[] | null;
+  relayInboundTags?: string[] | null;
   links: CascadeLink[] | null;
   lastError: string;
 }
+
+export type CascadeMode = 'split' | 'relay' | 'both';
 
 export interface CascadeForm {
   name: string;
@@ -51,6 +57,10 @@ export interface CascadeForm {
   exitCountry: string;
   entryInboundTags: string[];
   strategy: string;
+  mode: CascadeMode;
+  directDomains: string[];
+  directIps: string[];
+  relayInboundTags: string[];
 }
 
 const CASCADES_KEY = ['cascades', 'list'] as const;
@@ -66,6 +76,45 @@ export function emptyCascadeForm(): CascadeForm {
     exitCountry: '',
     entryInboundTags: [],
     strategy: 'leastPing',
+    mode: 'split',
+    directDomains: [],
+    directIps: [],
+    relayInboundTags: [],
+  };
+}
+
+// A cascade saved before modes existed relayed everything.
+export function cascadeMode(mode: string | undefined): CascadeMode {
+  return mode === 'split' || mode === 'both' ? mode : 'relay';
+}
+
+// Flips one of the two switches; turning off the last one is refused.
+export function toggleCascadeMode(
+  mode: CascadeMode,
+  which: 'split' | 'relay',
+  on: boolean,
+): CascadeMode {
+  const split = which === 'split' ? on : mode !== 'relay';
+  const relay = which === 'relay' ? on : mode !== 'split';
+  if (split && relay) return 'both';
+  if (split) return 'split';
+  if (relay) return 'relay';
+  return mode;
+}
+
+export function cascadeFormOf(c: CascadeRecord): CascadeForm {
+  return {
+    name: c.name,
+    enable: c.enable,
+    entryNodeId: c.entryNodeId,
+    exitNodeIds: c.exitNodeIds ?? [],
+    exitCountry: c.exitCountry ?? '',
+    entryInboundTags: c.entryInboundTags ?? [],
+    strategy: c.strategy || 'leastPing',
+    mode: cascadeMode(c.mode),
+    directDomains: c.directDomains ?? [],
+    directIps: c.directIps ?? [],
+    relayInboundTags: c.relayInboundTags ?? [],
   };
 }
 
@@ -140,15 +189,7 @@ export default function CascadesCard({ nodes }: CascadesCardProps) {
   };
   const openEdit = (c: CascadeRecord) => {
     setEditing(c);
-    setForm({
-      name: c.name,
-      enable: c.enable,
-      entryNodeId: c.entryNodeId,
-      exitNodeIds: c.exitNodeIds ?? [],
-      exitCountry: c.exitCountry ?? '',
-      entryInboundTags: c.entryInboundTags ?? [],
-      strategy: c.strategy || 'leastPing',
-    });
+    setForm(cascadeFormOf(c));
   };
   const onSubmit = async () => {
     if (!form) return;
@@ -156,18 +197,7 @@ export default function CascadesCard({ nodes }: CascadesCardProps) {
     if (msg?.success) setForm(null);
   };
   const toggle = (c: CascadeRecord, enable: boolean) =>
-    save.mutate({
-      id: c.id,
-      form: {
-        name: c.name,
-        enable,
-        entryNodeId: c.entryNodeId,
-        exitNodeIds: c.exitNodeIds ?? [],
-        exitCountry: c.exitCountry ?? '',
-        entryInboundTags: c.entryInboundTags ?? [],
-        strategy: c.strategy,
-      },
-    });
+    save.mutate({ id: c.id, form: { ...cascadeFormOf(c), enable } });
 
   const columns = [
     { title: t('pages.nodes.cascade.name'), dataIndex: 'name', key: 'name' },
@@ -188,6 +218,9 @@ export default function CascadesCard({ nodes }: CascadesCardProps) {
             </Tag>
           ))}
           {(c.exitNodeIds ?? []).length > 1 && <Tag>{c.strategy}</Tag>}
+          <Tag color={cascadeMode(c.mode) === 'relay' ? 'default' : 'purple'}>
+            {t(`pages.nodes.cascade.modes.${cascadeMode(c.mode)}`)}
+          </Tag>
         </Space>
       ),
     },
@@ -295,7 +328,10 @@ export default function CascadesCard({ nodes }: CascadesCardProps) {
               <Segmented
                 value={byCountry ? 'country' : 'servers'}
                 options={[
-                  { value: 'servers', label: t('pages.nodes.cascade.exitModeServers') },
+                  {
+                    value: 'servers',
+                    label: t('pages.nodes.cascade.exitModeServers'),
+                  },
                   {
                     value: 'country',
                     label: t('pages.nodes.cascade.exitModeCountry'),
@@ -303,7 +339,10 @@ export default function CascadesCard({ nodes }: CascadesCardProps) {
                   },
                 ]}
                 onChange={(v) =>
-                  setForm({ ...form, exitCountry: v === 'country' ? (countries[0] ?? '') : '' })
+                  setForm({
+                    ...form,
+                    exitCountry: v === 'country' ? (countries[0] ?? '') : '',
+                  })
                 }
               />
             </Form.Item>
@@ -316,7 +355,10 @@ export default function CascadesCard({ nodes }: CascadesCardProps) {
                 <Select
                   aria-label={t('pages.nodes.cascade.country')}
                   value={form.exitCountry}
-                  options={countries.map((c) => ({ value: c, label: `${countryFlag(c)} ${c}` }))}
+                  options={countries.map((c) => ({
+                    value: c,
+                    label: `${countryFlag(c)} ${c}`,
+                  }))}
                   onChange={(v: string) => setForm({ ...form, exitCountry: v })}
                 />
               </Form.Item>
@@ -341,6 +383,81 @@ export default function CascadesCard({ nodes }: CascadesCardProps) {
                   onChange={(v: string) => setForm({ ...form, strategy: v })}
                 />
               </Form.Item>
+            )}
+            <Form.Item
+              label={t('pages.nodes.cascade.split')}
+              extra={t('pages.nodes.cascade.splitHint')}
+            >
+              <Switch
+                aria-label={t('pages.nodes.cascade.split')}
+                checked={form.mode !== 'relay'}
+                disabled={form.mode === 'split'}
+                onChange={(v) =>
+                  setForm({
+                    ...form,
+                    mode: toggleCascadeMode(form.mode, 'split', v),
+                  })
+                }
+              />
+            </Form.Item>
+            <Form.Item
+              label={t('pages.nodes.cascade.relay')}
+              extra={t('pages.nodes.cascade.relayHint')}
+            >
+              <Switch
+                aria-label={t('pages.nodes.cascade.relay')}
+                checked={form.mode !== 'split'}
+                disabled={form.mode === 'relay'}
+                onChange={(v) =>
+                  setForm({
+                    ...form,
+                    mode: toggleCascadeMode(form.mode, 'relay', v),
+                  })
+                }
+              />
+            </Form.Item>
+            {form.mode === 'both' && (
+              <Form.Item
+                label={t('pages.nodes.cascade.relayInbounds')}
+                extra={t('pages.nodes.cascade.relayInboundsHint')}
+                required
+              >
+                <Select
+                  aria-label={t('pages.nodes.cascade.relayInbounds')}
+                  mode="tags"
+                  tagRender={selectTagRender}
+                  value={form.relayInboundTags}
+                  onChange={(v: string[]) => setForm({ ...form, relayInboundTags: v })}
+                />
+              </Form.Item>
+            )}
+            {form.mode !== 'relay' && (
+              <>
+                <Form.Item
+                  label={t('pages.nodes.cascade.directDomains')}
+                  extra={t('pages.nodes.cascade.directDomainsHint')}
+                >
+                  <Select
+                    aria-label={t('pages.nodes.cascade.directDomains')}
+                    mode="tags"
+                    tagRender={selectTagRender}
+                    value={form.directDomains}
+                    onChange={(v: string[]) => setForm({ ...form, directDomains: v })}
+                  />
+                </Form.Item>
+                <Form.Item
+                  label={t('pages.nodes.cascade.directIps')}
+                  extra={t('pages.nodes.cascade.directIpsHint')}
+                >
+                  <Select
+                    aria-label={t('pages.nodes.cascade.directIps')}
+                    mode="tags"
+                    tagRender={selectTagRender}
+                    value={form.directIps}
+                    onChange={(v: string[]) => setForm({ ...form, directIps: v })}
+                  />
+                </Form.Item>
+              </>
             )}
             <Form.Item label={t('pages.nodes.cascade.name')}>
               <Input

@@ -1406,7 +1406,22 @@
         "exitModeServers": "Picked servers",
         "exitModeCountry": "All servers of a country",
         "country": "Exit country",
-        "countryHint": "Traffic leaves through the fastest server of this country. New nodes of the country join automatically."
+        "countryHint": "Traffic leaves through the fastest server of this country. New nodes of the country join automatically.",
+        "split": "Split traffic",
+        "splitHint": "Sites and IPs of the entry server's country (Russia: .ru, .su, .рф, geosite:category-ru, geoip:ru) and the entries below leave the internet from the entry itself; everything else goes through the exit.",
+        "relay": "Pure relay",
+        "relayHint": "The entry only forwards traffic: everything goes through the exit.",
+        "relayInbounds": "Inbounds that only relay",
+        "relayInboundsHint": "With both switches on these entry inbounds relay everything; the other chained inbounds split.",
+        "directDomains": "Also direct: sites",
+        "directDomainsHint": "Added to the country template: example.com, domain:, full:, regexp:, geosite: entries.",
+        "directIps": "Also direct: IPs",
+        "directIpsHint": "Added to the country template: an IP, a CIDR or geoip: entries.",
+        "modes": {
+          "split": "split",
+          "relay": "relay",
+          "both": "split + relay"
+        }
       },
       "country": "Country",
       "countryHint": "Two-letter country code (DE, NL, FI). Nodes of one country together join \"by country\" cascades.",

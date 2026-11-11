@@ -1747,6 +1747,18 @@
             "format": "int64",
             "type": "integer"
           },
+          "directDomains": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "directIps": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
           "enable": {
             "example": true,
             "type": "boolean"
@@ -1785,9 +1797,20 @@
             },
             "type": "array"
           },
+          "mode": {
+            "description": "Mode is split, relay or both; empty is a cascade saved before modes, a relay.",
+            "example": "split",
+            "type": "string"
+          },
           "name": {
             "example": "RU → DE",
             "type": "string"
+          },
+          "relayInboundTags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           },
           "strategy": {
             "example": "leastPing",
@@ -1800,6 +1823,8 @@
         },
         "required": [
           "createdAt",
+          "directDomains",
+          "directIps",
           "enable",
           "entryInboundTags",
           "entryNodeId",
@@ -1808,7 +1833,9 @@
           "id",
           "lastError",
           "links",
+          "mode",
           "name",
+          "relayInboundTags",
           "strategy",
           "updatedAt"
         ],
@@ -12444,6 +12471,12 @@
                   "obj": [
                     {
                       "createdAt": 0,
+                      "directDomains": [
+                        ""
+                      ],
+                      "directIps": [
+                        ""
+                      ],
                       "enable": true,
                       "entryInboundTags": [
                         ""
@@ -12468,7 +12501,11 @@
                           "shortId": ""
                         }
                       ],
+                      "mode": "split",
                       "name": "RU → DE",
+                      "relayInboundTags": [
+                        ""
+                      ],
                       "strategy": "leastPing",
                       "updatedAt": 0
                     }
@@ -12531,6 +12568,12 @@
                   "success": true,
                   "obj": {
                     "createdAt": 0,
+                    "directDomains": [
+                      ""
+                    ],
+                    "directIps": [
+                      ""
+                    ],
                     "enable": true,
                     "entryInboundTags": [
                       ""
@@ -12555,7 +12598,11 @@
                         "shortId": ""
                       }
                     ],
+                    "mode": "split",
                     "name": "RU → DE",
+                    "relayInboundTags": [
+                      ""
+                    ],
                     "strategy": "leastPing",
                     "updatedAt": 0
                   }
@@ -12628,6 +12675,12 @@
                   "success": true,
                   "obj": {
                     "createdAt": 0,
+                    "directDomains": [
+                      ""
+                    ],
+                    "directIps": [
+                      ""
+                    ],
                     "enable": true,
                     "entryInboundTags": [
                       ""
@@ -12652,7 +12705,11 @@
                         "shortId": ""
                       }
                     ],
+                    "mode": "split",
                     "name": "RU → DE",
+                    "relayInboundTags": [
+                      ""
+                    ],
                     "strategy": "leastPing",
                     "updatedAt": 0
                   }

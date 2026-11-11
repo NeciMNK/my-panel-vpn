@@ -421,6 +421,8 @@ export interface Blocker {
 
 export interface Cascade {
   createdAt: number;
+  directDomains: string[];
+  directIps: string[];
   enable: boolean;
   entryInboundTags: string[];
   entryNodeId: number;
@@ -429,7 +431,9 @@ export interface Cascade {
   id: number;
   lastError: string;
   links: CascadeLink[];
+  mode: string;
   name: string;
+  relayInboundTags: string[];
   strategy: string;
   updatedAt: number;
 }
