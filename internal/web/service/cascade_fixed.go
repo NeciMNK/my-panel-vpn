@@ -5,8 +5,6 @@ import (
 	"slices"
 	"strings"
 
-	"gorm.io/gorm"
-
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
@@ -37,23 +35,7 @@ func (s *CascadeService) SetFixedExit(ctx context.Context, req *CascadeFixedExit
 		}
 	}
 	country := nodeCountry(req.NodeId)
-	err = database.GetDB().Transaction(func(tx *gorm.DB) error {
-		var mine []model.CascadeFixedExit
-		if err := tx.Where("email = ?", email).Find(&mine).Error; err != nil {
-			return err
-		}
-		for _, r := range mine {
-			if r.NodeId == req.NodeId {
-				return nil
-			}
-			if country != "" && nodeCountry(r.NodeId) == country {
-				if err := tx.Delete(&model.CascadeFixedExit{}, r.Id).Error; err != nil {
-					return err
-				}
-			}
-		}
-		return tx.Create(&model.CascadeFixedExit{Email: email, NodeId: req.NodeId}).Error
-	})
+	err = replaceFixedExit(email, req.NodeId, func(id int) bool { return country != "" && nodeCountry(id) == country })
 	if err != nil {
 		return err
 	}
