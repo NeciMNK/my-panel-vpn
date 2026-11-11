@@ -1447,7 +1447,7 @@
       "save": "保存",
       "infoDesc": "ここでのすべての変更は、保存してパネルを再起動する必要があります",
       "restartPanel": "パネルを再起動",
-      "migrateFrom": "移行元…",
+      "migrateFrom": "移行元",
       "restartPanelDesc": "パネルを再起動してもよろしいですか？再起動後にパネルにアクセスできない場合は、サーバーでパネルログを確認してください",
       "restartPanelSuccess": "パネルの再起動に成功しました",
       "actions": "操作",
