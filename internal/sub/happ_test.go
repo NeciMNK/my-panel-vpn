@@ -382,3 +382,32 @@ func TestApplyHappHeaders_LocalProxyAuth(t *testing.T) {
 		})
 	}
 }
+
+// onadd routing reaches Happ only when the subscription is first added, so
+// rule changes never reached existing users (#15); RoutingUpdate sends add.
+func TestHappRoutingUpdateSendsAddDeeplink(t *testing.T) {
+	cases := []struct {
+		name   string
+		update bool
+		rules  string
+		want   string
+	}{
+		{"off keeps onadd", false, "happ://routing/onadd/e30=", "happ://routing/onadd/e30="},
+		{"on turns onadd into add", true, "happ://routing/onadd/e30=", "happ://routing/add/e30="},
+		{"on keeps an explicit add", true, "happ://routing/add/e30=", "happ://routing/add/e30="},
+		{"on leaves routing off alone", true, "happ://routing/off", "happ://routing/off"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			controller := &SUBController{happConfig: HappConfig{RoutingUpdate: tc.update}}
+			recorder := httptest.NewRecorder()
+			ctx, _ := gin.CreateTestContext(recorder)
+			ctx.Request = httptest.NewRequest(http.MethodGet, "/sub/test", nil)
+			ctx.Request.Header.Set("User-Agent", "Happ/1.2.0")
+			controller.ApplyCommonHeaders(ctx, "", "", "Title", "", "", "", true, tc.rules, false)
+			if got := recorder.Header().Get("Routing"); got != tc.want {
+				t.Fatalf("Routing = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}

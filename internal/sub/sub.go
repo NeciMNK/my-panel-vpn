@@ -241,6 +241,7 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 
 	happCfg := HappConfig{}
 	happCfg.AutoDetect, _ = s.settingService.GetSubHappAutoDetect()
+	happCfg.RoutingUpdate, _ = s.settingService.GetSubHappRoutingUpdate()
 	happCfg.ProviderId, _ = s.settingService.GetSubHappProviderId()
 	happCfg.NewUrl, _ = s.settingService.GetSubHappNewUrl()
 	happCfg.FallbackUrl, _ = s.settingService.GetSubHappFallbackUrl()

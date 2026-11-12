@@ -94,6 +94,7 @@ export class AllSetting {
   subThemeDir = '';
   subHideSettings = false;
   subHappAutoDetect = false;
+  subHappRoutingUpdate = false;
   subHappProviderId = '';
   subHappNewUrl = '';
   subHappFallbackUrl = '';

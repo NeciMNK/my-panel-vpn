@@ -1599,6 +1599,8 @@
       "happLinkEnable": "Liên kết đăng ký được mã hóa",
       "happLinkEnableDesc": "Cho phép tạo liên kết Happ được mã hóa trong cửa sổ mã QR của khách hàng. URL đăng ký được xử lý cục bộ.",
       "subEnableRoutingDesc": "Cài đặt toàn cục để bật định tuyến trong ứng dụng khách VPN. (Chỉ dành cho Happ)",
+      "subHappRoutingUpdate": "Update routing on added subscriptions",
+      "subHappRoutingUpdateDesc": "Sends routing as happ://routing/add, so rule changes reach users who already added the subscription. Off: happ://routing/onadd, applied only when the subscription is first added.",
       "subRoutingRules": "Quy tắc định tuyến",
       "subRoutingRulesDesc": "Dán deeplink happ:// có sẵn hoặc một URL HTTPS cố định. Bảng điều khiển cập nhật quy tắc từ xa trong nền và giữ giá trị hợp lệ gần nhất, nên yêu cầu đăng ký không phải chờ nguồn. (Chỉ dành cho Happ)",
       "subHideSettings": "Ẩn cài đặt máy chủ",

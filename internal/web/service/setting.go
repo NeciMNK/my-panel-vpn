@@ -145,6 +145,7 @@ var defaultValueMap = map[string]string{
 	"subRoutingRules":             "",
 	"subHideSettings":             "false",
 	"subHappAutoDetect":           "false",
+	"subHappRoutingUpdate":        "false",
 	"subHappProviderId":           "",
 	"subHappNewUrl":               "",
 	"subHappFallbackUrl":          "",
@@ -1124,6 +1125,10 @@ func (s *SettingService) GetSubRoutingRules() (string, error) {
 
 func (s *SettingService) GetSubHideSettings() (bool, error) {
 	return s.getBool("subHideSettings")
+}
+
+func (s *SettingService) GetSubHappRoutingUpdate() (bool, error) {
+	return s.getBool("subHappRoutingUpdate")
 }
 
 func (s *SettingService) GetSubHappAutoDetect() (bool, error) {

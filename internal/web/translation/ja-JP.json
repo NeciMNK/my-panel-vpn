@@ -1599,6 +1599,8 @@
       "happLinkEnable": "暗号化されたサブスクリプションリンク",
       "happLinkEnableDesc": "クライアントの QR コード画面で、暗号化された Happ リンクを生成できるようにします。サブスクリプション URL はローカルで処理されます。",
       "subEnableRoutingDesc": "VPNクライアントでルーティングを有効にするためのグローバル設定。(Happのみ)",
+      "subHappRoutingUpdate": "Update routing on added subscriptions",
+      "subHappRoutingUpdateDesc": "Sends routing as happ://routing/add, so rule changes reach users who already added the subscription. Off: happ://routing/onadd, applied only when the subscription is first added.",
       "subRoutingRules": "ルーティングルール",
       "subRoutingRulesDesc": "完成した happ:// ディープリンク、または永続的な HTTPS URL を入力します。パネルはリモートルールをバックグラウンドで更新し、最後の有効値を保持するため、サブスクリプション要求は取得を待ちません。(Happのみ)",
       "subHideSettings": "サーバー設定を非表示",

@@ -363,6 +363,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "subHappProviderId": {
         "type": "string"
       },
+      "subHappRoutingUpdate": {
+        "type": "boolean"
+      },
       "subHappSubExpire": {
         "type": "boolean"
       },
@@ -780,6 +783,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "subHappPerAppMode",
       "subHappPingType",
       "subHappProviderId",
+      "subHappRoutingUpdate",
       "subHappSubExpire",
       "subHappSubExpireButtonLink",
       "subHappSubInfoButtonLink",
@@ -1205,6 +1209,9 @@ export const SCHEMAS: Record<string, unknown> = {
       },
       "subHappProviderId": {
         "type": "string"
+      },
+      "subHappRoutingUpdate": {
+        "type": "boolean"
       },
       "subHappSubExpire": {
         "type": "boolean"
@@ -1632,6 +1639,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "subHappPerAppMode",
       "subHappPingType",
       "subHappProviderId",
+      "subHappRoutingUpdate",
       "subHappSubExpire",
       "subHappSubExpireButtonLink",
       "subHappSubInfoButtonLink",

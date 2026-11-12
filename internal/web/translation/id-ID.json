@@ -1599,6 +1599,8 @@
       "happLinkEnable": "Tautan langganan terenkripsi",
       "happLinkEnableDesc": "Izinkan pembuatan tautan Happ terenkripsi di jendela kode QR klien. URL langganan diproses secara lokal.",
       "subEnableRoutingDesc": "Pengaturan global untuk mengaktifkan perutean (routing) di klien VPN. (Hanya untuk Happ)",
+      "subHappRoutingUpdate": "Update routing on added subscriptions",
+      "subHappRoutingUpdateDesc": "Sends routing as happ://routing/add, so rule changes reach users who already added the subscription. Off: happ://routing/onadd, applied only when the subscription is first added.",
       "subRoutingRules": "Aturan routing",
       "subRoutingRulesDesc": "Tempel deeplink happ:// siap pakai atau satu URL HTTPS permanen. Panel memperbarui aturan jarak jauh di latar belakang dan menyimpan nilai valid terakhir, sehingga permintaan langganan tidak menunggu sumber. (Hanya untuk Happ)",
       "subHideSettings": "Sembunyikan pengaturan server",

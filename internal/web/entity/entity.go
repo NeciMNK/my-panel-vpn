@@ -148,6 +148,7 @@ type AllSetting struct {
 
 	// Happ client customization settings (app-management / routing / UX).
 	SubHappAutoDetect          bool   `json:"subHappAutoDetect" form:"subHappAutoDetect"`
+	SubHappRoutingUpdate       bool   `json:"subHappRoutingUpdate" form:"subHappRoutingUpdate"`
 	SubHappProviderId          string `json:"subHappProviderId" form:"subHappProviderId"`
 	SubHappNewUrl              string `json:"subHappNewUrl" form:"subHappNewUrl"`
 	SubHappFallbackUrl         string `json:"subHappFallbackUrl" form:"subHappFallbackUrl"`

@@ -1599,6 +1599,8 @@
       "happLinkEnable": "روابط اشتراك مشفّرة",
       "happLinkEnableDesc": "السماح بإنشاء روابط Happ مشفّرة في نافذة رمز الاستجابة السريعة للعميل. تُعالج عناوين الاشتراك محليًا.",
       "subEnableRoutingDesc": "إعداد عام لتمكين التوجيه (Routing) في عميل VPN. (فقط لـ Happ)",
+      "subHappRoutingUpdate": "Update routing on added subscriptions",
+      "subHappRoutingUpdateDesc": "Sends routing as happ://routing/add, so rule changes reach users who already added the subscription. Off: happ://routing/onadd, applied only when the subscription is first added.",
       "subRoutingRules": "قواعد التوجيه",
       "subRoutingRulesDesc": "ألصق رابط happ:// جاهزًا أو عنوان HTTPS دائمًا. تحدّث اللوحة القواعد البعيدة في الخلفية وتحتفظ بآخر قيمة صالحة، لذلك لا تنتظر طلبات الاشتراك المصدر. (فقط لـ Happ)",
       "subHideSettings": "إخفاء إعدادات الخادم",

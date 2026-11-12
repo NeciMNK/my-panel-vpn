@@ -116,6 +116,7 @@ export interface AllSetting {
   subHappPerAppMode: string;
   subHappPingType: string;
   subHappProviderId: string;
+  subHappRoutingUpdate: boolean;
   subHappSubExpire: boolean;
   subHappSubExpireButtonLink: string;
   subHappSubInfoButtonLink: string;
@@ -317,6 +318,7 @@ export interface AllSettingView {
   subHappPerAppMode: string;
   subHappPingType: string;
   subHappProviderId: string;
+  subHappRoutingUpdate: boolean;
   subHappSubExpire: boolean;
   subHappSubExpireButtonLink: string;
   subHappSubInfoButtonLink: string;

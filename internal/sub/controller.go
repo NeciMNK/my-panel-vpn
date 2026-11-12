@@ -26,8 +26,11 @@ import (
 )
 
 const (
-	subMihomoPath      = "/mihomo/"
-	subClashLegacyPath = "/clash-legacy/"
+	subMihomoPath = "/mihomo/"
+
+	happRoutingOnAddPrefix = "happ://routing/onadd/"
+	happRoutingAddPrefix   = "happ://routing/add/"
+	subClashLegacyPath     = "/clash-legacy/"
 )
 
 // writeSubError translates a service-layer result into an HTTP response.
@@ -1019,6 +1022,11 @@ func (a *SUBController) ApplyCommonHeaders(
 		c.Writer.Header().Set("Routing-Enable", "true")
 	} else if happManaged {
 		c.Writer.Header().Set("Routing-Enable", "0")
+	}
+	if a.happConfig.RoutingUpdate {
+		if payload, ok := strings.CutPrefix(rules, happRoutingOnAddPrefix); ok {
+			rules = happRoutingAddPrefix + payload
+		}
 	}
 	if (routingErr == nil || !remote) && strings.TrimSpace(rules) != "" {
 		c.Writer.Header().Set("Routing", rules)

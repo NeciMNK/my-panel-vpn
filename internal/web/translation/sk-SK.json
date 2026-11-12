@@ -1724,6 +1724,8 @@
       "happLinkEnable": "Šifrované odkazy na odber",
       "happLinkEnableDesc": "Umožní vytvárať šifrované odkazy Happ v okne QR kódu klienta. URL odberov sa spracúvajú miestne.",
       "subEnableRoutingDesc": "Globálne zapnutie smerovania vo VPN klientovi. Iba pre Happ.",
+      "subHappRoutingUpdate": "Update routing on added subscriptions",
+      "subHappRoutingUpdateDesc": "Sends routing as happ://routing/add, so rule changes reach users who already added the subscription. Off: happ://routing/onadd, applied only when the subscription is first added.",
       "subRoutingRules": "Pravidlá smerovania",
       "subRoutingRulesDesc": "Vložte hotový odkaz happ:// alebo jednu stálu URL HTTPS vracajúcu takýto odkaz či JSON. Panel pravidlá obnovuje na pozadí a ponechá poslednú platnú hodnotu. Požiadavky na odber preto nečakajú na zdroj. Iba pre Happ.",
       "subHideSettings": "Skryť nastavenia servera",

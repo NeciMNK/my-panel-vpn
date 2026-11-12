@@ -1599,6 +1599,8 @@
       "happLinkEnable": "加密订阅链接",
       "happLinkEnableDesc": "允许在客户端二维码窗口生成 Happ 加密链接，订阅地址在本地处理。",
       "subEnableRoutingDesc": "在 VPN 客户端中启用路由的全局设置。（仅限 Happ）",
+      "subHappRoutingUpdate": "Update routing on added subscriptions",
+      "subHappRoutingUpdateDesc": "Sends routing as happ://routing/add, so rule changes reach users who already added the subscription. Off: happ://routing/onadd, applied only when the subscription is first added.",
       "subRoutingRules": "路由规则",
       "subRoutingRulesDesc": "粘贴现成的 happ:// 深层链接或一个固定 HTTPS URL。面板会在后台更新远程规则并保留最后一个有效值，因此订阅请求无需等待远程源。（仅限 Happ）",
       "subHideSettings": "隐藏服务器设置",

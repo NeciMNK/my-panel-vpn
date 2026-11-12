@@ -1599,6 +1599,8 @@
       "happLinkEnable": "Enlaces de suscripción cifrados",
       "happLinkEnableDesc": "Permite generar enlaces cifrados de Happ en la ventana del código QR del cliente. Las URL de suscripción se procesan localmente.",
       "subEnableRoutingDesc": "Configuración global para habilitar el enrutamiento en el cliente VPN. (Solo para Happ)",
+      "subHappRoutingUpdate": "Update routing on added subscriptions",
+      "subHappRoutingUpdateDesc": "Sends routing as happ://routing/add, so rule changes reach users who already added the subscription. Off: happ://routing/onadd, applied only when the subscription is first added.",
       "subRoutingRules": "Reglas de enrutamiento",
       "subRoutingRulesDesc": "Pegue un enlace happ:// listo o una URL HTTPS permanente. El panel actualiza las reglas remotas en segundo plano y conserva el último valor válido, sin retrasar las solicitudes de suscripción. (Solo para Happ)",
       "subHideSettings": "Ocultar configuración del servidor",

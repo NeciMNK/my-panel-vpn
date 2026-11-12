@@ -1599,6 +1599,8 @@
       "happLinkEnable": "Зашифровані посилання на підписку",
       "happLinkEnableDesc": "Дозволяє створювати зашифровані посилання Happ у вікні QR-коду клієнта. Адреси підписок обробляються локально.",
       "subEnableRoutingDesc": "Глобальне налаштування для увімкнення маршрутизації у VPN-клієнті. (Тільки для Happ)",
+      "subHappRoutingUpdate": "Update routing on added subscriptions",
+      "subHappRoutingUpdateDesc": "Sends routing as happ://routing/add, so rule changes reach users who already added the subscription. Off: happ://routing/onadd, applied only when the subscription is first added.",
       "subRoutingRules": "Правила маршрутизації",
       "subRoutingRulesDesc": "Вставте готове посилання happ:// або одну постійну HTTPS-адресу. Панель оновлює віддалені правила у фоні та зберігає останнє коректне значення, тому запит підписки не чекає на джерело. (Тільки для Happ)",
       "subHideSettings": "Приховати налаштування сервера",

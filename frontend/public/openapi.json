@@ -389,6 +389,9 @@
           "subHappProviderId": {
             "type": "string"
           },
+          "subHappRoutingUpdate": {
+            "type": "boolean"
+          },
           "subHappSubExpire": {
             "type": "boolean"
           },
@@ -806,6 +809,7 @@
           "subHappPerAppMode",
           "subHappPingType",
           "subHappProviderId",
+          "subHappRoutingUpdate",
           "subHappSubExpire",
           "subHappSubExpireButtonLink",
           "subHappSubInfoButtonLink",
@@ -1231,6 +1235,9 @@
           },
           "subHappProviderId": {
             "type": "string"
+          },
+          "subHappRoutingUpdate": {
+            "type": "boolean"
           },
           "subHappSubExpire": {
             "type": "boolean"
@@ -1658,6 +1665,7 @@
           "subHappPerAppMode",
           "subHappPingType",
           "subHappProviderId",
+          "subHappRoutingUpdate",
           "subHappSubExpire",
           "subHappSubExpireButtonLink",
           "subHappSubInfoButtonLink",

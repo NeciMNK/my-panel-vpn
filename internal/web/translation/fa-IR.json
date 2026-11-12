@@ -1603,6 +1603,8 @@
       "happLinkEnable": "لینک‌های رمزگذاری‌شدهٔ اشتراک",
       "happLinkEnableDesc": "امکان ایجاد لینک‌های رمزگذاری‌شدهٔ Happ در پنجرهٔ کد QR کلاینت را فراهم می‌کند. نشانی‌های اشتراک به‌صورت محلی پردازش می‌شوند.",
       "subEnableRoutingDesc": "تنظیمات سراسری برای فعال‌سازی مسیریابی در کلاینت VPN. (فقط برای Happ)",
+      "subHappRoutingUpdate": "Update routing on added subscriptions",
+      "subHappRoutingUpdateDesc": "Sends routing as happ://routing/add, so rule changes reach users who already added the subscription. Off: happ://routing/onadd, applied only when the subscription is first added.",
       "subRoutingRules": "قوانین مسیریابی",
       "subRoutingRulesDesc": "یک پیوند آماده happ:// یا یک نشانی دائمی HTTPS وارد کنید. پنل قوانین راه‌دور را در پس‌زمینه به‌روزرسانی و آخرین مقدار معتبر را نگه می‌دارد، بنابراین درخواست اشتراک منتظر منبع نمی‌ماند. (فقط برای Happ)",
       "subHideSettings": "پنهان کردن تنظیمات سرور",

@@ -103,6 +103,7 @@ export const AllSettingSchema = z
     subJsonObservatory: z.string().optional(),
     subHideSettings: z.boolean().optional(),
     subHappAutoDetect: z.boolean().optional(),
+    subHappRoutingUpdate: z.boolean().optional(),
     subHappProviderId: z.string().optional(),
     subHappNewUrl: z.string().optional(),
     subHappFallbackUrl: z.string().optional(),

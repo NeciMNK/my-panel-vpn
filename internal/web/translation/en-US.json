@@ -1724,6 +1724,8 @@
       "happLinkEnable": "Encrypted subscription links",
       "happLinkEnableDesc": "Allow encrypted Happ links to be generated in the client QR code window. Subscription URLs are processed locally.",
       "subEnableRoutingDesc": "Global setting to enable routing in the VPN client. (Only for Happ)",
+      "subHappRoutingUpdate": "Update routing on added subscriptions",
+      "subHappRoutingUpdateDesc": "Sends routing as happ://routing/add, so rule changes reach users who already added the subscription. Off: happ://routing/onadd, applied only when the subscription is first added.",
       "subRoutingRules": "Routing rules",
       "subRoutingRulesDesc": "Paste a ready happ:// deeplink or one permanent HTTPS URL returning a deeplink or JSON. The panel refreshes remote rules in the background and keeps the last valid value, so subscription requests never wait for the source. (Happ only)",
       "subHideSettings": "Hide server settings",
