@@ -36,7 +36,11 @@ func (a *AIDomainsController) save(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return
 	}
-	jsonMsg(c, I18nWeb(c, "pages.aiDomains.saved"), a.aiDomainService.Save(body.Domains))
+	if err := a.aiDomainService.Save(body.Domains); err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.aiDomains.notSaved"), err)
+		return
+	}
+	jsonMsg(c, I18nWeb(c, "pages.aiDomains.saved"), nil)
 }
 
 type aiSuggestionAnswerBody struct {
@@ -51,10 +55,14 @@ func (a *AIDomainsController) answer(c *gin.Context) {
 		return
 	}
 	sg, claimed, err := a.aiDomainService.Resolve(body.Id, body.Status)
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.aiDomains.notAnswered"), err)
+		return
+	}
 	msg := I18nWeb(c, "pages.aiDomains.alreadyAnswered")
-	if err == nil && claimed {
+	if claimed {
 		a.tgbot.NotifyAISuggestionAnswer(sg)
 		msg = I18nWeb(c, "pages.aiDomains.answered")
 	}
-	jsonMsgObj(c, msg, sg, err)
+	jsonMsgObj(c, msg, sg, nil)
 }

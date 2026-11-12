@@ -2939,7 +2939,9 @@
       "declined": "Added none",
       "present": "All already listed",
       "answered": "The client has been told",
-      "alreadyAnswered": "This suggestion has already been answered"
+      "alreadyAnswered": "This suggestion has already been answered",
+      "notSaved": "The list was not saved",
+      "notAnswered": "The answer was not sent"
     }
   },
   "tgbot": {
