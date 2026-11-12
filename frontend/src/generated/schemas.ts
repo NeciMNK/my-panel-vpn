@@ -6221,6 +6221,10 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": false,
         "type": "boolean"
       },
+      "applyToSub": {
+        "example": false,
+        "type": "boolean"
+      },
       "autoRenew": {
         "example": true,
         "type": "boolean"
@@ -6278,6 +6282,7 @@ export const SCHEMAS: Record<string, unknown> = {
     },
     "required": [
       "applyToPanel",
+      "applyToSub",
       "autoRenew",
       "certFile",
       "createdAt",

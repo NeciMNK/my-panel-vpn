@@ -143,9 +143,16 @@ func (s *Service) get(id int) (*model.TlsCertificate, error) {
 	return &cert, nil
 }
 
+// IssueOptions are the per-certificate switches chosen when it is requested.
+type IssueOptions struct {
+	AutoRenew    bool
+	ApplyToPanel bool
+	ApplyToSub   bool
+}
+
 // Create stores a pending certificate and issues it in the background; the
 // DNS-01 propagation wait outlasts an HTTP request.
-func (s *Service) Create(domains []string, autoRenew, applyToPanel bool) (*model.TlsCertificate, error) {
+func (s *Service) Create(domains []string, opts IssueOptions) (*model.TlsCertificate, error) {
 	domains, err := NormalizeDomains(domains)
 	if err != nil {
 		return nil, err
@@ -167,8 +174,9 @@ func (s *Service) Create(domains []string, autoRenew, applyToPanel bool) (*model
 	cert := &model.TlsCertificate{
 		Domains:      domains,
 		Status:       model.TlsCertStatusPending,
-		AutoRenew:    autoRenew,
-		ApplyToPanel: applyToPanel,
+		AutoRenew:    opts.AutoRenew,
+		ApplyToPanel: opts.ApplyToPanel,
+		ApplyToSub:   opts.ApplyToSub,
 	}
 	if err := database.GetDB().Create(cert).Error; err != nil {
 		return nil, err
@@ -328,10 +336,12 @@ func (s *Service) issue(id int) {
 		}
 		restart = changed
 	}
-	if changed, err := s.applyToSub(cert); err != nil {
-		logger.Warning("TLS certificate not applied to the subscription server:", err)
-	} else if changed {
-		restart = true
+	if cert.ApplyToSub {
+		if changed, err := s.applyToSub(cert); err != nil {
+			logger.Warning("TLS certificate not applied to the subscription server:", err)
+		} else if changed {
+			restart = true
+		}
 	}
 	if restart {
 		if err := restartPanel(); err != nil {

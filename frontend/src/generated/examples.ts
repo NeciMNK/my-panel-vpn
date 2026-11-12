@@ -1624,6 +1624,7 @@ export const EXAMPLES: Record<string, unknown> = {
   },
   "TlsCertificate": {
     "applyToPanel": false,
+    "applyToSub": false,
     "autoRenew": true,
     "certFile": "/etc/x-ui/certs/example.com/fullchain.pem",
     "createdAt": 1710000000000,

@@ -2272,6 +2272,8 @@
         "autoRenew": "Auto-renew",
         "applyToPanel": "Use for the panel",
         "applyToPanelDesc": "Once issued, the panel switches to this certificate and restarts.",
+        "applyToSub": "Use for the subscription server",
+        "applyToSubDesc": "The subscription server switches to HTTPS on this certificate and the panel restarts. Leave it off when a reverse proxy reaches the subscription port over plain HTTP.",
         "status": "Status",
         "statusPending": "Issuing…",
         "statusValid": "Valid",

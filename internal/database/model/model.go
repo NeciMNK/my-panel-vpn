@@ -1856,6 +1856,7 @@ type TlsCertificate struct {
 	NotAfter     int64                      `json:"notAfter" example:"1717000000000"`
 	AutoRenew    bool                       `json:"autoRenew" example:"true"`
 	ApplyToPanel bool                       `json:"applyToPanel" example:"false"`
+	ApplyToSub   bool                       `json:"applyToSub" example:"false"`
 	LastError    string                     `json:"lastError" gorm:"type:text" example:""`
 	NodeInstalls map[int]TlsCertNodeInstall `json:"nodeInstalls" gorm:"serializer:json;type:text"`
 	CreatedAt    int64                      `json:"createdAt" gorm:"autoCreateTime:milli" example:"1710000000000"`

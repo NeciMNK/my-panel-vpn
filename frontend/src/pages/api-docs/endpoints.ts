@@ -3395,6 +3395,13 @@ export const sections: readonly Section[] = [
             optional: true,
             desc: 'Serve the panel over this certificate once issued (restarts the panel when the paths change).',
           },
+          {
+            name: 'applyToSub',
+            in: 'body (form)',
+            type: 'boolean',
+            optional: true,
+            desc: 'Serve the subscription server over this certificate once issued, when its cert field is empty or the certificate covers the subscription host (restarts the panel). Off by default: a reverse proxy in front of the subscription port usually talks plain HTTP to it.',
+          },
         ],
         responseSchema: 'TlsCertificate',
       },

@@ -132,7 +132,7 @@ func TestIssueWritesFilesAndAppliesToPanel(t *testing.T) {
 		}
 	}
 
-	created, err := h.svc.Create([]string{"*.example.com", "example.com"}, true, true)
+	created, err := h.svc.Create([]string{"*.example.com", "example.com"}, IssueOptions{AutoRenew: true, ApplyToPanel: true})
 	if err != nil {
 		t.Fatalf("Create: %v", err)
 	}
@@ -176,7 +176,7 @@ func TestApplyLeavesSeparateSubCertAlone(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if _, err := h.svc.Create([]string{"panel.example.com"}, false, true); err != nil {
+	if _, err := h.svc.Create([]string{"panel.example.com"}, IssueOptions{ApplyToPanel: true}); err != nil {
 		t.Fatal(err)
 	}
 	if got, _ := h.svc.settingService.GetSubCertFile(); got != "/old/sub.pem" {
@@ -187,7 +187,7 @@ func TestApplyLeavesSeparateSubCertAlone(t *testing.T) {
 // A failed renewal must leave the working files and expiry in place.
 func TestFailedRenewalKeepsPreviousCertificate(t *testing.T) {
 	h := setup(t)
-	created, err := h.svc.Create([]string{"example.com"}, true, false)
+	created, err := h.svc.Create([]string{"example.com"}, IssueOptions{AutoRenew: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -212,7 +212,7 @@ func TestFailedRenewalKeepsPreviousCertificate(t *testing.T) {
 
 func TestRenewDue(t *testing.T) {
 	h := setup(t)
-	created, err := h.svc.Create([]string{"example.com"}, true, false)
+	created, err := h.svc.Create([]string{"example.com"}, IssueOptions{AutoRenew: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -269,7 +269,7 @@ func TestDeleteRefusesWhileInUse(t *testing.T) {
 	if err := h.svc.settingService.SetSubCertFile("/other/sub.pem"); err != nil {
 		t.Fatal(err)
 	}
-	created, err := h.svc.Create([]string{"example.com"}, true, false)
+	created, err := h.svc.Create([]string{"example.com"}, IssueOptions{AutoRenew: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -320,7 +320,7 @@ func TestCreateRequiresToken(t *testing.T) {
 	if err := h.svc.SetCloudflareToken("  "); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := h.svc.Create([]string{"example.com"}, true, false); err == nil || err.Error() != "set the Cloudflare API token first" {
+	if _, err := h.svc.Create([]string{"example.com"}, IssueOptions{AutoRenew: true}); err == nil || err.Error() != "set the Cloudflare API token first" {
 		t.Fatalf("Create without token: %v", err)
 	}
 }
@@ -350,22 +350,25 @@ func TestInstallValidatesNameAndPair(t *testing.T) {
 	}
 }
 
-// The sub server takes an issued pair when its cert field is empty or the
-// certificate covers the host subscription links are built for.
+// With applyToSub the sub server takes an issued pair when its cert field is
+// empty or the certificate covers the subscription host; without it, never (#22).
 func TestIssueFillsSubscriptionCert(t *testing.T) {
 	cases := []struct {
 		name         string
 		settings     map[string]string
 		domains      []string
+		applyToSub   bool
 		wantIssued   bool
 		wantRestarts int32
 	}{
-		{"empty field, no sub host", nil, []string{"example.com"}, true, 1},
-		{"sub domain covered by wildcard replaces old pair", map[string]string{"subDomain": "sub.example.com", "subCertFile": "/old/sub.pem", "subKeyFile": "/old/sub.key"}, []string{"*.example.com"}, true, 1},
-		{"sub URI host covered", map[string]string{"subURI": "https://sub.example.com:2096/sub/"}, []string{"sub.example.com"}, true, 1},
-		{"sub domain not covered keeps old pair", map[string]string{"subDomain": "sub.other.org", "subCertFile": "/old/sub.pem", "subKeyFile": "/old/sub.key"}, []string{"*.example.com"}, false, 0},
-		{"empty field but sub domain not covered", map[string]string{"subDomain": "a.b.example.com"}, []string{"*.example.com", "example.com"}, false, 0},
-		{"other pair without sub host is kept", map[string]string{"subCertFile": "/old/sub.pem", "subKeyFile": "/old/sub.key"}, []string{"example.com"}, false, 0},
+		{"empty field, no sub host", nil, []string{"example.com"}, true, true, 1},
+		{"sub domain covered by wildcard replaces old pair", map[string]string{"subDomain": "sub.example.com", "subCertFile": "/old/sub.pem", "subKeyFile": "/old/sub.key"}, []string{"*.example.com"}, true, true, 1},
+		{"sub URI host covered", map[string]string{"subURI": "https://sub.example.com:2096/sub/"}, []string{"sub.example.com"}, true, true, 1},
+		{"sub domain not covered keeps old pair", map[string]string{"subDomain": "sub.other.org", "subCertFile": "/old/sub.pem", "subKeyFile": "/old/sub.key"}, []string{"*.example.com"}, true, false, 0},
+		{"empty field but sub domain not covered", map[string]string{"subDomain": "a.b.example.com"}, []string{"*.example.com", "example.com"}, true, false, 0},
+		{"other pair without sub host is kept", map[string]string{"subCertFile": "/old/sub.pem", "subKeyFile": "/old/sub.key"}, []string{"example.com"}, true, false, 0},
+		{"plain HTTP sub behind a reverse proxy stays plain", map[string]string{"subURI": "https://sub.example.com/sub/"}, []string{"*.example.com", "example.com"}, false, false, 0},
+		{"empty field, no sub host, not asked", nil, []string{"example.com"}, false, false, 0},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -376,7 +379,7 @@ func TestIssueFillsSubscriptionCert(t *testing.T) {
 				}
 			}
 			before, _ := h.svc.settingService.GetSubCertFile()
-			created, err := h.svc.Create(tc.domains, true, false)
+			created, err := h.svc.Create(tc.domains, IssueOptions{AutoRenew: true, ApplyToSub: tc.applyToSub})
 			if err != nil {
 				t.Fatalf("Create: %v", err)
 			}

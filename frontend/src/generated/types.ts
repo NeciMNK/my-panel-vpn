@@ -1402,6 +1402,7 @@ export interface TlsCertSettings {
 
 export interface TlsCertificate {
   applyToPanel: boolean;
+  applyToSub: boolean;
   autoRenew: boolean;
   certFile: string;
   createdAt: number;

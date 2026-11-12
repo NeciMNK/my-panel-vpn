@@ -6247,6 +6247,10 @@
             "example": false,
             "type": "boolean"
           },
+          "applyToSub": {
+            "example": false,
+            "type": "boolean"
+          },
           "autoRenew": {
             "example": true,
             "type": "boolean"
@@ -6304,6 +6308,7 @@
         },
         "required": [
           "applyToPanel",
+          "applyToSub",
           "autoRenew",
           "certFile",
           "createdAt",
@@ -20389,6 +20394,7 @@
                   "obj": [
                     {
                       "applyToPanel": false,
+                      "applyToSub": false,
                       "autoRenew": true,
                       "certFile": "/etc/x-ui/certs/example.com/fullchain.pem",
                       "createdAt": 1710000000000,
@@ -20533,6 +20539,10 @@
                   "applyToPanel": {
                     "type": "boolean",
                     "description": "Serve the panel over this certificate once issued (restarts the panel when the paths change)."
+                  },
+                  "applyToSub": {
+                    "type": "boolean",
+                    "description": "Serve the subscription server over this certificate once issued, when its cert field is empty or the certificate covers the subscription host (restarts the panel). Off by default: a reverse proxy in front of the subscription port usually talks plain HTTP to it."
                   }
                 },
                 "required": [
@@ -20571,6 +20581,7 @@
                   "success": true,
                   "obj": {
                     "applyToPanel": false,
+                    "applyToSub": false,
                     "autoRenew": true,
                     "certFile": "/etc/x-ui/certs/example.com/fullchain.pem",
                     "createdAt": 1710000000000,
@@ -20634,6 +20645,7 @@
                   "success": true,
                   "obj": {
                     "applyToPanel": false,
+                    "applyToSub": false,
                     "autoRenew": true,
                     "certFile": "/etc/x-ui/certs/example.com/fullchain.pem",
                     "createdAt": 1710000000000,
@@ -20716,6 +20728,7 @@
                   "success": true,
                   "obj": {
                     "applyToPanel": false,
+                    "applyToSub": false,
                     "autoRenew": true,
                     "certFile": "/etc/x-ui/certs/example.com/fullchain.pem",
                     "createdAt": 1710000000000,

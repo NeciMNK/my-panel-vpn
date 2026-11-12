@@ -1506,6 +1506,7 @@ export type TlsCertSettings = z.infer<typeof TlsCertSettingsSchema>;
 
 export const TlsCertificateSchema = z.object({
   applyToPanel: z.boolean(),
+  applyToSub: z.boolean(),
   autoRenew: z.boolean(),
   certFile: z.string(),
   createdAt: z.number().int(),
