@@ -1276,6 +1276,7 @@
         "strategy": "Як обирати вихід",
         "inbounds": "Лише ці inbound'и входу",
         "inboundsHint": "Порожньо = весь трафік вхідного сервера йде через каскад.",
+        "inboundsAllWarning": "No inbounds chosen: the cascade takes over every inbound of the entry server, direct ones included. Pick the inbounds that should go through the exit.",
         "desc": "Користувачі підключаються до вхідного сервера, а в інтернет виходять через вихідний. Звʼязку між серверами панель створить сама. Кілька виходів = балансування.",
         "deleteConfirm": "Видалити каскад і його службові inbound'и?",
         "toasts": {

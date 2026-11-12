@@ -1276,6 +1276,7 @@
         "strategy": "How to pick the exit",
         "inbounds": "Only these entry inbounds",
         "inboundsHint": "Empty = all traffic of the entry server goes through the cascade.",
+        "inboundsAllWarning": "No inbounds chosen: the cascade takes over every inbound of the entry server, direct ones included. Pick the inbounds that should go through the exit.",
         "desc": "Users connect to the entry server and reach the internet through the exit. The panel creates the link between the servers itself. Several exits = load balancing.",
         "deleteConfirm": "Delete the cascade and its link inbounds?",
         "toasts": {
