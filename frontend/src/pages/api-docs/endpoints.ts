@@ -2135,6 +2135,37 @@ export const sections: readonly Section[] = [
   },
 
   {
+    id: 'aiDomains',
+    title: 'AI domains',
+    description:
+      "The sites the Telegram bot's AI pin sends through a client's pinned server when the client chose AI sites only, and the clients' suggestions for that list. All endpoints under /panel/api/aiDomains.",
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/aiDomains/list',
+        summary:
+          'The AI domain list in force (the built-in one until the admin saves another) and the latest 200 client suggestions, newest first.',
+        responseSchema: 'AIDomainsView',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/aiDomains/save',
+        summary:
+          'Replace the AI domain list: comma- or newline-separated Xray domain rules or geosite: categories. A token Xray cannot parse, or a category the installed geosite database lacks, is refused. An empty list restores the built-in one.',
+        body: '{\n  "domains": "domain:openai.com, geosite:openai"\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/aiDomains/suggestions/answer',
+        summary:
+          'Answer a pending client suggestion: added (also puts every suggested site on the list), partial, declined or present (all already listed). The client is told in Telegram. Only the first answer counts; a later one returns the suggestion unchanged.',
+        body: '{\n  "id": 1,\n  "status": "added"\n}',
+        responseSchema: 'AIDomainSuggestion',
+      },
+    ],
+  },
+
+  {
     id: 'ledger',
     title: 'Ledger',
     description:

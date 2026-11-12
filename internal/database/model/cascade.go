@@ -58,9 +58,22 @@ type CascadeFixedExit struct {
 }
 
 // CascadeAICountry is the one country a user uses AI services from: their pin
-// there beats their other pins in a cascade mixing countries.
+// there carries AI domains only, or all their traffic when AllTraffic is set.
 type CascadeAICountry struct {
-	Id      int    `json:"id" gorm:"primaryKey;autoIncrement"`
-	Email   string `json:"email" gorm:"uniqueIndex"`
-	Country string `json:"country"`
+	Id         int    `json:"id" gorm:"primaryKey;autoIncrement"`
+	Email      string `json:"email" gorm:"uniqueIndex"`
+	Country    string `json:"country"`
+	AllTraffic bool   `json:"allTraffic" gorm:"column:all_traffic;default:false"`
+}
+
+// AIDomainSuggestion is a client's request for more sites behind the AI pin;
+// an admin answers it once, so Status leaves "pending" only once.
+type AIDomainSuggestion struct {
+	Id         int    `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
+	TgUserId   int64  `json:"tgUserId" example:"123456789"`
+	Email      string `json:"email" example:"alice"`
+	Domains    string `json:"domains" example:"deepseek.com,poe.com"`
+	Status     string `json:"status" gorm:"index;not null;default:pending" example:"pending"`
+	CreatedAt  int64  `json:"createdAt" example:"1762900000"`
+	ResolvedAt int64  `json:"resolvedAt" example:"0"`
 }

@@ -56,7 +56,7 @@ func TestBuildWarpOutboundMatchesThePanelDialog(t *testing.T) {
 func TestWarpRuleStaysLastWhenCascadesAreAppliedAfterIt(t *testing.T) {
 	cfg := baseTemplate(t)
 	applyWarpRule(cfg, &model.WarpSwitch{Mode: WarpAll})
-	applyCascadeToTemplate(cfg, &model.Cascade{Id: 2, Links: []model.CascadeLink{{NodeId: 3}}}, nil, cascadeZone{})
+	applyCascadeToTemplate(cfg, &model.Cascade{Id: 2, Links: []model.CascadeLink{{NodeId: 3}}}, nil, aiExitPlan{}, cascadeZone{})
 	want := []string{"->api", "->blocked", "mp-cascade-2-route", "mp-warp-all"}
 	if got := ruleTags(cfg); !reflect.DeepEqual(got, want) {
 		t.Fatalf("rules = %v, want %v", got, want)

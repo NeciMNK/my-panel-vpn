@@ -66,16 +66,17 @@ func fixedExitEmail(req *CascadeFixedExitRequest) (string, error) {
 }
 
 // fixedExitsIn maps each user to their pinned exit among exits; with several
-// (a cascade mixing countries) the AI-country pin wins, else the latest one.
-func fixedExitsIn(rows []model.CascadeFixedExit, exits []int, aiExits map[string]int) map[string]int {
+// (a cascade mixing countries) an all-traffic AI pin wins, else the latest one.
+// A domain-only AI pin is no fixed exit: it routes AI services alone.
+func fixedExitsIn(rows []model.CascadeFixedExit, exits []int, ai aiExitPlan) map[string]int {
 	out := map[string]int{}
 	best := map[string]int{}
 	for _, r := range rows {
-		if slices.Contains(exits, r.NodeId) && r.Id >= best[r.Email] {
+		if slices.Contains(exits, r.NodeId) && r.Id >= best[r.Email] && !ai.isDomainPin(r) {
 			out[r.Email], best[r.Email] = r.NodeId, r.Id
 		}
 	}
-	for email, id := range aiExits {
+	for email, id := range ai.All {
 		if _, pinnedHere := out[email]; pinnedHere && slices.Contains(exits, id) {
 			out[email] = id
 		}

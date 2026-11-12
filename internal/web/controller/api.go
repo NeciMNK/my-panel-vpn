@@ -266,6 +266,7 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 
 	NewLedgerController(api.Group("/ledger"))
 	NewBillingController(api.Group("/billing"))
+	NewAIDomainsController(api.Group("/aiDomains"))
 
 	// Settings + Xray config management live under the API surface too, so the
 	// same API token drives them. Paths are /panel/api/setting/* and

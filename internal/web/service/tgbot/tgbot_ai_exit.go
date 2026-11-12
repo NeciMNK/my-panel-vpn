@@ -29,6 +29,10 @@ const (
 	cbAIExitWhere   = "ai_k"
 	cbAIExitBuy     = "ai_b"
 	cbAIExitReport  = "ai_r"
+	cbAIExitMode    = "ai_m"
+	// aiModeAll and aiModeAI in cbAIExitMode data: all traffic or AI sites only.
+	aiModeAll = "all"
+	aiModeAI  = "ai"
 	// cbAIExitConfirm is the admin's confirm; it must not start with "ai_".
 	cbAIExitConfirm = "aiok"
 	// anyCountry in cbAIExitWhere data drops the user's one AI country.
@@ -196,6 +200,22 @@ func (t *Tgbot) answerAIExit(callbackQuery *telego.CallbackQuery) {
 	if action == cbAIExitWhere {
 		t.answerSilent(callbackQuery.ID)
 		t.answerAIExitWhere(chatID, emails, arg)
+		return
+	}
+	if action == cbAIExitMode {
+		err := (&service.CascadeService{}).SetAIAllTraffic(context.Background(), emails, arg == aiModeAll)
+		if err != nil {
+			logger.Warning("AI exit: set traffic mode:", err)
+			t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
+			return
+		}
+		t.answerSilent(callbackQuery.ID)
+		t.screenAIExitOverview(chatID, emails, "")
+		return
+	}
+	if action == cbAIExitSuggest {
+		t.answerSilent(callbackQuery.ID)
+		t.promptAISuggest(chatID, callbackActor(callbackQuery), "")
 		return
 	}
 	if action == cbAIExitPin {
@@ -370,11 +390,21 @@ func (t *Tgbot) screenAIExitOverview(chatID int64, emails []string, note string)
 				cbAIExitCountry+" "+countryToken(g.Country))))
 		}
 	}
+	body := t.aiExitStatus(groups, aiCountry)
+	if aiCountry != "" {
+		_, all := (&service.CascadeService{}).AIMode(emails)
+		modeLine, toggle, next := "tgbot.messages.aiExitModeAI", "tgbot.buttons.aiExitModeAll", aiModeAll
+		if all {
+			modeLine, toggle, next = "tgbot.messages.aiExitModeAll", "tgbot.buttons.aiExitModeAI", aiModeAI
+		}
+		body += t.I18nBot(modeLine)
+		rows = append(rows, tu.InlineKeyboardRow(t.btn(toggle, cbAIExitMode+" "+next)))
+	}
 	if aiCountry != "" || len(groups) > 1 {
 		rows = append(rows, tu.InlineKeyboardRow(t.btn("tgbot.buttons.aiExitCountry", cbAIExitWhere)))
 	}
+	rows = append(rows, tu.InlineKeyboardRow(t.btn("tgbot.buttons.aiExitSuggest", cbAIExitSuggest)))
 	rows = append(rows, t.backRow())
-	body := t.aiExitStatus(groups, aiCountry)
 	if note != "" {
 		body += "\r\n" + note
 	}

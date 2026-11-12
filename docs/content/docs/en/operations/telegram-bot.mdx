@@ -123,9 +123,19 @@ Set the price, discounts and where to pay in **Finance → Prices and payment** 
   show up in **Pinned exits** on the Nodes page. When the client's exits span
   several countries, the bot first asks where they use AI: **Only in NL** (or another of
   their countries) pins an NL server at once (the least loaded one, which the quiz can
-  still change), and in a cascade mixing countries — the automatic server
-  choice — that pin wins over the client's other pins, so AI always sees the
-  same NL IP. **In every country** keeps one pin per country as above.
+  still change). By default only AI services (ChatGPT, Claude, Gemini,
+  Perplexity, Grok, Copilot…) leave through that NL server, from every
+  multi-exit cascade (the automatic server choice) that has it as an exit; the
+  rest of the client's traffic keeps the automatic choice. The client can switch
+  to **Send all my traffic through this IP**, which makes it a full pin that wins
+  over their other pins in a cascade mixing countries. **In every country** keeps one pin per country as above.
+  Only the admin edits which sites count as AI, on the **AI domains** page of
+  the panel: domain rules or ready-made `geosite:` categories from the installed
+  geosite database, applied to the servers within a minute. Clients tap
+  **Suggest an AI site** and send addresses; every admin gets them with four
+  answers (**Added all**, which also puts them on the list, **Added some**,
+  **Added none**, **All already listed**), on the same page or in the bot, and
+  the client is told the answer.
 - **Free plan**: with it on, a Telegram account that is not a client gets a
   **Request a free subscription** button. Admins approve it in the bot, which
   opens the add-client wizard prefilled with the user's Telegram ID, the free
