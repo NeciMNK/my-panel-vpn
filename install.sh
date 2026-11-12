@@ -1869,19 +1869,18 @@ remove_foreign_xui() {
     return 0
 }
 
-# resolve_latest_tag prints the latest stable release tag. It prefers the web
-# releases/latest redirect, which is not subject to the unauthenticated API's
-# 60 req/h-per-IP limit that trips shared CI/CGNAT addresses (the install then
-# fails with "Failed to fetch x-ui version"), and falls back to the API.
+# resolve_latest_tag prints the newest vX.Y.Z release tag, pre-releases included:
+# every fork tag before 1.0 is a pre-release, so releases/latest is always empty.
+# The releases.atom feed is not subject to the unauthenticated API's 60 req/h
+# per-IP limit that trips shared CI/CGNAT addresses; the API is the fallback.
 resolve_latest_tag() {
-    local url tag
-    url=$(curl -sSLI -o /dev/null -w '%{url_effective}' --retry 5 --retry-delay 3 --connect-timeout 15 --max-time 60 "https://github.com/${xui_repo}/releases/latest" 2>/dev/null)
-    tag=${url##*/tag/}
-    if [[ "$tag" != "$url" && -n "$tag" && "$tag" != "latest" ]]; then
-        echo "$tag"
-        return 0
+    local tags
+    tags=$(curl -fsSL --retry 5 --retry-delay 3 --connect-timeout 15 --max-time 60 "https://github.com/${xui_repo}/releases.atom" 2>/dev/null | grep -oE '/releases/tag/v[0-9]+\.[0-9]+\.[0-9]+"' | sed -E 's#.*/tag/(v[^"]+)"#\1#')
+    if [[ -z "$tags" ]]; then
+        tags=$(curl -Ls --retry 5 --retry-delay 3 --connect-timeout 15 --max-time 60 "https://api.github.com/repos/${xui_repo}/releases?per_page=100" 2>/dev/null | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$')
     fi
-    curl -Ls --retry 5 --retry-delay 3 --connect-timeout 15 --max-time 60 "https://api.github.com/repos/${xui_repo}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'
+    [[ -n "$tags" ]] && printf '%s\n' "$tags" | sort -V | tail -n1
+    return 0
 }
 
 # Releases publish <asset>.sha256 next to each archive. A mismatch or a failed
@@ -1935,9 +1934,9 @@ install_x-ui() {
     # Download resources
     if [ $# == 0 ]; then
         tag_version=$(resolve_latest_tag)
-        # The fork ships main as the rolling dev-latest build and may have no stable tag.
+        # Without any vX.Y.Z release, fall back to the rolling build of main.
         if [[ ! -n "$tag_version" ]]; then
-            echo -e "${yellow}No stable release found, installing the rolling build of main (dev-latest)${plain}"
+            echo -e "${yellow}No release found, installing the rolling build of main (dev-latest)${plain}"
             install_x-ui dev-latest
             return
         fi
