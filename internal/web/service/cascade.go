@@ -101,6 +101,13 @@ func (s *CascadeService) validate(req *CascadeRequest) error {
 	if !slices.Contains(cascadeStrategies, req.Strategy) {
 		return common.NewError("unknown balancing strategy " + req.Strategy)
 	}
+	var err error
+	if req.EntryInboundTags, err = masterInboundTags(req.EntryNodeId, req.EntryInboundTags); err != nil {
+		return err
+	}
+	if req.RelayInboundTags, err = masterInboundTags(req.EntryNodeId, req.RelayInboundTags); err != nil {
+		return err
+	}
 	if err := normalizeCascadeRouting(req); err != nil {
 		return err
 	}
@@ -265,14 +272,18 @@ func (s *CascadeService) rewriteEntry(ctx context.Context, nodeID int, c *model.
 		if err != nil {
 			return err
 		}
-		applyCascadeToTemplate(tmpl.Config, c, pins, ai, splitZone(nodeCountry(nodeID)))
+		applyCascadeToTemplate(tmpl.Config, c, nodeID, pins, ai, splitZone(nodeCountry(nodeID)))
 	}
 	return store.Save(ctx, tmpl)
 }
 
 // applyCascadeToTemplate adds one outbound per exit and tail rules: relay-only
 // inbounds first, then the split's direct rules, then the catch-all to the exit.
-func applyCascadeToTemplate(cfg map[string]any, c *model.Cascade, pins []model.CascadePin, ai aiExitPlan, zone cascadeZone) {
+func applyCascadeToTemplate(cfg map[string]any, stored *model.Cascade, nodeID int, pins []model.CascadePin, ai aiExitPlan, zone cascadeZone) {
+	local := *stored
+	local.EntryInboundTags = nodeLocalInboundTags(nodeID, stored.EntryInboundTags)
+	local.RelayInboundTags = nodeLocalInboundTags(nodeID, stored.RelayInboundTags)
+	c := &local
 	for _, l := range c.Links {
 		appendOutbounds(cfg, cascadeOutbound(c.Id, l))
 	}
@@ -531,4 +542,45 @@ func (s *CascadeService) ReconcileCountryCascades(ctx context.Context) {
 		err = s.apply(ctx, c, c.EntryNodeId, 1, "")
 		s.saveState(c, err)
 	}
+}
+
+// nodeLocalInboundTags maps master-form tags to the ones the node's Xray uses:
+// wireInbound pushes every inbound without its n<id>- prefix.
+func nodeLocalInboundTags(nodeID int, tags []string) []string {
+	if nodeID == 0 || len(tags) == 0 {
+		return tags
+	}
+	prefix := nodeTagPrefix(&nodeID)
+	out := make([]string, 0, len(tags))
+	for _, tag := range tags {
+		if local := strings.TrimPrefix(tag, prefix); !slices.Contains(out, local) {
+			out = append(out, local)
+		}
+	}
+	return out
+}
+
+// masterInboundTags stores tags as the master names the entry's inbounds, which
+// cascadeEnters matches; a node-form tag of a known inbound gets its prefix.
+func masterInboundTags(entryNodeID int, tags []string) ([]string, error) {
+	tags = cleanList(tags)
+	if entryNodeID == 0 || len(tags) == 0 {
+		return tags, nil
+	}
+	var known []string
+	if err := database.GetDB().Model(&model.Inbound{}).Where("node_id = ?", entryNodeID).
+		Pluck("tag", &known).Error; err != nil {
+		return nil, err
+	}
+	prefix := nodeTagPrefix(&entryNodeID)
+	out := make([]string, 0, len(tags))
+	for _, tag := range tags {
+		if !slices.Contains(known, tag) && slices.Contains(known, prefix+tag) {
+			tag = prefix + tag
+		}
+		if !slices.Contains(out, tag) {
+			out = append(out, tag)
+		}
+	}
+	return out, nil
 }
