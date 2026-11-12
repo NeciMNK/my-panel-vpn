@@ -14,6 +14,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"runtime"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -283,9 +284,21 @@ func showSetting(show bool) {
 			fmt.Println("Panel is secure with SSL")
 		}
 
+		subEnable, err := settingService.GetSubEnable()
+		if err != nil {
+			fmt.Println("get subEnable failed, error info:", err)
+		}
+		subPort, err := settingService.GetSubPort()
+		if err != nil {
+			fmt.Println("get subscription port failed, error info:", err)
+		}
+
 		fmt.Println("hasDefaultCredential:", hasDefaultCredential)
 		fmt.Println("port:", port)
 		fmt.Println("webBasePath:", webBasePath)
+		fmt.Println("subEnable:", subEnable)
+		// Not "subPort:": install.sh greps 'port:' for the panel port.
+		fmt.Println("subscriptionPort:", subPort)
 	}
 }
 
@@ -414,8 +427,45 @@ func encryptNodeTokens() {
 	fmt.Printf("node-token migration complete: %d re-encrypted, %d already current/skipped\n", changed, skipped)
 }
 
-// updateSetting updates various panel settings including port, credentials, base path, listen IP, and two-factor authentication.
-func updateSetting(port int, username string, password string, webBasePath string, listenIP string, resetTwoFactor bool) error {
+// settingUpdate holds the `x-ui setting` flags that write panel settings; zero values mean "leave unchanged".
+type settingUpdate struct {
+	port           int
+	username       string
+	password       string
+	webBasePath    string
+	listenIP       string
+	resetTwoFactor bool
+	subEnable      optionalBool
+	subPort        int
+}
+
+// optionalBool is a bool flag that also records whether it was given, so
+// -subEnable=false can be told apart from an absent flag.
+type optionalBool struct {
+	set   bool
+	value bool
+}
+
+func (b *optionalBool) String() string {
+	if b == nil || !b.set {
+		return ""
+	}
+	return strconv.FormatBool(b.value)
+}
+
+func (b *optionalBool) Set(s string) error {
+	v, err := strconv.ParseBool(s)
+	if err != nil {
+		return err
+	}
+	b.set, b.value = true, v
+	return nil
+}
+
+func (b *optionalBool) IsBoolFlag() bool { return true }
+
+// updateSetting updates panel settings: port, credentials, base path, listen IP, 2FA and the subscription server.
+func updateSetting(u settingUpdate) error {
 	err := database.InitDB(config.GetDBPath())
 	if err != nil {
 		fmt.Println("Database initialization failed:", err)
@@ -425,17 +475,17 @@ func updateSetting(port int, username string, password string, webBasePath strin
 	settingService := service.SettingService{}
 	userService := panel.UserService{}
 
-	if port > 0 {
-		err := settingService.SetPort(port)
+	if u.port > 0 {
+		err := settingService.SetPort(u.port)
 		if err != nil {
 			fmt.Println("Failed to set port:", err)
 		} else {
-			fmt.Printf("Port set successfully: %v\n", port)
+			fmt.Printf("Port set successfully: %v\n", u.port)
 		}
 	}
 
-	if username != "" || password != "" {
-		err := userService.UpdateFirstUser(username, password)
+	if u.username != "" || u.password != "" {
+		err := userService.UpdateFirstUser(u.username, u.password)
 		if err != nil {
 			fmt.Println("Failed to update username and password:", err)
 		} else {
@@ -443,8 +493,8 @@ func updateSetting(port int, username string, password string, webBasePath strin
 		}
 	}
 
-	if webBasePath != "" {
-		err := settingService.SetBasePath(webBasePath)
+	if u.webBasePath != "" {
+		err := settingService.SetBasePath(u.webBasePath)
 		if err != nil {
 			fmt.Println("Failed to set base URI path:", err)
 		} else {
@@ -452,7 +502,7 @@ func updateSetting(port int, username string, password string, webBasePath strin
 		}
 	}
 
-	if resetTwoFactor {
+	if u.resetTwoFactor {
 		err := settingService.SetTwoFactorEnable(false)
 
 		if err != nil {
@@ -463,12 +513,28 @@ func updateSetting(port int, username string, password string, webBasePath strin
 		}
 	}
 
-	if listenIP != "" {
-		err := settingService.SetListen(listenIP)
+	if u.listenIP != "" {
+		err := settingService.SetListen(u.listenIP)
 		if err != nil {
 			fmt.Println("Failed to set listen IP:", err)
 		} else {
-			fmt.Printf("listen %v set successfully\n", listenIP)
+			fmt.Printf("listen %v set successfully\n", u.listenIP)
+		}
+	}
+
+	if u.subEnable.set {
+		if err := settingService.SetSubEnable(u.subEnable.value); err != nil {
+			fmt.Println("Failed to set subscription server state:", err)
+		} else {
+			fmt.Printf("Subscription server enabled: %v\n", u.subEnable.value)
+		}
+	}
+
+	if u.subPort > 0 {
+		if err := settingService.SetSubPort(u.subPort); err != nil {
+			fmt.Println("Failed to set subscription port:", err)
+		} else {
+			fmt.Printf("Subscription port set successfully: %v\n", u.subPort)
 		}
 	}
 
@@ -675,6 +741,8 @@ func main() {
 	var tokenName string
 	var tokenScope string
 	var resetTwoFactor bool
+	var subEnable optionalBool
+	var subPort int
 	settingCmd.BoolVar(&reset, "reset", false, "Reset all settings")
 	settingCmd.BoolVar(&show, "show", false, "Display current settings")
 	settingCmd.IntVar(&port, "port", 0, "Set panel port number")
@@ -694,6 +762,8 @@ func main() {
 	settingCmd.StringVar(&tgbotRuntime, "tgbotRuntime", "", "Set cron time for Telegram bot notifications")
 	settingCmd.StringVar(&tgbotchatid, "tgbotchatid", "", "Set chat ID for Telegram bot notifications")
 	settingCmd.BoolVar(&enabletgbot, "enabletgbot", false, "Enable notifications via Telegram bot")
+	settingCmd.Var(&subEnable, "subEnable", "Enable or disable the subscription server (-subEnable=false to turn it off)")
+	settingCmd.IntVar(&subPort, "subPort", 0, "Set subscription server port")
 
 	oldUsage := flag.Usage
 	flag.Usage = func() {
@@ -773,7 +843,10 @@ func main() {
 				return
 			}
 		} else {
-			if err = updateSetting(port, username, password, webBasePath, listenIP, resetTwoFactor); err != nil {
+			if err = updateSetting(settingUpdate{
+				port: port, username: username, password: password, webBasePath: webBasePath,
+				listenIP: listenIP, resetTwoFactor: resetTwoFactor, subEnable: subEnable, subPort: subPort,
+			}); err != nil {
 				return
 			}
 		}

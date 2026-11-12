@@ -866,7 +866,43 @@ func (s *SettingService) GetPort() (int, error) {
 }
 
 func (s *SettingService) SetPort(port int) error {
+	subPort, err := s.GetSubPort()
+	if err != nil {
+		return err
+	}
+	if err := s.checkPorts(port, subPort); err != nil {
+		return err
+	}
 	return s.setInt("webPort", port)
+}
+
+func (s *SettingService) SetSubPort(port int) error {
+	webPort, err := s.GetPort()
+	if err != nil {
+		return err
+	}
+	if err := s.checkPorts(webPort, port); err != nil {
+		return err
+	}
+	return s.setInt("subPort", port)
+}
+
+func (s *SettingService) SetSubEnable(enable bool) error {
+	return s.setBool("subEnable", enable)
+}
+
+// checkPorts re-runs the settings form's port check for the CLI setters, which
+// write straight to the DB and would otherwise skip entity.CheckValid.
+func (s *SettingService) checkPorts(webPort, subPort int) error {
+	webListen, err := s.GetListen()
+	if err != nil {
+		return err
+	}
+	subListen, err := s.GetSubListen()
+	if err != nil {
+		return err
+	}
+	return entity.CheckWebSubPorts(webListen, webPort, subListen, subPort)
 }
 
 func (s *SettingService) SetCertFile(webCertFile string) error {
