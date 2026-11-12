@@ -265,14 +265,14 @@ func (s *CascadeService) rewriteEntry(ctx context.Context, nodeID int, c *model.
 		if err != nil {
 			return err
 		}
-		applyCascadeToTemplate(tmpl.Config, c, pins, ai.Domains, splitZone(nodeCountry(nodeID)))
+		applyCascadeToTemplate(tmpl.Config, c, pins, ai, splitZone(nodeCountry(nodeID)))
 	}
 	return store.Save(ctx, tmpl)
 }
 
 // applyCascadeToTemplate adds one outbound per exit and tail rules: relay-only
 // inbounds first, then the split's direct rules, then the catch-all to the exit.
-func applyCascadeToTemplate(cfg map[string]any, c *model.Cascade, pins []model.CascadePin, aiDomains map[string]int, zone cascadeZone) {
+func applyCascadeToTemplate(cfg map[string]any, c *model.Cascade, pins []model.CascadePin, ai aiExitPlan, zone cascadeZone) {
 	for _, l := range c.Links {
 		appendOutbounds(cfg, cascadeOutbound(c.Id, l))
 	}
@@ -299,7 +299,7 @@ func applyCascadeToTemplate(cfg map[string]any, c *model.Cascade, pins []model.C
 	multi := len(c.Links) > 1
 	if mode == CascadeModeBoth {
 		if multi {
-			appendTailRules(cfg, cascadeAIRules(c, aiDomains, cascadePrefix(c.Id)+"relay-", c.RelayInboundTags)...)
+			appendTailRules(cfg, cascadeAIRules(c, ai.Domains, ai.Sites, cascadePrefix(c.Id)+"relay-", c.RelayInboundTags)...)
 			appendTailRules(cfg, cascadePinRules(c, pins, cascadePrefix(c.Id)+"relay-", c.RelayInboundTags)...)
 		}
 		appendTailRules(cfg, cascadeRule(cascadePrefix(c.Id)+"relay", c.RelayInboundTags, target))
@@ -314,7 +314,7 @@ func applyCascadeToTemplate(cfg map[string]any, c *model.Cascade, pins []model.C
 		appendTailRules(cfg, domain, ip)
 	}
 	if multi {
-		appendTailRules(cfg, cascadeAIRules(c, aiDomains, cascadePrefix(c.Id), c.EntryInboundTags)...)
+		appendTailRules(cfg, cascadeAIRules(c, ai.Domains, ai.Sites, cascadePrefix(c.Id), c.EntryInboundTags)...)
 		appendTailRules(cfg, cascadePinRules(c, pins, cascadePrefix(c.Id), c.EntryInboundTags)...)
 	}
 	appendTailRules(cfg, cascadeRule(cascadeRouteTag(c.Id), c.EntryInboundTags, target))

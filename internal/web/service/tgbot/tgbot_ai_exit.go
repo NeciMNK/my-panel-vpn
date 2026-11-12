@@ -213,6 +213,11 @@ func (t *Tgbot) answerAIExit(callbackQuery *telego.CallbackQuery) {
 		t.screenAIExitOverview(chatID, emails, "")
 		return
 	}
+	if action == cbAIExitSuggest {
+		t.answerSilent(callbackQuery.ID)
+		t.promptAISuggest(chatID, callbackActor(callbackQuery), "")
+		return
+	}
 	if action == cbAIExitPin {
 		nodeID, err := strconv.Atoi(arg)
 		if err != nil {
@@ -398,6 +403,7 @@ func (t *Tgbot) screenAIExitOverview(chatID int64, emails []string, note string)
 	if aiCountry != "" || len(groups) > 1 {
 		rows = append(rows, tu.InlineKeyboardRow(t.btn("tgbot.buttons.aiExitCountry", cbAIExitWhere)))
 	}
+	rows = append(rows, tu.InlineKeyboardRow(t.btn("tgbot.buttons.aiExitSuggest", cbAIExitSuggest)))
 	rows = append(rows, t.backRow())
 	if note != "" {
 		body += "\r\n" + note

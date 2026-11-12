@@ -147,3 +147,7 @@ func normalizeCascadeRouting(req *CascadeRequest) error {
 	}
 	return nil
 }
+
+// suggestedHost is a bare ASCII or punycode host with a dot, unlike the looser
+// plainDomain an admin may write.
+var suggestedHost = regexp.MustCompile(`^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z][a-z0-9-]{0,61}[a-z0-9]$`)

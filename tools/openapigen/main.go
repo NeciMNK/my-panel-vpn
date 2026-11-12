@@ -53,6 +53,7 @@ func run(root, outDir string) error {
 				"TlsCertNodeInstall",
 				"LedgerServer",
 				"LedgerEntry",
+				"AIDomainSuggestion",
 			),
 			AliasAllow: setOf("Protocol"),
 			Overrides: map[string][]walkOverride{
@@ -144,6 +145,7 @@ func run(root, outDir string) error {
 				"ClientBillingView",
 				"PaymentPlanPrice",
 				"PaymentResult",
+				"AIDomainsView",
 			),
 		},
 		{

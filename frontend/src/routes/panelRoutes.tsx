@@ -8,6 +8,7 @@ import {
   ExportOutlined,
   GlobalOutlined,
   ImportOutlined,
+  RobotOutlined,
   SettingOutlined,
   SwapOutlined,
   TagsOutlined,
@@ -20,6 +21,7 @@ const InboundsPage = lazy(() => import('@/pages/inbounds/InboundsPage'));
 const ClientsPage = lazy(() => import('@/pages/clients/ClientsPage'));
 const GroupsPage = lazy(() => import('@/pages/groups/GroupsPage'));
 const LedgerPage = lazy(() => import('@/pages/ledger/LedgerPage'));
+const AIDomainsPage = lazy(() => import('@/pages/ai-domains/AIDomainsPage'));
 const NodesPage = lazy(() => import('@/pages/nodes/NodesPage'));
 const HostsPage = lazy(() => import('@/pages/hosts/HostsPage'));
 const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage'));
@@ -41,6 +43,12 @@ export const PANEL_ROUTES: PanelRoute[] = [
   { path: '/clients', titleKey: 'menu.clients', icon: TeamOutlined, component: ClientsPage },
   { path: '/groups', titleKey: 'menu.groups', icon: TagsOutlined, component: GroupsPage },
   { path: '/ledger', titleKey: 'menu.ledger', icon: DollarOutlined, component: LedgerPage },
+  {
+    path: '/ai-domains',
+    titleKey: 'menu.aiDomains',
+    icon: RobotOutlined,
+    component: AIDomainsPage,
+  },
   { path: '/nodes', titleKey: 'menu.nodes', icon: ClusterOutlined, component: NodesPage },
   { path: '/hosts', titleKey: 'menu.hosts', icon: GlobalOutlined, component: HostsPage },
   { path: '/outbound', titleKey: 'menu.outbounds', icon: ExportOutlined, component: XrayPage },

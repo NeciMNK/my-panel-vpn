@@ -42,7 +42,7 @@ func TestCascadeSingleExitIsATailRuleToItsOutbound(t *testing.T) {
 	c := &model.Cascade{Id: 3, Strategy: "leastPing", Links: []model.CascadeLink{
 		{NodeId: 2, Address: "de.example.com", Port: 31000, ClientId: "uuid-2", PublicKey: "pub", ShortId: "ab12", ServerName: "www.apple.com"},
 	}}
-	applyCascadeToTemplate(cfg, c, nil, nil, cascadeZone{})
+	applyCascadeToTemplate(cfg, c, nil, aiExitPlan{}, cascadeZone{})
 
 	tags := ruleTags(cfg)
 	want := []string{"->api", "->blocked", "mp-cascade-3-route"}
@@ -68,7 +68,7 @@ func TestCascadeSeveralExitsBalanceAndStripCleanly(t *testing.T) {
 	c := &model.Cascade{Id: 7, Strategy: "leastPing", EntryInboundTags: []string{"inbound-443"}, Links: []model.CascadeLink{
 		{NodeId: 2, Address: "a", Port: 1}, {NodeId: 5, Address: "b", Port: 2},
 	}}
-	applyCascadeToTemplate(cfg, c, nil, nil, cascadeZone{})
+	applyCascadeToTemplate(cfg, c, nil, aiExitPlan{}, cascadeZone{})
 
 	rule := templateRouting(cfg)["rules"].([]any)[2].(map[string]any)
 	if rule["balancerTag"] != "mp-cascade-7-route" {
@@ -94,8 +94,8 @@ func TestCascadeSeveralExitsBalanceAndStripCleanly(t *testing.T) {
 
 func TestStripManagedKeepsOtherCascades(t *testing.T) {
 	cfg := baseTemplate(t)
-	applyCascadeToTemplate(cfg, &model.Cascade{Id: 1, Links: []model.CascadeLink{{NodeId: 2}}}, nil, nil, cascadeZone{})
-	applyCascadeToTemplate(cfg, &model.Cascade{Id: 10, Links: []model.CascadeLink{{NodeId: 3}}}, nil, nil, cascadeZone{})
+	applyCascadeToTemplate(cfg, &model.Cascade{Id: 1, Links: []model.CascadeLink{{NodeId: 2}}}, nil, aiExitPlan{}, cascadeZone{})
+	applyCascadeToTemplate(cfg, &model.Cascade{Id: 10, Links: []model.CascadeLink{{NodeId: 3}}}, nil, aiExitPlan{}, cascadeZone{})
 	stripManaged(cfg, cascadePrefix(1))
 	tags := ruleTags(cfg)
 	if tags[len(tags)-1] != "mp-cascade-10-route" || len(tags) != 3 {

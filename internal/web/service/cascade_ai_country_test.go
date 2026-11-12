@@ -149,3 +149,19 @@ func TestSetAICountryPinsTheBestServerOfThatCountryOnly(t *testing.T) {
 		t.Fatalf("AICountry = %q, want NL kept so the pin is made once NL has room", got)
 	}
 }
+
+// The admin edits the AI domain list in the settings; the AI rules follow it.
+func TestAIRulesUseTheAdminsDomainList(t *testing.T) {
+	initJoinDB(t)
+	c := seedAutoCascade(t)
+	if err := (&SettingService{}).setString("tgAIExitDomains", "domain:my-ai.example, full:chat.example.org"); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := (&CascadeService{}).SetAICountry(context.Background(), []string{"anna"}, "NL"); err != nil {
+		t.Fatal(err)
+	}
+	_, domains := cascadeRuleOutbounds(t, c, "ai-")
+	if want := []string{"domain:my-ai.example", "full:chat.example.org"}; !reflect.DeepEqual(domains, want) {
+		t.Fatalf("AI rule domains = %v, want the admin's %v", domains, want)
+	}
+}

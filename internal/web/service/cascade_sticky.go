@@ -283,7 +283,7 @@ func (s *CascadeService) StickCascadeUsers(ctx context.Context) {
 			view.Fixed = fixedExitsIn(fixed, view.Exits, ai)
 		}
 		next, changed := nextCascadePins(old, view)
-		if key := aiRulesKey(c, ai.Domains); appliedAIRules[c.Id] != key {
+		if key := aiRulesKey(c, ai.Domains, ai.Sites); appliedAIRules[c.Id] != key {
 			appliedAIRules[c.Id], changed = key, true
 		}
 		if err := saveCascadePins(c.Id, old, next); err != nil {

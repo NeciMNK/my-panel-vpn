@@ -138,7 +138,8 @@
     "pinSidebar": "Fixar barra lateral",
     "unpinSidebar": "Desafixar barra lateral",
     "subFormats": "Sub Formats",
-    "ledger": "Finance"
+    "ledger": "Finance",
+    "aiDomains": "AI domains"
   },
   "pages": {
     "login": {
@@ -2921,6 +2922,24 @@
       "noNode": "— not a node —",
       "aiExitPrice": "AI button price",
       "aiExitPriceDesc": "One-off price of the bot's \"🤖 I will use AI\" button (a permanent exit IP). Friends always get it free. 0 hides it from everyone else. It is paid by card when a provider is connected, or by hand to the payment details with an admin's confirm in the bot. Clients who already paid keep it."
+    },
+    "aiDomains": {
+      "list": "Sites for the AI pin",
+      "listDesc": "Sites that the bot's \"🤖 AI\" pin sends through the client's pinned server when they chose AI sites only. Comma-separated domain rules (openai.com, domain:claude.ai, full:…) or ready-made categories from the geosite database (geosite:openai, geosite:category-ai-!cn; pick them with the database button). Changes reach the servers within a minute. Empty restores the built-in list.",
+      "saved": "AI domains saved",
+      "suggestions": "Clients' suggestions",
+      "suggestionsDesc": "Clients suggest sites from the AI screen of the bot. Add the ones you want to the list, then answer: the client gets your answer in Telegram. \"Added all\" puts every suggested site on the list for you.",
+      "date": "Date",
+      "client": "Client",
+      "domains": "Sites",
+      "status": "Answer",
+      "pending": "Waiting",
+      "added": "Added all",
+      "partial": "Added some",
+      "declined": "Added none",
+      "present": "All already listed",
+      "answered": "The client has been told",
+      "alreadyAnswered": "This suggestion has already been answered"
     }
   },
   "tgbot": {
@@ -3083,7 +3102,16 @@
       "aiExitOnlyIn": "AI only in {{ .Country }}: AI services always see the pinned IP, even with automatic server choice.\r\n",
       "aiExitBoughtAdmin": "🤖 AI button bought online: {{ .User }} → {{ .Email }}, {{ .Total }}",
       "aiExitReported": "🤖 {{ .User }} says they paid {{ .Total }} for the AI button: {{ .Email }}",
-      "aiExitBought": "✅ Payment received. The 🤖 I will use AI button is yours for good."
+      "aiExitBought": "✅ Payment received. The 🤖 I will use AI button is yours for good.",
+      "aiSuggestPrompt": "💡 Which AI sites are missing? Send their addresses separated by commas, for example <code>deepseek.com, poe.com</code>. An admin decides whether to add them.\r\n",
+      "aiSuggestBad": "\r\n⚠️ Not a site address: {{ .Text }}",
+      "aiSuggestWait": "⏳ You have just sent a suggestion; try again in a few minutes.",
+      "aiSuggestSent": "✅ Thank you! An admin will look at your suggestion.",
+      "aiSuggestReported": "💡 {{ .User }} ({{ .Email }}) suggests adding to the AI sites:\r\n{{ .Domains }}",
+      "aiSuggestAdded": "✅ Your suggestion was accepted: {{ .Domains }} now go through your AI IP.",
+      "aiSuggestPartial": "➗ An admin added some of the sites you suggested ({{ .Domains }}), but not all of them.",
+      "aiSuggestDeclined": "❌ An admin decided not to add {{ .Domains }}.",
+      "aiSuggestPresent": "📋 {{ .Domains }} already go through your AI IP, so nothing needed adding."
     },
     "buttons": {
       "closeKeyboard": "❌ Fechar teclado",
@@ -3178,7 +3206,12 @@
       "aiExitConfirm": "✅ Confirm AI button: {{ .Email }}",
       "aiExitOnlyIn": "🤖 Only in {{ .Country }}",
       "aiExitAnyCountry": "🌍 In every country",
-      "aiExitCountry": "🌍 Country for AI"
+      "aiExitCountry": "🌍 Country for AI",
+      "aiExitSuggest": "💡 Suggest an AI site",
+      "aiSuggestAdded": "✅ Added all",
+      "aiSuggestPartial": "➗ Added some",
+      "aiSuggestDeclined": "❌ Added none",
+      "aiSuggestPresent": "📋 All already listed"
     },
     "answers": {
       "broadcastStarted": "🚀 Transmissão iniciada.",
@@ -3220,7 +3253,9 @@
       "paymentPending": "The payment has not arrived yet. It is checked automatically too.",
       "paymentAlreadyApplied": "✅ This payment is already applied.",
       "paymentCanceled": "This invoice is closed. Open a new one if you still want to pay.",
-      "aiExitLocked": "The AI button is not available on your subscription."
+      "aiExitLocked": "The AI button is not available on your subscription.",
+      "aiSuggestAnswered": "Done, the client has been told.",
+      "aiSuggestAlreadyAnswered": "This suggestion has already been answered."
     },
     "screens": {
       "panel": "Panel",

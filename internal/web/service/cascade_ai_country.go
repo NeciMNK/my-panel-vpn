@@ -99,11 +99,12 @@ func (s *CascadeService) SetAIAllTraffic(ctx context.Context, emails []string, a
 	return nil
 }
 
-// aiExitPlan is each AI-country user's pin there: Domains carries AI services
-// only, All carries all their traffic.
+// aiExitPlan is each AI-country user's pin there: Domains carries the AI
+// services in Sites only, All carries all their traffic.
 type aiExitPlan struct {
 	Domains map[string]int
 	All     map[string]int
+	Sites   []string
 }
 
 // isDomainPin reports whether a fixed exit only carries the user's AI domains.
@@ -113,7 +114,7 @@ func (p aiExitPlan) isDomainPin(r model.CascadeFixedExit) bool {
 }
 
 func aiCountryExits(fixed []model.CascadeFixedExit, countryOf map[int]string) (aiExitPlan, error) {
-	plan := aiExitPlan{Domains: map[string]int{}, All: map[string]int{}}
+	plan := aiExitPlan{Domains: map[string]int{}, All: map[string]int{}, Sites: (&SettingService{}).GetTgAIExitDomains()}
 	var rows []model.CascadeAICountry
 	if err := database.GetDB().Find(&rows).Error; err != nil {
 		return plan, err
@@ -153,8 +154,9 @@ func loadAIExitPlan() (aiExitPlan, error) {
 	return aiCountryExits(fixed, countryOf)
 }
 
-// aiServiceDomains are the AI services that ban accounts whose IP keeps changing.
-var aiServiceDomains = []string{
+// defaultAIServiceDomains are the AI services that ban accounts whose IP keeps
+// changing; the admin replaces them with tgAIExitDomains.
+var defaultAIServiceDomains = []string{
 	"domain:openai.com", "domain:chatgpt.com", "domain:oaistatic.com", "domain:oaiusercontent.com",
 	"domain:anthropic.com", "domain:claude.ai", "domain:claude.com", "domain:claudeusercontent.com",
 	"domain:gemini.google.com", "domain:aistudio.google.com", "domain:generativelanguage.googleapis.com",
@@ -164,7 +166,7 @@ var aiServiceDomains = []string{
 
 // cascadeAIRules send each domain-only AI user of inbounds to their pinned exit
 // for AI services; exits outside c are skipped.
-func cascadeAIRules(c *model.Cascade, aiDomains map[string]int, tagPrefix string, inbounds []string) []map[string]any {
+func cascadeAIRules(c *model.Cascade, aiDomains map[string]int, domains []string, tagPrefix string, inbounds []string) []map[string]any {
 	byNode := map[int][]string{}
 	for email, id := range aiDomains {
 		byNode[id] = append(byNode[id], email)
@@ -180,7 +182,7 @@ func cascadeAIRules(c *model.Cascade, aiDomains map[string]int, tagPrefix string
 			"type":        "field",
 			"ruleTag":     fmt.Sprintf("%sai-n%d", tagPrefix, l.NodeId),
 			"user":        emails,
-			"domain":      slices.Clone(aiServiceDomains),
+			"domain":      slices.Clone(domains),
 			"outboundTag": cascadeLinkTag(c.Id, l.NodeId),
 		}
 		if len(inbounds) > 0 {
@@ -193,7 +195,7 @@ func cascadeAIRules(c *model.Cascade, aiDomains map[string]int, tagPrefix string
 
 // aiRulesKey fingerprints the AI rules of c, so the sticky pass rewrites the
 // entry when only they changed.
-func aiRulesKey(c *model.Cascade, aiDomains map[string]int) string {
-	raw, _ := json.Marshal(cascadeAIRules(c, aiDomains, "", nil))
+func aiRulesKey(c *model.Cascade, aiDomains map[string]int, domains []string) string {
+	raw, _ := json.Marshal(cascadeAIRules(c, aiDomains, domains, "", nil))
 	return string(raw)
 }

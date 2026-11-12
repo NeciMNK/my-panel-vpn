@@ -10,6 +10,21 @@ export type staticEgressResolver = string;
 export type trafficLocalApplyAction = number;
 export type transportBits = number;
 
+export interface AIDomainSuggestion {
+  createdAt: number;
+  domains: string;
+  email: string;
+  id: number;
+  resolvedAt: number;
+  status: string;
+  tgUserId: number;
+}
+
+export interface AIDomainsView {
+  domains: string;
+  suggestions: AIDomainSuggestion[];
+}
+
 export interface AllSetting {
   datepicker: string;
   discordAdminIds: string;
