@@ -14,6 +14,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -609,7 +610,7 @@ func (s *SettingService) PanelEgressProxyURL() string {
 	}
 	for i := range cfg.InboundConfigs {
 		if cfg.InboundConfigs[i].Tag == PanelEgressInboundTag {
-			return fmt.Sprintf("socks5://127.0.0.1:%d", cfg.InboundConfigs[i].Port)
+			return liveEgressBridgeURL(PanelEgressInboundTag, cfg.InboundConfigs[i].Port)
 		}
 	}
 	if tag, err := s.GetPanelOutbound(); err == nil && tag != "" {
@@ -617,6 +618,25 @@ func (s *SettingService) PanelEgressProxyURL() string {
 	}
 	return ""
 }
+
+// liveEgressBridgeURL returns the bridge only when it accepts connections: a
+// config the core never bound would otherwise fail every panel request (#12).
+func liveEgressBridgeURL(tag string, port int) string {
+	addr := net.JoinHostPort("127.0.0.1", strconv.Itoa(port))
+	conn, err := net.DialTimeout("tcp", addr, 300*time.Millisecond)
+	if err != nil {
+		warning := fmt.Sprintf("egress bridge [%s] on %s does not accept connections (%v), using a direct connection", tag, addr, err)
+		if previous, _ := lastDeadBridgeWarning.Swap(warning).(string); previous != warning {
+			logger.Warning(warning)
+		}
+		return ""
+	}
+	_ = conn.Close()
+	lastDeadBridgeWarning.Store("")
+	return "socks5://" + addr
+}
+
+var lastDeadBridgeWarning atomic.Value
 
 func (s *SettingService) NodeEgressProxyURL(nodeID int) string {
 	tag := NodeEgressInboundTag(nodeID)
@@ -631,7 +651,7 @@ func (s *SettingService) NodeEgressProxyURL(nodeID int) string {
 	}
 	for i := range cfg.InboundConfigs {
 		if cfg.InboundConfigs[i].Tag == tag {
-			return fmt.Sprintf("socks5://127.0.0.1:%d", cfg.InboundConfigs[i].Port)
+			return liveEgressBridgeURL(tag, cfg.InboundConfigs[i].Port)
 		}
 	}
 	logger.Warning("node outbound [", tag, "] is set but the egress bridge is not in the running config, using a direct connection")
