@@ -72,6 +72,20 @@ var nodeProtocolFirstRelease = map[model.Protocol]string{
 	model.MASQUE:    "v3.9.1",
 }
 
+// Upstream node mode began at v3.0.0, so a lower version is a my-panel-vpn release,
+// all of which are built on 3x-ui v3.11.0 and carry every protocol above.
+const (
+	firstUpstreamNodeRelease = "v3.0.0"
+	forkUpstreamBase         = "v3.11.0"
+)
+
+func upstreamEquivalentVersion(panelVersion string) string {
+	if cmp, ok := version.Compare(panelVersion, firstUpstreamNodeRelease); ok && cmp < 0 {
+		return forkUpstreamBase
+	}
+	return panelVersion
+}
+
 // checkNodeCanHostProtocol refuses assigning protocol to nodeID unless the
 // protocol may live on a node and that node's panel is new enough to run it.
 func checkNodeCanHostProtocol(db *gorm.DB, nodeID int, protocol model.Protocol) error {
@@ -91,7 +105,7 @@ func checkNodeCanHostProtocol(db *gorm.DB, nodeID int, protocol model.Protocol) 
 			node.Name, protocol, firstRelease)
 	}
 	// A dev build reports "dev+<sha>": it tracks main, which carries every protocol.
-	if cmp, ok := version.Compare(node.PanelVersion, firstRelease); ok && cmp < 0 {
+	if cmp, ok := version.Compare(upstreamEquivalentVersion(node.PanelVersion), firstRelease); ok && cmp < 0 {
 		return common.NewErrorf("node %q runs panel %s; %s inbounds need %s or newer",
 			node.Name, node.PanelVersion, protocol, firstRelease)
 	}
