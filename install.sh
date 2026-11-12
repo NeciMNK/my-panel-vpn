@@ -1861,7 +1861,7 @@ remove_foreign_xui() {
 
     echo -e "${green}Old panel removed. Backup: ${backup}${plain}"
     if [[ -f "${backup}/x-ui/x-ui.db" ]]; then
-        echo -e "${green}To bring its inbounds and clients over, upload ${backup}/x-ui/x-ui.db in the new panel: Move from another panel → 3x-ui.${plain}"
+        echo -e "${green}To bring its inbounds and clients over, upload ${backup}/x-ui/x-ui.db in the master panel: Move from another panel → 3x-ui.${plain}"
     fi
     if grep -q '^XUI_DB_TYPE=postgres' "${backup}/x-ui.env" 2> /dev/null; then
         echo -e "${yellow}The old panel used PostgreSQL; its database was left as is (connection settings are in ${backup}/x-ui.env).${plain}"
