@@ -8,7 +8,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -368,8 +367,8 @@ func (s *PanelProxyService) generatedOutbounds() (active bool, outbounds []any) 
 	return true, outbounds
 }
 
-// injectPanelProxy appends extra plus a probed leastPing balancer over every panelproxy-*
-// outbound, and reports whether it did; cfg is left untouched when it cannot.
+// injectPanelProxy appends extra plus a balancer over every panelproxy-* outbound, and
+// reports whether it did; cfg is left untouched when it cannot.
 func injectPanelProxy(cfg *xray.Config, extra []any) bool {
 	var outbounds []any
 	if len(cfg.OutboundConfigs) > 0 {
@@ -425,26 +424,12 @@ func injectPanelProxy(cfg *xray.Config, extra []any) bool {
 		return false
 	}
 
-	strategy := "leastPing"
-	observatory, burst := cfg.Observatory, false
-	if len(observatory) == 0 && len(cfg.BurstObservatory) > 0 {
-		// leastLoad is the strategy that reads burstObservatory results.
-		observatory, burst, strategy = cfg.BurstObservatory, true, "leastLoad"
-	}
-	newObservatory, err := observePanelProxy(observatory)
-	if err != nil {
-		logger.Warning("panel proxy: observatory section is unparsable, skipping:", err)
-		return false
-	}
-
 	balancers, _ := routing["balancers"].([]any)
 	routing["balancers"] = append(balancers, map[string]any{
 		"tag":      PanelProxyBalancerTag,
 		"selector": []any{PanelProxyTagPrefix},
-		"strategy": map[string]any{"type": strategy},
-		// Until the first probe round finishes (and when every exit is down) the
-		// balancer has no pick; the first exit beats silently connecting directly.
-		"fallbackTag": members[0],
+		// PinPanelProxyExit overrides the pick with an exit that reaches Telegram.
+		"strategy": map[string]any{"type": "random"},
 	})
 	newRouting, err := json.Marshal(routing)
 	if err != nil {
@@ -456,36 +441,7 @@ func injectPanelProxy(cfg *xray.Config, extra []any) bool {
 	}
 	cfg.OutboundConfigs = json_util.RawMessage(newOutbounds)
 	cfg.RouterConfig = json_util.RawMessage(newRouting)
-	if burst {
-		cfg.BurstObservatory = newObservatory
-	} else {
-		cfg.Observatory = newObservatory
-	}
 	return true
-}
-
-// observePanelProxy adds the panel proxy prefix to an observatory's subjects, or
-// creates one probing Telegram when the template has none.
-func observePanelProxy(raw json_util.RawMessage) (json_util.RawMessage, error) {
-	obs := map[string]any{}
-	if len(raw) > 0 {
-		if err := json.Unmarshal(raw, &obs); err != nil {
-			return nil, err
-		}
-	} else {
-		obs["probeUrl"] = panelProxyProbeURL
-		obs["probeInterval"] = "1m"
-		obs["enableConcurrency"] = true
-	}
-	subjects, _ := obs["subjectSelector"].([]any)
-	if !slices.Contains(subjects, any(PanelProxyTagPrefix)) {
-		obs["subjectSelector"] = append(subjects, PanelProxyTagPrefix)
-	}
-	out, err := json.Marshal(obs)
-	if err != nil {
-		return nil, err
-	}
-	return json_util.RawMessage(out), nil
 }
 
 // Check makes the requests the panel makes for itself, through the same client.
