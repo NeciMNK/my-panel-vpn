@@ -23,7 +23,7 @@ import {
 } from '@ant-design/icons';
 
 import { HttpUtil, SizeFormatter, RandomUtil } from '@/utils';
-import { buildClonePayload } from '@/lib/xray/inbound-clone';
+import { buildClonePayload, pickClonePort } from '@/lib/xray/inbound-clone';
 import { NODE_ELIGIBLE_PROTOCOLS } from '@/lib/xray/node-protocols';
 import {
   genAmneziaWGLinks,
@@ -69,7 +69,8 @@ type RowAction =
   | 'attachExisting'
   | 'detachClients'
   | 'addToGroup'
-  | 'clone';
+  | 'clone'
+  | 'copyAsXhttp';
 
 type GeneralAction = 'import' | 'export' | 'subs' | 'resetInbounds';
 
@@ -624,6 +625,24 @@ export default function InboundsPage() {
     [modal, importInbound, exportAllLinks, exportAllSubs, refresh, messageApi, t],
   );
 
+  const confirmCopyAsXhttp = useCallback(
+    (dbInbound: DBInbound) => {
+      modal.confirm({
+        title: t('pages.inbounds.copyAsXhttp'),
+        content: t('pages.inbounds.copyAsXhttpContent'),
+        okText: t('pages.inbounds.copyAsXhttp'),
+        cancelText: t('cancel'),
+        onOk: async () => {
+          const msg = await HttpUtil.post(`/panel/api/inbounds/${dbInbound.id}/copyAsXhttp`, {
+            port: pickClonePort(clonePortsInUse.get(dbInbound.nodeId ?? 0)),
+          });
+          if (msg?.success) await refresh();
+        },
+      });
+    },
+    [modal, t, clonePortsInUse, refresh],
+  );
+
   const onRowAction = useCallback(
     async ({ key, dbInbound }: { key: RowAction; dbInbound: DBInbound }) => {
       // Actions that touch per-client secrets (uuid, password, flow, ...) need
@@ -690,6 +709,9 @@ export default function InboundsPage() {
         case 'clone':
           confirmClone(target);
           break;
+        case 'copyAsXhttp':
+          confirmCopyAsXhttp(target);
+          break;
         default:
           messageApi.info(`Action "${key}" — coming in a later 5f subphase`);
       }
@@ -706,6 +728,7 @@ export default function InboundsPage() {
       confirmResetTraffic,
       confirmDelAllClients,
       confirmClone,
+      confirmCopyAsXhttp,
       messageApi,
     ],
   );

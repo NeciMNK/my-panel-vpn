@@ -61,7 +61,8 @@ export type RowAction =
   | 'delete'
   | 'resetTraffic'
   | 'delAllClients'
-  | 'clone';
+  | 'clone'
+  | 'copyAsXhttp';
 
 export type GeneralAction = 'import' | 'export' | 'subs' | 'resetInbounds';
 

@@ -838,7 +838,11 @@
         "peerNumberConfig": "Konfig Peer {n}"
       },
       "sniffingDestOverride": "Penggantian tujuan",
-      "advancedTitle": "Pengaturan Lanjutan"
+      "advancedTitle": "Pengaturan Lanjutan",
+      "copyAsXhttp": "Salin sebagai XHTTP",
+      "copyAsXhttpContent": "Membuat inbound XHTTP di port baru dengan klien dan keamanan yang sama. Inbound gRPC tetap berjalan; hapus setelah klien memperbarui langganan.",
+      "grpcDeprecated": "Xray telah menghentikan transport gRPC dan dapat menghapusnya. Pindahkan inbound ini ke XHTTP.",
+      "deprecated": "usang"
     },
     "clients": {
       "tabBasics": "Dasar",

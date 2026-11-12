@@ -1003,7 +1003,7 @@ export default function InboundFormModal({
               { value: 'tcp', label: 'RAW' },
               { value: 'kcp', label: 'mKCP' },
               { value: 'ws', label: 'WebSocket' },
-              { value: 'grpc', label: 'gRPC' },
+              { value: 'grpc', label: `gRPC (${t('pages.inbounds.deprecated')})` },
               { value: 'httpupgrade', label: 'HTTPUpgrade' },
               { value: 'xhttp', label: 'XHTTP' },
               ...(protocol === Protocols.VLESS ? [{ value: 'xdrive', label: 'XDRIVE' }] : []),
@@ -1025,7 +1025,17 @@ export default function InboundFormModal({
 
           {network === 'ws' && <WsForm />}
 
-          {network === 'grpc' && <GrpcForm />}
+          {network === 'grpc' && (
+            <>
+              <Alert
+                style={{ marginBottom: 12 }}
+                type="warning"
+                showIcon
+                title={t('pages.inbounds.grpcDeprecated')}
+              />
+              <GrpcForm />
+            </>
+          )}
 
           {network === 'xhttp' && <XhttpForm />}
 

@@ -86,6 +86,12 @@ _openapi:
         reorder cannot carry a stale client list over a concurrent edit.
       url: '#set-only-the-subscription-sort-order-reads-the-stored-inbound-so-a-reorder-cannot-carry-a-stale-client-list-over-a-concurrent-edit'
     - depth: 2
+      title: 'Add an XHTTP copy of a gRPC inbound (gRPC is deprecated since Xray
+        26.10) on the given port: same node, security and clients; serviceName
+        becomes the XHTTP path. The gRPC inbound keeps running until you delete
+        it.'
+      url: '#add-an-xhttp-copy-of-a-grpc-inbound-grpc-is-deprecated-since-xray-2610-on-the-given-port-same-node-security-and-clients-servicename-becomes-the-xhttp-path-the-grpc-inbound-keeps-running-until-you-delete-it'
+    - depth: 2
       title: Zero out upload + download counters for a single inbound. Does not touch
         per-client counters.
       url: '#zero-out-upload--download-counters-for-a-single-inbound-does-not-touch-per-client-counters'
@@ -189,6 +195,11 @@ _openapi:
       - content: Set only the subscription sort order. Reads the stored inbound, so a
           reorder cannot carry a stale client list over a concurrent edit.
         id: set-only-the-subscription-sort-order-reads-the-stored-inbound-so-a-reorder-cannot-carry-a-stale-client-list-over-a-concurrent-edit
+      - content: 'Add an XHTTP copy of a gRPC inbound (gRPC is deprecated since Xray
+          26.10) on the given port: same node, security and clients; serviceName
+          becomes the XHTTP path. The gRPC inbound keeps running until you
+          delete it.'
+        id: add-an-xhttp-copy-of-a-grpc-inbound-grpc-is-deprecated-since-xray-2610-on-the-given-port-same-node-security-and-clients-servicename-becomes-the-xhttp-path-the-grpc-inbound-keeps-running-until-you-delete-it
       - content: Zero out upload + download counters for a single inbound. Does not
           touch per-client counters.
         id: zero-out-upload--download-counters-for-a-single-inbound-does-not-touch-per-client-counters
@@ -230,7 +241,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/inbounds/list","method":"get"},{"path":"/panel/api/inbounds/list/slim","method":"get"},{"path":"/panel/api/inbounds/options","method":"get"},{"path":"/panel/api/inbounds/amneziawgKernelReadiness","method":"get"},{"path":"/panel/api/inbounds/allLinks","method":"get"},{"path":"/panel/api/inbounds/get/{id}","method":"get"},{"path":"/panel/api/inbounds/add","method":"post"},{"path":"/panel/api/inbounds/del/{id}","method":"post"},{"path":"/panel/api/inbounds/bulkDel","method":"post"},{"path":"/panel/api/inbounds/update/{id}","method":"post"},{"path":"/panel/api/inbounds/setEnable/{id}","method":"post"},{"path":"/panel/api/inbounds/{id}/subSortIndex","method":"post"},{"path":"/panel/api/inbounds/{id}/resetTraffic","method":"post"},{"path":"/panel/api/inbounds/{id}/delAllClients","method":"post"},{"path":"/panel/api/inbounds/resetAllTraffics","method":"post"},{"path":"/panel/api/inbounds/import","method":"post"},{"path":"/panel/api/inbounds/pushClientTraffics","method":"post"},{"path":"/panel/api/inbounds/{id}/fallbacks","method":"get"},{"path":"/panel/api/inbounds/{id}/fallbacks","method":"post"}]} showTitle />
+      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/inbounds/list","method":"get"},{"path":"/panel/api/inbounds/list/slim","method":"get"},{"path":"/panel/api/inbounds/options","method":"get"},{"path":"/panel/api/inbounds/amneziawgKernelReadiness","method":"get"},{"path":"/panel/api/inbounds/allLinks","method":"get"},{"path":"/panel/api/inbounds/get/{id}","method":"get"},{"path":"/panel/api/inbounds/add","method":"post"},{"path":"/panel/api/inbounds/del/{id}","method":"post"},{"path":"/panel/api/inbounds/bulkDel","method":"post"},{"path":"/panel/api/inbounds/update/{id}","method":"post"},{"path":"/panel/api/inbounds/setEnable/{id}","method":"post"},{"path":"/panel/api/inbounds/{id}/subSortIndex","method":"post"},{"path":"/panel/api/inbounds/{id}/copyAsXhttp","method":"post"},{"path":"/panel/api/inbounds/{id}/resetTraffic","method":"post"},{"path":"/panel/api/inbounds/{id}/delAllClients","method":"post"},{"path":"/panel/api/inbounds/resetAllTraffics","method":"post"},{"path":"/panel/api/inbounds/import","method":"post"},{"path":"/panel/api/inbounds/pushClientTraffics","method":"post"},{"path":"/panel/api/inbounds/{id}/fallbacks","method":"get"},{"path":"/panel/api/inbounds/{id}/fallbacks","method":"post"}]} showTitle />
     </>
   );
 }

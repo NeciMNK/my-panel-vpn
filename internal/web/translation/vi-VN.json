@@ -838,7 +838,11 @@
         "peerNumberConfig": "Cấu hình Peer {n}"
       },
       "sniffingDestOverride": "Ghi đè đích",
-      "advancedTitle": "Cài đặt nâng cao"
+      "advancedTitle": "Cài đặt nâng cao",
+      "copyAsXhttp": "Sao chép thành XHTTP",
+      "copyAsXhttpContent": "Tạo inbound XHTTP trên cổng mới với cùng client và bảo mật. Inbound gRPC vẫn hoạt động; hãy xóa khi client đã làm mới đăng ký.",
+      "grpcDeprecated": "Xray đã ngừng hỗ trợ transport gRPC và có thể gỡ bỏ. Hãy chuyển inbound này sang XHTTP.",
+      "deprecated": "đã lỗi thời"
     },
     "clients": {
       "tabBasics": "Cơ bản",

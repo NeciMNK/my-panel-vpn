@@ -838,7 +838,11 @@
         "peerNumber": "Peer {n}",
         "peerNumberConfig": "Konfigurácia peeru {n}"
       },
-      "sniffingDestOverride": "Prepísať cieľ"
+      "sniffingDestOverride": "Prepísať cieľ",
+      "copyAsXhttp": "Kopírovať ako XHTTP",
+      "copyAsXhttpContent": "Vytvorí XHTTP inbound na novom porte s rovnakými klientmi a zabezpečením. gRPC inbound naďalej funguje; odstráňte ho, keď klienti obnovia odbery.",
+      "grpcDeprecated": "Xray označil transport gRPC za zastaraný a môže ho odstrániť. Presuňte tento inbound na XHTTP.",
+      "deprecated": "zastarané"
     },
     "clients": {
       "tabBasics": "Základné údaje",

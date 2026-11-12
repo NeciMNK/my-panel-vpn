@@ -838,7 +838,11 @@
         "peerNumber": "Peer {n}",
         "peerNumberConfig": "Конфиг Peer {n}"
       },
-      "sniffingDestOverride": "Переопределение назначения"
+      "sniffingDestOverride": "Переопределение назначения",
+      "copyAsXhttp": "Перевести на XHTTP",
+      "copyAsXhttpContent": "Создаёт XHTTP-inbound на новом порту с теми же клиентами и безопасностью. gRPC-inbound продолжает работать; удалите его, когда клиенты обновят подписки.",
+      "grpcDeprecated": "Транспорт gRPC в Xray устарел и может быть удалён. Переведите этот inbound на XHTTP.",
+      "deprecated": "устарел"
     },
     "clients": {
       "tabBasics": "Основные",

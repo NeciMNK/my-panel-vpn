@@ -838,7 +838,11 @@
         "peerNumberConfig": "Peer {n} 設定"
       },
       "sniffingDestOverride": "宛先のオーバーライド",
-      "advancedTitle": "詳細設定"
+      "advancedTitle": "詳細設定",
+      "copyAsXhttp": "XHTTPとしてコピー",
+      "copyAsXhttpContent": "同じクライアントとセキュリティで新しいポートにXHTTPインバウンドを作成します。gRPCインバウンドは動作し続けます。クライアントがサブスクリプションを更新したら削除してください。",
+      "grpcDeprecated": "XrayはgRPCトランスポートを非推奨にしており、削除される可能性があります。このインバウンドをXHTTPに移行してください。",
+      "deprecated": "非推奨"
     },
     "clients": {
       "tabBasics": "基本",
