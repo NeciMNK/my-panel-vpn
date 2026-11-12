@@ -18,6 +18,7 @@ func TestCheckNodeCanHostProtocol_Masque(t *testing.T) {
 	}{
 		{"v3.9.0", "need v3.9.1 or newer"},
 		{"v3.9.1", ""},
+		{"0.0.1", ""},
 		{"dev+1d1128cf", ""},
 	}
 	for i, tc := range tests {
