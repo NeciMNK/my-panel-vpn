@@ -136,9 +136,7 @@ BASE_PATH="/$(rand_hex 9)/"
 ADMIN_USER="admin-$(rand_hex 3)"
 ADMIN_PASS="$(rand_hex 12)"
 # The master serves subscriptions; a node's own sub server only fights for :2096.
-# Disabled first, so a --port 2096 is not refused as clashing with the sub port.
-./x-ui setting -subEnable=false >/dev/null
-./x-ui setting -port "$PANEL_PORT" -webBasePath "$BASE_PATH" -username "$ADMIN_USER" -password "$ADMIN_PASS" >/dev/null
+./x-ui setting -port "$PANEL_PORT" -webBasePath "$BASE_PATH" -username "$ADMIN_USER" -password "$ADMIN_PASS" -subEnable=false >/dev/null
 
 mkdir -p "$CERT_DIR"
 chmod 700 "$CERT_DIR"
