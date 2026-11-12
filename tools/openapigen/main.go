@@ -146,6 +146,8 @@ func run(root, outDir string) error {
 				"PaymentPlanPrice",
 				"PaymentResult",
 				"AIDomainsView",
+				"CascadeRequest",
+				"CascadeFixedExitRequest",
 			),
 		},
 		{

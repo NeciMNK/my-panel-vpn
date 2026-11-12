@@ -1739,7 +1739,11 @@ export const sections: readonly Section[] = [
     id: 'cascades',
     title: 'Cascades',
     description:
-      'Entry → exit server chains. The panel provisions a hidden VLESS+REALITY inbound on every exit and an outbound plus a catch-all routing rule (or a balancer for several exits) on the entry. Node id 0 means this panel. All endpoints under /panel/api/cascades.',
+      'Entry → exit server chains. The panel provisions a hidden VLESS+REALITY inbound on every exit and an outbound plus routing rules (or a balancer for several exits) on the entry. Node id 0 means this panel. ' +
+      'Exits are either listed in exitNodeIds or picked by country: exitCountry "DE" makes every enabled node of that country (except the entry) an exit, and the list is re-resolved whenever a node is added, removed, disabled or moved to another country. ' +
+      'Sticky sessions are always on for a cascade with several exits; there is no switch. Every 15 seconds each newly online user is pinned to the least-loaded healthy exit that still has their minMbps free (/panel/api/speed); the pin keeps them on that exit, so on that IP, while they stay connected and for 15 minutes after they go offline. ' +
+      'A pin is dropped at once when its exit goes offline (the user moves to another exit), when the user connects to a different server themselves, or when the admin pins them with /cascades/fixedExits. strategy only spreads traffic that has no pin yet. ' +
+      'Modes: split (default) sends the entry country\u2019s own sites (its TLDs, geoip and geosite list, Russia when the entry has no country) plus directDomains/directIps straight out of the entry and the rest to the exit; relay sends everything to the exit; both runs split on entryInboundTags and relay on relayInboundTags. All endpoints under /panel/api/cascades.',
     endpoints: [
       {
         method: 'GET',
@@ -1752,17 +1756,19 @@ export const sections: readonly Section[] = [
         method: 'POST',
         path: '/panel/api/cascades/add',
         summary:
-          'Create a cascade and apply it: exits get their link inbound, the entry gets the outbound(s) and the routing rule. Empty entryInboundTags chains every inbound of the entry.',
-        body: '{\n  "name": "RU → DE",\n  "enable": true,\n  "entryNodeId": 1,\n  "exitNodeIds": [2, 3],\n  "entryInboundTags": [],\n  "strategy": "leastPing"\n}',
+          'Create a cascade and apply it: exits get their link inbound, the entry gets the outbound(s) and the routing rules. Give either exitNodeIds or exitCountry; when both are set, exitCountry wins. Empty entryInboundTags chains every inbound of the entry. A failed apply still saves the cascade, with the reason in lastError.',
+        body: '{\n  "name": "RU → DE",\n  "enable": true,\n  "entryNodeId": 1,\n  "exitNodeIds": [],\n  "exitCountry": "DE",\n  "entryInboundTags": [],\n  "strategy": "leastPing",\n  "mode": "split",\n  "directDomains": ["domain:example.ru"],\n  "directIps": [],\n  "relayInboundTags": []\n}',
+        requestSchema: { $ref: '#/components/schemas/CascadeRequest' },
         responseSchema: 'Cascade',
       },
       {
         method: 'POST',
         path: '/panel/api/cascades/update/:id',
         summary:
-          'Change a cascade (entry, exits, chained inbounds, strategy, enable) and re-apply it. Removed exits lose their link inbound; adding an exit adds it to the balancer.',
+          'Replace a cascade and re-apply it. The body is the full cascade as for add: a field left out is cleared, not kept, so send back everything from list. Removed exits lose their link inbound; an added exit joins the balancer.',
         params: [{ name: 'id', in: 'path', type: 'number', desc: 'Cascade ID.' }],
-        body: '{\n  "name": "RU → DE",\n  "enable": true,\n  "entryNodeId": 1,\n  "exitNodeIds": [2, 3],\n  "entryInboundTags": [],\n  "strategy": "leastPing"\n}',
+        body: '{\n  "name": "RU → DE, NL",\n  "enable": true,\n  "entryNodeId": 1,\n  "exitNodeIds": [2, 3],\n  "exitCountry": "",\n  "entryInboundTags": ["inbound-443"],\n  "strategy": "leastPing",\n  "mode": "both",\n  "directDomains": [],\n  "directIps": [],\n  "relayInboundTags": ["inbound-8443"]\n}',
+        requestSchema: { $ref: '#/components/schemas/CascadeRequest' },
         responseSchema: 'Cascade',
       },
       {
@@ -1786,6 +1792,7 @@ export const sections: readonly Section[] = [
         summary:
           'Pin a user to an exit server (node id 0 = this panel). A user keeps one pin per country: pinning another exit of the same country replaces it. Routing is rewritten at once.',
         body: '{\n  "email": "anna",\n  "nodeId": 2\n}',
+        requestSchema: { $ref: '#/components/schemas/CascadeFixedExitRequest' },
       },
       {
         method: 'POST',
@@ -1793,6 +1800,7 @@ export const sections: readonly Section[] = [
         summary:
           'Remove a pin: the user goes back to automatic exit choice and keeps their current exit under the usual 15-minute hold.',
         body: '{\n  "email": "anna",\n  "nodeId": 2\n}',
+        requestSchema: { $ref: '#/components/schemas/CascadeFixedExitRequest' },
       },
     ],
   },
