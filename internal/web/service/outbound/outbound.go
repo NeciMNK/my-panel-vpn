@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"net"
 	"net/netip"
 	"slices"
@@ -18,6 +19,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/xray"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // OutboundService provides business logic for managing Xray outbound configurations.
@@ -25,15 +27,18 @@ import (
 type OutboundService struct{}
 
 func (s *OutboundService) AddTraffic(traffics []*xray.Traffic, clientTraffics []*xray.ClientTraffic) (error, bool) {
-	err := database.GetDB().Transaction(func(tx *gorm.DB) error {
-		return s.addOutboundTraffic(tx, traffics)
+	// Each master adds its own Xray's deltas to the shared rows; Xray has
+	// already zeroed them, so a conflict with another master reruns the tick.
+	err := database.RetryTxConflict(func() error {
+		return database.GetDB().Transaction(func(tx *gorm.DB) error {
+			return s.addOutboundTraffic(tx, traffics)
+		})
 	})
 	return err, false
 }
 
 // saturatingAdd caps counters at database.TrafficMax: unlike the SQL paths,
-// this read-modify-write add happens in Go, where an int64 overflow silently
-// wraps negative instead of erroring (#5762).
+// this add happens in Go, where an int64 overflow silently wraps negative (#5762).
 func saturatingAdd(a, b int64) int64 {
 	if b > database.TrafficMax-a {
 		return database.TrafficMax
@@ -42,35 +47,37 @@ func saturatingAdd(a, b int64) int64 {
 }
 
 func (s *OutboundService) addOutboundTraffic(tx *gorm.DB, traffics []*xray.Traffic) error {
-	if len(traffics) == 0 {
+	byTag := make(map[string]*model.OutboundTraffics, len(traffics))
+	for _, traffic := range traffics {
+		if traffic == nil || !traffic.IsOutbound {
+			continue
+		}
+		row := byTag[traffic.Tag]
+		if row == nil {
+			row = &model.OutboundTraffics{Tag: traffic.Tag}
+			byTag[traffic.Tag] = row
+		}
+		row.Up = saturatingAdd(row.Up, traffic.Up)
+		row.Down = saturatingAdd(row.Down, traffic.Down)
+		row.Total = saturatingAdd(row.Up, row.Down)
+	}
+	if len(byTag) == 0 {
 		return nil
 	}
-
-	var err error
-
-	for _, traffic := range traffics {
-		if traffic.IsOutbound {
-
-			var outbound model.OutboundTraffics
-
-			err = tx.Model(&model.OutboundTraffics{}).Where("tag = ?", traffic.Tag).
-				FirstOrCreate(&outbound).Error
-			if err != nil {
-				return err
-			}
-
-			outbound.Tag = traffic.Tag
-			outbound.Up = saturatingAdd(outbound.Up, traffic.Up)
-			outbound.Down = saturatingAdd(outbound.Down, traffic.Down)
-			outbound.Total = saturatingAdd(outbound.Up, outbound.Down)
-
-			err = tx.Save(&outbound).Error
-			if err != nil {
-				return err
-			}
-		}
+	// One upsert adds in SQL, so a concurrent master's delta is never
+	// overwritten; tag order keeps two masters' row locks from crossing.
+	rows := make([]*model.OutboundTraffics, 0, len(byTag))
+	for _, tag := range slices.Sorted(maps.Keys(byTag)) {
+		rows = append(rows, byTag[tag])
 	}
-	return nil
+	return tx.Clauses(clause.OnConflict{
+		Columns: []clause.Column{{Name: "tag"}},
+		DoUpdates: clause.Assignments(map[string]any{
+			"up":    gorm.Expr(database.ClampedAddExpr("outbound_traffics.up"), gorm.Expr("excluded.up")),
+			"down":  gorm.Expr(database.ClampedAddExpr("outbound_traffics.down"), gorm.Expr("excluded.down")),
+			"total": gorm.Expr(database.ClampedAddExpr("outbound_traffics.total"), gorm.Expr("excluded.total")),
+		}),
+	}).Create(&rows).Error
 }
 
 func (s *OutboundService) GetOutboundsTraffic() ([]*model.OutboundTraffics, error) {
