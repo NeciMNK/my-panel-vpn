@@ -98,7 +98,10 @@ describe('Inbound screen-reader interaction', () => {
     const user = renderInbound('edit');
     await user.click(screen.getByRole('tab', { name: 'Stream' }));
     const transport = screen.getByRole('combobox', { name: 'Transmission' });
-    await user.selectOptions(transport, within(transport).getByRole('option', { name: 'gRPC (deprecated)' }));
+    await user.selectOptions(
+      transport,
+      within(transport).getByRole('option', { name: 'gRPC (deprecated)' }),
+    );
     await user.click(screen.getByRole('button', { name: 'Save Changes' }));
     await waitFor(() =>
       expect(post).toHaveBeenCalledWith('/panel/api/inbounds/update/41', expect.anything()),
