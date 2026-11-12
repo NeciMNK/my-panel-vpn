@@ -199,14 +199,18 @@ func TestAdminBoundAsClientReachesItsOwnPaymentView(t *testing.T) {
 	}
 	tap(tb, navAdmin, cbMySubscription, true)
 	sc, _ := tb.screens().get(navAdmin)
-	if !strings.Contains(sc.body, "admin-own@x") || !strings.Contains(sc.body, tb.I18nBot("tgbot.payment.title")) {
-		t.Errorf("own subscription screen lacks the client or its payment block:\n%s", sc.body)
-	}
-	if !buttonFor(t, tb, navAdmin, cbClientPaid) {
-		t.Error("own subscription screen offers no \"I have paid\"")
+	if !strings.Contains(sc.body, "admin-own@x") || !buttonFor(t, tb, navAdmin, cbClientPay) {
+		t.Errorf("own subscription screen lacks the client or its payment button:\n%s", sc.body)
 	}
 	if got := backTargets(t, tb, navAdmin); len(got) != 1 || got[0] != cbHome {
 		t.Errorf("back from own subscription = %q, want the admin menu", got)
+	}
+	tap(tb, navAdmin, cbClientPay, true)
+	if !buttonFor(t, tb, navAdmin, cbClientPaid) {
+		t.Error("own payment screen offers no \"I have paid\"")
+	}
+	if got := backTargets(t, tb, navAdmin); len(got) != 1 || got[0] != cbMySubscription {
+		t.Errorf("back from own payment screen = %q, want the admin's own subscription, not the panel menu", got)
 	}
 }
 
