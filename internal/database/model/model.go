@@ -1089,6 +1089,25 @@ type ClientGroup struct {
 
 func (ClientGroup) TableName() string { return "client_groups" }
 
+// Groups the panel assigns by itself: a new client joins one, a friend mark moves it.
+const (
+	ClientGroupUsers   = "users"
+	ClientGroupFriends = "friends"
+	ClientGroupTech    = "tech"
+)
+
+// ManagedClientPrefix starts the email of every client the panel creates for its own
+// cascade and home-network links.
+const ManagedClientPrefix = "mp-"
+
+// DefaultClientGroup is the group a new client without one joins.
+func DefaultClientGroup(email string) string {
+	if strings.HasPrefix(email, ManagedClientPrefix) {
+		return ClientGroupTech
+	}
+	return ClientGroupUsers
+}
+
 // MarshalJSON emits the reverse column as a nested JSON object rather than an
 // escaped JSON-text string, matching the same convention Inbound uses for its
 // JSON-text columns. Empty storage renders as null.

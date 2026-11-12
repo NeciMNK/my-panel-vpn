@@ -53,3 +53,26 @@ func (s *ClientService) ClaimPendingPayment(clientID, months int) (bool, error) 
 		Update("pending_months", 0)
 	return res.RowsAffected == 1, res.Error
 }
+
+// SetFriend marks or unmarks a friend and moves the client into or out of the friends
+// group; unmarking returns only a client still in friends to users.
+func (s *ClientService) SetFriend(email string, friend bool) error {
+	billing, err := s.GetBillingByEmail(email)
+	if err != nil {
+		return err
+	}
+	billing.Friend = friend
+	if err := s.SaveBilling(billing); err != nil {
+		return err
+	}
+	if friend {
+		_, err = s.AddToGroup([]string{email}, model.ClientGroupFriends)
+		return err
+	}
+	rec, err := s.GetRecordByEmail(nil, email)
+	if err != nil || rec.Group != model.ClientGroupFriends {
+		return err
+	}
+	_, err = s.AddToGroup([]string{email}, model.ClientGroupUsers)
+	return err
+}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
@@ -490,5 +491,83 @@ func TestClientForwardedPortsBackfilledOnUpgrade(t *testing.T) {
 		if rec.ForwardedPorts != want {
 			t.Errorf("%s forwardedPorts = %q after upgrade, want %q", email, rec.ForwardedPorts, want)
 		}
+	}
+}
+
+// Existing clients predate automatic groups: the Russian "тех" group becomes "tech"
+// everywhere it is stored, and group-less clients join tech, friends or users.
+func TestClientGroupsAssignedOnUpgrade(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "x-ui.db")
+	if err := InitDB(dbPath); err != nil {
+		t.Fatalf("InitDB: %v", err)
+	}
+	t.Cleanup(func() { _ = CloseDB() })
+	seed := map[string]string{
+		"panel-tech": "тех", "mp-cascade-1-n1": "", "mp-home-2-n3": "тех",
+		"friend@x": "", "plain@x": "", "family@x": "family", "friend-family@x": "family",
+	}
+	for email, group := range seed {
+		if err := db.Create(&model.ClientRecord{Email: email, Group: group, Enable: true}).Error; err != nil {
+			t.Fatalf("seed %s: %v", email, err)
+		}
+	}
+	for _, email := range []string{"friend@x", "friend-family@x"} {
+		var rec model.ClientRecord
+		if err := db.Where("email = ?", email).First(&rec).Error; err != nil {
+			t.Fatalf("read %s: %v", email, err)
+		}
+		if err := db.Create(&model.ClientBilling{ClientId: rec.Id, Friend: true}).Error; err != nil {
+			t.Fatalf("seed billing %s: %v", email, err)
+		}
+	}
+	if err := db.Create(&model.ClientGroup{Name: "тех", ResetUp: 7}).Error; err != nil {
+		t.Fatalf("seed group: %v", err)
+	}
+	if err := db.Create(&model.LedgerFreeGroup{Name: "тех"}).Error; err != nil {
+		t.Fatalf("seed free group: %v", err)
+	}
+	if err := db.Create(&model.Inbound{
+		Tag: "vless-a", Port: 44301, Protocol: model.VLESS, Enable: true,
+		Settings: `{"clients":[{"email":"panel-tech","group":"тех"},{"email":"plain@x"}]}`,
+	}).Error; err != nil {
+		t.Fatalf("seed inbound: %v", err)
+	}
+	if err := db.Where("seeder_name = ?", "ClientAutoGroups").Delete(&model.HistoryOfSeeders{}).Error; err != nil {
+		t.Fatalf("clear seeder history: %v", err)
+	}
+	if err := CloseDB(); err != nil {
+		t.Fatalf("CloseDB: %v", err)
+	}
+	if err := InitDB(dbPath); err != nil {
+		t.Fatalf("reopen InitDB: %v", err)
+	}
+
+	want := map[string]string{
+		"panel-tech": "tech", "mp-cascade-1-n1": "tech", "mp-home-2-n3": "tech",
+		"friend@x": "friends", "plain@x": "users", "family@x": "family", "friend-family@x": "family",
+	}
+	for email, group := range want {
+		var rec model.ClientRecord
+		if err := db.Where("email = ?", email).First(&rec).Error; err != nil {
+			t.Fatalf("read %s: %v", email, err)
+		}
+		if rec.Group != group {
+			t.Errorf("%s group = %q after upgrade, want %q", email, rec.Group, group)
+		}
+	}
+	var stored model.ClientGroup
+	if err := db.Where("name = ?", "tech").First(&stored).Error; err != nil || stored.ResetUp != 7 {
+		t.Errorf("client_groups tech = %+v (%v), want the renamed тех row with its baseline", stored, err)
+	}
+	var free []string
+	if err := db.Model(&model.LedgerFreeGroup{}).Pluck("name", &free).Error; err != nil || len(free) != 1 || free[0] != "tech" {
+		t.Errorf("ledger free groups = %q (%v), want [tech]", free, err)
+	}
+	var ib model.Inbound
+	if err := db.Where("tag = ?", "vless-a").First(&ib).Error; err != nil {
+		t.Fatalf("read inbound: %v", err)
+	}
+	if !strings.Contains(ib.Settings, `"group":"tech"`) || strings.Contains(ib.Settings, "тех") {
+		t.Errorf("inbound settings = %s, want тех renamed to tech", ib.Settings)
 	}
 }
