@@ -114,6 +114,16 @@ jobs:
             exit 1
           fi
 
+      - name: PostgreSQL two-master traffic accounting
+        run: |
+          set -o pipefail
+          go test -p=1 ./internal/web/service ./internal/web/service/outbound -run '^(TestAddTrafficTwoMastersPostgres|TestAddTrafficRetriesDeadlockVictimPostgres|TestAddTrafficTwoMastersKeepsEveryDeltaPostgres)$' -count=1 -v | tee /tmp/postgres-two-masters.log
+          passed=$(grep -c -- '^--- PASS' /tmp/postgres-two-masters.log || true)
+          if [ "$passed" -ne 3 ]; then
+            echo "expected 3 passing two-master traffic tests, got $passed" >&2
+            exit 1
+          fi
+
       - name: PostgreSQL deferred-commit test
         run: |
           set -o pipefail
