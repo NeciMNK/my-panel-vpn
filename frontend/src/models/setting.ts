@@ -66,6 +66,7 @@ export class AllSetting {
   subListen = '';
   subPort = 2096;
   subPath = '/sub/';
+  subPathAliases = '';
   subJsonPath = '/json/';
   subClashEnable = false;
   subClashPath = '/clash/';

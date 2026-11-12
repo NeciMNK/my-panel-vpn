@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"reflect"
 	"regexp"
@@ -200,6 +201,7 @@ var defaultValueMap = map[string]string{
 	"subListen":                   "",
 	"subPort":                     "2096",
 	"subPath":                     "/sub/",
+	"subPathAliases":              "",
 	"subDomain":                   "",
 	"subCertFile":                 "",
 	"subKeyFile":                  "",
@@ -1348,6 +1350,16 @@ func (s *SettingService) GetSubPort() (int, error) {
 	return s.getInt("subPort")
 }
 
+// GetSubPathAliases lists the earlier raw subscription paths still served,
+// each normalized to /path/.
+func (s *SettingService) GetSubPathAliases() ([]string, error) {
+	raw, err := s.getString("subPathAliases")
+	if err != nil {
+		return nil, err
+	}
+	return entity.ParseSubPathAliases(raw), nil
+}
+
 func (s *SettingService) GetSubPath() (string, error) {
 	return s.getString("subPath")
 }
@@ -1845,6 +1857,42 @@ type SecretClears struct {
 	TgPaySecret     bool
 }
 
+// followSubPaths moves a stored sub URI onto its renamed path when the URI
+// pointed at the old one and was not edited in the same save (#10).
+func (s *SettingService) followSubPaths(all *entity.AllSetting) error {
+	for _, p := range []struct {
+		pathKey, uriKey string
+		path, uri       *string
+	}{
+		{"subPath", "subURI", &all.SubPath, &all.SubURI},
+		{"subJsonPath", "subJsonURI", &all.SubJsonPath, &all.SubJsonURI},
+		{"subClashPath", "subClashURI", &all.SubClashPath, &all.SubClashURI},
+	} {
+		oldPath, err := s.getString(p.pathKey)
+		if err != nil {
+			return err
+		}
+		storedURI, err := s.getString(p.uriKey)
+		if err != nil {
+			return err
+		}
+		if *p.uri != storedURI || storedURI == "" || sameSubPath(oldPath, *p.path) {
+			continue
+		}
+		u, err := url.Parse(storedURI)
+		if err != nil || !sameSubPath(u.Path, oldPath) {
+			continue
+		}
+		u.Path, u.RawPath = *p.path, ""
+		*p.uri = u.String()
+	}
+	return nil
+}
+
+func sameSubPath(a, b string) bool {
+	return strings.Trim(a, "/") == strings.Trim(b, "/")
+}
+
 func (s *SettingService) UpdateAllSetting(allSetting *entity.AllSetting, clears SecretClears) error {
 	switch allSetting.SubHostSortMode {
 	case "":
@@ -1875,6 +1923,9 @@ func (s *SettingService) UpdateAllSetting(allSetting *entity.AllSetting, clears 
 		return err
 	}
 	if err := allSetting.CheckValid(); err != nil {
+		return err
+	}
+	if err := s.followSubPaths(allSetting); err != nil {
 		return err
 	}
 

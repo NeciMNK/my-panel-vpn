@@ -69,6 +69,11 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 		return nil, err
 	}
 
+	pathAliases, err := s.settingService.GetSubPathAliases()
+	if err != nil {
+		return nil, err
+	}
+
 	JsonPath, err := s.settingService.GetSubJsonPath()
 	if err != nil {
 		return nil, err
@@ -346,6 +351,7 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 
 	s.sub = NewSUBController(g,
 		WithSUBPath(LinksPath),
+		WithSUBPathAliases(pathAliases),
 		WithSUBJsonPath(JsonPath),
 		WithSUBClashPath(ClashPath),
 		WithSUBClashAutoDetect(subClashAutoDetect),

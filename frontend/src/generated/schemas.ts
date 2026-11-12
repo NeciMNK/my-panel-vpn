@@ -533,6 +533,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "subPath": {
         "type": "string"
       },
+      "subPathAliases": {
+        "type": "string"
+      },
       "subPort": {
         "maximum": 65535,
         "minimum": 1,
@@ -833,6 +836,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "subKeyFile",
       "subListen",
       "subPath",
+      "subPathAliases",
       "subPort",
       "subProfileMode",
       "subProfileUrl",
@@ -1372,6 +1376,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "subPath": {
         "type": "string"
       },
+      "subPathAliases": {
+        "type": "string"
+      },
       "subPort": {
         "maximum": 65535,
         "minimum": 1,
@@ -1681,6 +1688,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "subKeyFile",
       "subListen",
       "subPath",
+      "subPathAliases",
       "subPort",
       "subProfileMode",
       "subProfileUrl",

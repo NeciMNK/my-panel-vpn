@@ -559,6 +559,9 @@
           "subPath": {
             "type": "string"
           },
+          "subPathAliases": {
+            "type": "string"
+          },
           "subPort": {
             "maximum": 65535,
             "minimum": 1,
@@ -859,6 +862,7 @@
           "subKeyFile",
           "subListen",
           "subPath",
+          "subPathAliases",
           "subPort",
           "subProfileMode",
           "subProfileUrl",
@@ -1398,6 +1402,9 @@
           "subPath": {
             "type": "string"
           },
+          "subPathAliases": {
+            "type": "string"
+          },
           "subPort": {
             "maximum": 65535,
             "minimum": 1,
@@ -1707,6 +1714,7 @@
           "subKeyFile",
           "subListen",
           "subPath",
+          "subPathAliases",
           "subPort",
           "subProfileMode",
           "subProfileUrl",

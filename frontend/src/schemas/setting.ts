@@ -76,6 +76,7 @@ export const AllSettingSchema = z
     subListen: z.string().optional(),
     subPort: port.optional(),
     subPath: absolutePath.optional(),
+    subPathAliases: z.string().optional(),
     subJsonPath: absolutePath.optional(),
     subClashEnable: z.boolean().optional(),
     subClashPath: absolutePath.optional(),

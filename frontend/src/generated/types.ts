@@ -172,6 +172,7 @@ export interface AllSetting {
   subKeyFile: string;
   subListen: string;
   subPath: string;
+  subPathAliases: string;
   subPort: number;
   subProfileMode: string;
   subProfileUrl: string;
@@ -372,6 +373,7 @@ export interface AllSettingView {
   subKeyFile: string;
   subListen: string;
   subPath: string;
+  subPathAliases: string;
   subPort: number;
   subProfileMode: string;
   subProfileUrl: string;

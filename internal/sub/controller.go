@@ -68,6 +68,7 @@ type SUBController struct {
 	subIncyRoutingRules  string
 
 	subPath            string
+	subPathAliases     []string
 	subJsonPath        string
 	subClashPath       string
 	subClashAutoDetect bool
@@ -93,9 +94,10 @@ type SUBController struct {
 }
 
 type subControllerConfig struct {
-	subPath      string
-	subJsonPath  string
-	subClashPath string
+	subPath        string
+	subPathAliases []string
+	subJsonPath    string
+	subClashPath   string
 
 	subClashAutoDetect     bool
 	subClashUserAgentRegex string
@@ -138,6 +140,11 @@ type SUBControllerOption func(*subControllerConfig)
 
 func WithSUBPath(value string) SUBControllerOption {
 	return func(config *subControllerConfig) { config.subPath = value }
+}
+
+// WithSUBPathAliases keeps earlier raw subscription paths serving after a rename.
+func WithSUBPathAliases(paths []string) SUBControllerOption {
+	return func(config *subControllerConfig) { config.subPathAliases = paths }
 }
 
 func WithSUBJsonPath(value string) SUBControllerOption {
@@ -318,6 +325,7 @@ func NewSUBController(g *gin.RouterGroup, options ...SUBControllerOption) *SUBCo
 		subIncyRoutingRules:  config.subIncyRoutingRules,
 
 		subPath:            config.subPath,
+		subPathAliases:     config.subPathAliases,
 		subJsonPath:        config.subJsonPath,
 		subClashPath:       config.subClashPath,
 		subClashAutoDetect: config.subClashAutoDetect,
@@ -374,6 +382,27 @@ func (a *SUBController) initRouter(g *gin.RouterGroup) {
 			gLegacy.GET(":subid", a.subClashLegacy)
 			gLegacy.HEAD(":subid", a.subClashLegacy)
 		}
+	}
+	a.registerSubPathAliases(g)
+}
+
+func (a *SUBController) registerSubPathAliases(g *gin.RouterGroup) {
+	taken := []string{subMihomoPath, subClashLegacyPath}
+	for _, alias := range a.subPathAliases {
+		conflict := a.configuredSubscriptionPathOwner(alias) != ""
+		for _, p := range taken {
+			conflict = conflict || sameSubscriptionPath(alias, p)
+		}
+		if conflict {
+			logger.Warningf("subscription path alias %q is skipped: another subscription path already serves it", alias)
+			continue
+		}
+		taken = append(taken, alias)
+		gAlias := g.Group(alias, setNoCacheHeaders)
+		gAlias.GET(":subid", a.subs)
+		gAlias.HEAD(":subid", a.subs)
+		gAlias.GET(":subid/hwid-status", a.hwidStatus)
+		gAlias.HEAD(":subid/hwid-status", a.hwidStatus)
 	}
 }
 
