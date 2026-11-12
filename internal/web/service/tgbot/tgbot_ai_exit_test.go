@@ -1,6 +1,8 @@
 package tgbot
 
 import (
+	"encoding/json"
+	"fmt"
 	"reflect"
 	"slices"
 	"strings"
@@ -10,6 +12,8 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
+
+	"github.com/mymmrac/telego"
 )
 
 // seedAIExitWorld: the client's master inbound enters a cascade to DE (2, 3)
@@ -122,6 +126,17 @@ func TestTrustedClientUsesAIOnlyInOneCountry(t *testing.T) {
 		t.Fatalf("with AI only in DE the screen still offers NL: %s %s", body, markup)
 	}
 
+	if !strings.Contains(markup, `"ai_m all"`) {
+		t.Fatalf("the AI-country screen lacks the all-traffic switch: %s", markup)
+	}
+	tap(tb, 6060, "ai_m all", false)
+	if _, all := (&service.CascadeService{}).AIMode([]string{"ai@x"}); !all {
+		t.Fatal("the all-traffic switch did not change the mode")
+	}
+	if _, markup := screenMarkup(t, tb, 6060); !strings.Contains(markup, `"ai_m ai"`) {
+		t.Fatalf("after all traffic the screen must offer AI sites only: %s", markup)
+	}
+
 	tap(tb, 6060, "ai_k *", false)
 	if got := pinnedExits(t, "ai@x"); !reflect.DeepEqual(got, []int{2, 4}) {
 		t.Fatalf("any country pins = %v, want NL's only server 4 added", got)
@@ -226,5 +241,63 @@ func TestAdminConfirmsAManualAIButtonPayment(t *testing.T) {
 	tb.screenClientHome(6060, 6060)
 	if _, markup := screenMarkup(t, tb, 6060); !strings.Contains(markup, `"`+cbAIExit+`"`) {
 		t.Fatalf("a confirmed buyer has no AI button: %s", markup)
+	}
+}
+
+// A client suggests sites from the AI screen; each admin gets the four answers,
+// "added all" puts them on the list and tells the client, and the answer is final.
+func TestClientSuggestsAIDomainsAndAnAdminAddsThem(t *testing.T) {
+	tb, calls := newScreenTgbot(t, false)
+	initReportDB(t)
+	localizeWithRealBundle(t)
+	setTestAdmins(t, 9001)
+	resetThrottles(t)
+	seedBilledClient(t, 6060, "ai@x")
+	seedAIExitWorld(t)
+	tap(tb, 9001, "friend ai@x", true)
+
+	tap(tb, 6060, cbAIExitHome, false)
+	if _, markup := screenMarkup(t, tb, 6060); !strings.Contains(markup, `"`+cbAIExitSuggest+`"`) {
+		t.Fatalf("the AI screen offers no way to suggest a site: %s", markup)
+	}
+	tap(tb, 6060, cbAIExitSuggest, false)
+	actor := chatUser{chatID: 6060, userID: 6060}
+	if state, _ := userStateMgr.get(actor); state != aiSuggestAwaiting {
+		t.Fatalf("state = %q, want the bot waiting for the sites", state)
+	}
+	tb.handleAISuggestInput(&telego.Message{
+		Chat: telego.Chat{ID: 6060}, From: &telego.User{ID: 6060},
+		Text: "https://chat.deepseek.com/, poe.com",
+	}, actor)
+
+	notices := adminMessages(calls(), 9001)
+	if len(notices) != 1 {
+		t.Fatalf("admin notices = %d, want 1 suggestion", len(notices))
+	}
+	raw, _ := json.Marshal(notices[0].Payload)
+	for _, want := range []string{"chat.deepseek.com", "poe.com"} {
+		if !strings.Contains(string(raw), want) {
+			t.Fatalf("the admin's notice lacks %s: %s", want, raw)
+		}
+	}
+	var sg model.AIDomainSuggestion
+	if err := database.GetDB().First(&sg).Error; err != nil {
+		t.Fatal(err)
+	}
+	for _, verdict := range []string{service.AISuggestAdded, service.AISuggestPartial, service.AISuggestDeclined, service.AISuggestPresent} {
+		if want := fmt.Sprintf("aisg %d %s", sg.Id, verdict); !strings.Contains(string(raw), tb.encodeQuery(want)) {
+			t.Fatalf("the admin's notice lacks the %q answer: %s", want, raw)
+		}
+	}
+
+	before := len(calls())
+	tap(tb, 9001, fmt.Sprintf("aisg %d %s", sg.Id, service.AISuggestAdded), true)
+	tap(tb, 9001, fmt.Sprintf("aisg %d %s", sg.Id, service.AISuggestDeclined), true)
+	list := (&service.SettingService{}).GetTgAIExitDomains()
+	if !slices.Contains(list, "domain:chat.deepseek.com") || !slices.Contains(list, "domain:poe.com") {
+		t.Fatalf("the list after added all = %v", list)
+	}
+	if told := adminMessages(calls()[before:], 6060); len(told) != 1 {
+		t.Fatalf("client notices = %d, want one answer despite two taps", len(told))
 	}
 }

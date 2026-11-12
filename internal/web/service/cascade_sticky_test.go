@@ -205,7 +205,7 @@ func TestCascadePinRulesGoRightBeforeTheBalancerRule(t *testing.T) {
 		{NodeId: 2, Address: "a", Port: 1}, {NodeId: 5, Address: "b", Port: 2},
 	}}
 	pins := []model.CascadePin{{Email: "bob", NodeId: 5}, {Email: "anna", NodeId: 5}, {Email: "carl", NodeId: 9}}
-	applyCascadeToTemplate(cfg, c, pins, cascadeZone{})
+	applyCascadeToTemplate(cfg, c, 0, pins, aiExitPlan{}, cascadeZone{})
 
 	tags := ruleTags(cfg)
 	want := []string{"->api", "->blocked", "mp-cascade-7-pin-n5", "mp-cascade-7-route"}

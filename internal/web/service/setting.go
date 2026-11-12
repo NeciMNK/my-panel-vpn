@@ -10,6 +10,7 @@ import (
 	"os"
 	"reflect"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -120,6 +121,7 @@ var defaultValueMap = map[string]string{
 	"tgFreePlanInbounds":          "",
 	"tgFriendDiscount":            "0",
 	"tgAIExitPrice":               "0",
+	"tgAIExitDomains":             strings.Join(defaultAIServiceDomains, ","),
 	"tgPayProvider":               "",
 	"tgPayShopId":                 "",
 	"tgPaySecret":                 "",
@@ -753,6 +755,34 @@ func (s *SettingService) GetTgFreePlanInbounds() []int {
 		}
 	}
 	return ids
+}
+
+// GetTgAIExitDomains is the admin's AI domain list, the default one when emptied.
+func (s *SettingService) GetTgAIExitDomains() []string {
+	raw, _ := s.getString("tgAIExitDomains")
+	if tokens := splitAIDomains(raw); len(tokens) > 0 {
+		return tokens
+	}
+	return slices.Clone(defaultAIServiceDomains)
+}
+
+func splitAIDomains(raw string) []string {
+	return cleanList(strings.FieldsFunc(raw, func(r rune) bool { return r == ',' || r == '\n' }))
+}
+
+// validateAIDomains refuses tokens Xray cannot parse or geosite categories the
+// databases on disk lack: either would make the entries refuse their config.
+func validateAIDomains(raw string) error {
+	tokens := splitAIDomains(raw)
+	for _, token := range tokens {
+		if !validDomainRule(token) {
+			return common.NewErrorf("AI domains: not a domain rule: %s", token)
+		}
+	}
+	if issues := (&GeodataService{}).Validate(false, tokens); len(issues) > 0 {
+		return common.NewErrorf("AI domains: unknown in the geosite database: %s", issues[0].Token)
+	}
+	return nil
 }
 
 func (s *SettingService) GetTgAIExitPrice() (int, error) {

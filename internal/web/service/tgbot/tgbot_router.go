@@ -160,6 +160,10 @@ func (t *Tgbot) OnReceive() {
 			userStateMgr.maybePrune(time.Hour)
 			actor := messageActor(message)
 			if userState, exists := userStateMgr.get(actor); exists {
+				if userState == aiSuggestAwaiting {
+					t.handleAISuggestInput(&message, actor)
+					return nil
+				}
 				if userState == broadcastAwaitingText {
 					t.handleBroadcastInput(&message, actor)
 					return nil
@@ -457,6 +461,12 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 				t.toggleFriend(callbackQuery, email)
 			case cbAIExitConfirm:
 				t.confirmAIExit(callbackQuery, email)
+			case cbAISuggestAnswer:
+				if len(dataArray) == 3 {
+					t.answerAISuggestion(callbackQuery, dataArray[1], dataArray[2])
+					return
+				}
+				t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
 			case "nonpay":
 				t.toggleNonPaying(callbackQuery, email)
 			case "ledger":

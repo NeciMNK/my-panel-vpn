@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 
@@ -36,17 +37,20 @@ func seedAutoCascade(t *testing.T) *model.Cascade {
 	return c
 }
 
-func pinRuleOutbounds(t *testing.T, c *model.Cascade) map[string]string {
+// cascadeRuleOutbounds maps each user of c's rules whose tag starts with kind
+// ("pin-" or "ai-") to the rule's outbound, and returns the rules' domains.
+func cascadeRuleOutbounds(t *testing.T, c *model.Cascade, kind string) (map[string]string, []string) {
 	t.Helper()
 	tmpl, err := loadLocalTemplate()
 	if err != nil {
 		t.Fatal(err)
 	}
 	out := map[string]string{}
+	var domains []string
 	for _, r := range templateRouting(tmpl.Config)["rules"].([]any) {
 		rule := r.(map[string]any)
 		tag, _ := rule["ruleTag"].(string)
-		if !strings.HasPrefix(tag, cascadePrefix(c.Id)+"pin-") {
+		if !strings.HasPrefix(tag, cascadePrefix(c.Id)+kind) {
 			continue
 		}
 		var users []string
@@ -56,42 +60,62 @@ func pinRuleOutbounds(t *testing.T, c *model.Cascade) map[string]string {
 		for _, u := range users {
 			out[u] = rule["outboundTag"].(string)
 		}
+		if err := json.Unmarshal(mustJSON(t, rule["domain"]), &domains); err != nil {
+			t.Fatal(err)
+		}
 	}
-	return out
+	return out, domains
 }
 
-// A user pinned in both countries of an auto cascade left through whichever
-// pin came last; with "AI only in NL" the NL pin must win.
-func TestAICountryPinWinsInAutoCascade(t *testing.T) {
+// "AI only in NL" sends only AI services through the NL pin while the rest keeps
+// the auto choice or the admin's pin, unless the user chose all traffic there.
+func TestAICountryPinRoutesOnlyAIDomains(t *testing.T) {
 	initJoinDB(t)
 	c := seedAutoCascade(t)
 	s := &CascadeService{}
 	ctx := context.Background()
-	for _, id := range []int{4, 3} {
-		if err := s.SetFixedExit(ctx, &CascadeFixedExitRequest{Email: "anna", NodeId: id}); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if got := pinRuleOutbounds(t, c)["anna"]; got != "mp-cascade-1-n3" {
-		t.Fatalf("without an AI country anna leaves through %q, want the latest pin n3", got)
-	}
 
 	exit, pinned, err := s.SetAICountry(ctx, []string{"anna"}, "nl")
 	if err != nil || !pinned || exit.NodeId != 4 {
 		t.Fatalf("SetAICountry = %+v %v %v, want NL node 4 pinned", exit, pinned, err)
 	}
-	if got := pinRuleOutbounds(t, c)["anna"]; got != "mp-cascade-1-n4" {
-		t.Fatalf("with AI only in NL anna leaves through %q, want n4", got)
-	}
 	if got := s.AICountry([]string{"anna"}); got != "NL" {
 		t.Fatalf("AICountry = %q, want NL", got)
+	}
+	if pins, _ := cascadeRuleOutbounds(t, c, "pin-"); pins["anna"] != "" {
+		t.Fatalf("all of anna's traffic is pinned to %q; only AI domains may be", pins["anna"])
+	}
+	ai, domains := cascadeRuleOutbounds(t, c, "ai-")
+	if ai["anna"] != "mp-cascade-1-n4" || !slices.Contains(domains, "domain:openai.com") || !slices.Contains(domains, "domain:claude.ai") {
+		t.Fatalf("AI rule = %v %v, want anna's AI domains to n4", ai, domains)
+	}
+
+	if err := s.SetFixedExit(ctx, &CascadeFixedExitRequest{Email: "anna", NodeId: 3}); err != nil {
+		t.Fatal(err)
+	}
+	pins, _ := cascadeRuleOutbounds(t, c, "pin-")
+	ai, _ = cascadeRuleOutbounds(t, c, "ai-")
+	if pins["anna"] != "mp-cascade-1-n3" || ai["anna"] != "mp-cascade-1-n4" {
+		t.Fatalf("admin pin DE + AI in NL: pin %q, AI %q; want n3 and n4", pins["anna"], ai["anna"])
+	}
+
+	if err := s.SetAIAllTraffic(ctx, []string{"anna"}, true); err != nil {
+		t.Fatal(err)
+	}
+	pins, _ = cascadeRuleOutbounds(t, c, "pin-")
+	ai, _ = cascadeRuleOutbounds(t, c, "ai-")
+	if pins["anna"] != "mp-cascade-1-n4" || len(ai) != 0 {
+		t.Fatalf("all traffic through the AI pin: pin %q, AI rules %v; want n4 and none", pins["anna"], ai)
 	}
 
 	if _, _, err := s.SetAICountry(ctx, []string{"anna"}, ""); err != nil {
 		t.Fatal(err)
 	}
-	if got := pinRuleOutbounds(t, c)["anna"]; got != "mp-cascade-1-n3" {
-		t.Fatalf("after clearing the AI country anna leaves through %q, want the latest pin n3 again", got)
+	if err := s.SetAIAllTraffic(ctx, []string{"anna"}, false); err == nil {
+		t.Fatal("the traffic mode was set without an AI country")
+	}
+	if ai, _ := cascadeRuleOutbounds(t, c, "ai-"); len(ai) != 0 {
+		t.Fatalf("AI rules left after clearing the AI country: %v", ai)
 	}
 }
 
@@ -123,5 +147,21 @@ func TestSetAICountryPinsTheBestServerOfThatCountryOnly(t *testing.T) {
 	}
 	if got := s.AICountry([]string{"anna"}); got != "NL" {
 		t.Fatalf("AICountry = %q, want NL kept so the pin is made once NL has room", got)
+	}
+}
+
+// The admin edits the AI domain list in the settings; the AI rules follow it.
+func TestAIRulesUseTheAdminsDomainList(t *testing.T) {
+	initJoinDB(t)
+	c := seedAutoCascade(t)
+	if err := (&SettingService{}).setString("tgAIExitDomains", "domain:my-ai.example, full:chat.example.org"); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := (&CascadeService{}).SetAICountry(context.Background(), []string{"anna"}, "NL"); err != nil {
+		t.Fatal(err)
+	}
+	_, domains := cascadeRuleOutbounds(t, c, "ai-")
+	if want := []string{"domain:my-ai.example", "full:chat.example.org"}; !reflect.DeepEqual(domains, want) {
+		t.Fatalf("AI rule domains = %v, want the admin's %v", domains, want)
 	}
 }

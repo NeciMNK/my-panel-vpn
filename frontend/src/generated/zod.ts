@@ -30,6 +30,23 @@ export type trafficLocalApplyAction = z.infer<typeof trafficLocalApplyActionSche
 export const transportBitsSchema = z.number().int();
 export type transportBits = z.infer<typeof transportBitsSchema>;
 
+export const AIDomainSuggestionSchema = z.object({
+  createdAt: z.number().int(),
+  domains: z.string(),
+  email: z.string(),
+  id: z.number().int(),
+  resolvedAt: z.number().int(),
+  status: z.string(),
+  tgUserId: z.number().int(),
+});
+export type AIDomainSuggestion = z.infer<typeof AIDomainSuggestionSchema>;
+
+export const AIDomainsViewSchema = z.object({
+  domains: z.string(),
+  suggestions: z.array(z.lazy(() => AIDomainSuggestionSchema)),
+});
+export type AIDomainsView = z.infer<typeof AIDomainsViewSchema>;
+
 export const AllSettingSchema = z.object({
   datepicker: z.string(),
   discordAdminIds: z.string(),
