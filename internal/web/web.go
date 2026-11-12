@@ -314,6 +314,7 @@ const (
 	cadenceReapOrphans   = "@every 5m"
 	cadenceRemoteRouting = "@every 5m"
 	cadenceTgVpnFallback = "@every 2m"
+	cadencePanelProxyPin = "@every 15s"
 	cadenceCascadeSticky = "@every 15s"
 	cadenceHomeNetwork   = "@every 1m"
 	cadenceSpeed         = "@every 30s"
@@ -381,6 +382,8 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	_, _ = s.cron.AddJob(cadenceCascadeSticky, job.LeaderOnly(job.NewCascadeStickyJob()))
 	_, _ = s.cron.AddJob(cadenceHomeNetwork, job.LeaderOnly(job.NewHomeNetworkJob()))
 	_, _ = s.cron.AddJob(cadenceTgVpnFallback, job.LeaderOnly(job.NewTgVpnFallbackJob()))
+	// Every master runs its own Xray, so each pins its own panel proxy exit.
+	_, _ = s.cron.AddJob(cadencePanelProxyPin, job.NewPanelProxyPinJob())
 	_, _ = s.cron.AddJob(cadenceSpeed, job.LeaderOnly(job.NewSpeedJob()))
 	_, _ = s.cron.AddJob(cadenceSpeedTest, job.LeaderOnly(job.NewSpeedTestJob()))
 	_, _ = s.cron.AddJob(cadenceShaping, job.LeaderOnly(job.NewShapingJob()))

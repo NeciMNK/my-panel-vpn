@@ -18,6 +18,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/json_util"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/netsafe"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/service/outbound"
 	"github.com/mhsanaei/3x-ui/v3/internal/xray"
 )
 
@@ -49,7 +50,7 @@ func outboundTags(t *testing.T, cfg *xray.Config) []string {
 }
 
 // The panel's own traffic must reach a balancer over every prefixed exit (the
-// subscription's and the generated ones), probed so a dead exit is not picked.
+// subscription's and the generated ones); the panel pins it, so it needs no observatory.
 func TestInjectPanelProxyRoutesPanelTrafficThroughBalancer(t *testing.T) {
 	cfg := egressTestConfig()
 	cfg.OutboundConfigs = json_util.RawMessage(`[{"tag":"direct","protocol":"freedom"},{"tag":"panelproxy-de","protocol":"freedom"}]`)
@@ -73,35 +74,30 @@ func TestInjectPanelProxyRoutesPanelTrafficThroughBalancer(t *testing.T) {
 	if lb == nil {
 		t.Fatalf("balancers = %v, want %s", balancers, PanelProxyBalancerTag)
 	}
-	if !reflect.DeepEqual(lb["selector"], []any{PanelProxyTagPrefix}) || lb["fallbackTag"] != "panelproxy-de" {
+	if !reflect.DeepEqual(lb["selector"], []any{PanelProxyTagPrefix}) {
 		t.Fatalf("balancer = %v", lb)
 	}
-	if lb["strategy"].(map[string]any)["type"] != "leastPing" {
-		t.Fatalf("strategy = %v, want leastPing", lb["strategy"])
+	if lb["strategy"].(map[string]any)["type"] != "random" {
+		t.Fatalf("strategy = %v, want random", lb["strategy"])
 	}
 	if rules[0]["balancerTag"] != PanelProxyBalancerTag || !reflect.DeepEqual(rules[0]["inboundTag"], []any{PanelEgressInboundTag}) {
 		t.Fatalf("first rule = %v, want the panel egress bridge routed to the balancer", rules[0])
 	}
-	var obs map[string]any
-	if err := json.Unmarshal(cfg.Observatory, &obs); err != nil {
-		t.Fatalf("observatory: %v", err)
-	}
-	if obs["probeUrl"] != panelProxyProbeURL || !reflect.DeepEqual(obs["subjectSelector"], []any{PanelProxyTagPrefix}) {
-		t.Fatalf("observatory = %v", obs)
+	if len(cfg.Observatory) != 0 || len(cfg.BurstObservatory) != 0 {
+		t.Fatalf("observatory %s burst %s, want none", cfg.Observatory, cfg.BurstObservatory)
 	}
 }
 
-// A template that already probes its own outbounds keeps its probe settings; only
-// the panel proxy subjects are added, and burstObservatory switches to leastLoad.
-func TestInjectPanelProxyJoinsExistingObservatory(t *testing.T) {
+// Xray runs one observatory with one probe URL, so joining the template's would
+// judge the panel's exits by its URL (google.com) instead of Telegram.
+func TestInjectPanelProxyLeavesTemplateObservatory(t *testing.T) {
 	tests := []struct {
-		name         string
-		observatory  string
-		burst        string
-		wantStrategy string
+		name        string
+		observatory string
+		burst       string
 	}{
-		{"observatory", `{"subjectSelector":["warp"],"probeUrl":"https://example.com/204"}`, "", "leastPing"},
-		{"burstObservatory", "", `{"subjectSelector":["warp"],"pingConfig":{"destination":"https://example.com/204"}}`, "leastLoad"},
+		{"observatory", `{"subjectSelector":["warp"],"probeUrl":"https://www.google.com/generate_204"}`, ""},
+		{"burstObservatory", "", `{"subjectSelector":["warp"],"pingConfig":{"destination":"https://www.google.com/generate_204"}}`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -111,30 +107,43 @@ func TestInjectPanelProxyJoinsExistingObservatory(t *testing.T) {
 			if !injectPanelProxy(cfg, []any{map[string]any{"tag": "panelproxy-x", "protocol": "freedom"}}) {
 				t.Fatal("injectPanelProxy reported no balancer")
 			}
-			raw := cfg.Observatory
-			if tt.burst != "" {
-				raw = cfg.BurstObservatory
-				if len(cfg.Observatory) != 0 {
-					t.Fatalf("observatory = %s, want none beside the burst observatory", cfg.Observatory)
-				}
-			}
-			var obs map[string]any
-			if err := json.Unmarshal(raw, &obs); err != nil {
-				t.Fatalf("observatory: %v", err)
-			}
-			if !reflect.DeepEqual(obs["subjectSelector"], []any{"warp", PanelProxyTagPrefix}) {
-				t.Fatalf("subjectSelector = %v", obs["subjectSelector"])
-			}
-			if _, overwritten := obs["probeUrl"]; overwritten && tt.burst != "" {
-				t.Fatalf("burst observatory gained a probeUrl: %v", obs)
-			}
-			if tt.observatory != "" && obs["probeUrl"] != "https://example.com/204" {
-				t.Fatalf("probeUrl = %v, want the template's", obs["probeUrl"])
+			if string(cfg.Observatory) != tt.observatory || string(cfg.BurstObservatory) != tt.burst {
+				t.Fatalf("observatory %s burst %s, want the template's untouched", cfg.Observatory, cfg.BurstObservatory)
 			}
 			balancers, _ := panelProxyRouting(t, cfg)
 			last := balancers[len(balancers)-1]
-			if last["strategy"].(map[string]any)["type"] != tt.wantStrategy {
-				t.Fatalf("strategy = %v, want %s", last["strategy"], tt.wantStrategy)
+			if last["strategy"].(map[string]any)["type"] != "random" {
+				t.Fatalf("strategy = %v, want random", last["strategy"])
+			}
+		})
+	}
+}
+
+func TestPickPanelProxyExit(t *testing.T) {
+	ok := func(tag string, ms int64) *outbound.TestOutboundResult {
+		return &outbound.TestOutboundResult{Tag: tag, Success: true, Delay: ms}
+	}
+	down := func(tag string) *outbound.TestOutboundResult {
+		return &outbound.TestOutboundResult{Tag: tag, Error: "context deadline exceeded"}
+	}
+	tests := []struct {
+		name       string
+		current    string
+		results    []*outbound.TestOutboundResult
+		wantTarget string
+		wantChange bool
+	}{
+		{"first pin takes the fastest exit reaching Telegram", "", []*outbound.TestOutboundResult{down("panelproxy-ru"), ok("panelproxy-de", 300), ok("panelproxy-nl", 120)}, "panelproxy-nl", true},
+		{"a pin that still reaches Telegram is kept", "panelproxy-de", []*outbound.TestOutboundResult{ok("panelproxy-de", 300), ok("panelproxy-nl", 120)}, "panelproxy-de", false},
+		{"a pin that lost Telegram moves to the fastest", "panelproxy-ru", []*outbound.TestOutboundResult{down("panelproxy-ru"), ok("panelproxy-de", 300), ok("panelproxy-nl", 120)}, "panelproxy-nl", true},
+		{"a pin whose exit left the config moves", "panelproxy-gone", []*outbound.TestOutboundResult{ok("panelproxy-de", 300)}, "panelproxy-de", true},
+		{"no exit reaching Telegram keeps the pin", "panelproxy-de", []*outbound.TestOutboundResult{down("panelproxy-de"), down("panelproxy-nl")}, "panelproxy-de", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			target, change := pickPanelProxyExit(tt.current, tt.results)
+			if target != tt.wantTarget || change != tt.wantChange {
+				t.Fatalf("pickPanelProxyExit = (%q, %v), want (%q, %v)", target, change, tt.wantTarget, tt.wantChange)
 			}
 		})
 	}
