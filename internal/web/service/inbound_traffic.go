@@ -51,11 +51,15 @@ func (s *InboundService) addTrafficLocked(inboundTraffics []*xray.Traffic, clien
 	db := database.GetDB()
 	// Commit durable traffic before best-effort lifecycle maintenance so helper
 	// failures cannot discard usage already reported by Xray.
-	if err := db.Transaction(func(tx *gorm.DB) error {
-		if err := s.addInboundTraffic(tx, inboundTraffics); err != nil {
-			return err
-		}
-		return s.addClientTraffic(tx, clientTraffics)
+	// Xray already zeroed these counters, so a conflict with another master's
+	// poll on the shared Postgres must rerun the tick, not drop it.
+	if err := database.RetryTxConflict(func() error {
+		return db.Transaction(func(tx *gorm.DB) error {
+			if err := s.addInboundTraffic(tx, inboundTraffics); err != nil {
+				return err
+			}
+			return s.addClientTraffic(tx, clientTraffics)
+		})
 	}); err != nil {
 		return false, false, nil, nil, nil, err
 	}
@@ -109,22 +113,41 @@ func (s *InboundService) addTrafficLocked(inboundTraffics []*xray.Traffic, clien
 }
 
 func (s *InboundService) addInboundTraffic(tx *gorm.DB, traffics []*xray.Traffic) error {
-	if len(traffics) == 0 {
+	byTag := make(map[string]*xray.Traffic, len(traffics))
+	for _, traffic := range traffics {
+		if traffic == nil || !traffic.IsInbound || (traffic.Up == 0 && traffic.Down == 0) {
+			continue
+		}
+		if sum := byTag[traffic.Tag]; sum != nil {
+			sum.Up += traffic.Up
+			sum.Down += traffic.Down
+			continue
+		}
+		byTag[traffic.Tag] = &xray.Traffic{Up: traffic.Up, Down: traffic.Down}
+	}
+	if len(byTag) == 0 {
 		return nil
 	}
 
-	var err error
-
-	for _, traffic := range traffics {
-		if traffic.IsInbound {
-			err = tx.Model(&model.Inbound{}).Where("tag = ? AND node_id IS NULL", traffic.Tag).
-				Updates(map[string]any{
-					"up":   gorm.Expr(database.ClampedAddExpr("up"), traffic.Up),
-					"down": gorm.Expr(database.ClampedAddExpr("down"), traffic.Down),
-				}).Error
-			if err != nil {
-				return err
-			}
+	var rows []model.Inbound
+	err := tx.Model(&model.Inbound{}).Select("id", "tag").
+		Where("tag IN (?) AND node_id IS NULL", slices.Collect(maps.Keys(byTag))).
+		Order("id").
+		Find(&rows).Error
+	if err != nil {
+		return err
+	}
+	// Lock rows in id order, as every other inbound writer does: Xray reports
+	// tags in no fixed order, and two masters locking in different orders deadlock.
+	for _, row := range rows {
+		traffic := byTag[row.Tag]
+		err = tx.Model(&model.Inbound{}).Where("id = ?", row.Id).
+			Updates(map[string]any{
+				"up":   gorm.Expr(database.ClampedAddExpr("up"), traffic.Up),
+				"down": gorm.Expr(database.ClampedAddExpr("down"), traffic.Down),
+			}).Error
+		if err != nil {
+			return err
 		}
 	}
 	return nil
@@ -179,40 +202,30 @@ func (s *InboundService) addClientTraffic(tx *gorm.DB, traffics []*xray.ClientTr
 		}
 	}
 	now := time.Now().UnixMilli()
-	// Use atomic per-row UPDATE instead of read-modify-write Save. tx.Save
-	// issues UPDATEs in slice order, which varies between concurrent callers;
-	// on PostgreSQL two transactions locking the same rows in opposite order
-	// deadlock. An atomic "SET up = up + ?" never holds a row lock across a
-	// subsequent lock acquisition, so concurrent writers cannot deadlock.
+	// One pass in id order for every statement: a row locked out of that order
+	// (the old email-sorted expiry pass) deadlocks against another master's poll.
 	for _, ct := range dbClientTraffics {
-		t, ok := trafficByEmail[ct.Email]
-		if !ok || (t.Up == 0 && t.Down == 0) {
-			continue
+		if t, ok := trafficByEmail[ct.Email]; ok && (t.Up != 0 || t.Down != 0) {
+			if err = tx.Exec(
+				fmt.Sprintf(
+					`UPDATE client_traffics SET up = %s, down = %s, last_online = %s WHERE email = ?`,
+					database.ClampedAddExpr("up"),
+					database.ClampedAddExpr("down"),
+					database.GreatestExpr("last_online", "?"),
+				),
+				t.Up, t.Down, now, ct.Email,
+			).Error; err != nil {
+				return fmt.Errorf("update traffic for %s: %w", ct.Email, err)
+			}
 		}
-		if err = tx.Exec(
-			fmt.Sprintf(
-				`UPDATE client_traffics SET up = %s, down = %s, last_online = %s WHERE email = ?`,
-				database.ClampedAddExpr("up"),
-				database.ClampedAddExpr("down"),
-				database.GreatestExpr("last_online", "?"),
-			),
-			t.Up, t.Down, now, ct.Email,
-		).Error; err != nil {
-			return fmt.Errorf("update traffic for %s: %w", ct.Email, err)
-		}
-	}
-
-	// adjustTraffics converts delayed-start rows (negative ExpiryTime → absolute
-	// deadline) in-memory. Persist that conversion now since the traffic UPDATE
-	// above only touches up/down/last_online. Only converted emails are written:
-	// updating every polled row issued one no-op UPDATE per active client per
-	// poll. Sorted order keeps concurrent writers lock-compatible on Postgres.
-	for _, email := range slices.Sorted(maps.Keys(convertedExpiryByEmail)) {
-		if err = tx.Exec(
-			`UPDATE client_traffics SET expiry_time = ? WHERE email = ? AND expiry_time < 0`,
-			convertedExpiryByEmail[email], email,
-		).Error; err != nil {
-			return fmt.Errorf("update expiry time for %s: %w", email, err)
+		// adjustTraffics converted a delayed-start expiry only in memory.
+		if expiry, ok := convertedExpiryByEmail[ct.Email]; ok {
+			if err = tx.Exec(
+				`UPDATE client_traffics SET expiry_time = ? WHERE email = ? AND expiry_time < 0`,
+				expiry, ct.Email,
+			).Error; err != nil {
+				return fmt.Errorf("update expiry time for %s: %w", ct.Email, err)
+			}
 		}
 	}
 
