@@ -73,6 +73,18 @@ func initNodeTokenCrypto() error {
 	return nil
 }
 
+// startSubServer only logs a start failure: a taken sub port must not take the
+// panel, xray and the master link down with it (systemd then crash-loops a node).
+func startSubServer() *sub.Server {
+	sub.SetDistFS(web.EmbeddedDist())
+	subServer := sub.NewServer()
+	global.SetSubServer(subServer)
+	if err := subServer.Start(); err != nil {
+		logger.Errorf("Subscription server not started, the panel keeps running without it: %v", err)
+	}
+	return subServer
+}
+
 // runWebServer initializes and starts the web server for the 3x-ui panel.
 func runWebServer() {
 	log.Printf("Starting %v %v", config.GetName(), config.GetPanelVersion())
@@ -132,13 +144,7 @@ func runWebServer() {
 		log.Fatalf("Error starting web server: %v", err)
 	}
 
-	sub.SetDistFS(web.EmbeddedDist())
-	subServer := sub.NewServer()
-	global.SetSubServer(subServer)
-	err = subServer.Start()
-	if err != nil {
-		log.Fatalf("Error starting sub server: %v", err)
-	}
+	subServer := startSubServer()
 
 	sigCh := make(chan os.Signal, 8)
 	// Trap shutdown signals
@@ -194,14 +200,7 @@ func runWebServer() {
 			}
 			log.Println("Web server restarted successfully.")
 
-			sub.SetDistFS(web.EmbeddedDist())
-			subServer = sub.NewServer()
-			global.SetSubServer(subServer)
-			err = subServer.Start()
-			if err != nil {
-				log.Fatalf("Error restarting sub server: %v", err)
-			}
-			log.Println("Sub server restarted successfully.")
+			subServer = startSubServer()
 		case sys.SIGUSR1:
 			logger.Info("Received USR1 signal, restarting xray-core...")
 			err := server.RestartXray()
