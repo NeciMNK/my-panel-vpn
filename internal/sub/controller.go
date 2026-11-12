@@ -480,7 +480,7 @@ func (a *SUBController) buildSubPageData(c *gin.Context) (PageData, bool) {
 		basePath = "/"
 	}
 	basePathStr := basePath.(string)
-	metadata := a.metadataForSubRequest(func() *SubService { return subReq }, subId, "")
+	metadata := a.metadataForSubRequest(func() *SubService { return subReq }, subId, "", host)
 	page := subReq.BuildPageData(subId, hostHeader, traffic, lastOnline, subs, emails, subURL, subJsonURL, subClashURL, basePathStr, metadata.Title, metadata.SupportURL)
 	page.SubAnnounce = metadata.Announce
 	return page, true
@@ -543,7 +543,7 @@ func (a *SUBController) subs(c *gin.Context) {
 
 		// Add headers
 		header := subReq.subscriptionUserinfo(traffic)
-		metadata := a.metadataForSubRequest(func() *SubService { return subReq }, subId, builtinProfileURL(c, scheme, hostWithPort))
+		metadata := a.metadataForSubRequest(func() *SubService { return subReq }, subId, builtinProfileURL(c, scheme, hostWithPort), host)
 		a.ApplyCommonHeaders(c, header, a.updateInterval, metadata.Title, metadata.SupportURL, metadata.ProfileURL, metadata.Announce, a.subEnableRouting, a.subRoutingRules, a.subHideSettings)
 
 		// Incy's profile rides the raw body; other clients must not see that line (#6062).
@@ -885,7 +885,7 @@ func (a *SUBController) serveJsonBody(c *gin.Context, alwaysReturnArray bool, co
 			subReq = a.subService.ForRequest(host)
 		}
 		return subReq
-	}, subId, builtinProfileURL(c, scheme, hostWithPort))
+	}, subId, builtinProfileURL(c, scheme, hostWithPort), host)
 	a.ApplyCommonHeaders(c, header, a.updateInterval, metadata.Title, metadata.SupportURL, metadata.ProfileURL, metadata.Announce, a.subEnableRouting, a.subRoutingRules, a.subHideSettings)
 	if rawDownload {
 		c.Writer.Header().Set("Content-Disposition", `attachment; filename="subscription.json"`)
@@ -953,7 +953,7 @@ func (a *SUBController) serveClashBody(c *gin.Context, rawDownload bool, legacy 
 			subReq = a.subService.ForRequest(host)
 		}
 		return subReq
-	}, subId, builtinProfileURL(c, scheme, hostWithPort))
+	}, subId, builtinProfileURL(c, scheme, hostWithPort), host)
 	a.ApplyCommonHeaders(c, header, a.updateInterval, metadata.Title, metadata.SupportURL, metadata.ProfileURL, metadata.Announce, a.subEnableRouting, a.subRoutingRules, a.subHideSettings)
 	if rawDownload {
 		c.Writer.Header().Set("Content-Disposition", `attachment; filename="subscription.yaml"`)

@@ -81,7 +81,7 @@ func TestMetadataForSubRequestOmitsUnconfiguredProfileURL(t *testing.T) {
 	metadata := a.metadataForSubRequest(func() *SubService {
 		t.Fatal("metadataForSubRequest loaded a subscription context without configured placeholders")
 		return nil
-	}, "sub-123", "https://sub.example/sub-123")
+	}, "sub-123", "https://sub.example/sub-123", "sub.example")
 
 	if metadata.ProfileURL != "" {
 		t.Fatalf("ProfileURL = %q, want no link when unconfigured", metadata.ProfileURL)
@@ -176,7 +176,7 @@ func TestMetadataForSubRequestUsesStableClientIdentity(t *testing.T) {
 		subProfileMode: service.SubProfileModeCustom,
 		subAnnounce:    "Subscription {{SUB_ID}}",
 	}
-	metadata := a.metadataForSubRequest(func() *SubService { return &SubService{} }, "sub-123", "https://sub.example/sub-123")
+	metadata := a.metadataForSubRequest(func() *SubService { return &SubService{} }, "sub-123", "https://sub.example/sub-123", "sub.example")
 
 	if metadata.Title != "isVPN — john doe@example.com" {
 		t.Fatalf("Title = %q", metadata.Title)
@@ -189,5 +189,21 @@ func TestMetadataForSubRequestUsesStableClientIdentity(t *testing.T) {
 	}
 	if metadata.Announce != "Subscription sub-123" {
 		t.Fatalf("Announce = %q", metadata.Announce)
+	}
+}
+
+// An empty subTitle sent no Profile-Title, so Happ listed a nameless
+// subscription (#19); the subscription host names it instead.
+func TestEmptySubTitleFallsBackToSubscriptionHost(t *testing.T) {
+	initSubDB(t)
+	for _, tc := range []struct{ title, want string }{
+		{"", "sub.example.com"},
+		{"My VPN", "My VPN"},
+	} {
+		a := &SUBController{subTitle: tc.title}
+		metadata := a.metadataForSubRequest(func() *SubService { return &SubService{} }, "sub-123", "", "sub.example.com")
+		if metadata.Title != tc.want {
+			t.Fatalf("subTitle %q: Title = %q, want %q", tc.title, metadata.Title, tc.want)
+		}
 	}
 }
