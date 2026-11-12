@@ -213,6 +213,10 @@ func cascadeOnline(entryNodeID int, byGuid map[string][]string, guidOf map[int]s
 	return here, elsewhere
 }
 
+// appliedAIRules is the AI rule set last written per cascade; empty after a
+// restart, so the first pass rewrites each entry once. Guarded by cascadeMu.
+var appliedAIRules = map[int]string{}
+
 // StickCascadeUsers keeps every online user of a multi-exit cascade on one exit
 // and rewrites the entry's pin rules (hot-applied, no reconnects) when they move.
 func (s *CascadeService) StickCascadeUsers(ctx context.Context) {
@@ -255,7 +259,7 @@ func (s *CascadeService) StickCascadeUsers(ctx context.Context) {
 		logger.Warning("cascade sticky: list fixed exits:", err)
 		return
 	}
-	aiExits, err := aiCountryExits(fixed, countryOf)
+	ai, err := aiCountryExits(fixed, countryOf)
 	if err != nil {
 		logger.Warning("cascade sticky: list AI countries:", err)
 		return
@@ -276,9 +280,12 @@ func (s *CascadeService) StickCascadeUsers(ctx context.Context) {
 				view.Exits = append(view.Exits, l.NodeId)
 			}
 			view.OnlineHere, view.OnlineElsewhere = cascadeOnline(c.EntryNodeId, byGuid, guidOf)
-			view.Fixed = fixedExitsIn(fixed, view.Exits, aiExits)
+			view.Fixed = fixedExitsIn(fixed, view.Exits, ai)
 		}
 		next, changed := nextCascadePins(old, view)
+		if key := aiRulesKey(c, ai.Domains); appliedAIRules[c.Id] != key {
+			appliedAIRules[c.Id], changed = key, true
+		}
 		if err := saveCascadePins(c.Id, old, next); err != nil {
 			logger.Warning("cascade", c.Id, ": save pins:", err)
 			continue

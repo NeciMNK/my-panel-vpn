@@ -122,6 +122,17 @@ func TestTrustedClientUsesAIOnlyInOneCountry(t *testing.T) {
 		t.Fatalf("with AI only in DE the screen still offers NL: %s %s", body, markup)
 	}
 
+	if !strings.Contains(markup, `"ai_m all"`) {
+		t.Fatalf("the AI-country screen lacks the all-traffic switch: %s", markup)
+	}
+	tap(tb, 6060, "ai_m all", false)
+	if _, all := (&service.CascadeService{}).AIMode([]string{"ai@x"}); !all {
+		t.Fatal("the all-traffic switch did not change the mode")
+	}
+	if _, markup := screenMarkup(t, tb, 6060); !strings.Contains(markup, `"ai_m ai"`) {
+		t.Fatalf("after all traffic the screen must offer AI sites only: %s", markup)
+	}
+
 	tap(tb, 6060, "ai_k *", false)
 	if got := pinnedExits(t, "ai@x"); !reflect.DeepEqual(got, []int{2, 4}) {
 		t.Fatalf("any country pins = %v, want NL's only server 4 added", got)

@@ -135,7 +135,7 @@ func TestCascadeModeRoutes(t *testing.T) {
 			cfg := baseTemplate(t)
 			tc.c.Id = 4
 			tc.c.Strategy = "leastPing"
-			applyCascadeToTemplate(cfg, &tc.c, tc.pins, splitZone("RU"))
+			applyCascadeToTemplate(cfg, &tc.c, tc.pins, nil, splitZone("RU"))
 			got := summaries(cascadeRules(t, cfg, 4))
 			if !slices.Equal(got, tc.want) {
 				t.Fatalf("rules =\n %v\nwant\n %v", got, tc.want)
@@ -159,7 +159,7 @@ func TestCascadeSplitAddsAdminEntriesToTheZone(t *testing.T) {
 		Id: 4, Mode: CascadeModeSplit, Links: []model.CascadeLink{{NodeId: 2}},
 		DirectDomains: []string{"example.com"}, DirectIPs: []string{"203.0.113.0/24"},
 	}
-	applyCascadeToTemplate(cfg, c, nil, splitZone("RU"))
+	applyCascadeToTemplate(cfg, c, nil, nil, splitZone("RU"))
 	rules := cascadeRules(t, cfg, 4)
 	domains, ips := strs(rules[0]["domain"]), strs(rules[1]["ip"])
 	for _, want := range []string{"domain:ru", "domain:su", "domain:xn--p1ai", "geosite:category-ru", "example.com"} {
@@ -199,7 +199,7 @@ func TestCascadeSplitStripsCleanly(t *testing.T) {
 		Id: 4, Mode: CascadeModeBoth, RelayInboundTags: []string{"r"},
 		Links: []model.CascadeLink{{NodeId: 2}, {NodeId: 5}},
 	}
-	applyCascadeToTemplate(cfg, c, []model.CascadePin{{Email: "a", NodeId: 2}}, splitZone("RU"))
+	applyCascadeToTemplate(cfg, c, []model.CascadePin{{Email: "a", NodeId: 2}}, nil, splitZone("RU"))
 	raw, _ := json.Marshal(cfg)
 	again := map[string]any{}
 	_ = json.Unmarshal(raw, &again)

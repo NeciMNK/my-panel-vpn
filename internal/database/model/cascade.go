@@ -58,9 +58,10 @@ type CascadeFixedExit struct {
 }
 
 // CascadeAICountry is the one country a user uses AI services from: their pin
-// there beats their other pins in a cascade mixing countries.
+// there carries AI domains only, or all their traffic when AllTraffic is set.
 type CascadeAICountry struct {
-	Id      int    `json:"id" gorm:"primaryKey;autoIncrement"`
-	Email   string `json:"email" gorm:"uniqueIndex"`
-	Country string `json:"country"`
+	Id         int    `json:"id" gorm:"primaryKey;autoIncrement"`
+	Email      string `json:"email" gorm:"uniqueIndex"`
+	Country    string `json:"country"`
+	AllTraffic bool   `json:"allTraffic" gorm:"column:all_traffic;default:false"`
 }
