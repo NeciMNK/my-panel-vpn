@@ -55,6 +55,8 @@ ReadWriteDirectories=-/etc/x-ui -/usr/local/x-ui -/var/log/x-ui
 # (#6796). Reopen only /proc/sys/net: kernel.* (core_pattern among them) stays read-only.
 # No ReadWriteDirectories alias needed: ProtectKernelTunables itself requires systemd 232.
 ReadWritePaths=-/proc/sys/net
+# Implies a fresh procfs that hides lxcfs, so install.sh/update.sh set it to no in
+# 10-xui-sandbox.conf when lxcfs serves /proc (LXC); otherwise the panel shows host stats.
 ProtectKernelTunables=yes
 ProtectKernelModules=yes
 ProtectKernelLogs=yes

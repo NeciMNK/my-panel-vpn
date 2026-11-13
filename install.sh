@@ -1599,6 +1599,25 @@ _xui_warn_unsupported_hardening() {
     return 0
 }
 
+# lxcfs (LXC, LXD, Incus) bind-mounts its own meminfo, cpuinfo, stat, uptime
+# and swaps over the container's /proc. ProtectKernelTunables= implies
+# MountAPIVFS=, so systemd gives the panel a fresh procfs without those files
+# and the dashboard reports the host's CPU, memory, swap and uptime.
+# $1 is the mountinfo to inspect; callers pass nothing and get their own.
+_xui_proc_has_lxcfs() {
+    local mountinfo="${1:-/proc/self/mountinfo}"
+    [[ -r "$mountinfo" ]] || return 1
+    awk '$5 ~ /^\/proc\// {
+        for (i = 7; i < NF; i++) {
+            if ($i == "-") {
+                if ($(i + 1) == "fuse.lxcfs") found = 1
+                break
+            }
+        }
+    }
+    END { exit !found }' "$mountinfo"
+}
+
 # ProtectSystem=full makes /usr, /boot, /efi and /etc read-only. ProtectSystem=
 # strict would make the whole hierarchy read-only (only the kernel API
 # filesystems stay as they are), and that would break the panel's own use of
@@ -1703,6 +1722,13 @@ EOF
 # would leave the panel with a filter it cannot start under (x-ui.service.*).
 SystemCallFilter=@system-service
 SystemCallErrorNumber=EPERM
+EOF
+    fi
+    if _xui_proc_has_lxcfs; then
+        cat >> "$temp_file" << 'EOF'
+# lxcfs serves this container's /proc view; the fresh procfs that
+# ProtectKernelTunables=yes mounts would show the host's resources instead.
+ProtectKernelTunables=no
 EOF
     fi
     if [[ ! -s "$temp_file" ]]; then
