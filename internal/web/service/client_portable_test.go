@@ -465,8 +465,10 @@ func TestImportClientsGivesOrphansTheirCredentials(t *testing.T) {
 	svc := &ClientService{}
 	items := []ClientCreatePayload{
 		{Client: model.Client{Email: "orphan@bare", SubID: "sub-orphan-bare", Enable: true}},
-		{Client: model.Client{Email: "orphan@kept", SubID: "sub-orphan-kept", Enable: true,
-			ID: "dddddddd-dddd-dddd-dddd-dddddddddddd", Password: "keep-pass", Auth: "keep-auth"}},
+		{Client: model.Client{
+			Email: "orphan@kept", SubID: "sub-orphan-kept", Enable: true,
+			ID: "dddddddd-dddd-dddd-dddd-dddddddddddd", Password: "keep-pass", Auth: "keep-auth",
+		}},
 	}
 	res, _, err := svc.ImportClients(&InboundService{}, items)
 	if err != nil || res.Created != 2 {

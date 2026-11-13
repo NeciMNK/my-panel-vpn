@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	_ "embed"
 	"encoding/json"
 	"errors"
@@ -623,7 +624,8 @@ func (s *SettingService) PanelEgressProxyURL() string {
 // config the core never bound would otherwise fail every panel request (#12).
 func liveEgressBridgeURL(tag string, port int) string {
 	addr := net.JoinHostPort("127.0.0.1", strconv.Itoa(port))
-	conn, err := net.DialTimeout("tcp", addr, 300*time.Millisecond)
+	dialer := net.Dialer{Timeout: 300 * time.Millisecond}
+	conn, err := dialer.DialContext(context.Background(), "tcp", addr)
 	if err != nil {
 		warning := fmt.Sprintf("egress bridge [%s] on %s does not accept connections (%v), using a direct connection", tag, addr, err)
 		if previous, _ := lastDeadBridgeWarning.Swap(warning).(string); previous != warning {
