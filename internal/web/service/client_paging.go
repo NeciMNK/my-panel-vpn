@@ -210,7 +210,7 @@ func (q clientQuery) from() *gorm.DB {
 	for _, j := range q.joins {
 		tx = tx.Joins(j.sql, j.args...)
 	}
-	return tx
+	return excludeServiceClients(tx, "c.email")
 }
 
 func (q clientQuery) depletedExpr() string {
@@ -399,7 +399,7 @@ func (s *ClientService) ListPaged(inboundSvc *InboundService, settingSvc *Settin
 	q := newClientQuery(db, time.Now().UnixMilli(), expireDiffMs, trafficDiffBytes)
 
 	var total int64
-	if err := db.Model(&model.ClientRecord{}).Count(&total).Error; err != nil {
+	if err := excludeServiceClients(db.Model(&model.ClientRecord{}), "email").Count(&total).Error; err != nil {
 		return nil, err
 	}
 
@@ -578,7 +578,7 @@ func (q clientQuery) onlineEmails(onlines []string) ([]string, int, error) {
 	count := 0
 	for _, batch := range chunkStrings(onlines, sqlInChunk) {
 		var page []string
-		if err := q.db.Model(&model.ClientRecord{}).
+		if err := excludeServiceClients(q.db.Model(&model.ClientRecord{}), "email").
 			Where("COALESCE(enable, FALSE) = TRUE AND email IN ?", batch).
 			Order("id ASC").
 			Pluck("email", &page).Error; err != nil {
