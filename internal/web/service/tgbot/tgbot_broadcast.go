@@ -276,6 +276,9 @@ func (t *Tgbot) acceptBroadcastDraft(actor chatUser, ids []int) {
 	}
 	recipients := t.collectBroadcastRecipients()
 	token := t.randomLowerAndNum(12)
+	// Clear before publishing: a reader that sees the pending draft must not
+	// still find the chat awaiting broadcast input.
+	userStateMgr.clear(actor)
 	broadcastMu.Lock()
 	broadcastComposes[actor] = &broadcastCompose{
 		messageIDs:      ids,
@@ -283,7 +286,6 @@ func (t *Tgbot) acceptBroadcastDraft(actor chatUser, ids []int) {
 		token:           token,
 	}
 	broadcastMu.Unlock()
-	userStateMgr.clear(actor)
 	keyboard := tu.InlineKeyboard(tu.InlineKeyboardRow(
 		tu.InlineKeyboardButton(t.I18nBot("tgbot.buttons.broadcastSend")).WithCallbackData("broadcast_confirm "+token),
 		tu.InlineKeyboardButton(t.I18nBot("tgbot.buttons.cancel")).WithCallbackData("broadcast_cancel"),
