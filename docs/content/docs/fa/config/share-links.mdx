@@ -40,7 +40,7 @@ icon: Link
 که شما در تنظیمات پنل کنترل می‌کنید (`remarkTemplate`). مقدار پیش‌فرض این است:
 
 ```text
-{{INBOUND}}-{{EMAIL}}|📊{{TRAFFIC_LEFT}}|⏳{{DAYS_LEFT}}D
+{{AUTO_NAME}}
 ```
 
 توکن‌ها از نحو `{{UPPER_CASE}}` استفاده می‌کنند. قالب بر اساس `|` به بخش‌هایی تقسیم می‌شود؛
@@ -54,6 +54,7 @@ icon: Link
 | ----- | ----- |
 | `{{EMAIL}}` / `{{USERNAME}}` | ایمیل کلاینت (شناسه) |
 | `{{INBOUND}}` | توضیحات اینباند |
+| `{{AUTO_NAME}}` | Automatic server name from node countries and cascades: `🇳🇱 Pure NL`, `🇷🇺 / 🇳🇱 Split RU / NL`, `🇷🇺 / ⚡ Split Auto (Best Ping)`; protocols other than VLESS are named (`Hysteria Pure NL`). Falls back to the inbound remark when a server has no country |
 | `{{HOST}}` | توضیحات ردیف هاست (هاست‌های مدیریت‌شده) |
 | `{{ID}}` / `{{SHORT_ID}}` | UUID کلاینت / ۸ کاراکتر نخست آن |
 | `{{TELEGRAM_ID}}` · `{{SUB_ID}}` · `{{COMMENT}}` | شناسه Telegram، شناسه اشتراک، توضیح |

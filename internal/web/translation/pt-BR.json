@@ -2813,6 +2813,7 @@
         },
         "descEMAIL": "Email do cliente",
         "descINBOUND": "Observação da própria entrada (nome da configuração)",
+        "descAUTO_NAME": "Server name built automatically: entry flag, Pure / Split / Auto, exit country, protocol",
         "descHOST": "Observação do host",
         "descID": "UUID do cliente",
         "descSHORT_ID": "Primeiros 8 caracteres do UUID",

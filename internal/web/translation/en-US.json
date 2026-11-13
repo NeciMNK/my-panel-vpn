@@ -1224,6 +1224,7 @@
         },
         "descEMAIL": "Client email",
         "descINBOUND": "Inbound's own remark (the config name)",
+        "descAUTO_NAME": "Server name built automatically: entry flag, Pure / Split / Auto, exit country, protocol",
         "descHOST": "Host remark",
         "descID": "Client UUID",
         "descSHORT_ID": "First 8 characters of the UUID",

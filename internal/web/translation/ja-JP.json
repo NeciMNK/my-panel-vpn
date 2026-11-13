@@ -2813,6 +2813,7 @@
         },
         "descEMAIL": "クライアントのメール",
         "descINBOUND": "インバウンド自身の備考（設定名）",
+        "descAUTO_NAME": "Server name built automatically: entry flag, Pure / Split / Auto, exit country, protocol",
         "descHOST": "ホストの備考",
         "descID": "クライアント UUID",
         "descSHORT_ID": "UUID の最初の 8 文字",

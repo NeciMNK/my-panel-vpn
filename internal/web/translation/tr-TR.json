@@ -2813,6 +2813,7 @@
         },
         "descEMAIL": "Kullanıcı e-postası",
         "descINBOUND": "Gelen bağlantının kendi açıklaması (yapılandırma adı)",
+        "descAUTO_NAME": "Server name built automatically: entry flag, Pure / Split / Auto, exit country, protocol",
         "descHOST": "Host açıklaması",
         "descID": "Kullanıcı UUID'si",
         "descSHORT_ID": "UUID'nin ilk 8 karakteri",

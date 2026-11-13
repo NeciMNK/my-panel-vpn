@@ -41,7 +41,7 @@ The text after `#` in each link (the **remark**) is generated from a template
 you control in Panel Settings (`remarkTemplate`). The default is:
 
 ```text
-{{INBOUND}}-{{EMAIL}}|📊{{TRAFFIC_LEFT}}|⏳{{DAYS_LEFT}}D
+{{AUTO_NAME}}
 ```
 
 Tokens use `{{UPPER_CASE}}` syntax. The template is split on `|` into segments;
@@ -55,6 +55,7 @@ don't show empty decorations.
 | ----- | ----- |
 | `{{EMAIL}}` / `{{USERNAME}}` | Client email (identifier) |
 | `{{INBOUND}}` | Inbound remark |
+| `{{AUTO_NAME}}` | Automatic server name from node countries and cascades: `🇳🇱 Pure NL`, `🇷🇺 / 🇳🇱 Split RU / NL`, `🇷🇺 / ⚡ Split Auto (Best Ping)`; protocols other than VLESS are named (`Hysteria Pure NL`). Falls back to the inbound remark when a server has no country |
 | `{{HOST}}` | Host-row remark (managed hosts) |
 | `{{ID}}` / `{{SHORT_ID}}` | Client UUID / its first 8 chars |
 | `{{TELEGRAM_ID}}` · `{{SUB_ID}}` · `{{COMMENT}}` | Telegram ID, subscription ID, comment |
