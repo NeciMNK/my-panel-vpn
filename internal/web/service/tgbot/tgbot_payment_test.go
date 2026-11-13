@@ -61,9 +61,9 @@ func screenMarkup(t *testing.T, tb *Tgbot, chatID int64) (body string, markup st
 	return sc.body, string(raw)
 }
 
-// A client must learn from its own screen when, how much and where to pay;
-// the admin's text is HTML-escaped, or Telegram rejects the whole message.
-func TestClientHomeShowsWhenHowMuchAndWhereToPay(t *testing.T) {
+// The payment block sat under the subscriptions on the home screen and spilled onto
+// a second caption page; it belongs behind the home screen's own "Payment" button.
+func TestPayButtonShowsWhenHowMuchAndWhereToPay(t *testing.T) {
 	tb, _ := newScreenTgbot(t, false)
 	initReportDB(t)
 	localizeWithRealBundle(t)
@@ -74,9 +74,20 @@ func TestClientHomeShowsWhenHowMuchAndWhereToPay(t *testing.T) {
 	seedPaymentSettings(t, "300", "Card 2200 0000 & SBP <phone>")
 	seedSettings(t, map[string]string{"tgPaymentCurrency": "RUB", "tgPaymentDiscounts": "3:10"})
 
-	tb.screenClientHome(777, 5151)
+	tb.screenClientHome(5151, 5151)
+	home, homeMarkup := screenMarkup(t, tb, 5151)
+	if !strings.Contains(homeMarkup, `"`+cbClientPay+`"`) {
+		t.Fatalf("client home has no payment button: %s", homeMarkup)
+	}
+	if strings.Contains(home, "1 mo — 300 RUB") || strings.Contains(home, "Card 2200") {
+		t.Errorf("client home still carries the payment block:\n%s", home)
+	}
+	if strings.Contains(homeMarkup, `"`+cbClientPaid+`"`) {
+		t.Errorf("client home reports a payment before the client saw where to pay: %s", homeMarkup)
+	}
 
-	body, markup := screenMarkup(t, tb, 777)
+	tap(tb, 5151, cbClientPay, false)
+	body, markup := screenMarkup(t, tb, 5151)
 	for _, want := range []string{
 		due.Format("2006-01-02"),
 		"1 mo — 300 RUB",
@@ -84,11 +95,14 @@ func TestClientHomeShowsWhenHowMuchAndWhereToPay(t *testing.T) {
 		"Card 2200 0000 &amp; SBP &lt;phone&gt;",
 	} {
 		if !strings.Contains(body, want) {
-			t.Errorf("client home lacks %q:\n%s", want, body)
+			t.Errorf("payment screen lacks %q:\n%s", want, body)
 		}
 	}
 	if !strings.Contains(markup, `"`+cbClientPaid+`"`) {
-		t.Errorf("client home offers no way to report a payment: %s", markup)
+		t.Errorf("payment screen offers no way to report a payment: %s", markup)
+	}
+	if sc, _ := tb.screens().get(5151); sc.pageMax != 1 {
+		t.Errorf("payment screen spans %d pages, want 1", sc.pageMax)
 	}
 }
 
@@ -103,7 +117,7 @@ func TestClientHomeWithoutPaymentSettingsShowsNoPayment(t *testing.T) {
 	tb.screenClientHome(777, 5252)
 
 	body, markup := screenMarkup(t, tb, 777)
-	if strings.Contains(markup, cbClientPaid) {
+	if strings.Contains(markup, cbClientPay) || strings.Contains(markup, cbClientPaid) {
 		t.Errorf("an unbilled client is offered a payment button: %s", markup)
 	}
 	if strings.Contains(body, "Amount") {
@@ -123,9 +137,9 @@ func TestPaymentBlockMarksExpiredSubscriptionOverdue(t *testing.T) {
 	setClientExpiry(t, "late@x", lapsed)
 	seedPaymentSettings(t, "300", "card")
 
-	tb.screenClientHome(777, 5353)
+	tap(tb, 5353, cbClientPay, false)
 
-	body, _ := screenMarkup(t, tb, 777)
+	body, _ := screenMarkup(t, tb, 5353)
 	if !strings.Contains(body, "expired on "+lapsed.Format("2006-01-02")) {
 		t.Errorf("an expired client is not told payment is overdue:\n%s", body)
 	}
@@ -330,7 +344,7 @@ func TestTrustedClientDefersPayment(t *testing.T) {
 	due := time.Now().Add(2 * 24 * time.Hour).Truncate(time.Second)
 	setClientExpiry(t, "trusted@x", due)
 
-	tb.screenClientHome(5757, 5757)
+	tap(tb, 5757, cbClientPay, false)
 	if _, markup := screenMarkup(t, tb, 5757); strings.Contains(markup, cbClientDefer) {
 		t.Fatalf("an untrusted client is offered a deferral: %s", markup)
 	}
@@ -339,7 +353,7 @@ func TestTrustedClientDefersPayment(t *testing.T) {
 	if !billingOf(t, "trusted@x").Trusted {
 		t.Fatal("the admin's trust toggle did not mark the client trusted")
 	}
-	tb.screenClientHome(5757, 5757)
+	tap(tb, 5757, cbClientPay, false)
 	if _, markup := screenMarkup(t, tb, 5757); !strings.Contains(markup, `"`+cbClientDefer+`"`) {
 		t.Fatalf("a trusted client near expiry is not offered a deferral: %s", markup)
 	}
@@ -618,4 +632,61 @@ func TestRepeatConfirmOnAStaleNoticeStripsItsButton(t *testing.T) {
 		}
 	}
 	t.Error("the stale notice's confirm button was left untouched")
+}
+
+// The admin's report had only "+N mo" and "Hide": a transfer that never arrived could
+// not be refused, so the client never learnt and its report stayed confirmable.
+func TestPaymentNotReceivedTellsClientAndClosesReport(t *testing.T) {
+	tb, calls := newScreenTgbot(t, false)
+	initReportDB(t)
+	localizeWithRealBundle(t)
+	setTestAdmins(t, 9001, 9002)
+	resetThrottles(t)
+	seedBilledClient(t, 6262, "nomoney@x")
+	seedPaymentSettings(t, "300", "card")
+	due := time.Now().Add(5 * 24 * time.Hour)
+	setClientExpiry(t, "nomoney@x", due)
+
+	tap(tb, 6262, "client_paid 1", false)
+	sent := adminMessages(calls(), 9001)
+	if len(sent) != 1 {
+		t.Fatalf("admin reports = %d, want 1", len(sent))
+	}
+	reportMarkup, _ := json.Marshal(sent[0].Payload["reply_markup"])
+	if !strings.Contains(string(reportMarkup), `"pay_no nomoney@x 1"`) {
+		t.Fatalf("the admin report has no 'not received' button: %s", reportMarkup)
+	}
+
+	tb.answerCallback(&telego.CallbackQuery{
+		ID: "q", From: telego.User{ID: 9001, Username: "boss"}, Data: "pay_no nomoney@x 1",
+		Message: &telego.Message{Chat: telego.Chat{ID: 9001}},
+	}, true)
+
+	told := adminMessages(calls(), 6262)
+	if len(told) != 1 || !strings.Contains(told[0].text(), tb.I18nBot("tgbot.messages.paymentNotReceived", "Months==1")) {
+		t.Fatalf("client messages = %v, want one 'payment not received' notice", told)
+	}
+	edited := map[int64]bool{}
+	for _, c := range calls() {
+		if c.Method != "editMessageText" || !strings.Contains(c.text(), "@boss") {
+			continue
+		}
+		if markup := fmt.Sprint(c.Payload["reply_markup"]); strings.Contains(markup, "pay_ok") || strings.Contains(markup, "pay_no") {
+			t.Errorf("a refused report still offers its buttons: %v", markup)
+		}
+		edited[int64(c.Payload["chat_id"].(float64))] = true
+	}
+	if !edited[9001] || !edited[9002] {
+		t.Errorf("notices rewritten with who refused = %v, want both admins", edited)
+	}
+
+	tap(tb, 9002, "pay_ok nomoney@x 1", true)
+	if got := trafficOf(t, "nomoney@x").ExpiryTime; got != due.UnixMilli() {
+		t.Errorf("a refused report was still confirmed: expiry %v, want %v", time.UnixMilli(got), due)
+	}
+
+	tap(tb, 6262, "client_paid 1", false)
+	if n := len(adminMessages(calls(), 9001)); n != 2 {
+		t.Errorf("admin reports after the client reported again = %d, want 2: the refusal kept the throttle", n)
+	}
 }

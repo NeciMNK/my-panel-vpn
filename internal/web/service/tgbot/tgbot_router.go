@@ -457,6 +457,12 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 					return
 				}
 				t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
+			case "pay_no":
+				if len(dataArray) == 3 {
+					t.refusePayment(callbackQuery, email, dataArray[2])
+					return
+				}
+				t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
 			case "trust":
 				t.toggleTrusted(callbackQuery, email)
 			case "friend":
@@ -1138,6 +1144,9 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 	case cbMySubscription:
 		t.answerSilent(callbackQuery.ID)
 		t.screenClientHome(chatId, callbackQuery.From.ID)
+	case cbClientPay:
+		t.answerSilent(callbackQuery.ID)
+		t.screenClientPay(chatId, callbackQuery.From.ID)
 	case cbClientPaid:
 		t.answerSilent(callbackQuery.ID)
 		t.screenPlanPicker(chatId, callbackQuery.From.ID)
@@ -1375,7 +1384,7 @@ func isClientSelfCallback(data string) bool {
 	// "hide" is how any recipient puts a message away: it carries no target of its
 	// own (it is the message it sits on), so it is safe for anyone to reach.
 	case "home", "hide", "client_traffic", "client_commands", "client_sub_links",
-		"client_individual_links", "client_qr_links", cbClientPaid, cbClientDefer:
+		"client_individual_links", "client_qr_links", cbClientPay, cbClientPaid, cbClientDefer:
 		return true
 	// Paging only turns the screen already tracked for the caller's own chat.
 	case cbPageNext, cbPagePrev, cbPageNone:
