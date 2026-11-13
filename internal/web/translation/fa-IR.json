@@ -838,7 +838,11 @@
         "peerNumberConfig": "پیکربندی Peer {n}"
       },
       "sniffingDestOverride": "بازنویسی مقصد",
-      "advancedTitle": "تنظیمات پیشرفته"
+      "advancedTitle": "تنظیمات پیشرفته",
+      "copyAsXhttp": "کپی به‌صورت XHTTP",
+      "copyAsXhttpContent": "یک ورودی XHTTP روی پورت جدید با همان کاربران و امنیت می‌سازد. ورودی gRPC همچنان کار می‌کند؛ پس از به‌روزرسانی اشتراک کاربران آن را حذف کنید.",
+      "grpcDeprecated": "انتقال gRPC در Xray منسوخ شده و ممکن است حذف شود. این ورودی را به XHTTP منتقل کنید.",
+      "deprecated": "منسوخ"
     },
     "clients": {
       "tabBasics": "پایه",

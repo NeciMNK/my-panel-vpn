@@ -838,7 +838,11 @@
         "peerNumberConfig": "Peer {n} Yapılandırması"
       },
       "sniffingDestOverride": "Hedef geçersiz kılma",
-      "advancedTitle": "Gelişmiş Ayarlar"
+      "advancedTitle": "Gelişmiş Ayarlar",
+      "copyAsXhttp": "XHTTP olarak kopyala",
+      "copyAsXhttpContent": "Aynı istemciler ve güvenlikle yeni bir portta XHTTP inbound oluşturur. gRPC inbound çalışmaya devam eder; istemciler aboneliklerini yeniledikten sonra silin.",
+      "grpcDeprecated": "Xray gRPC aktarımını kullanımdan kaldırdı ve silebilir. Bu inbound'u XHTTP'ye taşıyın.",
+      "deprecated": "kullanımdan kalktı"
     },
     "clients": {
       "tabBasics": "Temel",

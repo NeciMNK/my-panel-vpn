@@ -255,9 +255,15 @@ export function useInboundColumns({
           } else if (record.isVMess || record.isVLess || record.isTrojan) {
             const stream = readStreamHints(record.streamSettings);
             tags.push(
-              <Tag key="n" color="green">
-                {networkLabel(stream.network)}
-              </Tag>,
+              stream.network === 'grpc' ? (
+                <Tooltip key="n" title={t('pages.inbounds.grpcDeprecated')}>
+                  <Tag color="orange">{networkLabel(stream.network)}</Tag>
+                </Tooltip>
+              ) : (
+                <Tag key="n" color="green">
+                  {networkLabel(stream.network)}
+                </Tag>
+              ),
             );
             const l4 = networkL4(stream.network);
             if (l4)

@@ -838,7 +838,11 @@
         "peerNumberConfig": "Config Peer {n}"
       },
       "sniffingDestOverride": "Substituição de destino",
-      "advancedTitle": "Configurações avançadas"
+      "advancedTitle": "Configurações avançadas",
+      "copyAsXhttp": "Copiar como XHTTP",
+      "copyAsXhttpContent": "Cria um inbound XHTTP em uma nova porta com os mesmos clientes e segurança. O inbound gRPC continua funcionando; exclua-o quando os clientes atualizarem as assinaturas.",
+      "grpcDeprecated": "O Xray tornou o transporte gRPC obsoleto e pode removê-lo. Migre este inbound para XHTTP.",
+      "deprecated": "obsoleto"
     },
     "clients": {
       "tabBasics": "Básico",

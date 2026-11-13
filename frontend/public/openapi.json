@@ -7652,6 +7652,82 @@
         }
       }
     },
+    "/panel/api/inbounds/{id}/copyAsXhttp": {
+      "post": {
+        "tags": [
+          "Inbounds"
+        ],
+        "summary": "Add an XHTTP copy of a gRPC inbound (gRPC is deprecated since Xray 26.10) on the given port: same node, security and clients; serviceName becomes the XHTTP path. The gRPC inbound keeps running until you delete it.",
+        "operationId": "post_panel_api_inbounds_id_copyAsXhttp",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID of the gRPC inbound.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "port": 34567
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "success": false,
+                  "msg": "Something went wrong: inbound does not use the gRPC transport"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/panel/api/inbounds/{id}/resetTraffic": {
       "post": {
         "tags": [

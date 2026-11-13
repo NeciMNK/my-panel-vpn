@@ -838,7 +838,11 @@
         "peerNumberConfig": "تكوين Peer {n}"
       },
       "sniffingDestOverride": "تجاوز الوجهة",
-      "advancedTitle": "الإعدادات المتقدمة"
+      "advancedTitle": "الإعدادات المتقدمة",
+      "copyAsXhttp": "نسخ كـ XHTTP",
+      "copyAsXhttpContent": "ينشئ مدخل XHTTP على منفذ جديد بنفس العملاء والأمان. يستمر مدخل gRPC في العمل؛ احذفه بعد أن يحدّث العملاء اشتراكاتهم.",
+      "grpcDeprecated": "أوقف Xray دعم نقل gRPC وقد يزيله. انقل هذا المدخل إلى XHTTP.",
+      "deprecated": "مهمل"
     },
     "clients": {
       "tabBasics": "أساسي",

@@ -347,6 +347,16 @@ export const sections: readonly Section[] = [
       },
       {
         method: 'POST',
+        path: '/panel/api/inbounds/:id/copyAsXhttp',
+        summary:
+          'Add an XHTTP copy of a gRPC inbound (gRPC is deprecated since Xray 26.10) on the given port: same node, security and clients; serviceName becomes the XHTTP path. The gRPC inbound keeps running until you delete it.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'ID of the gRPC inbound.' }],
+        body: '{\n  "port": 34567\n}',
+        errorResponse:
+          '{\n  "success": false,\n  "msg": "Something went wrong: inbound does not use the gRPC transport"\n}',
+      },
+      {
+        method: 'POST',
         path: '/panel/api/inbounds/:id/resetTraffic',
         summary:
           'Zero out upload + download counters for a single inbound. Does not touch per-client counters.',

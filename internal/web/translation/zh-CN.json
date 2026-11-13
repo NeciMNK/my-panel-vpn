@@ -838,7 +838,11 @@
         "peerNumberConfig": "Peer {n} 配置"
       },
       "sniffingDestOverride": "目标覆盖",
-      "advancedTitle": "高级设置"
+      "advancedTitle": "高级设置",
+      "copyAsXhttp": "复制为 XHTTP",
+      "copyAsXhttpContent": "在新端口上创建使用相同客户端和安全设置的 XHTTP 入站。gRPC 入站继续工作；客户端刷新订阅后请将其删除。",
+      "grpcDeprecated": "Xray 已弃用 gRPC 传输，未来可能移除。请将此入站迁移到 XHTTP。",
+      "deprecated": "已弃用"
     },
     "clients": {
       "tabBasics": "基本",

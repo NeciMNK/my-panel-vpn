@@ -117,14 +117,14 @@ try {
       await selectByKey(
         dialog.getByRole('combobox', { name: 'Transmission' }),
         edit ? 'g' : 'w',
-        edit ? 'gRPC' : 'WebSocket',
+        edit ? 'gRPC (deprecated)' : 'WebSocket',
       );
       const cdp = await context.newCDPSession(page);
       const ax = await cdp.send('Accessibility.getFullAXTree');
       const transport = ax.nodes.find(
         (node) => node.role?.value === 'combobox' && node.name?.value.trim() === 'Transmission',
       );
-      assert.equal(transport?.value?.value, edit ? 'gRPC' : 'WebSocket');
+      assert.equal(transport?.value?.value, edit ? 'gRPC (deprecated)' : 'WebSocket');
       const submit = dialog.getByRole('button', {
         name: edit ? 'Save Changes' : 'Create',
         exact: true,
