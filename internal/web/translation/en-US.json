@@ -1409,7 +1409,7 @@
         "country": "Exit country",
         "countryHint": "Traffic leaves through the fastest server of this country. New nodes of the country join automatically.",
         "split": "Split traffic",
-        "splitHint": "Sites and IPs of the entry server's country (Russia: .ru, .su, .рф, geosite:category-ru, geoip:ru) and the entries below leave the internet from the entry itself; everything else goes through the exit.",
+        "splitHint": "Sites whose servers are in the entry server's country (by server IP, geoip; for Russia also geosite:category-ru) and the entries below leave the internet from the entry itself; everything else goes through the exit, even a .ru site hosted abroad.",
         "relay": "Pure relay",
         "relayHint": "The entry only forwards traffic: everything goes through the exit.",
         "relayInbounds": "Inbounds that only relay",

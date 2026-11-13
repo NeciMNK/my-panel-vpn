@@ -307,11 +307,15 @@ func applyCascadeToTemplate(cfg map[string]any, c *model.Cascade, pins []model.C
 	if mode != CascadeModeRelay {
 		appendOutbounds(cfg, map[string]any{"tag": cascadeDirectTag(c.Id), "protocol": "freedom"})
 		direct := map[string]any{"outboundTag": cascadeDirectTag(c.Id)}
-		domain := cascadeRule(cascadePrefix(c.Id)+"direct-domain", c.EntryInboundTags, direct)
-		domain["domain"] = append(slices.Clone(zone.Domains), c.DirectDomains...)
+		if domains := append(slices.Clone(zone.Domains), c.DirectDomains...); len(domains) > 0 {
+			domain := cascadeRule(cascadePrefix(c.Id)+"direct-domain", c.EntryInboundTags, direct)
+			domain["domain"] = domains
+			appendTailRules(cfg, domain)
+		}
 		ip := cascadeRule(cascadePrefix(c.Id)+"direct-ip", c.EntryInboundTags, direct)
 		ip["ip"] = append(slices.Clone(zone.IPs), c.DirectIPs...)
-		appendTailRules(cfg, domain, ip)
+		appendTailRules(cfg, ip)
+		templateRouting(cfg)["domainStrategy"] = splitDomainStrategy
 	}
 	if multi {
 		appendTailRules(cfg, cascadeAIRules(c, ai.Domains, ai.Sites, cascadePrefix(c.Id), c.EntryInboundTags)...)
