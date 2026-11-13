@@ -66,6 +66,7 @@ export class AllSetting {
   subListen = '';
   subPort = 2096;
   subPath = '/sub/';
+  subPathAliases = '';
   subJsonPath = '/json/';
   subClashEnable = false;
   subClashPath = '/clash/';
@@ -93,6 +94,7 @@ export class AllSetting {
   subThemeDir = '';
   subHideSettings = false;
   subHappAutoDetect = false;
+  subHappRoutingUpdate = false;
   subHappProviderId = '';
   subHappNewUrl = '';
   subHappFallbackUrl = '';

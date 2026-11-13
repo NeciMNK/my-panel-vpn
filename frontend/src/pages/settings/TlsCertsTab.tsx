@@ -51,6 +51,7 @@ export default function TlsCertsTab() {
   const [domainsRaw, setDomainsRaw] = useState('');
   const [autoRenew, setAutoRenewDraft] = useState(true);
   const [applyToPanel, setApplyToPanel] = useState(false);
+  const [applyToSub, setApplyToSub] = useState(false);
 
   const tokenSet = settings?.cloudflareTokenSet ?? false;
   const nodeName = (id: string) => nodes.find((n) => String(n.id) === id)?.name ?? `#${id}`;
@@ -65,6 +66,7 @@ export default function TlsCertsTab() {
       domains: splitDomains(domainsRaw),
       autoRenew,
       applyToPanel,
+      applyToSub,
     });
     if (msg?.success) {
       setModalOpen(false);
@@ -305,6 +307,14 @@ export default function TlsCertsTab() {
           {applyToPanel && (
             <Typography.Text type="secondary">
               {t('pages.settings.tlsCerts.applyToPanelDesc')}
+            </Typography.Text>
+          )}
+          <Checkbox checked={applyToSub} onChange={(e) => setApplyToSub(e.target.checked)}>
+            {t('pages.settings.tlsCerts.applyToSub')}
+          </Checkbox>
+          {applyToSub && (
+            <Typography.Text type="secondary">
+              {t('pages.settings.tlsCerts.applyToSubDesc')}
             </Typography.Text>
           )}
         </Space>

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -269,6 +270,7 @@ func TestPanelEgressProxyURLFollowsQuickPanelProxy(t *testing.T) {
 		t.Fatalf("panelOutbound = %q, the test needs it empty", tag)
 	}
 	startFakeCore(t)
+	listenAsEgressBridge(t)
 
 	want := fmt.Sprintf("socks5://127.0.0.1:%d", panelEgressBasePort)
 	if got := (&SettingService{}).PanelEgressProxyURL(); got != want {
@@ -295,6 +297,7 @@ func TestPanelProxyOwnSubscriptionIsFetchedDirectly(t *testing.T) {
 		t.Fatalf("Set: %v", err)
 	}
 	startFakeCore(t)
+	listenAsEgressBridge(t)
 
 	for _, tc := range []struct {
 		name           string
@@ -321,4 +324,15 @@ func TestPanelProxyOwnSubscriptionIsFetchedDirectly(t *testing.T) {
 			}
 		})
 	}
+}
+
+// listenAsEgressBridge binds the bridge port the way the real core would; the
+// fake core only records its config, and a dead bridge now means direct.
+func listenAsEgressBridge(t *testing.T) {
+	t.Helper()
+	listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", panelEgressBasePort))
+	if err != nil {
+		t.Fatalf("bind the egress bridge port: %v", err)
+	}
+	t.Cleanup(func() { _ = listener.Close() })
 }

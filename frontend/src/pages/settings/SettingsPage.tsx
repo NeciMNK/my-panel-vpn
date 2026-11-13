@@ -68,6 +68,10 @@ function isIp(h: string): boolean {
   return parts.length === 2 ? groups < 8 : groups === 8;
 }
 
+function trimSlashes(path: string) {
+  return path.replace(/^\/+|\/+$/g, '');
+}
+
 function scrollTarget() {
   return document.getElementById('content-layout') as HTMLElement;
 }
@@ -85,6 +89,7 @@ export default function SettingsPage() {
 
   const {
     allSetting,
+    savedSetting,
     updateSetting,
     fetched,
     spinning,
@@ -137,7 +142,39 @@ export default function SettingsPage() {
       messageApi.error(`${fieldPath}: ${t(msgKey, { defaultValue: msgKey })}`);
       return;
     }
+    const oldPath = savedSetting.subPath;
+    if (savedSetting.subEnable && trimSlashes(allSetting.subPath) !== trimSlashes(oldPath)) {
+      confirmSubPathChange(oldPath);
+      return;
+    }
     await saveAll();
+  }
+
+  // Renaming the path breaks every link already handed out, so ask whether to keep the old one (#21).
+  function confirmSubPathChange(oldPath: string) {
+    const aliases = [allSetting.subPathAliases, oldPath].filter(Boolean).join(',');
+    const confirm = modal.confirm({
+      title: t('pages.settings.subPathChangeTitle'),
+      content: t('pages.settings.subPathChangeDesc', { old: oldPath }),
+      okText: t('pages.settings.subPathKeepOld'),
+      cancelText: t('cancel'),
+      onOk: () => savePayload({ subPathAliases: aliases }),
+      footer: (_, { OkBtn, CancelBtn }) => (
+        <>
+          <CancelBtn />
+          <Button
+            danger
+            onClick={() => {
+              confirm.destroy();
+              void saveAll();
+            }}
+          >
+            {t('pages.settings.subPathDropOld')}
+          </Button>
+          <OkBtn />
+        </>
+      ),
+    });
   }
 
   function restartPanel() {

@@ -457,3 +457,36 @@ func TestImportClientsDuplicateEmailRestoresCreatedCopy(t *testing.T) {
 		})
 	}
 }
+
+// An imported client without inbounds was stored with no uuid, password or
+// auth; attaching it later minted a fresh secret per inbound (#14, see #1).
+func TestImportClientsGivesOrphansTheirCredentials(t *testing.T) {
+	setupBulkDB(t)
+	svc := &ClientService{}
+	items := []ClientCreatePayload{
+		{Client: model.Client{Email: "orphan@bare", SubID: "sub-orphan-bare", Enable: true}},
+		{Client: model.Client{
+			Email: "orphan@kept", SubID: "sub-orphan-kept", Enable: true,
+			ID: "dddddddd-dddd-dddd-dddd-dddddddddddd", Password: "keep-pass", Auth: "keep-auth",
+		}},
+	}
+	res, _, err := svc.ImportClients(&InboundService{}, items)
+	if err != nil || res.Created != 2 {
+		t.Fatalf("ImportClients = %+v, %v; want 2 created", res, err)
+	}
+
+	bare, err := svc.GetRecordByEmail(nil, "orphan@bare")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bare.UUID == "" || bare.Password == "" || bare.Auth == "" {
+		t.Fatalf("orphan stored without credentials: uuid=%q password=%q auth=%q", bare.UUID, bare.Password, bare.Auth)
+	}
+	kept, err := svc.GetRecordByEmail(nil, "orphan@kept")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if kept.UUID != "dddddddd-dddd-dddd-dddd-dddddddddddd" || kept.Password != "keep-pass" || kept.Auth != "keep-auth" {
+		t.Fatalf("exported credentials not kept: uuid=%q password=%q auth=%q", kept.UUID, kept.Password, kept.Auth)
+	}
+}

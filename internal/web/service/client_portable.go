@@ -197,6 +197,7 @@ func (s *ClientService) ImportClients(inboundSvc *InboundService, items []Client
 			client.CreatedAt = now
 		}
 		client.UpdatedAt = now
+		fillPortableCredentials(&client)
 
 		rec := client.ToRecord()
 		rec.LimitHwid = orphans[i].LimitHwid
@@ -335,4 +336,18 @@ func (s *ClientService) DeleteOrphans() (int, error) {
 		return 0, err
 	}
 	return len(ids), nil
+}
+
+// fillPortableCredentials gives a client stored without inbounds the secrets
+// every later attach must share, so each inbound does not mint its own (#14).
+func fillPortableCredentials(c *model.Client) {
+	if c.ID == "" {
+		c.ID = uuid.NewString()
+	}
+	if c.Password == "" {
+		c.Password = strings.ReplaceAll(uuid.NewString(), "-", "")
+	}
+	if c.Auth == "" {
+		c.Auth = strings.ReplaceAll(uuid.NewString(), "-", "")
+	}
 }

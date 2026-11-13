@@ -363,6 +363,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "subHappProviderId": {
         "type": "string"
       },
+      "subHappRoutingUpdate": {
+        "type": "boolean"
+      },
       "subHappSubExpire": {
         "type": "boolean"
       },
@@ -531,6 +534,9 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "string"
       },
       "subPath": {
+        "type": "string"
+      },
+      "subPathAliases": {
         "type": "string"
       },
       "subPort": {
@@ -777,6 +783,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "subHappPerAppMode",
       "subHappPingType",
       "subHappProviderId",
+      "subHappRoutingUpdate",
       "subHappSubExpire",
       "subHappSubExpireButtonLink",
       "subHappSubInfoButtonLink",
@@ -833,6 +840,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "subKeyFile",
       "subListen",
       "subPath",
+      "subPathAliases",
       "subPort",
       "subProfileMode",
       "subProfileUrl",
@@ -1202,6 +1210,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "subHappProviderId": {
         "type": "string"
       },
+      "subHappRoutingUpdate": {
+        "type": "boolean"
+      },
       "subHappSubExpire": {
         "type": "boolean"
       },
@@ -1370,6 +1381,9 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "string"
       },
       "subPath": {
+        "type": "string"
+      },
+      "subPathAliases": {
         "type": "string"
       },
       "subPort": {
@@ -1625,6 +1639,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "subHappPerAppMode",
       "subHappPingType",
       "subHappProviderId",
+      "subHappRoutingUpdate",
       "subHappSubExpire",
       "subHappSubExpireButtonLink",
       "subHappSubInfoButtonLink",
@@ -1681,6 +1696,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "subKeyFile",
       "subListen",
       "subPath",
+      "subPathAliases",
       "subPort",
       "subProfileMode",
       "subProfileUrl",
@@ -6221,6 +6237,10 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": false,
         "type": "boolean"
       },
+      "applyToSub": {
+        "example": false,
+        "type": "boolean"
+      },
       "autoRenew": {
         "example": true,
         "type": "boolean"
@@ -6278,6 +6298,7 @@ export const SCHEMAS: Record<string, unknown> = {
     },
     "required": [
       "applyToPanel",
+      "applyToSub",
       "autoRenew",
       "certFile",
       "createdAt",

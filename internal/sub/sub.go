@@ -69,6 +69,11 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 		return nil, err
 	}
 
+	pathAliases, err := s.settingService.GetSubPathAliases()
+	if err != nil {
+		return nil, err
+	}
+
 	JsonPath, err := s.settingService.GetSubJsonPath()
 	if err != nil {
 		return nil, err
@@ -236,6 +241,7 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 
 	happCfg := HappConfig{}
 	happCfg.AutoDetect, _ = s.settingService.GetSubHappAutoDetect()
+	happCfg.RoutingUpdate, _ = s.settingService.GetSubHappRoutingUpdate()
 	happCfg.ProviderId, _ = s.settingService.GetSubHappProviderId()
 	happCfg.NewUrl, _ = s.settingService.GetSubHappNewUrl()
 	happCfg.FallbackUrl, _ = s.settingService.GetSubHappFallbackUrl()
@@ -346,6 +352,7 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 
 	s.sub = NewSUBController(g,
 		WithSUBPath(LinksPath),
+		WithSUBPathAliases(pathAliases),
 		WithSUBJsonPath(JsonPath),
 		WithSUBClashPath(ClashPath),
 		WithSUBClashAutoDetect(subClashAutoDetect),

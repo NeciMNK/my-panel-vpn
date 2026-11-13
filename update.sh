@@ -518,6 +518,18 @@ require_repo_files() {
     done
 }
 
+# resolve_latest_tag prints the newest vX.Y.Z release tag, pre-releases included:
+# every fork tag before 1.0 is a pre-release, so releases/latest is always empty.
+resolve_latest_tag() {
+    local tags
+    tags=$(${curl_bin} -fsSL --retry 5 --retry-delay 3 --connect-timeout 15 --max-time 60 "https://github.com/${xui_repo}/releases.atom" 2> /dev/null | grep -oE '/releases/tag/v[0-9]+\.[0-9]+\.[0-9]+"' | sed -E 's#.*/tag/(v[^"]+)"#\1#')
+    if [[ -z "$tags" ]]; then
+        tags=$(${curl_bin} -Ls --retry 5 --retry-delay 3 --connect-timeout 15 --max-time 60 "https://api.github.com/repos/${xui_repo}/releases?per_page=100" 2> /dev/null | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$')
+    fi
+    [[ -n "$tags" ]] && printf '%s\n' "$tags" | sort -V | tail -n1
+    return 0
+}
+
 update_x-ui() {
     cd ${xui_folder%/x-ui}/
 
@@ -538,11 +550,11 @@ update_x-ui() {
         tag_version="${XUI_UPDATE_TAG}"
         echo -e "${green}Using update tag: ${tag_version}${plain}"
     else
-        tag_version=$(${curl_bin} -Ls "https://api.github.com/repos/${xui_repo}/releases/latest" 2> /dev/null | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-        # The fork ships main as the rolling dev-latest build and may have no stable tag.
+        tag_version=$(resolve_latest_tag)
+        # Without any vX.Y.Z release, fall back to the rolling build of main.
         if [[ ! -n "$tag_version" ]]; then
             tag_version="dev-latest"
-            echo -e "${yellow}No stable release found, updating to the rolling build of main (dev-latest)${plain}"
+            echo -e "${yellow}No release found, updating to the rolling build of main (dev-latest)${plain}"
         fi
     fi
     echo -e "Got x-ui latest version: ${tag_version}, beginning the installation..."

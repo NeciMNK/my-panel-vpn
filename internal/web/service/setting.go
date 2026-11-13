@@ -1,18 +1,21 @@
 package service
 
 import (
+	"context"
 	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"reflect"
 	"regexp"
 	"slices"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -144,6 +147,7 @@ var defaultValueMap = map[string]string{
 	"subRoutingRules":             "",
 	"subHideSettings":             "false",
 	"subHappAutoDetect":           "false",
+	"subHappRoutingUpdate":        "false",
 	"subHappProviderId":           "",
 	"subHappNewUrl":               "",
 	"subHappFallbackUrl":          "",
@@ -200,6 +204,7 @@ var defaultValueMap = map[string]string{
 	"subListen":                   "",
 	"subPort":                     "2096",
 	"subPath":                     "/sub/",
+	"subPathAliases":              "",
 	"subDomain":                   "",
 	"subCertFile":                 "",
 	"subKeyFile":                  "",
@@ -606,7 +611,7 @@ func (s *SettingService) PanelEgressProxyURL() string {
 	}
 	for i := range cfg.InboundConfigs {
 		if cfg.InboundConfigs[i].Tag == PanelEgressInboundTag {
-			return fmt.Sprintf("socks5://127.0.0.1:%d", cfg.InboundConfigs[i].Port)
+			return liveEgressBridgeURL(PanelEgressInboundTag, cfg.InboundConfigs[i].Port)
 		}
 	}
 	if tag, err := s.GetPanelOutbound(); err == nil && tag != "" {
@@ -614,6 +619,26 @@ func (s *SettingService) PanelEgressProxyURL() string {
 	}
 	return ""
 }
+
+// liveEgressBridgeURL returns the bridge only when it accepts connections: a
+// config the core never bound would otherwise fail every panel request (#12).
+func liveEgressBridgeURL(tag string, port int) string {
+	addr := net.JoinHostPort("127.0.0.1", strconv.Itoa(port))
+	dialer := net.Dialer{Timeout: 300 * time.Millisecond}
+	conn, err := dialer.DialContext(context.Background(), "tcp", addr)
+	if err != nil {
+		warning := fmt.Sprintf("egress bridge [%s] on %s does not accept connections (%v), using a direct connection", tag, addr, err)
+		if previous, _ := lastDeadBridgeWarning.Swap(warning).(string); previous != warning {
+			logger.Warning(warning)
+		}
+		return ""
+	}
+	_ = conn.Close()
+	lastDeadBridgeWarning.Store("")
+	return "socks5://" + addr
+}
+
+var lastDeadBridgeWarning atomic.Value
 
 func (s *SettingService) NodeEgressProxyURL(nodeID int) string {
 	tag := NodeEgressInboundTag(nodeID)
@@ -628,7 +653,7 @@ func (s *SettingService) NodeEgressProxyURL(nodeID int) string {
 	}
 	for i := range cfg.InboundConfigs {
 		if cfg.InboundConfigs[i].Tag == tag {
-			return fmt.Sprintf("socks5://127.0.0.1:%d", cfg.InboundConfigs[i].Port)
+			return liveEgressBridgeURL(tag, cfg.InboundConfigs[i].Port)
 		}
 	}
 	logger.Warning("node outbound [", tag, "] is set but the egress bridge is not in the running config, using a direct connection")
@@ -1124,6 +1149,10 @@ func (s *SettingService) GetSubHideSettings() (bool, error) {
 	return s.getBool("subHideSettings")
 }
 
+func (s *SettingService) GetSubHappRoutingUpdate() (bool, error) {
+	return s.getBool("subHappRoutingUpdate")
+}
+
 func (s *SettingService) GetSubHappAutoDetect() (bool, error) {
 	return s.getBool("subHappAutoDetect")
 }
@@ -1346,6 +1375,16 @@ func (s *SettingService) GetSubListen() (string, error) {
 
 func (s *SettingService) GetSubPort() (int, error) {
 	return s.getInt("subPort")
+}
+
+// GetSubPathAliases lists the earlier raw subscription paths still served,
+// each normalized to /path/.
+func (s *SettingService) GetSubPathAliases() ([]string, error) {
+	raw, err := s.getString("subPathAliases")
+	if err != nil {
+		return nil, err
+	}
+	return entity.ParseSubPathAliases(raw), nil
 }
 
 func (s *SettingService) GetSubPath() (string, error) {
@@ -1845,6 +1884,42 @@ type SecretClears struct {
 	TgPaySecret     bool
 }
 
+// followSubPaths moves a stored sub URI onto its renamed path when the URI
+// pointed at the old one and was not edited in the same save (#10).
+func (s *SettingService) followSubPaths(all *entity.AllSetting) error {
+	for _, p := range []struct {
+		pathKey, uriKey string
+		path, uri       *string
+	}{
+		{"subPath", "subURI", &all.SubPath, &all.SubURI},
+		{"subJsonPath", "subJsonURI", &all.SubJsonPath, &all.SubJsonURI},
+		{"subClashPath", "subClashURI", &all.SubClashPath, &all.SubClashURI},
+	} {
+		oldPath, err := s.getString(p.pathKey)
+		if err != nil {
+			return err
+		}
+		storedURI, err := s.getString(p.uriKey)
+		if err != nil {
+			return err
+		}
+		if *p.uri != storedURI || storedURI == "" || sameSubPath(oldPath, *p.path) {
+			continue
+		}
+		u, err := url.Parse(storedURI)
+		if err != nil || !sameSubPath(u.Path, oldPath) {
+			continue
+		}
+		u.Path, u.RawPath = *p.path, ""
+		*p.uri = u.String()
+	}
+	return nil
+}
+
+func sameSubPath(a, b string) bool {
+	return strings.Trim(a, "/") == strings.Trim(b, "/")
+}
+
 func (s *SettingService) UpdateAllSetting(allSetting *entity.AllSetting, clears SecretClears) error {
 	switch allSetting.SubHostSortMode {
 	case "":
@@ -1875,6 +1950,9 @@ func (s *SettingService) UpdateAllSetting(allSetting *entity.AllSetting, clears 
 		return err
 	}
 	if err := allSetting.CheckValid(); err != nil {
+		return err
+	}
+	if err := s.followSubPaths(allSetting); err != nil {
 		return err
 	}
 
