@@ -494,11 +494,12 @@ export const EXAMPLES: Record<string, unknown> = {
     "strategy": "leastPing",
     "updatedAt": 0
   },
-  "CascadeFixedExit": {
+  "CascadeFixedExitRow": {
     "createdAt": 1762862400,
     "email": "anna",
     "id": 1,
-    "nodeId": 2
+    "nodeId": 2,
+    "trafficMode": "all"
   },
   "CascadeLink": {
     "address": "",

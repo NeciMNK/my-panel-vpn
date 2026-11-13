@@ -1777,15 +1777,15 @@ export const sections: readonly Section[] = [
         path: '/panel/api/cascades/fixedExits',
         summary:
           'List the exits users are permanently pinned to. In every multi-exit cascade that has the pinned exit, the user always leaves from it, connected or not; while it is down they fall back to another exit and return as soon as it is back.',
-        responseSchema: 'CascadeFixedExit',
+        responseSchema: 'CascadeFixedExitRow',
         responseSchemaArray: true,
       },
       {
         method: 'POST',
         path: '/panel/api/cascades/fixedExits/set',
         summary:
-          'Pin a user to an exit server (node id 0 = this panel). A user keeps one pin per country: pinning another exit of the same country replaces it. Routing is rewritten at once.',
-        body: '{\n  "email": "anna",\n  "nodeId": 2\n}',
+          'Pin a user to an exit server (node id 0 = this panel). A user keeps one pin per country: pinning another exit of the same country replaces it. trafficMode "all" sends all their traffic through it, "ai" only AI sites (one country per user, as the AI button in the bot sets it; needs a server with a country); omitted keeps the current mode. Routing is rewritten at once.',
+        body: '{\n  "email": "anna",\n  "nodeId": 2,\n  "trafficMode": "ai"\n}',
       },
       {
         method: 'POST',

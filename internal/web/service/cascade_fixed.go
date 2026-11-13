@@ -5,21 +5,53 @@ import (
 	"slices"
 	"strings"
 
+	"gorm.io/gorm"
+
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 )
 
+// What a pinned exit carries: all the user's traffic, or AI sites only.
+const (
+	FixedExitAllTraffic = "all"
+	FixedExitAIOnly     = "ai"
+)
+
 // CascadeFixedExitRequest pins (or unpins) one user to one exit server.
 type CascadeFixedExitRequest struct {
-	Email  string `json:"email" example:"anna"`
-	NodeId int    `json:"nodeId" example:"2"`
+	Email       string `json:"email" example:"anna"`
+	NodeId      int    `json:"nodeId" example:"2"`
+	TrafficMode string `json:"trafficMode" validate:"omitempty,oneof=all ai" example:"all"`
 }
 
-func (s *CascadeService) ListFixedExits() ([]model.CascadeFixedExit, error) {
-	var rows []model.CascadeFixedExit
-	err := database.GetDB().Order("id asc").Find(&rows).Error
-	return rows, err
+// CascadeFixedExitRow is one pin as the panel lists it, with what it carries.
+type CascadeFixedExitRow struct {
+	Id          int    `json:"id" example:"1"`
+	Email       string `json:"email" example:"anna"`
+	NodeId      int    `json:"nodeId" example:"2"`
+	TrafficMode string `json:"trafficMode" validate:"oneof=all ai" example:"all"`
+	CreatedAt   int64  `json:"createdAt" example:"1762862400"`
+}
+
+func (s *CascadeService) ListFixedExits() ([]CascadeFixedExitRow, error) {
+	var fixed []model.CascadeFixedExit
+	if err := database.GetDB().Order("id asc").Find(&fixed).Error; err != nil {
+		return nil, err
+	}
+	plan, err := loadAIExitPlan()
+	if err != nil {
+		return nil, err
+	}
+	rows := make([]CascadeFixedExitRow, 0, len(fixed))
+	for _, f := range fixed {
+		mode := FixedExitAllTraffic
+		if plan.isDomainPin(f) {
+			mode = FixedExitAIOnly
+		}
+		rows = append(rows, CascadeFixedExitRow{Id: f.Id, Email: f.Email, NodeId: f.NodeId, TrafficMode: mode, CreatedAt: f.CreatedAt})
+	}
+	return rows, nil
 }
 
 // SetFixedExit pins a user to an exit, replacing their pin in the same country,
@@ -35,12 +67,36 @@ func (s *CascadeService) SetFixedExit(ctx context.Context, req *CascadeFixedExit
 		}
 	}
 	country := nodeCountry(req.NodeId)
+	if req.TrafficMode == FixedExitAIOnly && country == "" {
+		return common.NewErrorf("AI sites only needs a server with a country")
+	}
 	err = replaceFixedExit(email, req.NodeId, func(id int) bool { return country != "" && nodeCountry(id) == country })
 	if err != nil {
 		return err
 	}
+	if err := setFixedExitTraffic(email, country, req.TrafficMode); err != nil {
+		return err
+	}
 	s.StickCascadeUsers(ctx)
 	return nil
+}
+
+// setFixedExitTraffic applies an admin's mode through the user's one AI
+// country, the bot AI button's switch; no mode leaves it as it was.
+func setFixedExitTraffic(email, country, mode string) error {
+	db := database.GetDB()
+	if mode == FixedExitAIOnly {
+		return db.Transaction(func(tx *gorm.DB) error {
+			if err := tx.Where("email = ?", email).Delete(&model.CascadeAICountry{}).Error; err != nil {
+				return err
+			}
+			return tx.Create(&model.CascadeAICountry{Email: email, Country: country}).Error
+		})
+	}
+	if mode == "" || country == "" {
+		return nil
+	}
+	return db.Model(&model.CascadeAICountry{}).Where("email = ? AND country = ?", email, country).Update("all_traffic", true).Error
 }
 
 // DeleteFixedExit hands the user back to automatic choice; they keep their

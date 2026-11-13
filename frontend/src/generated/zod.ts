@@ -495,13 +495,14 @@ export const CascadeSchema = z.object({
 });
 export type Cascade = z.infer<typeof CascadeSchema>;
 
-export const CascadeFixedExitSchema = z.object({
+export const CascadeFixedExitRowSchema = z.object({
   createdAt: z.number().int(),
   email: z.string(),
   id: z.number().int(),
   nodeId: z.number().int(),
+  trafficMode: z.enum(['all', 'ai']),
 });
-export type CascadeFixedExit = z.infer<typeof CascadeFixedExitSchema>;
+export type CascadeFixedExitRow = z.infer<typeof CascadeFixedExitRowSchema>;
 
 export const CascadeLinkSchema = z.object({
   address: z.string(),
