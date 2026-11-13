@@ -35,8 +35,11 @@ _openapi:
     - depth: 2
       title: 'Pin a user to an exit server (node id 0 = this panel). A user keeps one
         pin per country: pinning another exit of the same country replaces it.
-        Routing is rewritten at once.'
-      url: '#pin-a-user-to-an-exit-server-node-id-0--this-panel-a-user-keeps-one-pin-per-country-pinning-another-exit-of-the-same-country-replaces-it-routing-is-rewritten-at-once'
+        trafficMode "all" sends all their traffic through it, "ai" only AI sites
+        (one country per user, as the AI button in the bot sets it; needs a
+        server with a country); omitted keeps the current mode. Routing is
+        rewritten at once.'
+      url: '#pin-a-user-to-an-exit-server-node-id-0--this-panel-a-user-keeps-one-pin-per-country-pinning-another-exit-of-the-same-country-replaces-it-trafficmode-all-sends-all-their-traffic-through-it-ai-only-ai-sites-one-country-per-user-as-the-ai-button-in-the-bot-sets-it-needs-a-server-with-a-country-omitted-keeps-the-current-mode-routing-is-rewritten-at-once'
     - depth: 2
       title: 'Remove a pin: the user goes back to automatic exit choice and keeps
         their current exit under the usual 15-minute hold.'
@@ -63,8 +66,11 @@ _openapi:
         id: list-the-exits-users-are-permanently-pinned-to-in-every-multi-exit-cascade-that-has-the-pinned-exit-the-user-always-leaves-from-it-connected-or-not-while-it-is-down-they-fall-back-to-another-exit-and-return-as-soon-as-it-is-back
       - content: 'Pin a user to an exit server (node id 0 = this panel). A user keeps
           one pin per country: pinning another exit of the same country replaces
-          it. Routing is rewritten at once.'
-        id: pin-a-user-to-an-exit-server-node-id-0--this-panel-a-user-keeps-one-pin-per-country-pinning-another-exit-of-the-same-country-replaces-it-routing-is-rewritten-at-once
+          it. trafficMode "all" sends all their traffic through it, "ai" only AI
+          sites (one country per user, as the AI button in the bot sets it;
+          needs a server with a country); omitted keeps the current mode.
+          Routing is rewritten at once.'
+        id: pin-a-user-to-an-exit-server-node-id-0--this-panel-a-user-keeps-one-pin-per-country-pinning-another-exit-of-the-same-country-replaces-it-trafficmode-all-sends-all-their-traffic-through-it-ai-only-ai-sites-one-country-per-user-as-the-ai-button-in-the-bot-sets-it-needs-a-server-with-a-country-omitted-keeps-the-current-mode-routing-is-rewritten-at-once
       - content: 'Remove a pin: the user goes back to automatic exit choice and keeps
           their current exit under the usual 15-minute hold.'
         id: remove-a-pin-the-user-goes-back-to-automatic-exit-choice-and-keeps-their-current-exit-under-the-usual-15-minute-hold

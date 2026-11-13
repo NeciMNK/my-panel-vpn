@@ -1955,8 +1955,8 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
-  "CascadeFixedExit": {
-    "description": "CascadeFixedExit is an admin's permanent choice of exit for one user: every\ncascade with that exit sends the user there while it is up.",
+  "CascadeFixedExitRow": {
+    "description": "CascadeFixedExitRow is one pin as the panel lists it, with what it carries.",
     "properties": {
       "createdAt": {
         "example": 1762862400,
@@ -1974,13 +1974,22 @@ export const SCHEMAS: Record<string, unknown> = {
       "nodeId": {
         "example": 2,
         "type": "integer"
+      },
+      "trafficMode": {
+        "enum": [
+          "all",
+          "ai"
+        ],
+        "example": "all",
+        "type": "string"
       }
     },
     "required": [
       "createdAt",
       "email",
       "id",
-      "nodeId"
+      "nodeId",
+      "trafficMode"
     ],
     "type": "object"
   },

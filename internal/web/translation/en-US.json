@@ -1426,9 +1426,12 @@
       },
       "fixedExits": {
         "title": "Pinned exits",
-        "desc": "The user always leaves to the internet through the chosen server (with its IP) in every cascade that has this server as an exit, e.g. \"all servers of DE\". One pinned server per country. While it is down the user is moved to another exit for the time being and comes back as soon as the server is online again.",
+        "desc": "The user always leaves to the internet through the chosen server (with its IP) in every cascade that has this server as an exit, e.g. \"all servers of DE\". One pinned server per country. While it is down the user is moved to another exit for the time being and comes back as soon as the server is online again. Traffic: “All traffic” sends everything through this server; “AI sites only” sends only AI services (the list on the AI domains page) and picks the rest automatically. AI sites only works in one country per user, the same choice as the bot’s AI button.",
         "user": "User",
         "exit": "Exit server",
+        "traffic": "Traffic",
+        "trafficAll": "All traffic",
+        "trafficAI": "AI sites only",
         "pin": "Pin",
         "fallback": "down — on another exit for now",
         "toasts": {

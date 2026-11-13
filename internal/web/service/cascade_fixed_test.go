@@ -131,3 +131,71 @@ func fixedTestLink(t *testing.T, nodeID int) model.CascadeLink {
 		ClientId: "1b4e28ba-2fa1-11d2-883f-0016d3cca427", PublicKey: pub, ShortId: "abcd", ServerName: "www.apple.com",
 	}
 }
+
+func fixedExitModes(t *testing.T) map[string]string {
+	t.Helper()
+	rows, err := (&CascadeService{}).ListFixedExits()
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := map[string]string{}
+	for _, r := range rows {
+		out[fmt.Sprintf("%s@%d", r.Email, r.NodeId)] = r.TrafficMode
+	}
+	return out
+}
+
+// An admin's pin says what it carries: AI sites only makes its country the
+// user's one AI country, so a second AI-only pin moves it there.
+func TestSetFixedExitChoosesWhatThePinCarries(t *testing.T) {
+	initJoinDB(t)
+	seedFixedExitNodes(t)
+	s := &CascadeService{}
+	ctx := context.Background()
+	steps := []struct {
+		req          CascadeFixedExitRequest
+		modes        map[string]string
+		aiIn         string
+		aiAllTraffic bool
+	}{
+		{
+			CascadeFixedExitRequest{Email: "anna", NodeId: 2, TrafficMode: FixedExitAIOnly},
+			map[string]string{"anna@2": FixedExitAIOnly},
+			"DE", false,
+		},
+		{
+			CascadeFixedExitRequest{Email: "anna", NodeId: 4},
+			map[string]string{"anna@2": FixedExitAIOnly, "anna@4": FixedExitAllTraffic},
+			"DE", false,
+		},
+		{
+			CascadeFixedExitRequest{Email: "anna", NodeId: 2, TrafficMode: FixedExitAllTraffic},
+			map[string]string{"anna@2": FixedExitAllTraffic, "anna@4": FixedExitAllTraffic},
+			"DE", true,
+		},
+		{
+			CascadeFixedExitRequest{Email: "anna", NodeId: 4, TrafficMode: FixedExitAIOnly},
+			map[string]string{"anna@2": FixedExitAllTraffic, "anna@4": FixedExitAIOnly},
+			"NL", false,
+		},
+	}
+	for i, st := range steps {
+		if err := s.SetFixedExit(ctx, &st.req); err != nil {
+			t.Fatalf("step %d set %+v: %v", i, st.req, err)
+		}
+		if got := fixedExitModes(t); !reflect.DeepEqual(got, st.modes) {
+			t.Fatalf("step %d modes = %v, want %v", i, got, st.modes)
+		}
+		if country, all := s.AIMode([]string{"anna"}); country != st.aiIn || all != st.aiAllTraffic {
+			t.Fatalf("step %d AI mode = %q all=%v, want %q all=%v", i, country, all, st.aiIn, st.aiAllTraffic)
+		}
+	}
+
+	err := s.SetFixedExit(ctx, &CascadeFixedExitRequest{Email: "bob", NodeId: 0, TrafficMode: FixedExitAIOnly})
+	if err == nil || err.Error() != "AI sites only needs a server with a country" {
+		t.Fatalf("AI-only pin on a server without a country: err = %v", err)
+	}
+	if got := fixedExitModes(t); got["bob@0"] != "" {
+		t.Fatalf("a refused AI-only pin was saved: %v", got)
+	}
+}

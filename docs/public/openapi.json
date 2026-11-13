@@ -1981,8 +1981,8 @@
         ],
         "type": "object"
       },
-      "CascadeFixedExit": {
-        "description": "CascadeFixedExit is an admin's permanent choice of exit for one user: every\ncascade with that exit sends the user there while it is up.",
+      "CascadeFixedExitRow": {
+        "description": "CascadeFixedExitRow is one pin as the panel lists it, with what it carries.",
         "properties": {
           "createdAt": {
             "example": 1762862400,
@@ -2000,13 +2000,22 @@
           "nodeId": {
             "example": 2,
             "type": "integer"
+          },
+          "trafficMode": {
+            "enum": [
+              "all",
+              "ai"
+            ],
+            "example": "all",
+            "type": "string"
           }
         },
         "required": [
           "createdAt",
           "email",
           "id",
-          "nodeId"
+          "nodeId",
+          "trafficMode"
         ],
         "type": "object"
       },
@@ -13231,7 +13240,7 @@
                     "obj": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/CascadeFixedExit"
+                        "$ref": "#/components/schemas/CascadeFixedExitRow"
                       }
                     }
                   }
@@ -13243,7 +13252,8 @@
                       "createdAt": 1762862400,
                       "email": "anna",
                       "id": 1,
-                      "nodeId": 2
+                      "nodeId": 2,
+                      "trafficMode": "all"
                     }
                   ]
                 }
@@ -13258,7 +13268,7 @@
         "tags": [
           "Cascades"
         ],
-        "summary": "Pin a user to an exit server (node id 0 = this panel). A user keeps one pin per country: pinning another exit of the same country replaces it. Routing is rewritten at once.",
+        "summary": "Pin a user to an exit server (node id 0 = this panel). A user keeps one pin per country: pinning another exit of the same country replaces it. trafficMode \"all\" sends all their traffic through it, \"ai\" only AI sites (one country per user, as the AI button in the bot sets it; needs a server with a country); omitted keeps the current mode. Routing is rewritten at once.",
         "operationId": "post_panel_api_cascades_fixedExits_set",
         "requestBody": {
           "required": true,
@@ -13269,7 +13279,8 @@
               },
               "example": {
                 "email": "anna",
-                "nodeId": 2
+                "nodeId": 2,
+                "trafficMode": "ai"
               }
             }
           }
