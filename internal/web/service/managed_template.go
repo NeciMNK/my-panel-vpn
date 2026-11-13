@@ -16,7 +16,7 @@ import (
 
 // Everything this fork writes into an Xray template carries a tag that starts
 // with managedTagPrefix, so a feature can strip and rewrite only its own part.
-const managedTagPrefix = "mp-"
+const managedTagPrefix = model.ManagedClientPrefix
 
 var errManagedInboundClient = common.NewError("this is a service inbound of a cascade or home network link: only the panel's own clients can be on it")
 

@@ -182,6 +182,9 @@ func (s *ClientService) syncInboundClients(tx *gorm.DB, inboundId int, clients [
 		incoming.ClientHostRuleIds = model.NormalizeClientHostRuleIds(incoming.ClientHostRuleIds)
 		row, ok := existing[email]
 		if !ok {
+			if strings.TrimSpace(incoming.Group) == "" {
+				incoming.Group = model.DefaultClientGroup(email)
+			}
 			if _, dup := pending[email]; !dup {
 				pending[email] = incoming
 				toCreate = append(toCreate, incoming)

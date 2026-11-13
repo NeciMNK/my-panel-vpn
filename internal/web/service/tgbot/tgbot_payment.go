@@ -537,8 +537,7 @@ func (t *Tgbot) friendRow(email string) []telego.InlineKeyboardButton {
 func (t *Tgbot) toggleFriend(callbackQuery *telego.CallbackQuery, email string) {
 	billing, err := t.clientService.GetBillingByEmail(email)
 	if err == nil {
-		billing.Friend = !billing.Friend
-		err = t.clientService.SaveBilling(billing)
+		err = t.clientService.SetFriend(email, !billing.Friend)
 	}
 	if err != nil {
 		logger.Warning("toggleFriend:", err)

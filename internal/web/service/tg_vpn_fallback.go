@@ -19,7 +19,7 @@ import (
 // client on the nodes and routes its own traffic (the bot's too) through it.
 const (
 	PanelTechClientEmail = "panel-tech"
-	PanelTechGroup       = "тех"
+	PanelTechGroup       = model.ClientGroupTech
 	// One failed probe is often a blip; two in a row is a filter, not a hiccup.
 	tgVpnFallbackFailures = 2
 	tgDirectProbeTimeout  = 10 * time.Second
