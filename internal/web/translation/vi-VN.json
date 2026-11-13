@@ -2813,6 +2813,7 @@
         },
         "descEMAIL": "Email khách hàng",
         "descINBOUND": "Ghi chú của chính inbound (tên cấu hình)",
+        "descAUTO_NAME": "Server name built automatically: entry flag, Pure / Split / Auto, exit country, protocol",
         "descHOST": "Ghi chú host",
         "descID": "UUID khách hàng",
         "descSHORT_ID": "8 ký tự đầu của UUID",

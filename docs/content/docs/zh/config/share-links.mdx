@@ -36,7 +36,7 @@ icon: Link
 每个链接中 `#` 之后的文本（即**备注**）由你在面板设置中控制的模板（`remarkTemplate`）生成。默认值为：
 
 ```text
-{{INBOUND}}-{{EMAIL}}|📊{{TRAFFIC_LEFT}}|⏳{{DAYS_LEFT}}D
+{{AUTO_NAME}}
 ```
 
 占位符使用 `{{UPPER_CASE}}` 语法。模板会按 `|` 拆分成若干段；若某一段的唯一值是无限标记 `∞`
@@ -49,6 +49,7 @@ icon: Link
 | ----- | ----- |
 | `{{EMAIL}}` / `{{USERNAME}}` | 客户端电子邮箱（标识符） |
 | `{{INBOUND}}` | 入站备注 |
+| `{{AUTO_NAME}}` | Automatic server name from node countries and cascades: `🇳🇱 Pure NL`, `🇷🇺 / 🇳🇱 Split RU / NL`, `🇷🇺 / ⚡ Split Auto (Best Ping)`; protocols other than VLESS are named (`Hysteria Pure NL`). Falls back to the inbound remark when a server has no country |
 | `{{HOST}}` | 主机行备注（受管主机） |
 | `{{ID}}` / `{{SHORT_ID}}` | 客户端 UUID / 其前 8 个字符 |
 | `{{TELEGRAM_ID}}` · `{{SUB_ID}}` · `{{COMMENT}}` | Telegram ID、订阅 ID、备注 |

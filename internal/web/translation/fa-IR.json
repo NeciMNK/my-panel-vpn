@@ -2813,6 +2813,7 @@
         },
         "descEMAIL": "ایمیل کاربر",
         "descINBOUND": "نام خود اینباند (نام کانفیگ)",
+        "descAUTO_NAME": "Server name built automatically: entry flag, Pure / Split / Auto, exit country, protocol",
         "descHOST": "نام میزبان",
         "descID": "UUID کاربر",
         "descSHORT_ID": "۸ کاراکتر اول UUID",

@@ -1224,6 +1224,7 @@
         },
         "descEMAIL": "Názov klienta",
         "descINBOUND": "Vlastný názov vstupu (názov konfigurácie)",
+        "descAUTO_NAME": "Server name built automatically: entry flag, Pure / Split / Auto, exit country, protocol",
         "descHOST": "Názov adresy servera",
         "descID": "UUID klienta",
         "descSHORT_ID": "Prvých 8 znakov UUID",

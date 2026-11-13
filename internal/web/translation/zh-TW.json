@@ -2813,6 +2813,7 @@
         },
         "descEMAIL": "客戶端電子郵件",
         "descINBOUND": "入站本身的備註（配置名稱）",
+        "descAUTO_NAME": "Server name built automatically: entry flag, Pure / Split / Auto, exit country, protocol",
         "descHOST": "Host 備註",
         "descID": "客戶端 UUID",
         "descSHORT_ID": "UUID 的前 8 個字元",

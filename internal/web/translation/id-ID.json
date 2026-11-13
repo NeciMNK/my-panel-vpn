@@ -2813,6 +2813,7 @@
         },
         "descEMAIL": "Email klien",
         "descINBOUND": "Catatan inbound itu sendiri (nama konfigurasi)",
+        "descAUTO_NAME": "Server name built automatically: entry flag, Pure / Split / Auto, exit country, protocol",
         "descHOST": "Catatan host",
         "descID": "UUID klien",
         "descSHORT_ID": "8 karakter pertama dari UUID",

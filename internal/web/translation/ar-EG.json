@@ -2813,6 +2813,7 @@
         },
         "descEMAIL": "بريد العميل",
         "descINBOUND": "ملاحظة الوارد نفسه (اسم الإعداد)",
+        "descAUTO_NAME": "Server name built automatically: entry flag, Pure / Split / Auto, exit country, protocol",
         "descHOST": "ملاحظة المضيف",
         "descID": "UUID العميل",
         "descSHORT_ID": "أول 8 أحرف من الـ UUID",
