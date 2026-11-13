@@ -55,7 +55,7 @@ func (s *ClientService) ClaimPendingPayment(clientID, months int) (bool, error) 
 }
 
 // SetFriend marks or unmarks a friend and moves the client into or out of the friends
-// group; unmarking returns only a client still in friends to users.
+// group; unmarking returns only a client still in friends to paid or users.
 func (s *ClientService) SetFriend(email string, friend bool) error {
 	billing, err := s.GetBillingByEmail(email)
 	if err != nil {
@@ -73,6 +73,41 @@ func (s *ClientService) SetFriend(email string, friend bool) error {
 	if err != nil || rec.Group != model.ClientGroupFriends {
 		return err
 	}
-	_, err = s.AddToGroup([]string{email}, model.ClientGroupUsers)
+	group, err := regularClientGroup(email, billing)
+	if err != nil {
+		return err
+	}
+	_, err = s.AddToGroup([]string{email}, group)
+	return err
+}
+
+// regularClientGroup is paid for a client with a booked payment and no free plan
+// since, users for everyone else.
+func regularClientGroup(email string, billing *model.ClientBilling) (string, error) {
+	if billing.FreePlan {
+		return model.ClientGroupUsers, nil
+	}
+	var payments int64
+	if err := database.GetDB().Model(&model.LedgerEntry{}).
+		Where("email = ? AND kind = ?", email, model.LedgerIncome).Count(&payments).Error; err != nil {
+		return "", err
+	}
+	if payments > 0 {
+		return model.ClientGroupPaid, nil
+	}
+	return model.ClientGroupUsers, nil
+}
+
+// MarkPaid moves a free user who just paid into paid; friends, tech and groups the
+// admin chose keep theirs.
+func (s *ClientService) MarkPaid(email string) error {
+	rec, err := s.GetRecordByEmail(nil, email)
+	if err != nil {
+		return err
+	}
+	if rec.Group != "" && rec.Group != model.ClientGroupUsers {
+		return nil
+	}
+	_, err = s.AddToGroup([]string{email}, model.ClientGroupPaid)
 	return err
 }

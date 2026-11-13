@@ -2050,7 +2050,7 @@ func purgeOwnerlessClientHwids() error {
 const legacyTechGroup = "тех"
 
 // Clients predating automatic groups: тех becomes tech wherever a group name is
-// stored, and a group-less client joins tech, friends or users as a new one would.
+// stored, and a group-less client joins tech, friends, paid or users.
 func assignClientAutoGroups() error {
 	return db.Transaction(func(tx *gorm.DB) error {
 		if err := renameLegacyTechGroup(tx); err != nil {
@@ -2065,6 +2065,13 @@ func assignClientAutoGroups() error {
 			Where("COALESCE(group_name, '') = '' AND id IN (?)",
 				tx.Model(&model.ClientBilling{}).Select("client_id").Where("friend = ?", true)).
 			UpdateColumn("group_name", model.ClientGroupFriends).Error; err != nil {
+			return err
+		}
+		payers := tx.Model(&model.LedgerEntry{}).Select("email").Where("kind = ?", model.LedgerIncome)
+		onFreePlan := tx.Model(&model.ClientBilling{}).Select("client_id").Where("free_plan = ?", true)
+		if err := tx.Model(&model.ClientRecord{}).
+			Where("COALESCE(group_name, '') = '' AND email IN (?) AND id NOT IN (?)", payers, onFreePlan).
+			UpdateColumn("group_name", model.ClientGroupPaid).Error; err != nil {
 			return err
 		}
 		if err := tx.Model(&model.ClientRecord{}).Where("COALESCE(group_name, '') = ''").

@@ -495,7 +495,7 @@ func TestClientForwardedPortsBackfilledOnUpgrade(t *testing.T) {
 }
 
 // Existing clients predate automatic groups: the Russian "тех" group becomes "tech"
-// everywhere it is stored, and group-less clients join tech, friends or users.
+// everywhere it is stored, and group-less clients join tech, friends, paid or users.
 func TestClientGroupsAssignedOnUpgrade(t *testing.T) {
 	dbPath := filepath.Join(t.TempDir(), "x-ui.db")
 	if err := InitDB(dbPath); err != nil {
@@ -505,6 +505,7 @@ func TestClientGroupsAssignedOnUpgrade(t *testing.T) {
 	seed := map[string]string{
 		"panel-tech": "тех", "mp-cascade-1-n1": "", "mp-home-2-n3": "тех",
 		"friend@x": "", "plain@x": "", "family@x": "family", "friend-family@x": "family",
+		"payer@x": "", "free-payer@x": "",
 	}
 	for email, group := range seed {
 		if err := db.Create(&model.ClientRecord{Email: email, Group: group, Enable: true}).Error; err != nil {
@@ -519,6 +520,18 @@ func TestClientGroupsAssignedOnUpgrade(t *testing.T) {
 		if err := db.Create(&model.ClientBilling{ClientId: rec.Id, Friend: true}).Error; err != nil {
 			t.Fatalf("seed billing %s: %v", email, err)
 		}
+	}
+	for _, email := range []string{"payer@x", "free-payer@x"} {
+		if err := db.Create(&model.LedgerEntry{Month: "2026-10", Kind: "income", Amount: 300, Email: email}).Error; err != nil {
+			t.Fatalf("seed payment %s: %v", email, err)
+		}
+	}
+	var freePayer model.ClientRecord
+	if err := db.Where("email = ?", "free-payer@x").First(&freePayer).Error; err != nil {
+		t.Fatalf("read free-payer: %v", err)
+	}
+	if err := db.Create(&model.ClientBilling{ClientId: freePayer.Id, FreePlan: true}).Error; err != nil {
+		t.Fatalf("seed free plan: %v", err)
 	}
 	if err := db.Create(&model.ClientGroup{Name: "тех", ResetUp: 7}).Error; err != nil {
 		t.Fatalf("seed group: %v", err)
@@ -545,6 +558,7 @@ func TestClientGroupsAssignedOnUpgrade(t *testing.T) {
 	want := map[string]string{
 		"panel-tech": "tech", "mp-cascade-1-n1": "tech", "mp-home-2-n3": "tech",
 		"friend@x": "friends", "plain@x": "users", "family@x": "family", "friend-family@x": "family",
+		"payer@x": "paid", "free-payer@x": "users",
 	}
 	for email, group := range want {
 		var rec model.ClientRecord

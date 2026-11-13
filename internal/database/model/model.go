@@ -1089,9 +1089,10 @@ type ClientGroup struct {
 
 func (ClientGroup) TableName() string { return "client_groups" }
 
-// Groups the panel assigns by itself: a new client joins one, a friend mark moves it.
+// Groups the panel assigns by itself: a new client joins one, a payment or friend mark moves it.
 const (
 	ClientGroupUsers   = "users"
+	ClientGroupPaid    = "paid"
 	ClientGroupFriends = "friends"
 	ClientGroupTech    = "tech"
 )
@@ -1239,6 +1240,9 @@ type LedgerEntry struct {
 }
 
 func (LedgerEntry) TableName() string { return "ledger_entries" }
+
+// LedgerIncome is the kind of a ledger entry that books a client's payment.
+const LedgerIncome = "income"
 
 // LedgerFreeGroup marks a client group (e.g. family) whose members never pay.
 type LedgerFreeGroup struct {

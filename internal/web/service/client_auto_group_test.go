@@ -2,6 +2,7 @@ package service
 
 import (
 	"testing"
+	"time"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
@@ -87,5 +88,52 @@ func TestSetFriendMovesTheClientGroup(t *testing.T) {
 				t.Errorf("group = %q, want %q", got, st.wantGroup)
 			}
 		})
+	}
+}
+
+// A confirmed payment makes a free user a paying one, so the client moves from users
+// to paid; a friend or a client the admin grouped by hand keeps its group.
+func TestPaymentMovesUsersToPaid(t *testing.T) {
+	now := time.Date(2026, 11, 13, 12, 0, 0, 0, time.UTC)
+	cases := []struct {
+		name, email, startGroup, wantGroup string
+	}{
+		{"free user pays", "pay-a@x", "users", "paid"},
+		{"friend pays", "pay-b@x", "friends", "friends"},
+		{"custom group pays", "pay-c@x", "family", "family"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			seedPayingClient(t, tc.email, now.UnixMilli())
+			if err := database.GetDB().Model(&model.ClientRecord{}).Where("email = ?", tc.email).
+				UpdateColumn("group_name", tc.startGroup).Error; err != nil {
+				t.Fatalf("set start group: %v", err)
+			}
+			if _, err := (&BillingService{}).ApplyPayment(tc.email, 1, "1 mo", now); err != nil {
+				t.Fatalf("ApplyPayment: %v", err)
+			}
+			if got := lookupClientRecord(t, tc.email).Group; got != tc.wantGroup {
+				t.Errorf("group = %q, want %q", got, tc.wantGroup)
+			}
+		})
+	}
+}
+
+// Unmarking a friend who has paid returns them to paid, not to the free users.
+func TestUnfriendReturnsAPayerToPaid(t *testing.T) {
+	now := time.Date(2026, 11, 13, 12, 0, 0, 0, time.UTC)
+	seedPayingClient(t, "pal@x", now.UnixMilli())
+	svc := &ClientService{}
+	if _, err := (&BillingService{}).ApplyPayment("pal@x", 1, "1 mo", now); err != nil {
+		t.Fatalf("ApplyPayment: %v", err)
+	}
+	if err := svc.SetFriend("pal@x", true); err != nil {
+		t.Fatalf("SetFriend on: %v", err)
+	}
+	if err := svc.SetFriend("pal@x", false); err != nil {
+		t.Fatalf("SetFriend off: %v", err)
+	}
+	if got := lookupClientRecord(t, "pal@x").Group; got != "paid" {
+		t.Fatalf("group = %q, want paid", got)
 	}
 }

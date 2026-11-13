@@ -203,6 +203,9 @@ func (s *BillingService) applyPayment(email string, months, paid int, note strin
 	if err := s.clientService.SaveBilling(billing); err != nil {
 		logger.Warning("payment: saving billing for", email, "failed:", err)
 	}
+	if err := s.clientService.MarkPaid(email); err != nil {
+		logger.Warning("payment: moving", email, "to the paid group failed:", err)
+	}
 	if err := database.GetDB().Model(&model.ClientBilling{}).Where("client_id = ?", billing.ClientId).
 		Update("pending_months", 0).Error; err != nil {
 		logger.Warning("payment: clearing the pending report for", email, "failed:", err)
