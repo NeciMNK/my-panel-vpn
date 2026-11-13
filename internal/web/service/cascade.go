@@ -27,19 +27,35 @@ import (
 // and, on the entry, an outbound per exit plus a catch-all rule or balancer.
 type CascadeService struct{}
 
-// CascadeRequest is the "two clicks" form: an entry, its exits, optionally
-// which entry inbounds to chain (empty = all) and the multi-exit strategy.
+// CascadeRequest is the body of /cascades/add and /cascades/update. Update
+// replaces the whole cascade: an omitted field is cleared, not kept.
 type CascadeRequest struct {
-	Name             string   `json:"name" example:"RU → DE"`
-	Enable           bool     `json:"enable" example:"true"`
-	EntryNodeId      int      `json:"entryNodeId" example:"1"`
-	ExitNodeIds      []int    `json:"exitNodeIds" example:"2"`
-	ExitCountry      string   `json:"exitCountry" example:"DE"`
+	Name   string `json:"name" example:"RU → DE"`
+	Enable bool   `json:"enable" example:"true"`
+	// EntryNodeId is the server users connect to; 0 is this panel.
+	EntryNodeId int `json:"entryNodeId" example:"1"`
+	// ExitNodeIds are the servers traffic leaves from; ignored when exitCountry
+	// is set. Several exits share a balancer and keep each user on one exit.
+	ExitNodeIds []int `json:"exitNodeIds" example:"[2,3]"`
+	// ExitCountry (ISO code) makes every enabled node of that country except the
+	// entry an exit, re-resolved whenever nodes are added, moved or disabled.
+	ExitCountry string `json:"exitCountry" example:"DE"`
+	// EntryInboundTags are the entry inbounds whose users are chained; empty
+	// chains every inbound of the entry.
 	EntryInboundTags []string `json:"entryInboundTags"`
-	Strategy         string   `json:"strategy" example:"leastPing"`
-	Mode             string   `json:"mode" example:"split"`
-	DirectDomains    []string `json:"directDomains"`
-	DirectIPs        []string `json:"directIps"`
+	// Strategy picks an exit for a new user when there are several (default
+	// leastPing); the user then stays there, see the section description.
+	Strategy string `json:"strategy" validate:"omitempty,oneof=leastPing leastLoad random roundRobin" example:"leastPing"`
+	// Mode (default split): split sends the entry country's sites direct and the
+	// rest to the exit, relay sends everything, both mixes them per inbound.
+	Mode string `json:"mode" validate:"omitempty,oneof=split relay both" example:"split"`
+	// DirectDomains extend the split's direct list: a plain domain or domain:,
+	// full:, keyword:, regexp:, geosite: rules. Ignored in relay mode.
+	DirectDomains []string `json:"directDomains"`
+	// DirectIPs extend the split's direct list: IPs, CIDRs or geoip: rules.
+	DirectIPs []string `json:"directIps"`
+	// RelayInboundTags are, in both mode only (and then required), the entry
+	// inbounds that relay everything; they must not be in entryInboundTags.
 	RelayInboundTags []string `json:"relayInboundTags"`
 }
 

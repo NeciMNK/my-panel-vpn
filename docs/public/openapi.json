@@ -1888,12 +1888,14 @@
             "type": "integer"
           },
           "directDomains": {
+            "description": "DirectDomains are the admin's domain rules added to the split's direct list.",
             "items": {
               "type": "string"
             },
             "type": "array"
           },
           "directIps": {
+            "description": "DirectIPs are the admin's IP rules added to the split's direct list.",
             "items": {
               "type": "string"
             },
@@ -1904,6 +1906,7 @@
             "type": "boolean"
           },
           "entryInboundTags": {
+            "description": "EntryInboundTags are the chained entry inbounds; empty means all of them.",
             "items": {
               "type": "string"
             },
@@ -1919,6 +1922,7 @@
             "type": "string"
           },
           "exitNodeIds": {
+            "description": "ExitNodeIds are the exits in use; for a country cascade, the resolved list.",
             "items": {
               "type": "integer"
             },
@@ -1929,9 +1933,11 @@
             "type": "integer"
           },
           "lastError": {
+            "description": "LastError is why the last apply failed; empty when the cascade is live.",
             "type": "string"
           },
           "links": {
+            "description": "Links are the provisioned hops, one per exit; read-only, set by the panel.",
             "items": {
               "$ref": "#/components/schemas/CascadeLink"
             },
@@ -1947,12 +1953,14 @@
             "type": "string"
           },
           "relayInboundTags": {
+            "description": "RelayInboundTags are the entry inbounds that relay everything in both mode.",
             "items": {
               "type": "string"
             },
             "type": "array"
           },
           "strategy": {
+            "description": "Strategy is the balancer strategy used when there are several exits.",
             "example": "leastPing",
             "type": "string"
           },
@@ -2010,6 +2018,26 @@
         ],
         "type": "object"
       },
+      "CascadeFixedExitRequest": {
+        "description": "CascadeFixedExitRequest pins (or unpins) one user to one exit server.",
+        "properties": {
+          "email": {
+            "description": "Email is the client's email, as in the client list.",
+            "example": "anna",
+            "type": "string"
+          },
+          "nodeId": {
+            "description": "NodeId is the exit server; 0 is this panel.",
+            "example": 2,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "email",
+          "nodeId"
+        ],
+        "type": "object"
+      },
       "CascadeLink": {
         "description": "CascadeLink is the hidden VLESS+REALITY hop the master provisions on one exit.",
         "properties": {
@@ -2051,6 +2079,103 @@
           "publicKey",
           "serverName",
           "shortId"
+        ],
+        "type": "object"
+      },
+      "CascadeRequest": {
+        "description": "CascadeRequest is the body of /cascades/add and /cascades/update. Update\nreplaces the whole cascade: an omitted field is cleared, not kept.",
+        "properties": {
+          "directDomains": {
+            "description": "DirectDomains extend the split's direct list: a plain domain or domain:,\nfull:, keyword:, regexp:, geosite: rules. Ignored in relay mode.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "directIps": {
+            "description": "DirectIPs extend the split's direct list: IPs, CIDRs or geoip: rules.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "enable": {
+            "example": true,
+            "type": "boolean"
+          },
+          "entryInboundTags": {
+            "description": "EntryInboundTags are the entry inbounds whose users are chained; empty\nchains every inbound of the entry.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "entryNodeId": {
+            "description": "EntryNodeId is the server users connect to; 0 is this panel.",
+            "example": 1,
+            "type": "integer"
+          },
+          "exitCountry": {
+            "description": "ExitCountry (ISO code) makes every enabled node of that country except the\nentry an exit, re-resolved whenever nodes are added, moved or disabled.",
+            "example": "DE",
+            "type": "string"
+          },
+          "exitNodeIds": {
+            "description": "ExitNodeIds are the servers traffic leaves from; ignored when exitCountry\nis set. Several exits share a balancer and keep each user on one exit.",
+            "example": [
+              2,
+              3
+            ],
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "mode": {
+            "description": "Mode (default split): split sends the entry country's sites direct and the\nrest to the exit, relay sends everything, both mixes them per inbound.",
+            "enum": [
+              "split",
+              "relay",
+              "both"
+            ],
+            "example": "split",
+            "type": "string"
+          },
+          "name": {
+            "example": "RU → DE",
+            "type": "string"
+          },
+          "relayInboundTags": {
+            "description": "RelayInboundTags are, in both mode only (and then required), the entry\ninbounds that relay everything; they must not be in entryInboundTags.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "strategy": {
+            "description": "Strategy picks an exit for a new user when there are several (default\nleastPing); the user then stays there, see the section description.",
+            "enum": [
+              "leastPing",
+              "leastLoad",
+              "random",
+              "roundRobin"
+            ],
+            "example": "leastPing",
+            "type": "string"
+          }
+        },
+        "required": [
+          "directDomains",
+          "directIps",
+          "enable",
+          "entryInboundTags",
+          "entryNodeId",
+          "exitCountry",
+          "exitNodeIds",
+          "mode",
+          "name",
+          "relayInboundTags",
+          "strategy"
         ],
         "type": "object"
       },
@@ -6545,7 +6670,7 @@
     },
     {
       "name": "Cascades",
-      "description": "Entry → exit server chains. The panel provisions a hidden VLESS+REALITY inbound on every exit and an outbound plus a catch-all routing rule (or a balancer for several exits) on the entry. Node id 0 means this panel. All endpoints under /panel/api/cascades."
+      "description": "Entry → exit server chains. The panel provisions a hidden VLESS+REALITY inbound on every exit and an outbound plus routing rules (or a balancer for several exits) on the entry. Node id 0 means this panel. Exits are either listed in exitNodeIds or picked by country: exitCountry \"DE\" makes every enabled node of that country (except the entry) an exit, and the list is re-resolved whenever a node is added, removed, disabled or moved to another country. Sticky sessions are always on for a cascade with several exits; there is no switch. Every 15 seconds each newly online user is pinned to the least-loaded healthy exit that still has their minMbps free (/panel/api/speed); the pin keeps them on that exit, so on that IP, while they stay connected and for 15 minutes after they go offline. A pin is dropped at once when its exit goes offline (the user moves to another exit), when the user connects to a different server themselves, or when the admin pins them with /cascades/fixedExits. strategy only spreads traffic that has no pin yet. Modes: split (default) sends the entry country’s own sites (its TLDs, geoip and geosite list, Russia when the entry has no country) plus directDomains/directIps straight out of the entry and the rest to the exit; relay sends everything to the exit; both runs split on entryInboundTags and relay on relayInboundTags. All endpoints under /panel/api/cascades."
     },
     {
       "name": "Home networks",
@@ -12968,25 +13093,29 @@
         "tags": [
           "Cascades"
         ],
-        "summary": "Create a cascade and apply it: exits get their link inbound, the entry gets the outbound(s) and the routing rule. Empty entryInboundTags chains every inbound of the entry.",
+        "summary": "Create a cascade and apply it: exits get their link inbound, the entry gets the outbound(s) and the routing rules. Give either exitNodeIds or exitCountry; when both are set, exitCountry wins. Empty entryInboundTags chains every inbound of the entry. A failed apply still saves the cascade, with the reason in lastError.",
         "operationId": "post_panel_api_cascades_add",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "type": "object"
+                "$ref": "#/components/schemas/CascadeRequest"
               },
               "example": {
                 "name": "RU → DE",
                 "enable": true,
                 "entryNodeId": 1,
-                "exitNodeIds": [
-                  2,
-                  3
-                ],
+                "exitNodeIds": [],
+                "exitCountry": "DE",
                 "entryInboundTags": [],
-                "strategy": "leastPing"
+                "strategy": "leastPing",
+                "mode": "split",
+                "directDomains": [
+                  "domain:example.ru"
+                ],
+                "directIps": [],
+                "relayInboundTags": []
               }
             }
           }
@@ -13064,7 +13193,7 @@
         "tags": [
           "Cascades"
         ],
-        "summary": "Change a cascade (entry, exits, chained inbounds, strategy, enable) and re-apply it. Removed exits lose their link inbound; adding an exit adds it to the balancer.",
+        "summary": "Replace a cascade and re-apply it. The body is the full cascade as for add: a field left out is cleared, not kept, so send back everything from list. Removed exits lose their link inbound; an added exit joins the balancer.",
         "operationId": "post_panel_api_cascades_update_id",
         "parameters": [
           {
@@ -13082,18 +13211,27 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object"
+                "$ref": "#/components/schemas/CascadeRequest"
               },
               "example": {
-                "name": "RU → DE",
+                "name": "RU → DE, NL",
                 "enable": true,
                 "entryNodeId": 1,
                 "exitNodeIds": [
                   2,
                   3
                 ],
-                "entryInboundTags": [],
-                "strategy": "leastPing"
+                "exitCountry": "",
+                "entryInboundTags": [
+                  "inbound-443"
+                ],
+                "strategy": "leastPing",
+                "mode": "both",
+                "directDomains": [],
+                "directIps": [],
+                "relayInboundTags": [
+                  "inbound-8443"
+                ]
               }
             }
           }
@@ -13265,7 +13403,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object"
+                "$ref": "#/components/schemas/CascadeFixedExitRequest"
               },
               "example": {
                 "email": "anna",
@@ -13309,7 +13447,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object"
+                "$ref": "#/components/schemas/CascadeFixedExitRequest"
               },
               "example": {
                 "email": "anna",

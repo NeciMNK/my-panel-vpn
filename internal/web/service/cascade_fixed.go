@@ -12,8 +12,10 @@ import (
 
 // CascadeFixedExitRequest pins (or unpins) one user to one exit server.
 type CascadeFixedExitRequest struct {
-	Email  string `json:"email" example:"anna"`
-	NodeId int    `json:"nodeId" example:"2"`
+	// Email is the client's email, as in the client list.
+	Email string `json:"email" example:"anna"`
+	// NodeId is the exit server; 0 is this panel.
+	NodeId int `json:"nodeId" example:"2"`
 }
 
 func (s *CascadeService) ListFixedExits() ([]model.CascadeFixedExit, error) {

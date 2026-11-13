@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -258,6 +259,27 @@ func TestCascadeValidateMode(t *testing.T) {
 				if d == "" || strings.TrimSpace(d) != d {
 					t.Fatalf("entry %q not normalised: %v %v", d, req.DirectDomains, req.DirectIPs)
 				}
+			}
+		})
+	}
+}
+
+// TestCascadeRequestEnumsMatchService fails when the oneof tags that publish the
+// strategy/mode enums in OpenAPI drift from the values the service accepts.
+func TestCascadeRequestEnumsMatchService(t *testing.T) {
+	typ := reflect.TypeFor[CascadeRequest]()
+	for _, tc := range []struct {
+		field string
+		want  []string
+	}{
+		{"Strategy", cascadeStrategies},
+		{"Mode", cascadeModes},
+	} {
+		t.Run(tc.field, func(t *testing.T) {
+			f, _ := typ.FieldByName(tc.field)
+			got := strings.Fields(strings.TrimPrefix(f.Tag.Get("validate"), "omitempty,oneof="))
+			if !slices.Equal(got, tc.want) {
+				t.Fatalf("validate oneof = %v, service accepts %v", got, tc.want)
 			}
 		})
 	}
