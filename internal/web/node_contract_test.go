@@ -9,6 +9,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"io"
 	"math/big"
@@ -367,6 +368,11 @@ func TestMasterNodeContract(t *testing.T) {
 					go subedge.ServeTunnel(tctx, conn, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 						fmt.Fprint(w, "master answered "+r.URL.Path)
 					}))
+					for deadline := time.Now().Add(5 * time.Second); len(service.SubEdgeNode().Tunnels()) == 0; time.Sleep(10 * time.Millisecond) {
+						if time.Now().After(deadline) {
+							return errors.New("the node never registered the tunnel")
+						}
+					}
 					resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/sub/abc", port))
 					if err != nil {
 						return err
