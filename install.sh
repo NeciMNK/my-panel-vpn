@@ -1849,6 +1849,8 @@ remove_foreign_xui() {
     if [[ $release == "alpine" ]]; then
         rc-service x-ui stop > /dev/null 2>&1
     else
+        # Reload first: a unit replaced on disk makes systemctl stop warn about it.
+        systemctl daemon-reload > /dev/null 2>&1
         systemctl stop x-ui > /dev/null 2>&1
     fi
     pkill -f 'mtg-linux-[^ ]* run ' > /dev/null 2>&1 || true
