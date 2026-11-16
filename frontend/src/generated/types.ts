@@ -466,17 +466,18 @@ export interface Cascade {
   updatedAt: number;
 }
 
+export interface CascadeFixedExitRequest {
+  email: string;
+  nodeId: number;
+  trafficMode: string;
+}
+
 export interface CascadeFixedExitRow {
   createdAt: number;
   email: string;
   id: number;
   nodeId: number;
   trafficMode: string;
-}
-
-export interface CascadeFixedExitRequest {
-  email: string;
-  nodeId: number;
 }
 
 export interface CascadeLink {

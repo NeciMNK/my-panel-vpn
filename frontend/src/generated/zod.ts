@@ -495,6 +495,13 @@ export const CascadeSchema = z.object({
 });
 export type Cascade = z.infer<typeof CascadeSchema>;
 
+export const CascadeFixedExitRequestSchema = z.object({
+  email: z.string(),
+  nodeId: z.number().int(),
+  trafficMode: z.enum(['all', 'ai']),
+});
+export type CascadeFixedExitRequest = z.infer<typeof CascadeFixedExitRequestSchema>;
+
 export const CascadeFixedExitRowSchema = z.object({
   createdAt: z.number().int(),
   email: z.string(),
@@ -503,12 +510,6 @@ export const CascadeFixedExitRowSchema = z.object({
   trafficMode: z.enum(['all', 'ai']),
 });
 export type CascadeFixedExitRow = z.infer<typeof CascadeFixedExitRowSchema>;
-
-export const CascadeFixedExitRequestSchema = z.object({
-  email: z.string(),
-  nodeId: z.number().int(),
-});
-export type CascadeFixedExitRequest = z.infer<typeof CascadeFixedExitRequestSchema>;
 
 export const CascadeLinkSchema = z.object({
   address: z.string(),

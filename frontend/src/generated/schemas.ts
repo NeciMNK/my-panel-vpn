@@ -1963,6 +1963,36 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "CascadeFixedExitRequest": {
+    "description": "CascadeFixedExitRequest pins (or unpins) one user to one exit server.",
+    "properties": {
+      "email": {
+        "description": "Email is the client's email, as in the client list.",
+        "example": "anna",
+        "type": "string"
+      },
+      "nodeId": {
+        "description": "NodeId is the exit server; 0 is this panel.",
+        "example": 2,
+        "type": "integer"
+      },
+      "trafficMode": {
+        "description": "TrafficMode is what the pin carries: \"all\" traffic or \"ai\" sites only; empty keeps the current mode.",
+        "enum": [
+          "all",
+          "ai"
+        ],
+        "example": "all",
+        "type": "string"
+      }
+    },
+    "required": [
+      "email",
+      "nodeId",
+      "trafficMode"
+    ],
+    "type": "object"
+  },
   "CascadeFixedExitRow": {
     "description": "CascadeFixedExitRow is one pin as the panel lists it, with what it carries.",
     "properties": {
@@ -1998,26 +2028,6 @@ export const SCHEMAS: Record<string, unknown> = {
       "id",
       "nodeId",
       "trafficMode"
-    ],
-    "type": "object"
-  },
-  "CascadeFixedExitRequest": {
-    "description": "CascadeFixedExitRequest pins (or unpins) one user to one exit server.",
-    "properties": {
-      "email": {
-        "description": "Email is the client's email, as in the client list.",
-        "example": "anna",
-        "type": "string"
-      },
-      "nodeId": {
-        "description": "NodeId is the exit server; 0 is this panel.",
-        "example": 2,
-        "type": "integer"
-      }
-    },
-    "required": [
-      "email",
-      "nodeId"
     ],
     "type": "object"
   },
