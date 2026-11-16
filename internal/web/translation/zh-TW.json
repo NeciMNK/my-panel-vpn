@@ -838,7 +838,11 @@
         "peerNumberConfig": "Peer {n} 設定"
       },
       "sniffingDestOverride": "目標覆寫",
-      "advancedTitle": "進階設定"
+      "advancedTitle": "進階設定",
+      "copyAsXhttp": "複製為 XHTTP",
+      "copyAsXhttpContent": "在新連接埠上建立使用相同用戶端與安全設定的 XHTTP 入站。gRPC 入站繼續運作；用戶端更新訂閱後請將其刪除。",
+      "grpcDeprecated": "Xray 已棄用 gRPC 傳輸，未來可能移除。請將此入站遷移至 XHTTP。",
+      "deprecated": "已棄用"
     },
     "clients": {
       "tabBasics": "基本",
@@ -1288,7 +1292,7 @@
         "country": "Exit country",
         "countryHint": "Traffic leaves through the fastest server of this country. New nodes of the country join automatically.",
         "split": "Split traffic",
-        "splitHint": "Sites and IPs of the entry server's country (Russia: .ru, .su, .рф, geosite:category-ru, geoip:ru) and the entries below leave the internet from the entry itself; everything else goes through the exit.",
+        "splitHint": "Sites whose servers are in the entry server's country (by server IP, geoip; for Russia also geosite:category-ru) and the entries below leave the internet from the entry itself; everything else goes through the exit, even a .ru site hosted abroad.",
         "relay": "Pure relay",
         "relayHint": "The entry only forwards traffic: everything goes through the exit.",
         "relayInbounds": "Inbounds that only relay",
@@ -3076,6 +3080,8 @@
       "paymentReported": "💳 {{ .User }} paid for {{ .Months }} mo ({{ .Total }}): ",
       "paymentConfirmed": "✅ Payment confirmed: {{ .Email }} is active until {{ .Date }}.",
       "paymentConfirmedBy": "✅ {{ .Email }}: confirmed by {{ .Admin }}, active until {{ .Date }}",
+      "paymentRefusedBy": "❌ Not received: {{ .Admin }}",
+      "paymentNotReceived": "❌ The admin has not received your payment for {{ .Months }} mo. Check the payment details and report the payment again, or write to the admin.",
       "graceTaken": "⏳ {{ .User }} deferred payment by {{ .Days }} days for: ",
       "aiExitIntro": "🤖 AI services (ChatGPT, Claude, Gemini…) block accounts whose IP keeps changing. Your exit IP is pinned per country and stays the same on every connection.\r\n\r\n",
       "aiExitPinnedLine": "{{ .Country }}: 📌 pinned to {{ .Server }}\r\n",
@@ -3176,9 +3182,11 @@
       "attachInbound": "關聯入站 ({{ .Count }})",
       "attachDone": "✅ 完成",
       "iPaid": "✅ I have paid",
+      "pay": "💳 Payment",
       "planOption": "{{ .Months }} mo",
       "payLater": "⏳ Pay later (up to {{ .Days }} days)",
       "confirmPayment": "✅ {{ .Email }}: +{{ .Months }} mo",
+      "paymentNotReceived": "❌ Not received",
       "trusted": "⭐ Trusted (pay later): {{ .State }}",
       "requestFree": "🆓 Request a free subscription ({{ .GB }} GB/month)",
       "approve": "✅ Approve",

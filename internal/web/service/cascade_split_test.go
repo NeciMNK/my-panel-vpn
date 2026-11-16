@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -135,7 +136,7 @@ func TestCascadeModeRoutes(t *testing.T) {
 			cfg := baseTemplate(t)
 			tc.c.Id = 4
 			tc.c.Strategy = "leastPing"
-			applyCascadeToTemplate(cfg, &tc.c, tc.pins, aiExitPlan{}, splitZone("RU"))
+			applyCascadeToTemplate(cfg, &tc.c, 0, tc.pins, aiExitPlan{}, splitZone("RU"))
 			got := summaries(cascadeRules(t, cfg, 4))
 			if !slices.Equal(got, tc.want) {
 				t.Fatalf("rules =\n %v\nwant\n %v", got, tc.want)
@@ -159,13 +160,11 @@ func TestCascadeSplitAddsAdminEntriesToTheZone(t *testing.T) {
 		Id: 4, Mode: CascadeModeSplit, Links: []model.CascadeLink{{NodeId: 2}},
 		DirectDomains: []string{"example.com"}, DirectIPs: []string{"203.0.113.0/24"},
 	}
-	applyCascadeToTemplate(cfg, c, nil, aiExitPlan{}, splitZone("RU"))
+	applyCascadeToTemplate(cfg, c, 0, nil, aiExitPlan{}, splitZone("RU"))
 	rules := cascadeRules(t, cfg, 4)
 	domains, ips := strs(rules[0]["domain"]), strs(rules[1]["ip"])
-	for _, want := range []string{"domain:ru", "domain:su", "domain:xn--p1ai", "geosite:category-ru", "example.com"} {
-		if !slices.Contains(domains, want) {
-			t.Fatalf("direct domains %v miss %q", domains, want)
-		}
+	if !slices.Equal(domains, []string{"geosite:category-ru", "example.com"}) {
+		t.Fatalf("direct domains = %v", domains)
 	}
 	if !slices.Equal(ips, []string{"geoip:ru", "203.0.113.0/24"}) {
 		t.Fatalf("direct ips = %v", ips)
@@ -178,9 +177,8 @@ func TestSplitZoneFollowsTheEntryCountry(t *testing.T) {
 		domains []string
 		ips     []string
 	}{
-		{"", []string{"domain:ru", "domain:su", "domain:xn--p1ai", "geosite:category-ru"}, []string{"geoip:ru"}},
-		{"de", []string{"domain:de"}, []string{"geoip:de"}},
-		{"GB", []string{"domain:uk"}, []string{"geoip:gb"}},
+		{"", []string{"geosite:category-ru"}, []string{"geoip:ru"}},
+		{"DE", nil, []string{"geoip:de"}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.country, func(t *testing.T) {
@@ -192,6 +190,18 @@ func TestSplitZoneFollowsTheEntryCountry(t *testing.T) {
 	}
 }
 
+// An empty domain list would make a rule that matches every connection and
+// sends all of a non-Russian entry's traffic direct.
+func TestCascadeSplitSkipsEmptyDomainRule(t *testing.T) {
+	cfg := baseTemplate(t)
+	c := &model.Cascade{Id: 4, Mode: CascadeModeSplit, Links: []model.CascadeLink{{NodeId: 2}}}
+	applyCascadeToTemplate(cfg, c, 0, nil, aiExitPlan{}, splitZone("DE"))
+	got := summaries(cascadeRules(t, cfg, 4))
+	if want := []string{"direct-ip ip ->direct", "route ->n2"}; !slices.Equal(got, want) {
+		t.Fatalf("rules = %v, want %v", got, want)
+	}
+}
+
 func TestCascadeSplitStripsCleanly(t *testing.T) {
 	cfg := baseTemplate(t)
 	before, _ := json.Marshal(cfg)
@@ -199,11 +209,13 @@ func TestCascadeSplitStripsCleanly(t *testing.T) {
 		Id: 4, Mode: CascadeModeBoth, RelayInboundTags: []string{"r"},
 		Links: []model.CascadeLink{{NodeId: 2}, {NodeId: 5}},
 	}
-	applyCascadeToTemplate(cfg, c, []model.CascadePin{{Email: "a", NodeId: 2}}, aiExitPlan{}, splitZone("RU"))
+	applyCascadeToTemplate(cfg, c, 0, []model.CascadePin{{Email: "a", NodeId: 2}}, aiExitPlan{}, splitZone("RU"))
 	raw, _ := json.Marshal(cfg)
 	again := map[string]any{}
 	_ = json.Unmarshal(raw, &again)
 	stripManaged(again, cascadePrefix(4))
+	// IPOnDemand stays: another split cascade on this entry may still need it.
+	delete(templateRouting(again), "domainStrategy")
 	after, _ := json.Marshal(again)
 	if string(after) != string(before) {
 		t.Fatalf("strip left traces:\n before %s\n after  %s", before, after)
@@ -258,6 +270,27 @@ func TestCascadeValidateMode(t *testing.T) {
 				if d == "" || strings.TrimSpace(d) != d {
 					t.Fatalf("entry %q not normalised: %v %v", d, req.DirectDomains, req.DirectIPs)
 				}
+			}
+		})
+	}
+}
+
+// TestCascadeRequestEnumsMatchService fails when the oneof tags that publish the
+// strategy/mode enums in OpenAPI drift from the values the service accepts.
+func TestCascadeRequestEnumsMatchService(t *testing.T) {
+	typ := reflect.TypeFor[CascadeRequest]()
+	for _, tc := range []struct {
+		field string
+		want  []string
+	}{
+		{"Strategy", cascadeStrategies},
+		{"Mode", cascadeModes},
+	} {
+		t.Run(tc.field, func(t *testing.T) {
+			f, _ := typ.FieldByName(tc.field)
+			got := strings.Fields(strings.TrimPrefix(f.Tag.Get("validate"), "omitempty,oneof="))
+			if !slices.Equal(got, tc.want) {
+				t.Fatalf("validate oneof = %v, service accepts %v", got, tc.want)
 			}
 		})
 	}

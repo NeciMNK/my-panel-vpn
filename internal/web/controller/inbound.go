@@ -90,6 +90,7 @@ func (a *InboundController) initRouter(g *gin.RouterGroup) {
 	g.POST("/update/:id", a.updateInbound)
 	g.POST("/setEnable/:id", a.setInboundEnable)
 	g.POST("/:id/subSortIndex", a.setInboundSubSortIndex)
+	g.POST("/:id/copyAsXhttp", a.copyInboundAsXhttp)
 	g.POST("/:id/resetTraffic", a.resetInboundTraffic)
 	g.POST("/:id/delAllClients", a.delAllInboundClients)
 	g.POST("/resetAllTraffics", a.resetAllTraffics)
@@ -300,6 +301,38 @@ func (a *InboundController) setInboundSubSortIndex(c *gin.Context) {
 	}
 	jsonMsg(c, I18nWeb(c, "pages.inbounds.toasts.inboundUpdateSuccess"), nil)
 	websocket.BroadcastInvalidate(websocket.MessageTypeInbounds)
+}
+
+// copyInboundAsXhttp adds an XHTTP twin of a gRPC inbound (deprecated in Xray
+// 26.10) on a new port with the same clients, leaving the source running.
+func (a *InboundController) copyInboundAsXhttp(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	type form struct {
+		Port int `json:"port" form:"port" binding:"required,gte=1,lte=65535"`
+	}
+	var f form
+	if err := c.ShouldBind(&f); err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	inbound, needRestart, err := a.inboundService.CopyGrpcInboundAsXhttp(id, f.Port)
+	if needRestart {
+		a.xrayService.SetToNeedRestart()
+	}
+	if inbound != nil {
+		user := session.GetLoginUser(c)
+		a.broadcastInboundsUpdate(user.Id)
+		notifyClientsChanged()
+	}
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
+		return
+	}
+	jsonMsgObj(c, I18nWeb(c, "pages.inbounds.toasts.inboundCreateSuccess"), inbound, nil)
 }
 
 func (a *InboundController) setInboundEnable(c *gin.Context) {

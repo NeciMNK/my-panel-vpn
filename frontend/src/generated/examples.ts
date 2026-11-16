@@ -501,6 +501,10 @@ export const EXAMPLES: Record<string, unknown> = {
     "nodeId": 2,
     "trafficMode": "all"
   },
+  "CascadeFixedExitRequest": {
+    "email": "anna",
+    "nodeId": 2
+  },
   "CascadeLink": {
     "address": "",
     "clientId": "",
@@ -511,6 +515,30 @@ export const EXAMPLES: Record<string, unknown> = {
     "publicKey": "",
     "serverName": "",
     "shortId": ""
+  },
+  "CascadeRequest": {
+    "directDomains": [
+      ""
+    ],
+    "directIps": [
+      ""
+    ],
+    "enable": true,
+    "entryInboundTags": [
+      ""
+    ],
+    "entryNodeId": 1,
+    "exitCountry": "DE",
+    "exitNodeIds": [
+      2,
+      3
+    ],
+    "mode": "split",
+    "name": "RU → DE",
+    "relayInboundTags": [
+      ""
+    ],
+    "strategy": "leastPing"
   },
   "Client": {
     "adTag": "0123456789abcdef0123456789abcdef",

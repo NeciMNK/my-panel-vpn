@@ -20,8 +20,11 @@ const (
 
 // CascadeFixedExitRequest pins (or unpins) one user to one exit server.
 type CascadeFixedExitRequest struct {
-	Email       string `json:"email" example:"anna"`
-	NodeId      int    `json:"nodeId" example:"2"`
+	// Email is the client's email, as in the client list.
+	Email string `json:"email" example:"anna"`
+	// NodeId is the exit server; 0 is this panel.
+	NodeId int `json:"nodeId" example:"2"`
+	// TrafficMode is what the pin carries: "all" traffic or "ai" sites only; empty keeps the current mode.
 	TrafficMode string `json:"trafficMode" validate:"omitempty,oneof=all ai" example:"all"`
 }
 
