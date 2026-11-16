@@ -63,7 +63,7 @@ func (s *InboundService) nodePushPlan(ib *model.Inbound) (runtime.Runtime, bool,
 	if err != nil {
 		return nil, false, false, err
 	}
-	if !enabled || status == "offline" {
+	if !enabled || status == model.NodeStatusOffline || status == model.NodeStatusIsolated {
 		return nil, false, true, nil
 	}
 	rt, err := s.runtimeFor(ib)

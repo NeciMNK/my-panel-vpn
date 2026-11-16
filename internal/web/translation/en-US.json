@@ -1335,7 +1335,8 @@
         "offline": "Offline",
         "unknown": "Unknown",
         "xrayError": "Xray Error",
-        "xrayStopped": "Stopped"
+        "xrayStopped": "Stopped",
+        "isolated": "Master lost it, node works"
       },
       "toasts": {
         "list": "Failed to load nodes",
@@ -3057,6 +3058,7 @@
       "eventXrayCrashError": "Error: {{ .Error }}",
       "eventNodeDown": "Node {{ .Name }} is DOWN",
       "eventNodeUp": "Node {{ .Name }} is UP",
+      "eventNodeIsolated": "Master lost node {{ .Name }}, but it still works: {{ .SeenBy }} reach it",
       "eventLoginFallback": "Login failed from {{ .Source }}",
       "memoryThreshold": "Memory Load {{ .Percent }}% exceeds the threshold of {{ .Threshold }}%",
       "inboundsCount": "🔌 Inbounds: {{ .Count }}\r\n",
@@ -3367,7 +3369,8 @@
       "threshold": "Threshold",
       "reason": "Reason",
       "time": "Time",
-      "source": "Source"
+      "source": "Source",
+      "seenBy": "Reached by"
     },
     "values": {
       "uptime": "{{ .Days }}d {{ .Hours }}h",
@@ -3380,6 +3383,7 @@
       "outboundUp": "Outbound Up",
       "nodeDown": "Node Down",
       "nodeUp": "Node Up",
+      "nodeIsolated": "Node Unreachable From Master",
       "xrayCrash": "Xray Core Crashed",
       "cpuHigh": "CPU Threshold Exceeded",
       "memoryHigh": "Memory Threshold Exceeded",
@@ -3437,6 +3441,7 @@
     "statusSuccess": "SUCCESS",
     "statusFailed": "FAILED",
     "statusDown": "DOWN",
+    "statusIsolated": "MASTER LOST IT",
     "statusUp": "UP"
   },
   "commandPalette": {

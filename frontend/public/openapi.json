@@ -4865,8 +4865,12 @@
             "example": "https",
             "type": "string"
           },
+          "seenBy": {
+            "description": "SeenBy names the nodes that still reached this node while the master could not.",
+            "type": "string"
+          },
           "status": {
-            "description": "Heartbeat-updated fields. UpdatedAt advances on every probe even when\nthe row is otherwise unchanged so the UI's \"last seen\" tooltip is\ntruthful without us having to read LastHeartbeat separately.\nonline|offline|unknown",
+            "description": "Heartbeat-updated fields. UpdatedAt advances on every probe even when\nthe row is otherwise unchanged so the UI's \"last seen\" tooltip is\ntruthful without us having to read LastHeartbeat separately.\nonline|offline|isolated|unknown",
             "example": "online",
             "type": "string"
           },
@@ -4944,6 +4948,7 @@
           "port",
           "remark",
           "scheme",
+          "seenBy",
           "status",
           "tlsVerifyMode",
           "updatedAt",
@@ -5218,6 +5223,9 @@
             "example": "https",
             "type": "string"
           },
+          "seenBy": {
+            "type": "string"
+          },
           "status": {
             "example": "online",
             "type": "string"
@@ -5292,6 +5300,7 @@
           "port",
           "remark",
           "scheme",
+          "seenBy",
           "status",
           "tlsVerifyMode",
           "updatedAt",
@@ -5548,6 +5557,33 @@
           "online",
           "tag",
           "up"
+        ],
+        "type": "object"
+      },
+      "PeerProbeResult": {
+        "description": "PeerProbeResult is what the asked node saw; Port is the first one that answered.",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "latencyMs": {
+            "example": 38,
+            "type": "integer"
+          },
+          "port": {
+            "example": 443,
+            "type": "integer"
+          },
+          "reachable": {
+            "example": true,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "error",
+          "latencyMs",
+          "port",
+          "reachable"
         ],
         "type": "object"
       },
@@ -10054,6 +10090,76 @@
                       "type": "string"
                     },
                     "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/server/probePeer": {
+      "post": {
+        "tags": [
+          "Server"
+        ],
+        "summary": "Check from this node whether another node accepts TCP on any of 1-4 ports. The master calls it on its other nodes when it cannot reach a node itself, to tell a dead node from a master-side network problem. It only connects and hangs up.",
+        "operationId": "post_panel_api_server_probePeer",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "address": {
+                    "type": "string"
+                  },
+                  "ports": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 65535
+                    },
+                    "minItems": 1,
+                    "maxItems": 4
+                  }
+                },
+                "required": [
+                  "address",
+                  "ports"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/PeerProbeResult"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "error": "",
+                    "latencyMs": 38,
+                    "port": 443,
+                    "reachable": true
                   }
                 }
               }
@@ -14620,6 +14726,7 @@
                       "port": 2053,
                       "remark": "Primary edge",
                       "scheme": "https",
+                      "seenBy": "",
                       "status": "online",
                       "tlsVerifyMode": "verify",
                       "transitive": false,
@@ -14825,6 +14932,7 @@
                     "port": 2053,
                     "remark": "Primary edge",
                     "scheme": "https",
+                    "seenBy": "",
                     "status": "online",
                     "tlsVerifyMode": "verify",
                     "transitive": false,
@@ -15117,6 +15225,7 @@
                     "port": 2053,
                     "remark": "Primary edge",
                     "scheme": "https",
+                    "seenBy": "",
                     "status": "online",
                     "tlsVerifyMode": "verify",
                     "transitive": false,
@@ -22162,6 +22271,7 @@
                   "port": 2053,
                   "remark": "Primary edge",
                   "scheme": "https",
+                  "seenBy": "",
                   "status": "online",
                   "tlsVerifyMode": "verify",
                   "transitive": false,

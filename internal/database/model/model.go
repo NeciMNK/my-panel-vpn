@@ -838,6 +838,13 @@ type Setting struct {
 	Value string `json:"value" form:"value"`
 }
 
+// Node heartbeat statuses. Isolated: the master lost the node, other nodes still reach it.
+const (
+	NodeStatusOnline   = "online"
+	NodeStatusOffline  = "offline"
+	NodeStatusIsolated = "isolated"
+)
+
 // Node represents a remote 3x-ui panel registered with the central panel.
 // The central panel polls each node's existing /panel/api/server/status
 // endpoint over HTTP using the per-node ApiToken to populate the runtime
@@ -871,7 +878,7 @@ type Node struct {
 	// Heartbeat-updated fields. UpdatedAt advances on every probe even when
 	// the row is otherwise unchanged so the UI's "last seen" tooltip is
 	// truthful without us having to read LastHeartbeat separately.
-	Status        string  `json:"status" gorm:"default:unknown" example:"online"` // online|offline|unknown
+	Status        string  `json:"status" gorm:"default:unknown" example:"online"` // online|offline|isolated|unknown
 	LastHeartbeat int64   `json:"lastHeartbeat" example:"1700000000"`             // unix seconds, 0 = never
 	LatencyMs     int     `json:"latencyMs" example:"42"`
 	XrayVersion   string  `json:"xrayVersion" example:"25.10.31"`
@@ -890,6 +897,8 @@ type Node struct {
 	// (status=online) from "Xray core itself has failed on the node" for monitoring.
 	XrayState string `json:"xrayState" gorm:"column:xray_state"`
 	XrayError string `json:"xrayError" gorm:"column:xray_error"`
+	// SeenBy names the nodes that still reached this node while the master could not.
+	SeenBy string `json:"seenBy" gorm:"column:seen_by" example:""`
 
 	ConfigDirty   bool  `json:"configDirty" gorm:"default:false"`
 	ConfigDirtyAt int64 `json:"configDirtyAt"`
@@ -1876,3 +1885,9 @@ const (
 	TlsCertStatusValid   = "valid"
 	TlsCertStatusError   = "error"
 )
+
+// Serving reports whether users can still connect to the node, even when the
+// master itself cannot reach it.
+func (n *Node) Serving() bool {
+	return n.Enable && (n.Status == NodeStatusOnline || n.Status == NodeStatusIsolated)
+}

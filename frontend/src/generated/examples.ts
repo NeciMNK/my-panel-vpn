@@ -1284,6 +1284,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "port": 2053,
     "remark": "",
     "scheme": "https",
+    "seenBy": "",
     "status": "online",
     "tlsVerifyMode": "verify",
     "transitive": false,
@@ -1359,6 +1360,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "port": 2053,
     "remark": "Primary edge",
     "scheme": "https",
+    "seenBy": "",
     "status": "online",
     "tlsVerifyMode": "verify",
     "transitive": false,
@@ -1423,6 +1425,12 @@ export const EXAMPLES: Record<string, unknown> = {
     "online": true,
     "tag": "inbound-51820",
     "up": 1048576
+  },
+  "PeerProbeResult": {
+    "error": "",
+    "latencyMs": 38,
+    "port": 443,
+    "reachable": true
   },
   "ProbeResultUI": {
     "cpuPct": 12.5,

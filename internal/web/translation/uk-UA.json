@@ -1214,7 +1214,8 @@
         "offline": "Не в мережі",
         "unknown": "Невідомо",
         "xrayError": "Помилка Xray",
-        "xrayStopped": "Зупинено"
+        "xrayStopped": "Зупинено",
+        "isolated": "Майстер не бачить, вузол працює"
       },
       "toasts": {
         "list": "Не вдалося завантажити вузли",
@@ -3057,6 +3058,7 @@
       "eventXrayCrashError": "Помилка: {{ .Error }}",
       "eventNodeDown": "Вузол {{ .Name }} НЕДОСТУПНИЙ",
       "eventNodeUp": "Вузол {{ .Name }} ДОСТУПНИЙ",
+      "eventNodeIsolated": "Майстер не бачить вузол {{ .Name }}, але він працює: його бачать {{ .SeenBy }}",
       "eventLoginFallback": "Невдала спроба входу з {{ .Source }}",
       "memoryThreshold": "Використання пам'яті {{ .Percent }}% перевищує порогове значення {{ .Threshold }}%",
       "inboundsCount": "🔌 Підключень: {{ .Count }}\r\n",
@@ -3367,7 +3369,8 @@
       "threshold": "Поріг",
       "reason": "Причина",
       "time": "Час",
-      "source": "Джерело"
+      "source": "Джерело",
+      "seenBy": "Бачать"
     },
     "values": {
       "uptime": "{{ .Days }} д {{ .Hours }} год",
@@ -3380,6 +3383,7 @@
       "outboundUp": "Вихідне відновлено",
       "nodeDown": "Вузол недоступний",
       "nodeUp": "Вузол знову в мережі",
+      "nodeIsolated": "Майстер не бачить вузол",
       "xrayCrash": "Збій ядра Xray",
       "cpuHigh": "Перевищено поріг CPU",
       "memoryHigh": "Перевищено поріг пам'яті",
@@ -3437,6 +3441,7 @@
     "statusSuccess": "УСПІШНО",
     "statusFailed": "НЕВДАЛО",
     "statusDown": "НЕДОСТУПНО",
+    "statusIsolated": "МАЙСТЕР НЕ БАЧИТЬ",
     "statusUp": "ДОСТУПНО"
   },
   "commandPalette": {

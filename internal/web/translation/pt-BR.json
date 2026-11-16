@@ -1214,7 +1214,8 @@
         "offline": "Offline",
         "unknown": "Desconhecido",
         "xrayError": "Erro do Xray",
-        "xrayStopped": "Parado"
+        "xrayStopped": "Parado",
+        "isolated": "O mestre o perdeu, o nó funciona"
       },
       "toasts": {
         "list": "Falha ao carregar os nós",
@@ -3057,6 +3058,7 @@
       "eventXrayCrashError": "Erro: {{ .Error }}",
       "eventNodeDown": "O nó {{ .Name }} está INATIVO",
       "eventNodeUp": "O nó {{ .Name }} está ATIVO",
+      "eventNodeIsolated": "O mestre perdeu o nó {{ .Name }}, mas ele ainda funciona: {{ .SeenBy }} o alcançam",
       "eventLoginFallback": "Falha de login a partir de {{ .Source }}",
       "memoryThreshold": "Uso de memória {{ .Percent }}% excede o limite de {{ .Threshold }}%",
       "inboundsCount": "🔌 Inbounds: {{ .Count }}\r\n",
@@ -3367,7 +3369,8 @@
       "threshold": "Limite",
       "reason": "Motivo",
       "time": "Horário",
-      "source": "Origem"
+      "source": "Origem",
+      "seenBy": "Alcançado por"
     },
     "values": {
       "uptime": "{{ .Days }}d {{ .Hours }}h",
@@ -3380,6 +3383,7 @@
       "outboundUp": "Saída restabelecida",
       "nodeDown": "Nó fora do ar",
       "nodeUp": "Nó restabelecido",
+      "nodeIsolated": "Nó inacessível pelo mestre",
       "xrayCrash": "O núcleo Xray travou",
       "cpuHigh": "Limite de CPU excedido",
       "memoryHigh": "Limite de memória excedido",
@@ -3437,6 +3441,7 @@
     "statusSuccess": "SUCESSO",
     "statusFailed": "FALHOU",
     "statusDown": "INATIVO",
+    "statusIsolated": "O MESTRE O PERDEU",
     "statusUp": "ATIVO"
   },
   "commandPalette": {

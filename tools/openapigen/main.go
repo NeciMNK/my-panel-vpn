@@ -85,6 +85,7 @@ func run(root, outDir string) error {
 				"AllSetting",
 				"AllSettingView",
 				"HostGroup",
+				"PeerProbeResult",
 			),
 		},
 		{

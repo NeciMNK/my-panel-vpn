@@ -239,7 +239,7 @@ func (s *CascadeService) StickCascadeUsers(ctx context.Context) {
 	countryOf := map[int]string{}
 	for _, n := range nodes {
 		guidOf[n.Id] = effectiveNodeGuid(n, ambiguous)
-		healthy[n.Id] = n.Enable && n.Status == "online"
+		healthy[n.Id] = n.Serving()
 		countryOf[n.Id] = n.Country
 	}
 	byGuid := (&InboundService{}).GetOnlineClientsByGuid()

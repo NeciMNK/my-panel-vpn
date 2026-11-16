@@ -1214,7 +1214,8 @@
         "offline": "离线",
         "unknown": "未知",
         "xrayError": "Xray 错误",
-        "xrayStopped": "已停止"
+        "xrayStopped": "已停止",
+        "isolated": "主面板无法连接，节点正常"
       },
       "toasts": {
         "list": "加载节点失败",
@@ -3057,6 +3058,7 @@
       "eventXrayCrashError": "错误：{{ .Error }}",
       "eventNodeDown": "节点 {{ .Name }} 已离线",
       "eventNodeUp": "节点 {{ .Name }} 已上线",
+      "eventNodeIsolated": "主面板无法连接节点 {{ .Name }}，但节点仍在运行：{{ .SeenBy }} 可以连接",
       "eventLoginFallback": "来自 {{ .Source }} 的登录失败",
       "memoryThreshold": "内存使用率 {{ .Percent }}% 超过阈值 {{ .Threshold }}%",
       "inboundsCount": "🔌 Inbounds: {{ .Count }}\r\n",
@@ -3367,7 +3369,8 @@
       "threshold": "阈值",
       "reason": "原因",
       "time": "时间",
-      "source": "来源"
+      "source": "来源",
+      "seenBy": "可连接节点"
     },
     "values": {
       "uptime": "{{ .Days }}天 {{ .Hours }}小时",
@@ -3380,6 +3383,7 @@
       "outboundUp": "出站已恢复",
       "nodeDown": "节点已离线",
       "nodeUp": "节点已恢复",
+      "nodeIsolated": "主面板无法连接节点",
       "xrayCrash": "Xray 核心崩溃",
       "cpuHigh": "CPU 超出阈值",
       "memoryHigh": "内存超出阈值",
@@ -3437,6 +3441,7 @@
     "statusSuccess": "成功",
     "statusFailed": "失败",
     "statusDown": "断开",
+    "statusIsolated": "主面板无法连接",
     "statusUp": "恢复"
   },
   "commandPalette": {

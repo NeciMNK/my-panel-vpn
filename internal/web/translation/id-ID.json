@@ -1214,7 +1214,8 @@
         "offline": "Offline",
         "unknown": "Tidak diketahui",
         "xrayError": "Kesalahan Xray",
-        "xrayStopped": "Berhenti"
+        "xrayStopped": "Berhenti",
+        "isolated": "Master kehilangannya, node berjalan"
       },
       "toasts": {
         "list": "Gagal memuat node",
@@ -3057,6 +3058,7 @@
       "eventXrayCrashError": "Kesalahan: {{ .Error }}",
       "eventNodeDown": "Node {{ .Name }} MATI",
       "eventNodeUp": "Node {{ .Name }} AKTIF",
+      "eventNodeIsolated": "Master kehilangan node {{ .Name }}, tetapi node masih berjalan: {{ .SeenBy }} menjangkaunya",
       "eventLoginFallback": "Gagal masuk dari {{ .Source }}",
       "memoryThreshold": "Penggunaan memori {{ .Percent }}% melebihi ambang batas {{ .Threshold }}%",
       "inboundsCount": "🔌 Inbounds: {{ .Count }}\r\n",
@@ -3367,7 +3369,8 @@
       "threshold": "Ambang Batas",
       "reason": "Alasan",
       "time": "Waktu",
-      "source": "Sumber"
+      "source": "Sumber",
+      "seenBy": "Dijangkau oleh"
     },
     "values": {
       "uptime": "{{ .Days }} hari {{ .Hours }} jam",
@@ -3380,6 +3383,7 @@
       "outboundUp": "Outbound Aktif",
       "nodeDown": "Node Mati",
       "nodeUp": "Node Aktif",
+      "nodeIsolated": "Node tidak terjangkau dari master",
       "xrayCrash": "Inti Xray Mengalami Crash",
       "cpuHigh": "Ambang Batas CPU Terlampaui",
       "memoryHigh": "Ambang Batas Memori Terlampaui",
@@ -3437,6 +3441,7 @@
     "statusSuccess": "BERHASIL",
     "statusFailed": "GAGAL",
     "statusDown": "MATI",
+    "statusIsolated": "MASTER KEHILANGANNYA",
     "statusUp": "AKTIF"
   },
   "commandPalette": {

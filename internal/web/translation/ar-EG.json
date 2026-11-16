@@ -1214,7 +1214,8 @@
         "offline": "غير متصل",
         "unknown": "غير معروف",
         "xrayError": "خطأ Xray",
-        "xrayStopped": "متوقف"
+        "xrayStopped": "متوقف",
+        "isolated": "فقدتها اللوحة الرئيسية، العقدة تعمل"
       },
       "toasts": {
         "list": "فشل تحميل النودز",
@@ -3057,6 +3058,7 @@
       "eventXrayCrashError": "الخطأ: {{ .Error }}",
       "eventNodeDown": "العقدة {{ .Name }} غير متصلة",
       "eventNodeUp": "العقدة {{ .Name }} متصلة",
+      "eventNodeIsolated": "فقدت اللوحة الرئيسية الاتصال بالعقدة {{ .Name }}، لكنها ما زالت تعمل: تصل إليها {{ .SeenBy }}",
       "eventLoginFallback": "فشل تسجيل الدخول من {{ .Source }}",
       "memoryThreshold": "استخدام الذاكرة {{ .Percent }}% يتجاوز الحد {{ .Threshold }}%",
       "inboundsCount": "🔌 Inbounds: {{ .Count }}\r\n",
@@ -3367,7 +3369,8 @@
       "threshold": "الحد",
       "reason": "السبب",
       "time": "الوقت",
-      "source": "المصدر"
+      "source": "المصدر",
+      "seenBy": "تصل إليها"
     },
     "values": {
       "uptime": "{{ .Days }} يوم {{ .Hours }} ساعة",
@@ -3380,6 +3383,7 @@
       "outboundUp": "الصادر يعمل",
       "nodeDown": "العقدة متوقفة",
       "nodeUp": "العقدة تعمل",
+      "nodeIsolated": "العقدة غير متاحة من اللوحة الرئيسية",
       "xrayCrash": "تعطّلت نواة Xray",
       "cpuHigh": "تم تجاوز حد المعالج",
       "memoryHigh": "تم تجاوز حد الذاكرة",
@@ -3437,6 +3441,7 @@
     "statusSuccess": "نجاح",
     "statusFailed": "فشل",
     "statusDown": "غير متصل",
+    "statusIsolated": "فقدتها اللوحة الرئيسية",
     "statusUp": "متصل"
   },
   "commandPalette": {

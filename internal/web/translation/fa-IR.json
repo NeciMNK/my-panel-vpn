@@ -1214,7 +1214,8 @@
         "offline": "آفلاین",
         "unknown": "نامشخص",
         "xrayError": "خطای Xray",
-        "xrayStopped": "متوقف"
+        "xrayStopped": "متوقف",
+        "isolated": "پنل اصلی دسترسی ندارد، نود کار می‌کند"
       },
       "toasts": {
         "list": "بارگذاری نودها ناموفق",
@@ -3057,6 +3058,7 @@
       "eventXrayCrashError": "خطا: {{ .Error }}",
       "eventNodeDown": "نود {{ .Name }} قطع است",
       "eventNodeUp": "نود {{ .Name }} وصل است",
+      "eventNodeIsolated": "پنل اصلی به نود {{ .Name }} دسترسی ندارد، اما نود کار می‌کند: {{ .SeenBy }} به آن دسترسی دارند",
       "eventLoginFallback": "ورود ناموفق از {{ .Source }}",
       "memoryThreshold": "مصرف حافظه {{ .Percent }}% از حد آستانه {{ .Threshold }}% فراتر رفته است",
       "inboundsCount": "🔌 Inbounds: {{ .Count }}\r\n",
@@ -3367,7 +3369,8 @@
       "threshold": "آستانه",
       "reason": "دلیل",
       "time": "زمان",
-      "source": "منبع"
+      "source": "منبع",
+      "seenBy": "در دسترس از"
     },
     "values": {
       "uptime": "{{ .Days }} روز {{ .Hours }} ساعت",
@@ -3380,6 +3383,7 @@
       "outboundUp": "خروجی در دسترس است",
       "nodeDown": "نود از دسترس خارج شد",
       "nodeUp": "نود در دسترس است",
+      "nodeIsolated": "نود از پنل اصلی در دسترس نیست",
       "xrayCrash": "هسته Xray از کار افتاد",
       "cpuHigh": "عبور از آستانه پردازنده",
       "memoryHigh": "عبور از آستانه حافظه",
@@ -3437,6 +3441,7 @@
     "statusSuccess": "موفق",
     "statusFailed": "ناموفق",
     "statusDown": "قطع",
+    "statusIsolated": "پنل اصلی دسترسی ندارد",
     "statusUp": "وصل"
   },
   "commandPalette": {

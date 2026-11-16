@@ -1214,7 +1214,8 @@
         "offline": "オフライン",
         "unknown": "不明",
         "xrayError": "Xray エラー",
-        "xrayStopped": "停止"
+        "xrayStopped": "停止",
+        "isolated": "マスターから到達不可、ノードは稼働中"
       },
       "toasts": {
         "list": "ノードの読み込みに失敗しました",
@@ -3057,6 +3058,7 @@
       "eventXrayCrashError": "エラー: {{ .Error }}",
       "eventNodeDown": "ノード {{ .Name }} がダウンしています",
       "eventNodeUp": "ノード {{ .Name }} が復旧しました",
+      "eventNodeIsolated": "マスターはノード {{ .Name }} に到達できませんが、ノードは稼働中です: {{ .SeenBy }} から到達可能",
       "eventLoginFallback": "{{ .Source }} からのログインに失敗しました",
       "memoryThreshold": "メモリ使用率 {{ .Percent }}% がしきい値 {{ .Threshold }}% を超えました",
       "inboundsCount": "🔌 Inbounds: {{ .Count }}\r\n",
@@ -3367,7 +3369,8 @@
       "threshold": "しきい値",
       "reason": "理由",
       "time": "時刻",
-      "source": "送信元"
+      "source": "送信元",
+      "seenBy": "到達可能なノード"
     },
     "values": {
       "uptime": "{{ .Days }}日 {{ .Hours }}時間",
@@ -3380,6 +3383,7 @@
       "outboundUp": "アウトバウンド復旧",
       "nodeDown": "ノード停止",
       "nodeUp": "ノード復旧",
+      "nodeIsolated": "マスターからノードに到達不可",
       "xrayCrash": "Xray コアがクラッシュしました",
       "cpuHigh": "CPU しきい値超過",
       "memoryHigh": "メモリしきい値超過",
@@ -3437,6 +3441,7 @@
     "statusSuccess": "成功",
     "statusFailed": "失敗",
     "statusDown": "ダウン",
+    "statusIsolated": "マスターから到達不可",
     "statusUp": "アップ"
   },
   "commandPalette": {
