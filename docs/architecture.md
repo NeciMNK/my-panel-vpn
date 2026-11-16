@@ -590,8 +590,8 @@ for AutoMigrate in `internal/database/db.go`.
 9. **Cross-cutting notifications go through `internal/eventbus/`** — publish an event instead
    of importing the Telegram/Discord/email services into producers.
 10. **Per-protocol facts live in `internal/protocol`.** A new inbound protocol starts with a
-   `model.Protocol` constant, its `Spec` and the validator's `oneof` (tests pin all three);
-   one served outside Xray also needs a `localEngine` in `internal/web/runtime/local_engine.go`.
+    `model.Protocol` constant, its `Spec` and the validator's `oneof` (tests pin all three);
+    one served outside Xray also needs a `localEngine` in `internal/web/runtime/local_engine.go`.
 
 ---
 
