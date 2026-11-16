@@ -1098,6 +1098,26 @@ type ClientGroup struct {
 
 func (ClientGroup) TableName() string { return "client_groups" }
 
+// Groups the panel assigns by itself: a new client joins one, a payment or friend mark moves it.
+const (
+	ClientGroupUsers   = "users"
+	ClientGroupPaid    = "paid"
+	ClientGroupFriends = "friends"
+	ClientGroupTech    = "tech"
+)
+
+// ManagedClientPrefix starts the email of every client the panel creates for its own
+// cascade and home-network links.
+const ManagedClientPrefix = "mp-"
+
+// DefaultClientGroup is the group a new client without one joins.
+func DefaultClientGroup(email string) string {
+	if strings.HasPrefix(email, ManagedClientPrefix) {
+		return ClientGroupTech
+	}
+	return ClientGroupUsers
+}
+
 // MarshalJSON emits the reverse column as a nested JSON object rather than an
 // escaped JSON-text string, matching the same convention Inbound uses for its
 // JSON-text columns. Empty storage renders as null.
@@ -1229,6 +1249,9 @@ type LedgerEntry struct {
 }
 
 func (LedgerEntry) TableName() string { return "ledger_entries" }
+
+// LedgerIncome is the kind of a ledger entry that books a client's payment.
+const LedgerIncome = "income"
 
 // LedgerFreeGroup marks a client group (e.g. family) whose members never pay.
 type LedgerFreeGroup struct {

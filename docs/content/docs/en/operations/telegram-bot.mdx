@@ -141,6 +141,10 @@ Set the price, discounts and where to pay in **Finance → Prices and payment** 
   opens the add-client wizard prefilled with the user's Telegram ID, the free
   quota (**Free plan traffic**, 10 GB by default) and a monthly traffic reset; the admin picks the inbounds. Confirming any payment
   for a free client removes the limit.
+- **When a term ends** (a bot client or one you gave an expiry date in the panel),
+  the client is not switched off: it moves to the free plan with no end date,
+  **Free plan traffic** a month, usage starting from zero. Paying again restarts a
+  full term from the day of payment. A client you switched off yourself stays off.
 - **Friends**: the **🤝 Friend** button in the bot's client card gives that client
   the **Friends discount** (a percent under **Finance → Prices and payment**). It
   applies to every term after the term discount; the client sees its own prices.
