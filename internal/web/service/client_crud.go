@@ -509,6 +509,23 @@ func (s *ClientService) fillProtocolDefaultsAgainstExisting(c *model.Client, ib 
 	return nil
 }
 
+// carryMintedCredentials keeps what fillProtocolDefaults minted for one inbound
+// on the shared identity, so every later inbound and the record reuse it.
+func carryMintedCredentials(shared *model.Client, filled model.Client) {
+	if shared.ID == "" {
+		shared.ID = filled.ID
+	}
+	if shared.Password == "" {
+		shared.Password = filled.Password
+	}
+	if shared.Auth == "" {
+		shared.Auth = filled.Auth
+	}
+	if shared.Secret == "" {
+		shared.Secret = filled.Secret
+	}
+}
+
 // defaultMtprotoDomain is the FakeTLS fronting domain used when an mtproto
 // inbound carries no fakeTlsDomain of its own; it mirrors the frontend default.
 const defaultMtprotoDomain = "www.cloudflare.com"
@@ -1245,6 +1262,7 @@ func (s *ClientService) Attach(inboundSvc *InboundService, id int, inboundIds []
 		if err := s.fillProtocolDefaults(&copyClient, inbound); err != nil {
 			return false, fmt.Errorf("inbound %d: %w", ibId, err)
 		}
+		carryMintedCredentials(clientWire, copyClient)
 		settingsPayload, mErr := json.Marshal(map[string][]model.Client{"clients": {clientWithInboundFlow(copyClient, inbound)}})
 		if mErr != nil {
 			return false, fmt.Errorf("inbound %d: %w", ibId, mErr)

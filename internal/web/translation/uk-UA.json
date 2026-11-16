@@ -838,7 +838,11 @@
         "peerNumberConfig": "Конфіг Peer {n}"
       },
       "sniffingDestOverride": "Перевизначення призначення",
-      "advancedTitle": "Додаткові налаштування"
+      "advancedTitle": "Додаткові налаштування",
+      "copyAsXhttp": "Перевести на XHTTP",
+      "copyAsXhttpContent": "Створює XHTTP-inbound на новому порту з тими самими клієнтами та безпекою. gRPC-inbound продовжує працювати; видаліть його, коли клієнти оновлять підписки.",
+      "grpcDeprecated": "Транспорт gRPC у Xray застарів і може бути видалений. Переведіть цей inbound на XHTTP.",
+      "deprecated": "застарів"
     },
     "clients": {
       "tabBasics": "Основні",
@@ -3073,6 +3077,8 @@
       "paymentReported": "💳 {{ .User }} сплатив {{ .Months }} міс ({{ .Total }}): ",
       "paymentConfirmed": "✅ Оплату підтверджено: {{ .Email }} активна до {{ .Date }}.",
       "paymentConfirmedBy": "✅ {{ .Email }}: підтвердив {{ .Admin }}, до {{ .Date }}",
+      "paymentRefusedBy": "❌ Оплата не надійшла, позначив {{ .Admin }}",
+      "paymentNotReceived": "❌ Адмін не отримав вашу оплату за {{ .Months }} міс. Перевірте реквізити й повідомте про оплату ще раз або напишіть адміну.",
       "graceTaken": "⏳ {{ .User }} відклав оплату на {{ .Days }} днів: ",
       "aiExitIntro": "🤖 AI services (ChatGPT, Claude, Gemini…) block accounts whose IP keeps changing. Your exit IP is pinned per country and stays the same on every connection.\r\n\r\n",
       "aiExitPinnedLine": "{{ .Country }}: 📌 pinned to {{ .Server }}\r\n",
@@ -3173,9 +3179,11 @@
       "attachInbound": "Прив’язати інбаунд ({{ .Count }})",
       "attachDone": "✅ Готово",
       "iPaid": "✅ Я сплатив",
+      "pay": "💳 Оплата",
       "planOption": "{{ .Months }} міс",
       "payLater": "⏳ Сплачу пізніше (до {{ .Days }} днів)",
       "confirmPayment": "✅ {{ .Email }}: +{{ .Months }} міс",
+      "paymentNotReceived": "❌ Не переказав",
       "trusted": "⭐ Довірений (відстрочка): {{ .State }}",
       "requestFree": "🆓 Запросити безкоштовну підписку ({{ .GB }} ГБ/міс)",
       "approve": "✅ Схвалити",

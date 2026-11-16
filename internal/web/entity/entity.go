@@ -301,16 +301,8 @@ func (s *AllSetting) CheckValid() error {
 		}
 	}
 
-	if s.WebPort <= 0 || s.WebPort > math.MaxUint16 {
-		return common.NewError("web port is not a valid port:", s.WebPort)
-	}
-
-	if s.SubPort <= 0 || s.SubPort > math.MaxUint16 {
-		return common.NewError("Sub port is not a valid port:", s.SubPort)
-	}
-
-	if (s.SubPort == s.WebPort) && listenAddressesConflict(s.WebListen, s.SubListen) {
-		return common.NewError("Sub and Web could not use same ip:port, ", s.SubListen, ":", s.SubPort, " & ", s.WebListen, ":", s.WebPort)
+	if err := CheckWebSubPorts(s.WebListen, s.WebPort, s.SubListen, s.SubPort); err != nil {
+		return err
 	}
 
 	if s.WebCertFile != "" || s.WebKeyFile != "" {
@@ -402,6 +394,21 @@ func (s *AllSetting) CheckValid() error {
 		}
 	}
 
+	return nil
+}
+
+// CheckWebSubPorts validates both ports and that the web and subscription servers
+// can bind side by side; shared by the settings form and the x-ui CLI.
+func CheckWebSubPorts(webListen string, webPort int, subListen string, subPort int) error {
+	if webPort <= 0 || webPort > math.MaxUint16 {
+		return common.NewError("web port is not a valid port:", webPort)
+	}
+	if subPort <= 0 || subPort > math.MaxUint16 {
+		return common.NewError("Sub port is not a valid port:", subPort)
+	}
+	if subPort == webPort && listenAddressesConflict(webListen, subListen) {
+		return common.NewError("Sub and Web could not use same ip:port, ", subListen, ":", subPort, " & ", webListen, ":", webPort)
+	}
 	return nil
 }
 

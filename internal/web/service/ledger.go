@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	LedgerIncome  = "income"
+	LedgerIncome  = model.LedgerIncome
 	LedgerExpense = "expense"
 
 	NonPayingClient   = "client"

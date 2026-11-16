@@ -18,6 +18,11 @@ import (
 	"gorm.io/gorm"
 )
 
+var (
+	errServiceClientAttach = common.NewError("service client of a cascade or home network link: the panel manages its inbounds")
+	errAttachWithoutSubID  = common.NewError("client has no subId, so its identity cannot be attached to another inbound")
+)
+
 // BulkAttachResult reports the outcome of a bulk attach across target inbounds.
 type BulkAttachResult struct {
 	Attached []string `json:"attached"`
@@ -53,9 +58,19 @@ func (s *ClientService) BulkAttach(inboundSvc *InboundService, emails []string, 
 			continue
 		}
 		seenEmail[key] = struct{}{}
+		if strings.HasPrefix(key, managedTagPrefix) {
+			recordErr("%s: %v", email, errServiceClientAttach)
+			continue
+		}
 		rec, err := s.GetRecordByEmail(nil, email)
 		if err != nil {
 			recordErr("%s: %v", email, err)
+			continue
+		}
+		// AddInboundClient matches an existing email by subId and rejects the
+		// whole batch on a miss, so refuse such a client here on its own.
+		if strings.TrimSpace(rec.SubID) == "" {
+			recordErr("%s: %v", email, errAttachWithoutSubID)
 			continue
 		}
 		records = append(records, rec)
@@ -70,6 +85,16 @@ func (s *ClientService) BulkAttach(inboundSvc *InboundService, emails []string, 
 	flowsByEmail, err := s.EffectiveFlowsByEmails(nil, emailsForFlow)
 	if err != nil {
 		return result, false, err
+	}
+
+	identities := make([]model.Client, len(records))
+	for i, rec := range records {
+		identities[i] = *rec.ToClient()
+		// Forwards are set per inbound; see Attach.
+		identities[i].ForwardedPorts = nil
+		if flow, ok := flowsByEmail[rec.Email]; ok && flow != "" {
+			identities[i].Flow = flow
+		}
 	}
 
 	needRestart := false
@@ -106,22 +131,18 @@ func (s *ClientService) BulkAttach(inboundSvc *InboundService, emails []string, 
 		}
 
 		clientsToAdd := make([]model.Client, 0, len(records))
-		for _, rec := range records {
+		for i, rec := range records {
 			if _, attached := have[strings.ToLower(rec.Email)]; attached {
 				result.Skipped = append(result.Skipped, rec.Email)
 				continue
 			}
-			client := *rec.ToClient()
-			// Forwards are set per inbound; see Attach.
-			client.ForwardedPorts = nil
-			if flow, ok := flowsByEmail[rec.Email]; ok && flow != "" {
-				client.Flow = flow
-			}
+			client := identities[i]
 			client.UpdatedAt = time.Now().UnixMilli()
 			if err := s.fillProtocolDefaults(&client, inbound); err != nil {
 				recordErr("%s -> inbound %d: %v", rec.Email, ibId, err)
 				continue
 			}
+			carryMintedCredentials(&identities[i], client)
 			clientsToAdd = append(clientsToAdd, clientWithInboundFlow(client, inbound))
 		}
 

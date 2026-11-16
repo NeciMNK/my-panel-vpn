@@ -8,20 +8,28 @@ type Cascade struct {
 	Name        string `json:"name" example:"RU → DE"`
 	Enable      bool   `json:"enable" gorm:"default:true" example:"true"`
 	EntryNodeId int    `json:"entryNodeId" gorm:"column:entry_node_id" example:"1"`
-	ExitNodeIds []int  `json:"exitNodeIds" gorm:"serializer:json;column:exit_node_ids"`
+	// ExitNodeIds are the exits in use; for a country cascade, the resolved list.
+	ExitNodeIds []int `json:"exitNodeIds" gorm:"serializer:json;column:exit_node_ids"`
 	// ExitCountry, when set, makes every enabled node of that country an exit.
-	ExitCountry      string   `json:"exitCountry" gorm:"column:exit_country" example:"DE"`
+	ExitCountry string `json:"exitCountry" gorm:"column:exit_country" example:"DE"`
+	// EntryInboundTags are the chained entry inbounds; empty means all of them.
 	EntryInboundTags []string `json:"entryInboundTags" gorm:"serializer:json;column:entry_inbound_tags"`
-	Strategy         string   `json:"strategy" gorm:"default:leastPing" example:"leastPing"`
+	// Strategy is the balancer strategy used when there are several exits.
+	Strategy string `json:"strategy" gorm:"default:leastPing" example:"leastPing"`
 	// Mode is split, relay or both; empty is a cascade saved before modes, a relay.
-	Mode             string        `json:"mode" example:"split"`
-	DirectDomains    []string      `json:"directDomains" gorm:"serializer:json;column:direct_domains"`
-	DirectIPs        []string      `json:"directIps" gorm:"serializer:json;column:direct_ips"`
-	RelayInboundTags []string      `json:"relayInboundTags" gorm:"serializer:json;column:relay_inbound_tags"`
-	Links            []CascadeLink `json:"links" gorm:"serializer:json"`
-	LastError        string        `json:"lastError" gorm:"column:last_error"`
-	CreatedAt        int64         `json:"createdAt" gorm:"autoCreateTime"`
-	UpdatedAt        int64         `json:"updatedAt" gorm:"autoUpdateTime"`
+	Mode string `json:"mode" example:"split"`
+	// DirectDomains are the admin's domain rules added to the split's direct list.
+	DirectDomains []string `json:"directDomains" gorm:"serializer:json;column:direct_domains"`
+	// DirectIPs are the admin's IP rules added to the split's direct list.
+	DirectIPs []string `json:"directIps" gorm:"serializer:json;column:direct_ips"`
+	// RelayInboundTags are the entry inbounds that relay everything in both mode.
+	RelayInboundTags []string `json:"relayInboundTags" gorm:"serializer:json;column:relay_inbound_tags"`
+	// Links are the provisioned hops, one per exit; read-only, set by the panel.
+	Links []CascadeLink `json:"links" gorm:"serializer:json"`
+	// LastError is why the last apply failed; empty when the cascade is live.
+	LastError string `json:"lastError" gorm:"column:last_error"`
+	CreatedAt int64  `json:"createdAt" gorm:"autoCreateTime"`
+	UpdatedAt int64  `json:"updatedAt" gorm:"autoUpdateTime"`
 }
 
 // CascadeLink is the hidden VLESS+REALITY hop the master provisions on one exit.

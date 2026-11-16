@@ -838,7 +838,11 @@
         "peerNumberConfig": "Cấu hình Peer {n}"
       },
       "sniffingDestOverride": "Ghi đè đích",
-      "advancedTitle": "Cài đặt nâng cao"
+      "advancedTitle": "Cài đặt nâng cao",
+      "copyAsXhttp": "Sao chép thành XHTTP",
+      "copyAsXhttpContent": "Tạo inbound XHTTP trên cổng mới với cùng client và bảo mật. Inbound gRPC vẫn hoạt động; hãy xóa khi client đã làm mới đăng ký.",
+      "grpcDeprecated": "Xray đã ngừng hỗ trợ transport gRPC và có thể gỡ bỏ. Hãy chuyển inbound này sang XHTTP.",
+      "deprecated": "đã lỗi thời"
     },
     "clients": {
       "tabBasics": "Cơ bản",
@@ -3073,6 +3077,8 @@
       "paymentReported": "💳 {{ .User }} paid for {{ .Months }} mo ({{ .Total }}): ",
       "paymentConfirmed": "✅ Payment confirmed: {{ .Email }} is active until {{ .Date }}.",
       "paymentConfirmedBy": "✅ {{ .Email }}: confirmed by {{ .Admin }}, active until {{ .Date }}",
+      "paymentRefusedBy": "❌ Not received: {{ .Admin }}",
+      "paymentNotReceived": "❌ The admin has not received your payment for {{ .Months }} mo. Check the payment details and report the payment again, or write to the admin.",
       "graceTaken": "⏳ {{ .User }} deferred payment by {{ .Days }} days for: ",
       "aiExitIntro": "🤖 AI services (ChatGPT, Claude, Gemini…) block accounts whose IP keeps changing. Your exit IP is pinned per country and stays the same on every connection.\r\n\r\n",
       "aiExitPinnedLine": "{{ .Country }}: 📌 pinned to {{ .Server }}\r\n",
@@ -3173,9 +3179,11 @@
       "attachInbound": "Đính kèm inbound ({{ .Count }})",
       "attachDone": "✅ Xong",
       "iPaid": "✅ I have paid",
+      "pay": "💳 Payment",
       "planOption": "{{ .Months }} mo",
       "payLater": "⏳ Pay later (up to {{ .Days }} days)",
       "confirmPayment": "✅ {{ .Email }}: +{{ .Months }} mo",
+      "paymentNotReceived": "❌ Not received",
       "trusted": "⭐ Trusted (pay later): {{ .State }}",
       "requestFree": "🆓 Request a free subscription ({{ .GB }} GB/month)",
       "approve": "✅ Approve",
