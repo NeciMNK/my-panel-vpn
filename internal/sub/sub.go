@@ -137,7 +137,7 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 
 	SubUpdates, err := s.settingService.GetSubUpdates()
 	if err != nil {
-		SubUpdates = "10"
+		SubUpdates = "1"
 	}
 
 	SubJsonMux, err := s.settingService.GetSubJsonMux()
