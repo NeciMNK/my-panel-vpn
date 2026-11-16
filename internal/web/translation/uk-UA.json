@@ -2187,7 +2187,7 @@
       },
       "eventSpeedLow": "Speed below user minimum",
       "eventMasterLeader": "Another master took over",
-      "tgPaymentMoved": "The price, discounts and where to pay are set on the Finance page.",
+      "tgPaymentMoved": "Prices, discounts, payment details, the free plan and online payment (YooKassa, which confirms payments by itself) are set on the Finance page, Prices and payment tab.",
       "tgFreePlanPrice": "Ціна безкоштовного тарифу (онлайн)",
       "tgFreePlanPriceDesc": "Разова оплата проти спам-ботів. Якщо більше 0 і підключено платіжку, новий користувач сплачує її карткою в боті й отримує безкоштовний тариф автоматично, без схвалення адміна; ця сума віднімається з його першої платної підписки. 0 або без платіжки — лишається безкоштовний запит, який схвалює адмін.",
       "tgFreePlanInbounds": "Підключення для оплаченого безкоштовного тарифу",
@@ -2931,7 +2931,12 @@
       "nodeHint": "Оберіть ноду на цьому сервері: її адреса показуватиметься тут і змінюватиметься разом із налаштуваннями ноди. Для сервера без ноди (наприклад, самої панелі) впишіть IP нижче.",
       "noNode": "— не нода —",
       "aiExitPrice": "AI button price",
-      "aiExitPriceDesc": "One-off price of the bot's \"🤖 I will use AI\" button (a permanent exit IP). Friends always get it free. 0 hides it from everyone else. It is paid by card when a provider is connected, or by hand to the payment details with an admin's confirm in the bot. Clients who already paid keep it."
+      "aiExitPriceDesc": "One-off price of the bot's \"🤖 I will use AI\" button (a permanent exit IP). Friends always get it free. 0 hides it from everyone else. It is paid by card when a provider is connected, or by hand to the payment details with an admin's confirm in the bot. Clients who already paid keep it.",
+      "tabs": {
+        "summary": "Servers and totals",
+        "payment": "Prices and payment",
+        "nonPaying": "Not paying"
+      }
     },
     "aiDomains": {
       "list": "Sites for the AI pin",
