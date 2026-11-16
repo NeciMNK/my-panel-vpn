@@ -18,16 +18,17 @@ import (
 	"gorm.io/gorm"
 )
 
-type transportBits = protocol.Transport
+// transportBits shares protocol.Transport's bit layout, so a Spec's ListenTransport converts as-is.
+type transportBits uint8
 
 const (
-	transportTCP = protocol.TCP
-	transportUDP = protocol.UDP
+	transportTCP = transportBits(protocol.TCP)
+	transportUDP = transportBits(protocol.UDP)
 )
 
 func inboundTransports(p model.Protocol, streamSettings, settings string) transportBits {
 	if spec, ok := protocol.Lookup(p); ok && spec.ListenTransport != 0 {
-		return spec.ListenTransport
+		return transportBits(spec.ListenTransport)
 	}
 	if p == model.MASQUE {
 		return masqueTransports(streamSettings)
