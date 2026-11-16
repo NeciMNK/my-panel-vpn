@@ -20,7 +20,7 @@ import { HttpUtil, IntlUtil } from '@/utils';
 import { selectTagRender } from '@/components/form/SelectTag';
 import { useClientOptions } from '@/api/queries/useClientOptions';
 import type { NodeRecord } from '@/api/queries/useNodesQuery';
-import type { GroupSpeed, SpeedTestSettings, SpeedTestStats } from '@/generated/types';
+import type { GroupSpeed, SpeedTestSettings, SpeedTestStats, SpeedTier } from '@/generated/types';
 
 import SpeedTestHistoryModal, { speedTestProviderKey } from './SpeedTestHistoryModal';
 
@@ -42,6 +42,7 @@ export interface ServerLoadRecord {
 export interface SpeedOverviewRecord {
   clients: ClientSpeedRecord[] | null;
   groups?: GroupSpeed[] | null;
+  tiers?: SpeedTier[] | null;
   servers: { nodeId: number; capacityMbps: number }[] | null;
   load: ServerLoadRecord[] | null;
   testing?: number[] | null;

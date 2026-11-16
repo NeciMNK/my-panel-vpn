@@ -131,18 +131,22 @@ func (s *PaymentOrderService) currency() string {
 	return currency
 }
 
-// CreatePlanOrder opens a payment page for months of the client's subscription,
-// priced for that client (friends discount, free-plan credit).
-func (s *PaymentOrderService) CreatePlanOrder(ctx context.Context, tgID int64, email string, months int, description, returnURL string) (*model.PaymentOrder, error) {
+// CreatePlanOrder opens a payment page for months of the client's subscription with
+// speed tier tierID (0 = none), priced for that client (friends discount, free-plan credit).
+func (s *PaymentOrderService) CreatePlanOrder(ctx context.Context, tgID int64, email string, months, tierID int, description, returnURL string) (*model.PaymentOrder, error) {
 	if months < 1 || months > maxPaymentMonths {
 		return nil, ErrPaymentMonths
+	}
+	tier, err := s.billingService.SpeedTier(tierID)
+	if err != nil {
+		return nil, err
 	}
 	billing, err := s.clientService.GetBillingByEmail(email)
 	if err != nil {
 		return nil, err
 	}
-	amount, _ := s.billingService.ClientPaymentAmount(billing, months)
-	order := &model.PaymentOrder{Kind: OrderPlan, TgID: tgID, Email: email, Months: months, Amount: amount}
+	amount, _ := s.billingService.ClientPaymentAmount(billing, months, tier)
+	order := &model.PaymentOrder{Kind: OrderPlan, TgID: tgID, Email: email, Months: months, SpeedTier: tierID, Amount: amount}
 	return s.open(ctx, order, description, returnURL)
 }
 
@@ -277,7 +281,7 @@ func (s *PaymentOrderService) fulfil(order *model.PaymentOrder, now time.Time) (
 	note := fmt.Sprintf("%s #%s", order.Provider, order.InvoiceId)
 	switch order.Kind {
 	case OrderPlan:
-		return s.billingService.ApplyOnlinePayment(order.Email, order.Months, order.Amount, note, now)
+		return s.billingService.ApplyOnlinePayment(order.Email, order.Months, order.SpeedTier, order.Amount, note, now)
 	case OrderAI:
 		return s.unlockAIExit(order, note, now)
 	}

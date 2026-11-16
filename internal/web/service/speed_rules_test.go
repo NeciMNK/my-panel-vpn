@@ -159,3 +159,45 @@ func TestCascadeExitUsersFollowPinsAndOneExitCascades(t *testing.T) {
 		t.Fatalf("exit users = %+v, want %+v (bob's inbound is not in the cascade, dina has no pin yet)", got, want)
 	}
 }
+
+func TestSaveTierValidatesAndDeleteTierDropsItFromClients(t *testing.T) {
+	dbtest.InitDB(t, filepath.Join(t.TempDir(), "x-ui.db"))
+	s := &SpeedService{}
+	for _, bad := range []struct {
+		req  SpeedTierRequest
+		want string
+	}{
+		{SpeedTierRequest{Name: " ", MinMbps: 200}, "name the speed tier"},
+		{SpeedTierRequest{Name: "Plus"}, "a speed tier needs a guaranteed speed above 0"},
+		{SpeedTierRequest{Name: "Plus", MinMbps: 200, MonthlyPrice: -1}, "the price cannot be negative"},
+		{SpeedTierRequest{Id: 99, Name: "Plus", MinMbps: 200}, "speed tier not found"},
+	} {
+		if err := s.SaveTier(&bad.req); err == nil || strings.TrimSpace(err.Error()) != bad.want {
+			t.Fatalf("%+v: err = %v, want %q", bad.req, err, bad.want)
+		}
+	}
+	if err := s.SaveTier(&SpeedTierRequest{Name: "Plus", MinMbps: 200, MonthlyPrice: 100}); err != nil {
+		t.Fatal(err)
+	}
+	db := database.GetDB()
+	var tier model.SpeedTier
+	db.First(&tier)
+	client := model.ClientRecord{Email: "fast", Group: model.ClientGroupPaid}
+	if err := db.Create(&client).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Create(&model.ClientBilling{ClientId: client.Id, SpeedTierId: tier.Id}).Error; err != nil {
+		t.Fatal(err)
+	}
+	if rules, _ := speedRules(); rules["fast"] != (speedRule{Min: 200}) {
+		t.Fatalf("rule with Plus = %+v", rules["fast"])
+	}
+	if err := s.DeleteTier(tier.Id); err != nil {
+		t.Fatal(err)
+	}
+	var billing model.ClientBilling
+	db.Where("client_id = ?", client.Id).First(&billing)
+	if rules, _ := speedRules(); billing.SpeedTierId != 0 || rules["fast"] != (speedRule{Min: 100}) {
+		t.Fatalf("after deleting Plus: tier %d, rule %+v; want 0 and the paid group's min 100", billing.SpeedTierId, rules["fast"])
+	}
+}

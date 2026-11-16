@@ -105,6 +105,12 @@ to bill clients through the bot:
   shows who confirmed and the new end date, with the button gone, so one report
   extends once. Repeat reports within 10 minutes are ignored. Reports and
   confirmations are written to the panel log at INFO.
+- **Speed tiers** (Finance → Prices and payment → Speed tiers), e.g. *Plus*: at least
+  200 Mbit/s for +100 a month. With tiers on sale, **I have paid** and card payment
+  first ask which speed the client pays for; the tier's price is added to every month
+  of the term, and its minimum is guaranteed until the term ends (it beats the group
+  speed; a speed set on the client itself still wins). A term paid without a tier
+  drops it.
 - **Pay later**: in the bot's client card an admin marks a client **Trusted**.
   A trusted client whose subscription ends within 15 days can extend it by 15 days
   on credit, at most once every 30 days but with no limit on the total; admins are

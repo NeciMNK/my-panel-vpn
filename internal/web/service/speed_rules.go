@@ -3,10 +3,13 @@ package service
 import (
 	"math"
 	"strings"
+	"time"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
+
+	"gorm.io/gorm"
 )
 
 // GroupSpeedRequest sets one group's speed; all 0 removes it. FloorMbps > 0
@@ -45,8 +48,8 @@ func (s *SpeedService) SetGroup(req *GroupSpeedRequest) error {
 	return db.Save(row).Error
 }
 
-// speedRule is the speed one client is entitled to: their own setting, or
-// else their group's. Floor > 0 makes Max float down to Floor under load.
+// speedRule is the speed one client is entitled to: their own setting, else the
+// speed tier of their paid term, else their group's. Floor > 0 makes Max float.
 type speedRule struct{ Min, Max, Floor int }
 
 func (r speedRule) floats() bool { return r.Floor > 0 && r.Max > 0 }
@@ -78,6 +81,21 @@ func speedRules() (map[string]speedRule, error) {
 				out[m.Email] = byGroup[m.Group]
 			}
 		}
+	}
+	var tiered []struct {
+		Email   string
+		MinMbps int
+	}
+	if err := db.Table("client_billings").
+		Select("clients.email AS email, speed_tiers.min_mbps AS min_mbps").
+		Joins("JOIN clients ON clients.id = client_billings.client_id").
+		Joins("JOIN speed_tiers ON speed_tiers.id = client_billings.speed_tier_id").
+		Where("client_billings.free_plan = ? AND (clients.expiry_time <= 0 OR clients.expiry_time > ?)", false, time.Now().UnixMilli()).
+		Scan(&tiered).Error; err != nil {
+		return nil, err
+	}
+	for _, r := range tiered {
+		out[r.Email] = speedRule{Min: r.MinMbps}
 	}
 	var own []model.ClientSpeed
 	if err := db.Find(&own).Error; err != nil {
@@ -166,4 +184,46 @@ func cascadeExitUsers(cascades []model.Cascade, online map[int][]string, entered
 		}
 	}
 	return out
+}
+
+// SpeedTierRequest adds (id 0) or edits a speed tier clients can buy.
+type SpeedTierRequest struct {
+	Id           int    `json:"id" example:"0"`
+	Name         string `json:"name" example:"Plus"`
+	MinMbps      int    `json:"minMbps" example:"200"`
+	MonthlyPrice int    `json:"monthlyPrice" example:"100"`
+}
+
+func (s *SpeedService) SaveTier(req *SpeedTierRequest) error {
+	if req == nil || strings.TrimSpace(req.Name) == "" {
+		return common.NewError("name the speed tier")
+	}
+	if req.MinMbps <= 0 {
+		return common.NewError("a speed tier needs a guaranteed speed above 0")
+	}
+	if req.MonthlyPrice < 0 {
+		return common.NewError("the price cannot be negative")
+	}
+	tier := &model.SpeedTier{Id: req.Id, Name: strings.TrimSpace(req.Name), MinMbps: req.MinMbps, MonthlyPrice: req.MonthlyPrice}
+	db := database.GetDB()
+	if req.Id != 0 {
+		res := db.Model(&model.SpeedTier{}).Where("id = ?", req.Id).
+			Updates(map[string]any{"name": tier.Name, "min_mbps": tier.MinMbps, "monthly_price": tier.MonthlyPrice})
+		if res.Error == nil && res.RowsAffected == 0 {
+			return common.NewError("speed tier not found")
+		}
+		return res.Error
+	}
+	return db.Create(tier).Error
+}
+
+// DeleteTier stops selling a tier; clients who bought it fall back to their group's
+// speed, and reports pending with it can no longer be confirmed for it.
+func (s *SpeedService) DeleteTier(id int) error {
+	return database.GetDB().Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&model.ClientBilling{}).Where("speed_tier_id = ?", id).Update("speed_tier_id", 0).Error; err != nil {
+			return err
+		}
+		return tx.Where("id = ?", id).Delete(&model.SpeedTier{}).Error
+	})
 }

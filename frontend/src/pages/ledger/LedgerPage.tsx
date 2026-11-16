@@ -69,6 +69,7 @@ import {
 import { z } from 'zod';
 
 import OnlinePaymentCard from './OnlinePaymentCard';
+import SpeedTiersCard from './SpeedTiersCard';
 import './LedgerPage.css';
 
 const JSON_HEADERS = {
@@ -654,6 +655,9 @@ export default function LedgerPage() {
                           </Col>
                           <Col span={24}>
                             <OnlinePaymentCard />
+                          </Col>
+                          <Col span={24}>
+                            <SpeedTiersCard />
                           </Col>
                         </Row>
                       ),

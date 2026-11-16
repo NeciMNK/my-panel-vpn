@@ -1903,6 +1903,19 @@ export const sections: readonly Section[] = [
       },
       {
         method: 'POST',
+        path: '/panel/api/speed/tier',
+        summary:
+          "Add (id 0) or edit a speed tier clients can buy in the bot: a guaranteed minMbps for monthlyPrice added to every month of the term they pay. It beats the group speed and lapses with the term; a client's own speed still wins.",
+        body: '{\n  "id": 0,\n  "name": "Plus",\n  "minMbps": 200,\n  "monthlyPrice": 100\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/speed/tier/delete',
+        summary: 'Stop selling a speed tier; clients who bought it fall back to their group speed.',
+        body: '{\n  "id": 1\n}',
+      },
+      {
+        method: 'POST',
         path: '/panel/api/speed/capacity',
         summary: "Set one server's link speed in Mbit/s (node id 0 = this panel); 0 removes it.",
         body: '{\n  "nodeId": 0,\n  "capacityMbps": 1000\n}',
@@ -2265,8 +2278,8 @@ export const sections: readonly Section[] = [
         method: 'POST',
         path: '/panel/api/billing/pay',
         summary:
-          'Apply a payment for 1-36 months. A running term is extended from its end, a lapsed one restarts from now. Any payment the client reported in the bot is settled, so a later confirm there cannot apply it twice. note defaults to "<months> mo" in the ledger.',
-        body: '{\n  "email": "alice",\n  "months": 3,\n  "note": "YooKassa 2c4f"\n}',
+          'Apply a payment for 1-36 months. A running term is extended from its end, a lapsed one restarts from now. speedTierId (0 = none) buys that speed tier for the term: its monthly price is added per month and its guaranteed speed applies until the term ends; a term without one drops the tier. Any payment the client reported in the bot is settled, so a later confirm there cannot apply it twice. note defaults to "<months> mo" in the ledger.',
+        body: '{\n  "email": "alice",\n  "months": 3,\n  "speedTierId": 0,\n  "note": "YooKassa 2c4f"\n}',
         responseSchema: 'PaymentResult',
       },
     ],

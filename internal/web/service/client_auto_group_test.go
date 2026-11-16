@@ -109,7 +109,7 @@ func TestPaymentMovesUsersToPaid(t *testing.T) {
 				UpdateColumn("group_name", tc.startGroup).Error; err != nil {
 				t.Fatalf("set start group: %v", err)
 			}
-			if _, err := (&BillingService{}).ApplyPayment(tc.email, 1, "1 mo", now); err != nil {
+			if _, err := (&BillingService{}).ApplyPayment(tc.email, 1, 0, "1 mo", now); err != nil {
 				t.Fatalf("ApplyPayment: %v", err)
 			}
 			if got := lookupClientRecord(t, tc.email).Group; got != tc.wantGroup {
@@ -124,7 +124,7 @@ func TestUnfriendReturnsAPayerToPaid(t *testing.T) {
 	now := time.Date(2026, 11, 13, 12, 0, 0, 0, time.UTC)
 	seedPayingClient(t, "pal@x", now.UnixMilli())
 	svc := &ClientService{}
-	if _, err := (&BillingService{}).ApplyPayment("pal@x", 1, "1 mo", now); err != nil {
+	if _, err := (&BillingService{}).ApplyPayment("pal@x", 1, 0, "1 mo", now); err != nil {
 		t.Fatalf("ApplyPayment: %v", err)
 	}
 	if err := svc.SetFriend("pal@x", true); err != nil {

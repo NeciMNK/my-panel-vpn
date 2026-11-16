@@ -3,6 +3,7 @@ package tgbot
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -167,11 +168,11 @@ func TestClientPaidReportsChosenTermToAdmins(t *testing.T) {
 
 	tap(tb, 5454, cbClientPaid, false)
 	_, markup := screenMarkup(t, tb, 5454)
-	if !strings.Contains(markup, `"client_paid 3"`) {
+	if !strings.Contains(markup, `"client_paid 3 0"`) {
 		t.Fatalf("the term picker does not offer the 3-month term: %s", markup)
 	}
 
-	tap(tb, 5454, "client_paid 3", false)
+	tap(tb, 5454, "client_paid 3 0", false)
 	sent := adminMessages(calls(), 9001)
 	if len(sent) != 1 {
 		t.Fatalf("admin messages = %d, want 1 (calls: %v)", len(sent), methods(calls()))
@@ -182,13 +183,50 @@ func TestClientPaidReportsChosenTermToAdmins(t *testing.T) {
 		}
 	}
 	adminMarkup, _ := json.Marshal(sent[0].Payload["reply_markup"])
-	if !strings.Contains(string(adminMarkup), `"pay_ok reporter@x 3"`) {
+	if !strings.Contains(string(adminMarkup), `"pay_ok reporter@x 3 0"`) {
 		t.Errorf("the admin notice has no confirm button for 3 months: %s", adminMarkup)
 	}
 
-	tap(tb, 5454, "client_paid 3", false)
+	tap(tb, 5454, "client_paid 3 0", false)
 	if n := len(adminMessages(calls(), 9001)); n != 1 {
 		t.Errorf("admin messages after a repeat report = %d, want 1: the report is not throttled", n)
+	}
+}
+
+// With speed tiers on sale, "I paid" asks for the speed first; the term's price,
+// the admin's notice and the confirmed payment all carry the chosen tier.
+func TestClientPaidWithASpeedTierChargesAndGrantsIt(t *testing.T) {
+	tb, calls := newScreenTgbot(t, false)
+	initReportDB(t)
+	localizeWithRealBundle(t)
+	setTestAdmins(t, 9001)
+	resetThrottles(t)
+	seedClientForTgUser(t, 5460, "fast@x")
+	seedPaymentSettings(t, "300", "card")
+	seedSettings(t, map[string]string{"tgPaymentDiscounts": "3:10"})
+	plus := &model.SpeedTier{Name: "Plus", MinMbps: 200, MonthlyPrice: 100}
+	if err := database.GetDB().Create(plus).Error; err != nil {
+		t.Fatal(err)
+	}
+	id := strconv.Itoa(plus.Id)
+
+	tap(tb, 5460, cbClientPaid, false)
+	if _, markup := screenMarkup(t, tb, 5460); !strings.Contains(markup, `"client_paid s`+id+`"`) || !strings.Contains(markup, `"client_paid s0"`) {
+		t.Fatalf("the first step does not offer the speed tiers: %s", markup)
+	}
+	tap(tb, 5460, "client_paid s"+id, false)
+	if _, markup := screenMarkup(t, tb, 5460); !strings.Contains(markup, `3 mo · 1110","callback_data":"client_paid 3 `+id+`"`) {
+		t.Fatalf("the term picker does not price 3 months with Plus at 810 + 3 x 100: %s", markup)
+	}
+	tap(tb, 5460, "client_paid 3 "+id, false)
+	sent := adminMessages(calls(), 9001)
+	if len(sent) != 1 || !strings.Contains(sent[0].text(), "1110") || !strings.Contains(sent[0].text(), "Plus") {
+		t.Fatalf("admin notices = %d, want one naming 1110 and Plus: %v", len(sent), sent)
+	}
+	tap(tb, 9001, "pay_ok fast@x 3 "+id, true)
+	billing, err := (&service.ClientService{}).GetBillingByEmail("fast@x")
+	if err != nil || billing.SpeedTierId != plus.Id {
+		t.Fatalf("billing after confirm = %+v (%v), want speed tier %d", billing, err, plus.Id)
 	}
 }
 

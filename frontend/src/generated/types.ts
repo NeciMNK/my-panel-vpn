@@ -532,6 +532,8 @@ export interface ClientBillingView {
   nonPaying: boolean;
   pendingMonths: number;
   plans: PaymentPlanPrice[];
+  speedTierId: number;
+  speedTiers: SpeedTier[];
   trusted: boolean;
 }
 
@@ -1335,6 +1337,7 @@ export interface SpeedOverview {
   testSettings: SpeedTestSettings;
   testStats: SpeedTestStats[];
   testing: number[];
+  tiers: SpeedTier[];
 }
 
 export interface SpeedTestResult {
@@ -1367,6 +1370,13 @@ export interface SpeedTestStats {
   maxDownloadMbps: number;
   minDownloadMbps: number;
   nodeId: number;
+}
+
+export interface SpeedTier {
+  id: number;
+  minMbps: number;
+  monthlyPrice: number;
+  name: string;
 }
 
 export interface SubBalancer {

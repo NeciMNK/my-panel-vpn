@@ -2936,6 +2936,12 @@
         "summary": "Servers and totals",
         "payment": "Prices and payment",
         "nonPaying": "Not paying"
+      },
+      "speedTiers": {
+        "title": "Speed tiers",
+        "desc": "A speed upgrade clients can buy in the bot when they pay: its price is added to every month of the term, and its minimum is guaranteed until the term ends. It beats the group's speed; a speed set on the client itself still wins. Deleting a tier returns its buyers to their group's speed.",
+        "name": "Name",
+        "price": "Price per month"
       }
     },
     "aiDomains": {
@@ -3128,7 +3134,8 @@
       "aiSuggestAdded": "✅ Your suggestion was accepted: {{ .Domains }} now go through your AI IP.",
       "aiSuggestPartial": "➗ An admin added some of the sites you suggested ({{ .Domains }}), but not all of them.",
       "aiSuggestDeclined": "❌ An admin decided not to add {{ .Domains }}.",
-      "aiSuggestPresent": "📋 {{ .Domains }} already go through your AI IP, so nothing needed adding."
+      "aiSuggestPresent": "📋 {{ .Domains }} already go through your AI IP, so nothing needed adding.",
+      "paymentReportedTier": "{{ .Total }}, speed {{ .Name }} from {{ .Mbps }} Mbit/s"
     },
     "buttons": {
       "closeKeyboard": "❌ 关闭键盘",
@@ -3228,7 +3235,9 @@
       "aiSuggestAdded": "✅ Added all",
       "aiSuggestPartial": "➗ Added some",
       "aiSuggestDeclined": "❌ Added none",
-      "aiSuggestPresent": "📋 All already listed"
+      "aiSuggestPresent": "📋 All already listed",
+      "tierNone": "Standard speed",
+      "tierOption": "{{ .Name }}: from {{ .Mbps }} Mbit/s, +{{ .Total }}/mo"
     },
     "answers": {
       "broadcastStarted": "🚀 群发已开始。",
@@ -3326,7 +3335,11 @@
       "orderDescription": "VPN {{ .Email }}, {{ .Months }} mo",
       "aiExitDescription": "VPN: permanent exit IP for AI services",
       "aiExitInvoice": "🧾 <b>🤖 I will use AI</b>: a permanent exit IP, so AI services do not block your account — {{ .Total }} once, yours for good.\r\nThe button unlocks automatically after payment.",
-      "aiExitManual": "🧾 <b>🤖 I will use AI</b>: a permanent exit IP, so AI services do not block your account — {{ .Total }} once, yours for good.\r\n🏦 Where to pay:\r\n{{ .Details }}\r\n\r\nThen tap \"I paid\": the button opens once an admin confirms the payment."
+      "aiExitManual": "🧾 <b>🤖 I will use AI</b>: a permanent exit IP, so AI services do not block your account — {{ .Total }} once, yours for good.\r\n🏦 Where to pay:\r\n{{ .Details }}\r\n\r\nThen tap \"I paid\": the button opens once an admin confirms the payment.",
+      "tiersTitle": "⚡ Faster speed, added to every month:\r\n",
+      "tier": "• {{ .Name }}: at least {{ .Mbps }} Mbit/s, +{{ .Total }} a month\r\n",
+      "tierCurrent": "Your speed now: {{ .Name }}.\r\n",
+      "chooseTier": "⚡ Which speed do you pay for? A faster tier adds its price to every month of the term."
     },
     "ledger": {
       "summary": "💰 <b>Finance for {{ .Month }}</b>\r\n\r\n➕ Income: {{ .Income }}\r\n➖ Expenses: {{ .Expenses }} (servers {{ .Servers }})\r\n{{ .Sign }} <b>Result: {{ .Balance }}</b>\r\n👥 Paying clients: {{ .Paying }}, expected {{ .Expected }}\r\n",

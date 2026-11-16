@@ -450,8 +450,12 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 				t.screenClientQR(chatId, email)
 				return
 			case "pay_ok":
-				if len(dataArray) == 3 {
-					t.confirmPayment(callbackQuery, email, dataArray[2])
+				switch len(dataArray) {
+				case 3:
+					t.confirmPayment(callbackQuery, email, dataArray[2], "0")
+					return
+				case 4:
+					t.confirmPayment(callbackQuery, email, dataArray[2], dataArray[3])
 					return
 				}
 				t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
@@ -500,7 +504,7 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 			case "free_no":
 				t.declineFreePlan(callbackQuery, dataArray[1])
 			case cbClientPaid:
-				t.reportClientPayment(callbackQuery, dataArray[1])
+				t.answerClientPaid(callbackQuery, strings.Join(dataArray[1:], " "))
 			case "client_get_usage":
 				t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.messages.email", "Email=="+email))
 				t.searchClientScreen(chatId, email)
@@ -1071,8 +1075,8 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 		}
 	}
 
-	if months, ok := strings.CutPrefix(callbackQuery.Data, cbClientPaid+" "); ok {
-		t.reportClientPayment(callbackQuery, months)
+	if args, ok := strings.CutPrefix(callbackQuery.Data, cbClientPaid+" "); ok {
+		t.answerClientPaid(callbackQuery, args)
 		return
 	}
 	if isAIExitCallback(callbackQuery.Data) {
@@ -1149,7 +1153,7 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 		t.screenClientHome(chatId, callbackQuery.From.ID)
 	case cbClientPaid:
 		t.answerSilent(callbackQuery.ID)
-		t.screenPlanPicker(chatId, callbackQuery.From.ID)
+		t.screenPlanPicker(chatId, callbackQuery.From.ID, 0, false)
 	case cbClientDefer:
 		t.deferPayment(callbackQuery)
 	case "client_traffic":

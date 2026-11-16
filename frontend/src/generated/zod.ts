@@ -564,6 +564,8 @@ export const ClientBillingViewSchema = z.object({
   nonPaying: z.boolean(),
   pendingMonths: z.number().int(),
   plans: z.array(z.lazy(() => PaymentPlanPriceSchema)),
+  speedTierId: z.number().int(),
+  speedTiers: z.array(z.lazy(() => SpeedTierSchema)),
   trusted: z.boolean(),
 });
 export type ClientBillingView = z.infer<typeof ClientBillingViewSchema>;
@@ -1430,6 +1432,7 @@ export const SpeedOverviewSchema = z.object({
   testSettings: z.lazy(() => SpeedTestSettingsSchema),
   testStats: z.array(z.lazy(() => SpeedTestStatsSchema)),
   testing: z.array(z.number().int()),
+  tiers: z.array(z.lazy(() => SpeedTierSchema)),
 });
 export type SpeedOverview = z.infer<typeof SpeedOverviewSchema>;
 
@@ -1467,6 +1470,14 @@ export const SpeedTestStatsSchema = z.object({
   nodeId: z.number().int(),
 });
 export type SpeedTestStats = z.infer<typeof SpeedTestStatsSchema>;
+
+export const SpeedTierSchema = z.object({
+  id: z.number().int(),
+  minMbps: z.number().int(),
+  monthlyPrice: z.number().int(),
+  name: z.string(),
+});
+export type SpeedTier = z.infer<typeof SpeedTierSchema>;
 
 export const SubBalancerSchema = z.object({
   createdAt: z.number().int(),

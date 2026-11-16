@@ -2291,6 +2291,16 @@
             },
             "type": "array"
           },
+          "speedTierId": {
+            "example": 0,
+            "type": "integer"
+          },
+          "speedTiers": {
+            "items": {
+              "$ref": "#/components/schemas/SpeedTier"
+            },
+            "type": "array"
+          },
           "trusted": {
             "example": false,
             "type": "boolean"
@@ -2307,6 +2317,8 @@
           "nonPaying",
           "pendingMonths",
           "plans",
+          "speedTierId",
+          "speedTiers",
           "trusted"
         ],
         "type": "object"
@@ -5941,6 +5953,12 @@
               "type": "integer"
             },
             "type": "array"
+          },
+          "tiers": {
+            "items": {
+              "$ref": "#/components/schemas/SpeedTier"
+            },
+            "type": "array"
           }
         },
         "required": [
@@ -5950,7 +5968,8 @@
           "servers",
           "testSettings",
           "testStats",
-          "testing"
+          "testing",
+          "tiers"
         ],
         "type": "object"
       },
@@ -6099,6 +6118,34 @@
           "maxDownloadMbps",
           "minDownloadMbps",
           "nodeId"
+        ],
+        "type": "object"
+      },
+      "SpeedTier": {
+        "description": "SpeedTier is a paid speed upgrade: a guaranteed MinMbps for MonthlyPrice on\ntop of every month of the client's term.",
+        "properties": {
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "minMbps": {
+            "example": 200,
+            "type": "integer"
+          },
+          "monthlyPrice": {
+            "example": 100,
+            "type": "integer"
+          },
+          "name": {
+            "example": "Plus",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "minMbps",
+          "monthlyPrice",
+          "name"
         ],
         "type": "object"
       },
@@ -14014,6 +14061,14 @@
                     ],
                     "testing": [
                       0
+                    ],
+                    "tiers": [
+                      {
+                        "id": 1,
+                        "minMbps": 200,
+                        "monthlyPrice": 100,
+                        "name": "Plus"
+                      }
                     ]
                   }
                 }
@@ -14087,6 +14142,95 @@
                 "minMbps": 0,
                 "maxMbps": 100,
                 "floorMbps": 50
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/speed/tier": {
+      "post": {
+        "tags": [
+          "Speed limits"
+        ],
+        "summary": "Add (id 0) or edit a speed tier clients can buy in the bot: a guaranteed minMbps for monthlyPrice added to every month of the term they pay. It beats the group speed and lapses with the term; a client's own speed still wins.",
+        "operationId": "post_panel_api_speed_tier",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "id": 0,
+                "name": "Plus",
+                "minMbps": 200,
+                "monthlyPrice": 100
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/speed/tier/delete": {
+      "post": {
+        "tags": [
+          "Speed limits"
+        ],
+        "summary": "Stop selling a speed tier; clients who bought it fall back to their group speed.",
+        "operationId": "post_panel_api_speed_tier_delete",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "id": 1
               }
             }
           }
@@ -16204,6 +16348,15 @@
                         "total": 810
                       }
                     ],
+                    "speedTierId": 0,
+                    "speedTiers": [
+                      {
+                        "id": 1,
+                        "minMbps": 200,
+                        "monthlyPrice": 100,
+                        "name": "Plus"
+                      }
+                    ],
                     "trusted": false
                   }
                 }
@@ -16218,7 +16371,7 @@
         "tags": [
           "Billing"
         ],
-        "summary": "Apply a payment for 1-36 months. A running term is extended from its end, a lapsed one restarts from now. Any payment the client reported in the bot is settled, so a later confirm there cannot apply it twice. note defaults to \"<months> mo\" in the ledger.",
+        "summary": "Apply a payment for 1-36 months. A running term is extended from its end, a lapsed one restarts from now. speedTierId (0 = none) buys that speed tier for the term: its monthly price is added per month and its guaranteed speed applies until the term ends; a term without one drops the tier. Any payment the client reported in the bot is settled, so a later confirm there cannot apply it twice. note defaults to \"<months> mo\" in the ledger.",
         "operationId": "post_panel_api_billing_pay",
         "requestBody": {
           "required": true,
@@ -16230,6 +16383,7 @@
               "example": {
                 "email": "alice",
                 "months": 3,
+                "speedTierId": 0,
                 "note": "YooKassa 2c4f"
               }
             }

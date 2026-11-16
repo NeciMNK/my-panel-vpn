@@ -2265,6 +2265,16 @@ export const SCHEMAS: Record<string, unknown> = {
         },
         "type": "array"
       },
+      "speedTierId": {
+        "example": 0,
+        "type": "integer"
+      },
+      "speedTiers": {
+        "items": {
+          "$ref": "#/components/schemas/SpeedTier"
+        },
+        "type": "array"
+      },
       "trusted": {
         "example": false,
         "type": "boolean"
@@ -2281,6 +2291,8 @@ export const SCHEMAS: Record<string, unknown> = {
       "nonPaying",
       "pendingMonths",
       "plans",
+      "speedTierId",
+      "speedTiers",
       "trusted"
     ],
     "type": "object"
@@ -5915,6 +5927,12 @@ export const SCHEMAS: Record<string, unknown> = {
           "type": "integer"
         },
         "type": "array"
+      },
+      "tiers": {
+        "items": {
+          "$ref": "#/components/schemas/SpeedTier"
+        },
+        "type": "array"
       }
     },
     "required": [
@@ -5924,7 +5942,8 @@ export const SCHEMAS: Record<string, unknown> = {
       "servers",
       "testSettings",
       "testStats",
-      "testing"
+      "testing",
+      "tiers"
     ],
     "type": "object"
   },
@@ -6073,6 +6092,34 @@ export const SCHEMAS: Record<string, unknown> = {
       "maxDownloadMbps",
       "minDownloadMbps",
       "nodeId"
+    ],
+    "type": "object"
+  },
+  "SpeedTier": {
+    "description": "SpeedTier is a paid speed upgrade: a guaranteed MinMbps for MonthlyPrice on\ntop of every month of the client's term.",
+    "properties": {
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "minMbps": {
+        "example": 200,
+        "type": "integer"
+      },
+      "monthlyPrice": {
+        "example": 100,
+        "type": "integer"
+      },
+      "name": {
+        "example": "Plus",
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "minMbps",
+      "monthlyPrice",
+      "name"
     ],
     "type": "object"
   },

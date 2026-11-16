@@ -32,6 +32,7 @@ func run(root, outDir string) error {
 				"WarpSwitch",
 				"ClientSpeed",
 				"GroupSpeed",
+				"SpeedTier",
 				"ServerCapacity",
 				"SpeedTestResult",
 				"User",

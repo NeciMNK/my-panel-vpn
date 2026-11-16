@@ -568,6 +568,15 @@ export const EXAMPLES: Record<string, unknown> = {
         "total": 810
       }
     ],
+    "speedTierId": 0,
+    "speedTiers": [
+      {
+        "id": 1,
+        "minMbps": 200,
+        "monthlyPrice": 100,
+        "name": "Plus"
+      }
+    ],
     "trusted": false
   },
   "ClientInbound": {
@@ -1568,6 +1577,14 @@ export const EXAMPLES: Record<string, unknown> = {
     ],
     "testing": [
       0
+    ],
+    "tiers": [
+      {
+        "id": 1,
+        "minMbps": 200,
+        "monthlyPrice": 100,
+        "name": "Plus"
+      }
     ]
   },
   "SpeedTestResult": {
@@ -1601,6 +1618,12 @@ export const EXAMPLES: Record<string, unknown> = {
     "maxDownloadMbps": 948.1,
     "minDownloadMbps": 640,
     "nodeId": 0
+  },
+  "SpeedTier": {
+    "id": 1,
+    "minMbps": 200,
+    "monthlyPrice": 100,
+    "name": "Plus"
   },
   "SubBalancer": {
     "createdAt": 1710000000000,

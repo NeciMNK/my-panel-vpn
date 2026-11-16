@@ -25,6 +25,16 @@ _openapi:
         and maxMbps by what the guarantees leave free.
       url: '#set-a-client-groups-speed-in-mbits-all-0-removes-it-a-clients-own-speed-replaces-their-groups-minmbps-is-guaranteed-on-the-server-the-client-connects-to-floormbps--0-makes-the-cap-float-between-floormbps-and-maxmbps-by-what-the-guarantees-leave-free'
     - depth: 2
+      title: "Add (id 0) or edit a speed tier clients can buy in the bot: a guaranteed
+        minMbps for monthlyPrice added to every month of the term they pay. It
+        beats the group speed and lapses with the term; a client's own speed
+        still wins."
+      url: '#add-id-0-or-edit-a-speed-tier-clients-can-buy-in-the-bot-a-guaranteed-minmbps-for-monthlyprice-added-to-every-month-of-the-term-they-pay-it-beats-the-group-speed-and-lapses-with-the-term-a-clients-own-speed-still-wins'
+    - depth: 2
+      title: Stop selling a speed tier; clients who bought it fall back to their group
+        speed.
+      url: '#stop-selling-a-speed-tier-clients-who-bought-it-fall-back-to-their-group-speed'
+    - depth: 2
       title: Set one server's link speed in Mbit/s (node id 0 = this panel); 0 removes
         it.
       url: '#set-one-servers-link-speed-in-mbits-node-id-0--this-panel-0-removes-it'
@@ -58,6 +68,14 @@ _openapi:
           client connects to; floorMbps > 0 makes the cap float between
           floorMbps and maxMbps by what the guarantees leave free.
         id: set-a-client-groups-speed-in-mbits-all-0-removes-it-a-clients-own-speed-replaces-their-groups-minmbps-is-guaranteed-on-the-server-the-client-connects-to-floormbps--0-makes-the-cap-float-between-floormbps-and-maxmbps-by-what-the-guarantees-leave-free
+      - content: "Add (id 0) or edit a speed tier clients can buy in the bot: a
+          guaranteed minMbps for monthlyPrice added to every month of the term
+          they pay. It beats the group speed and lapses with the term; a
+          client's own speed still wins."
+        id: add-id-0-or-edit-a-speed-tier-clients-can-buy-in-the-bot-a-guaranteed-minmbps-for-monthlyprice-added-to-every-month-of-the-term-they-pay-it-beats-the-group-speed-and-lapses-with-the-term-a-clients-own-speed-still-wins
+      - content: Stop selling a speed tier; clients who bought it fall back to their
+          group speed.
+        id: stop-selling-a-speed-tier-clients-who-bought-it-fall-back-to-their-group-speed
       - content: Set one server's link speed in Mbit/s (node id 0 = this panel); 0
           removes it.
         id: set-one-servers-link-speed-in-mbits-node-id-0--this-panel-0-removes-it
@@ -85,7 +103,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/speed/overview","method":"get"},{"path":"/panel/api/speed/client","method":"post"},{"path":"/panel/api/speed/group","method":"post"},{"path":"/panel/api/speed/capacity","method":"post"},{"path":"/panel/api/speed/test","method":"post"},{"path":"/panel/api/speed/tests","method":"get"},{"path":"/panel/api/speed/testSettings","method":"post"}]} showTitle />
+      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/speed/overview","method":"get"},{"path":"/panel/api/speed/client","method":"post"},{"path":"/panel/api/speed/group","method":"post"},{"path":"/panel/api/speed/tier","method":"post"},{"path":"/panel/api/speed/tier/delete","method":"post"},{"path":"/panel/api/speed/capacity","method":"post"},{"path":"/panel/api/speed/test","method":"post"},{"path":"/panel/api/speed/tests","method":"get"},{"path":"/panel/api/speed/testSettings","method":"post"}]} showTitle />
     </>
   );
 }

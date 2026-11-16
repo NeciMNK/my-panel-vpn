@@ -52,6 +52,7 @@ type ServerFreeSpeed struct {
 type SpeedOverview struct {
 	Clients      []model.ClientSpeed    `json:"clients"`
 	Groups       []model.GroupSpeed     `json:"groups"`
+	Tiers        []model.SpeedTier      `json:"tiers"`
 	Servers      []model.ServerCapacity `json:"servers"`
 	Load         []ServerFreeSpeed      `json:"load"`
 	Testing      []int                  `json:"testing" example:"[0]"`
@@ -288,6 +289,11 @@ func (s *SpeedService) Overview() (*SpeedOverview, error) {
 	if err := db.Order("group_name asc").Find(&out.Groups).Error; err != nil {
 		return nil, err
 	}
+	tiers, err := (&BillingService{}).SpeedTiers()
+	if err != nil {
+		return nil, err
+	}
+	out.Tiers = tiers
 	if err := db.Order("node_id asc").Find(&out.Servers).Error; err != nil {
 		return nil, err
 	}
