@@ -204,6 +204,9 @@ export interface AllSetting {
   tgRunTime: string;
   timeLocation: string;
   trafficDiff: number;
+  trafficResetAllDay: number;
+  trafficResetAllMonthly: boolean;
+  trafficUsagePeriods: string;
   trustedProxyCIDRs: string;
   twoFactorEnable: boolean;
   twoFactorToken: string;
@@ -404,6 +407,9 @@ export interface AllSettingView {
   tgRunTime: string;
   timeLocation: string;
   trafficDiff: number;
+  trafficResetAllDay: number;
+  trafficResetAllMonthly: boolean;
+  trafficUsagePeriods: string;
   trustedProxyCIDRs: string;
   twoFactorEnable: boolean;
   twoFactorToken: string;
@@ -1440,6 +1446,23 @@ export interface Traffic {
   IsOutbound: boolean;
   Tag: string;
   Up: number;
+}
+
+export interface TrafficUsageAmount {
+  down: number;
+  up: number;
+}
+
+export interface TrafficUsageReport {
+  clients: TrafficUsageRow[];
+  periods: string[];
+  servers: TrafficUsageRow[];
+}
+
+export interface TrafficUsageRow {
+  name: string;
+  subject: string;
+  usage: TrafficUsageAmount[];
 }
 
 export interface TuicClientSettings {

@@ -226,6 +226,9 @@ export const AllSettingSchema = z.object({
   tgRunTime: z.string(),
   timeLocation: z.string(),
   trafficDiff: z.number().int().min(0).max(100),
+  trafficResetAllDay: z.number().int().min(1).max(31),
+  trafficResetAllMonthly: z.boolean(),
+  trafficUsagePeriods: z.string(),
   trustedProxyCIDRs: z.string(),
   twoFactorEnable: z.boolean(),
   twoFactorToken: z.string(),
@@ -427,6 +430,9 @@ export const AllSettingViewSchema = z.object({
   tgRunTime: z.string(),
   timeLocation: z.string(),
   trafficDiff: z.number().int().min(0).max(100),
+  trafficResetAllDay: z.number().int().min(1).max(31),
+  trafficResetAllMonthly: z.boolean(),
+  trafficUsagePeriods: z.string(),
   trustedProxyCIDRs: z.string(),
   twoFactorEnable: z.boolean(),
   twoFactorToken: z.string(),
@@ -1549,6 +1555,26 @@ export const TrafficSchema = z.object({
   Up: z.number().int(),
 });
 export type Traffic = z.infer<typeof TrafficSchema>;
+
+export const TrafficUsageAmountSchema = z.object({
+  down: z.number().int(),
+  up: z.number().int(),
+});
+export type TrafficUsageAmount = z.infer<typeof TrafficUsageAmountSchema>;
+
+export const TrafficUsageReportSchema = z.object({
+  clients: z.array(z.lazy(() => TrafficUsageRowSchema)),
+  periods: z.array(z.string()),
+  servers: z.array(z.lazy(() => TrafficUsageRowSchema)),
+});
+export type TrafficUsageReport = z.infer<typeof TrafficUsageReportSchema>;
+
+export const TrafficUsageRowSchema = z.object({
+  name: z.string(),
+  subject: z.string(),
+  usage: z.array(z.lazy(() => TrafficUsageAmountSchema)),
+});
+export type TrafficUsageRow = z.infer<typeof TrafficUsageRowSchema>;
 
 export const TuicClientSettingsSchema = z.object({
   email: z.string(),

@@ -652,6 +652,17 @@ export const SCHEMAS: Record<string, unknown> = {
         "minimum": 0,
         "type": "integer"
       },
+      "trafficResetAllDay": {
+        "maximum": 31,
+        "minimum": 1,
+        "type": "integer"
+      },
+      "trafficResetAllMonthly": {
+        "type": "boolean"
+      },
+      "trafficUsagePeriods": {
+        "type": "string"
+      },
       "trustedProxyCIDRs": {
         "type": "string"
       },
@@ -865,6 +876,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgRunTime",
       "timeLocation",
       "trafficDiff",
+      "trafficResetAllDay",
+      "trafficResetAllMonthly",
+      "trafficUsagePeriods",
       "trustedProxyCIDRs",
       "twoFactorEnable",
       "twoFactorToken",
@@ -1491,6 +1505,17 @@ export const SCHEMAS: Record<string, unknown> = {
         "minimum": 0,
         "type": "integer"
       },
+      "trafficResetAllDay": {
+        "maximum": 31,
+        "minimum": 1,
+        "type": "integer"
+      },
+      "trafficResetAllMonthly": {
+        "type": "boolean"
+      },
+      "trafficUsagePeriods": {
+        "type": "string"
+      },
       "trustedProxyCIDRs": {
         "type": "string"
       },
@@ -1713,6 +1738,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgRunTime",
       "timeLocation",
       "trafficDiff",
+      "trafficResetAllDay",
+      "trafficResetAllMonthly",
+      "trafficUsagePeriods",
       "trustedProxyCIDRs",
       "twoFactorEnable",
       "twoFactorToken",
@@ -6449,6 +6477,85 @@ export const SCHEMAS: Record<string, unknown> = {
       "IsOutbound",
       "Tag",
       "Up"
+    ],
+    "type": "object"
+  },
+  "TrafficUsageAmount": {
+    "description": "TrafficUsageAmount is the traffic of one period in bytes.",
+    "properties": {
+      "down": {
+        "example": 5368709120,
+        "format": "int64",
+        "type": "integer"
+      },
+      "up": {
+        "example": 1073741824,
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "down",
+      "up"
+    ],
+    "type": "object"
+  },
+  "TrafficUsageReport": {
+    "description": "TrafficUsageReport is the traffic of every server and client over the periods\nthe admin picked in the settings.",
+    "properties": {
+      "clients": {
+        "items": {
+          "$ref": "#/components/schemas/TrafficUsageRow"
+        },
+        "type": "array"
+      },
+      "periods": {
+        "example": [
+          "24h",
+          "30d",
+          "month"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "servers": {
+        "items": {
+          "$ref": "#/components/schemas/TrafficUsageRow"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "clients",
+      "periods",
+      "servers"
+    ],
+    "type": "object"
+  },
+  "TrafficUsageRow": {
+    "description": "TrafficUsageRow is one client (subject = email) or server (subject = node id,\n\"0\" = this panel); Usage lines up with the report's Periods.",
+    "properties": {
+      "name": {
+        "example": "anna",
+        "type": "string"
+      },
+      "subject": {
+        "example": "anna",
+        "type": "string"
+      },
+      "usage": {
+        "items": {
+          "$ref": "#/components/schemas/TrafficUsageAmount"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "name",
+      "subject",
+      "usage"
     ],
     "type": "object"
   },

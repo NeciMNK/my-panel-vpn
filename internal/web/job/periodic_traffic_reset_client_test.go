@@ -120,6 +120,7 @@ func TestPeriodicTrafficResetClients(t *testing.T) {
 
 	t.Run("leaves a client with no cycle of its own alone", func(t *testing.T) {
 		initResetJobDB(t)
+		setGlobalMonthlyReset(t, false, 1)
 		seedClientOnCycle(t, 41003, seededClient{email: "none@example.com", cycle: "never", day: 1, recordEnable: true, quotaEnable: true})
 
 		for _, period := range []Period{"hourly", "daily", "weekly", "monthly"} {

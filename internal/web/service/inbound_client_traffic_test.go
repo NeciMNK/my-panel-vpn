@@ -57,7 +57,7 @@ func TestAddClientTraffic_MatchesByEmail(t *testing.T) {
 	err := svc.addClientTraffic(db, []*xray.ClientTraffic{
 		{Email: staleEmail, Up: 10, Down: 20},
 		{Email: dualEmail, Up: 30, Down: 40},
-	})
+	}, nil)
 	if err != nil {
 		t.Fatalf("addClientTraffic: %v", err)
 	}
@@ -125,7 +125,7 @@ func TestAdjustTraffics_DelayedStartConvertsDespiteStaleInboundId(t *testing.T) 
 	}
 
 	before := time.Now().UnixMilli()
-	if err := svc.addClientTraffic(db, []*xray.ClientTraffic{{Email: email, Up: 100, Down: 200}}); err != nil {
+	if err := svc.addClientTraffic(db, []*xray.ClientTraffic{{Email: email, Up: 100, Down: 200}}, nil); err != nil {
 		t.Fatalf("addClientTraffic: %v", err)
 	}
 
@@ -199,7 +199,7 @@ func TestAddClientTraffic_ExpiryWriteOnlyForConvertedClients(t *testing.T) {
 	err := svc.addClientTraffic(db, []*xray.ClientTraffic{
 		{Email: delayedEmail, Up: 10, Down: 20},
 		{Email: normalEmail, Up: 30, Down: 40},
-	})
+	}, nil)
 	if err != nil {
 		t.Fatalf("addClientTraffic: %v", err)
 	}
@@ -313,7 +313,7 @@ func TestAddClientTrafficResolvesRenamedTuicClientByStableIdentity(t *testing.T)
 
 	if err := (&InboundService{}).addClientTraffic(db, []*xray.ClientTraffic{{
 		Email: oldEmail, TuicTrafficID: stableTrafficID, TuicUUID: clientUUID, TuicInboundId: inboundID, Up: 123, Down: 456,
-	}}); err != nil {
+	}}, nil); err != nil {
 		t.Fatalf("add retired snapshot traffic: %v", err)
 	}
 	for _, test := range []struct {

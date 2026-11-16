@@ -202,6 +202,9 @@ export const EXAMPLES: Record<string, unknown> = {
     "tgRunTime": "",
     "timeLocation": "",
     "trafficDiff": 0,
+    "trafficResetAllDay": 1,
+    "trafficResetAllMonthly": false,
+    "trafficUsagePeriods": "",
     "trustedProxyCIDRs": "",
     "twoFactorEnable": false,
     "twoFactorToken": "",
@@ -401,6 +404,9 @@ export const EXAMPLES: Record<string, unknown> = {
     "tgRunTime": "",
     "timeLocation": "",
     "trafficDiff": 0,
+    "trafficResetAllDay": 1,
+    "trafficResetAllMonthly": false,
+    "trafficUsagePeriods": "",
     "trustedProxyCIDRs": "",
     "twoFactorEnable": false,
     "twoFactorToken": "",
@@ -1673,6 +1679,51 @@ export const EXAMPLES: Record<string, unknown> = {
     "IsOutbound": false,
     "Tag": "inbound-443",
     "Up": 1048576
+  },
+  "TrafficUsageAmount": {
+    "down": 5368709120,
+    "up": 1073741824
+  },
+  "TrafficUsageReport": {
+    "clients": [
+      {
+        "name": "anna",
+        "subject": "anna",
+        "usage": [
+          {
+            "down": 5368709120,
+            "up": 1073741824
+          }
+        ]
+      }
+    ],
+    "periods": [
+      "24h",
+      "30d",
+      "month"
+    ],
+    "servers": [
+      {
+        "name": "anna",
+        "subject": "anna",
+        "usage": [
+          {
+            "down": 5368709120,
+            "up": 1073741824
+          }
+        ]
+      }
+    ]
+  },
+  "TrafficUsageRow": {
+    "name": "anna",
+    "subject": "anna",
+    "usage": [
+      {
+        "down": 5368709120,
+        "up": 1073741824
+      }
+    ]
   },
   "TuicClientSettings": {
     "email": "",

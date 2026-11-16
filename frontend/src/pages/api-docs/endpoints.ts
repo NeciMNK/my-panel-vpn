@@ -1894,6 +1894,22 @@ export const sections: readonly Section[] = [
   },
 
   {
+    id: 'trafficUsage',
+    title: 'Traffic by period',
+    description:
+      'Traffic history that survives counter resets: every server and client, summed over the periods picked in the settings (trafficUsagePeriods). Rolling 24h and 7d are hour-accurate; longer rolling periods count whole days; calendar periods (day, Monday-based week, month, half-year, year) start in the panel timezone. All endpoints under /panel/api/trafficUsage.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/trafficUsage/report',
+        summary:
+          'Usage of every server (subject = node id, "0" = this panel) and client (subject = email); each usage array lines up with periods.',
+        responseSchema: 'TrafficUsageReport',
+      },
+    ],
+  },
+
+  {
     id: 'speed',
     title: 'Speed limits',
     description:

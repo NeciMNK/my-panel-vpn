@@ -110,6 +110,9 @@ func run(root, outDir string) error {
 			StructAllow: setOf(
 				"InboundOption",
 				"SpeedOverview",
+				"TrafficUsageReport",
+				"TrafficUsageRow",
+				"TrafficUsageAmount",
 				"MasterStatus",
 				"MasterSetup",
 				"ServerFreeSpeed",

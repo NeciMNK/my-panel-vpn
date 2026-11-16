@@ -17,6 +17,9 @@ export class AllSetting {
   pageSize = 25;
   expireDiff = 0;
   trafficDiff = 0;
+  trafficResetAllMonthly = true;
+  trafficResetAllDay = 1;
+  trafficUsagePeriods = '24h,7d,30d,month';
   remarkTemplate = '{{INBOUND}}-{{EMAIL}}|📊{{TRAFFIC_LEFT}}|⏳{{DAYS_LEFT}}D';
   subShowIdentityOnAllLinks = false;
   subInfoNodeEnable = false;
