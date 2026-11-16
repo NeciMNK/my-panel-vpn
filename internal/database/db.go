@@ -99,6 +99,7 @@ func allModels() []any {
 		&model.CascadeFixedExit{},
 		&model.CascadeAICountry{},
 		&model.AIDomainSuggestion{},
+		&model.AIOutageChoice{},
 		&model.HomeNetwork{},
 		&model.WarpSwitch{},
 		&model.ClientSpeed{},

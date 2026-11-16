@@ -1369,6 +1369,11 @@ func (t *Tgbot) answerOwnSubscriptionCallback(callbackQuery *telego.CallbackQuer
 		t.answerAIExit(callbackQuery)
 		return true
 	}
+	if isAIOutageCallback(data) {
+		callbackQuery.Data = data
+		t.answerAIOutage(callbackQuery)
+		return true
+	}
 	return false
 }
 

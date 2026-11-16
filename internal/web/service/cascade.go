@@ -324,12 +324,19 @@ func applyCascadeToTemplate(cfg map[string]any, stored *model.Cascade, nodeID in
 		target["balancerTag"] = cascadeRouteTag(c.Id)
 	}
 	multi := len(c.Links) > 1
+	if multi && len(cascadeOutageRules(c, ai.Outages, "", nil)) > 0 {
+		appendOutbounds(cfg, map[string]any{"tag": cascadeBlockTag(c.Id), "protocol": "blackhole"})
+	}
 	if mode == CascadeModeBoth {
 		if multi {
+			appendTailRules(cfg, cascadeOutageRules(c, ai.Outages, cascadePrefix(c.Id)+"relay-", c.RelayInboundTags)...)
 			appendTailRules(cfg, cascadeAIRules(c, ai.Domains, ai.Sites, cascadePrefix(c.Id)+"relay-", c.RelayInboundTags)...)
 			appendTailRules(cfg, cascadePinRules(c, pins, cascadePrefix(c.Id)+"relay-", c.RelayInboundTags)...)
 		}
 		appendTailRules(cfg, cascadeRule(cascadePrefix(c.Id)+"relay", c.RelayInboundTags, target))
+	}
+	if multi {
+		appendTailRules(cfg, cascadeOutageRules(c, ai.Outages, cascadePrefix(c.Id), c.EntryInboundTags)...)
 	}
 	if mode != CascadeModeRelay {
 		appendOutbounds(cfg, map[string]any{"tag": cascadeDirectTag(c.Id), "protocol": "freedom"})

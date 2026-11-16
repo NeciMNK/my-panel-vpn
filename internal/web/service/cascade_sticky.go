@@ -236,11 +236,9 @@ func (s *CascadeService) StickCascadeUsers(ctx context.Context) {
 	ambiguous := ambiguousNodeGuids(nodes, selfGuid)
 	guidOf := map[int]string{0: selfGuid}
 	healthy := map[int]bool{0: true}
-	countryOf := map[int]string{}
 	for _, n := range nodes {
 		guidOf[n.Id] = effectiveNodeGuid(n, ambiguous)
 		healthy[n.Id] = n.Enable && n.Status == "online"
-		countryOf[n.Id] = n.Country
 	}
 	byGuid := (&InboundService{}).GetOnlineClientsByGuid()
 	now := time.Now().Unix()
@@ -259,7 +257,7 @@ func (s *CascadeService) StickCascadeUsers(ctx context.Context) {
 		logger.Warning("cascade sticky: list fixed exits:", err)
 		return
 	}
-	ai, err := aiCountryExits(fixed, countryOf)
+	ai, err := aiCountryExits(fixed, newExitWorld(nodes, rows))
 	if err != nil {
 		logger.Warning("cascade sticky: list AI countries:", err)
 		return
@@ -280,10 +278,10 @@ func (s *CascadeService) StickCascadeUsers(ctx context.Context) {
 				view.Exits = append(view.Exits, l.NodeId)
 			}
 			view.OnlineHere, view.OnlineElsewhere = cascadeOnline(c.EntryNodeId, byGuid, guidOf)
-			view.Fixed = fixedExitsIn(fixed, view.Exits, ai)
+			view.Fixed = fixedExitsIn(ai.Fixed, view.Exits, ai)
 		}
 		next, changed := nextCascadePins(old, view)
-		if key := aiRulesKey(c, ai.Domains, ai.Sites); appliedAIRules[c.Id] != key {
+		if key := aiRulesKey(c, ai); appliedAIRules[c.Id] != key {
 			appliedAIRules[c.Id], changed = key, true
 		}
 		if err := saveCascadePins(c.Id, old, next); err != nil {

@@ -74,6 +74,18 @@ type CascadeAICountry struct {
 	AllTraffic bool   `json:"allTraffic" gorm:"column:all_traffic;default:false"`
 }
 
+// AIOutageChoice is what a user wants while a server they are pinned to is
+// down; without a row their AI services are blocked and the rest flows as usual.
+type AIOutageChoice struct {
+	Id     int    `json:"id" gorm:"primaryKey;autoIncrement"`
+	Email  string `json:"email" gorm:"uniqueIndex"`
+	Action string `json:"action"`
+	// Services are the AI services blocked under "block"; empty blocks them all.
+	Services []string `json:"services" gorm:"serializer:json"`
+	// Country is where "other" looks when the dead server's country has no live one.
+	Country string `json:"country"`
+}
+
 // AIDomainSuggestion is a client's request for more sites behind the AI pin;
 // an admin answers it once, so Status leaves "pending" only once.
 type AIDomainSuggestion struct {
