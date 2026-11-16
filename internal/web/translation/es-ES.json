@@ -2982,6 +2982,7 @@
     },
     "messages": {
       "cpuThreshold": "El uso de CPU {{ .Percent }}% es mayor que el umbral {{ .Threshold }}%",
+      "cpuNormal": "CPU load is back to normal: {{ .Percent }}%, below the threshold of {{ .Threshold }}%",
       "selectUserFailed": "❌ ¡Error al seleccionar usuario!",
       "userSaved": "✅ Usuario de Telegram guardado.",
       "loginSuccess": "✅ Has iniciado sesión en el panel con éxito.\r\n",
@@ -3059,6 +3060,7 @@
       "eventNodeUp": "El nodo {{ .Name }} está ACTIVO",
       "eventLoginFallback": "Inicio de sesión fallido desde {{ .Source }}",
       "memoryThreshold": "Uso de memoria {{ .Percent }}% supera el umbral de {{ .Threshold }}%",
+      "memoryNormal": "Memory load is back to normal: {{ .Percent }}%, below the threshold of {{ .Threshold }}%",
       "inboundsCount": "🔌 Inbounds: {{ .Count }}\r\n",
       "clientsCount": "👥 Clients: {{ .Count }}\r\n",
       "category_server": "🖥 Servidor",

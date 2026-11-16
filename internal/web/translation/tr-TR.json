@@ -2982,6 +2982,7 @@
     },
     "messages": {
       "cpuThreshold": "CPU Yükü ({{ .Percent }}%), {{ .Threshold }}% eşiğini aşıyor",
+      "cpuNormal": "CPU load is back to normal: {{ .Percent }}%, below the threshold of {{ .Threshold }}%",
       "selectUserFailed": "❌ Kullanıcı seçiminde hata!",
       "userSaved": "✅ Telegram Kullanıcısı kaydedildi.",
       "loginSuccess": "✅ Panele başarıyla giriş yapıldı.\r\n",
@@ -3059,6 +3060,7 @@
       "eventNodeUp": "{{ .Name }} düğümü ÇEVRİMİÇİ",
       "eventLoginFallback": "{{ .Source }} adresinden oturum açma başarısız",
       "memoryThreshold": "Bellek kullanımı {{ .Percent }}% eşiği {{ .Threshold }}% aşıyor",
+      "memoryNormal": "Memory load is back to normal: {{ .Percent }}%, below the threshold of {{ .Threshold }}%",
       "inboundsCount": "🔌 Inbounds: {{ .Count }}\r\n",
       "clientsCount": "👥 Clients: {{ .Count }}\r\n",
       "category_server": "🖥 Sunucu",

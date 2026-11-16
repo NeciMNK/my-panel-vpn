@@ -2982,6 +2982,7 @@
     },
     "messages": {
       "cpuThreshold": "بار ‌پردازنده {{ .Percent }}% بیشتر از آستانه است {{ .Threshold }}%",
+      "cpuNormal": "CPU load is back to normal: {{ .Percent }}%, below the threshold of {{ .Threshold }}%",
       "selectUserFailed": "❌ خطا در انتخاب کاربر!",
       "userSaved": "✅ کاربر تلگرام ذخیره شد.",
       "loginSuccess": "✅ با موفقیت به پنل وارد شدید.\r\n",
@@ -3059,6 +3060,7 @@
       "eventNodeUp": "نود {{ .Name }} وصل است",
       "eventLoginFallback": "ورود ناموفق از {{ .Source }}",
       "memoryThreshold": "مصرف حافظه {{ .Percent }}% از حد آستانه {{ .Threshold }}% فراتر رفته است",
+      "memoryNormal": "Memory load is back to normal: {{ .Percent }}%, below the threshold of {{ .Threshold }}%",
       "inboundsCount": "🔌 Inbounds: {{ .Count }}\r\n",
       "clientsCount": "👥 Clients: {{ .Count }}\r\n",
       "category_server": "🖥 سرور",

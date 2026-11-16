@@ -145,6 +145,9 @@ func (s *Subscriber) FormatEmbed(e eventbus.Event) (Embed, bool) {
 	if h == "" {
 		h = "unknown"
 	}
+	if (e.Type == eventbus.EventCPUHigh || e.Type == eventbus.EventMemoryHigh) && e.Source != "" {
+		h = e.Source // a node's load event names that node
+	}
 	var ts string
 	if e.Timestamp.IsZero() {
 		ts = time.Now().UTC().Format(time.RFC3339)

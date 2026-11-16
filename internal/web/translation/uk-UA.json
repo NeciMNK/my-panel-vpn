@@ -2982,6 +2982,7 @@
     },
     "messages": {
       "cpuThreshold": "Навантаження ЦП  {{ .Percent }}% перевищує порогове значення {{ .Threshold }}%",
+      "cpuNormal": "Завантаження процесора знову в нормі: {{ .Percent }}%, нижче порогу {{ .Threshold }}%",
       "selectUserFailed": "❌ Помилка під час вибору користувача!",
       "userSaved": "✅ Користувача Telegram збережено.",
       "loginSuccess": "✅ Успішно ввійшли в панель\r\n",
@@ -3059,6 +3060,7 @@
       "eventNodeUp": "Вузол {{ .Name }} ДОСТУПНИЙ",
       "eventLoginFallback": "Невдала спроба входу з {{ .Source }}",
       "memoryThreshold": "Використання пам'яті {{ .Percent }}% перевищує порогове значення {{ .Threshold }}%",
+      "memoryNormal": "Використання пам'яті знову в нормі: {{ .Percent }}%, нижче порогу {{ .Threshold }}%",
       "inboundsCount": "🔌 Підключень: {{ .Count }}\r\n",
       "clientsCount": "👥 Клієнтів: {{ .Count }}\r\n",
       "category_server": "🖥 Сервер",

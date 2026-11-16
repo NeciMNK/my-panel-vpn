@@ -2982,6 +2982,7 @@
     },
     "messages": {
       "cpuThreshold": "CPU使用率は{{ .Percent }}%、しきい値{{ .Threshold }}%を超えました",
+      "cpuNormal": "CPU load is back to normal: {{ .Percent }}%, below the threshold of {{ .Threshold }}%",
       "selectUserFailed": "❌ ユーザーの選択に失敗しました！",
       "userSaved": "✅ Telegramユーザーが保存されました。",
       "loginSuccess": "✅ パネルに正常にログインしました。\r\n",
@@ -3059,6 +3060,7 @@
       "eventNodeUp": "ノード {{ .Name }} が復旧しました",
       "eventLoginFallback": "{{ .Source }} からのログインに失敗しました",
       "memoryThreshold": "メモリ使用率 {{ .Percent }}% がしきい値 {{ .Threshold }}% を超えました",
+      "memoryNormal": "Memory load is back to normal: {{ .Percent }}%, below the threshold of {{ .Threshold }}%",
       "inboundsCount": "🔌 Inbounds: {{ .Count }}\r\n",
       "clientsCount": "👥 Clients: {{ .Count }}\r\n",
       "category_server": "🖥 サーバー",

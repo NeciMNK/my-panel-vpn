@@ -160,14 +160,17 @@ func (j *NodeHeartbeatJob) saveDownNotified(id int, notified bool) {
 	}
 }
 
-func nodeHealthEvent(eventType eventbus.EventType, n *model.Node, patch service.HeartbeatPatch) eventbus.Event {
-	source := n.Name
-	if source == "" {
-		source = "node-" + strconv.Itoa(n.Id)
+func nodeEventSource(n *model.Node) string {
+	if n.Name == "" {
+		return "node-" + strconv.Itoa(n.Id)
 	}
+	return n.Name
+}
+
+func nodeHealthEvent(eventType eventbus.EventType, n *model.Node, patch service.HeartbeatPatch) eventbus.Event {
 	return eventbus.Event{
 		Type:   eventType,
-		Source: source,
+		Source: nodeEventSource(n),
 		Data: &eventbus.NodeHealthData{
 			NodeId:    n.Id,
 			LatencyMs: patch.LatencyMs,

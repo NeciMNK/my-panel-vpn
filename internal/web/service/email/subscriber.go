@@ -71,6 +71,9 @@ func i18n(key string, params ...string) string {
 func (s *Subscriber) formatMessage(e eventbus.Event) (subject, body string) {
 	h, _ := hostname()
 	host := h
+	if isLoadEvent(e) && e.Source != "" {
+		host = e.Source
+	}
 	ts := e.Timestamp.Format("2006-01-02 15:04:05")
 
 	wrap := func(title, content string) string {
@@ -195,4 +198,9 @@ func (s *Subscriber) formatMessage(e eventbus.Event) (subject, body string) {
 
 func hostname() (string, error) {
 	return os.Hostname()
+}
+
+// isLoadEvent: a CPU/RAM event with a Source comes from a node, not this host.
+func isLoadEvent(e eventbus.Event) bool {
+	return e.Type == eventbus.EventCPUHigh || e.Type == eventbus.EventMemoryHigh
 }

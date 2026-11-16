@@ -2982,6 +2982,7 @@
     },
     "messages": {
       "cpuThreshold": "Beban CPU {{ .Percent }}% melebihi batas {{ .Threshold }}%",
+      "cpuNormal": "CPU load is back to normal: {{ .Percent }}%, below the threshold of {{ .Threshold }}%",
       "selectUserFailed": "❌ Kesalahan dalam pemilihan pengguna!",
       "userSaved": "✅ Pengguna Telegram tersimpan.",
       "loginSuccess": "✅ Berhasil masuk ke panel.\r\n",
@@ -3059,6 +3060,7 @@
       "eventNodeUp": "Node {{ .Name }} AKTIF",
       "eventLoginFallback": "Gagal masuk dari {{ .Source }}",
       "memoryThreshold": "Penggunaan memori {{ .Percent }}% melebihi ambang batas {{ .Threshold }}%",
+      "memoryNormal": "Memory load is back to normal: {{ .Percent }}%, below the threshold of {{ .Threshold }}%",
       "inboundsCount": "🔌 Inbounds: {{ .Count }}\r\n",
       "clientsCount": "👥 Clients: {{ .Count }}\r\n",
       "category_server": "🖥 Server",

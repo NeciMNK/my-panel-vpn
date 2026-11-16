@@ -2982,6 +2982,7 @@
     },
     "messages": {
       "cpuThreshold": "CPU 使用率为 {{ .Percent }}%，超过阈值 {{ .Threshold }}%",
+      "cpuNormal": "CPU load is back to normal: {{ .Percent }}%, below the threshold of {{ .Threshold }}%",
       "selectUserFailed": "❌ 用户选择错误！",
       "userSaved": "✅ 电报用户已保存。",
       "loginSuccess": "✅ 成功登录到面板。\r\n",
@@ -3059,6 +3060,7 @@
       "eventNodeUp": "节点 {{ .Name }} 已上线",
       "eventLoginFallback": "来自 {{ .Source }} 的登录失败",
       "memoryThreshold": "内存使用率 {{ .Percent }}% 超过阈值 {{ .Threshold }}%",
+      "memoryNormal": "Memory load is back to normal: {{ .Percent }}%, below the threshold of {{ .Threshold }}%",
       "inboundsCount": "🔌 Inbounds: {{ .Count }}\r\n",
       "clientsCount": "👥 Clients: {{ .Count }}\r\n",
       "category_server": "🖥 服务器",

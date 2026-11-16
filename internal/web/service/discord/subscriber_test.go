@@ -549,3 +549,23 @@ func TestFormatEmbed_ValueTypes(t *testing.T) {
 		t.Fatalf("expected green embed for Login success value type, got ok=%v", ok)
 	}
 }
+
+// A node's overload must name the node: under the master's hostname the admin
+// would go looking at the wrong server.
+func TestFormatEmbed_NodeLoadNamesTheNode(t *testing.T) {
+	settingService := setupTestDB(t)
+	_ = settingService.SetDiscordCpu(80)
+	sub := NewSubscriber(settingService, NewDiscordService(settingService))
+
+	embed, ok := sub.FormatEmbed(eventbus.Event{
+		Type:   eventbus.EventCPUHigh,
+		Source: "de-1",
+		Data:   &eventbus.SystemMetricData{Percent: 95, Peak: 97},
+	})
+	if !ok {
+		t.Fatal("expected an embed for a node above the threshold")
+	}
+	if want := "3x-ui • de-1"; embed.Footer == nil || embed.Footer.Text != want {
+		t.Fatalf("footer = %+v, want %q", embed.Footer, want)
+	}
+}

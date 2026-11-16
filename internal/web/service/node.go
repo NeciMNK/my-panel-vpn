@@ -1139,6 +1139,16 @@ func nodeMetricKey(id int, metric string) string {
 	return "node:" + strconv.Itoa(id) + ":" + metric
 }
 
+// nodeLoadSlack is how far the first and last heartbeat sample may sit from the
+// window edges: a few missed 5 s heartbeats, not a node that just appeared.
+const nodeLoadSlack = 15 * time.Second
+
+// NodeLoadSpan is a node metric's lowest and highest sample over the window
+// ending at now; ok is false until heartbeats cover the whole window.
+func (s *NodeService) NodeLoadSpan(id int, metric string, window time.Duration, now time.Time) (low, high float64, ok bool) {
+	return nodeMetrics.span(nodeMetricKey(id, metric), now.Add(-window).Unix(), now.Unix(), int64(nodeLoadSlack/time.Second))
+}
+
 func (s *NodeService) AggregateNodeMetric(id int, metric string, bucketSeconds int, maxPoints int) []map[string]any {
 	return nodeMetrics.aggregate(nodeMetricKey(id, metric), bucketSeconds, maxPoints)
 }

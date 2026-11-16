@@ -2982,6 +2982,7 @@
     },
     "messages": {
       "cpuThreshold": "Záťaž CPU {{ .Percent }}% prekročila prah {{ .Threshold }}%",
+      "cpuNormal": "CPU load is back to normal: {{ .Percent }}%, below the threshold of {{ .Threshold }}%",
       "selectUserFailed": "❌ Nepodarilo sa vybrať používateľa!",
       "userSaved": "✅ Používateľ Telegramu bol uložený.",
       "loginSuccess": "✅ Úspešné prihlásenie do panelu.\r\n",
@@ -3059,6 +3060,7 @@
       "eventNodeUp": "Server {{ .Name }} je DOSTUPNÝ",
       "eventLoginFallback": "Neúspešné prihlásenie z {{ .Source }}",
       "memoryThreshold": "Využitie pamäte {{ .Percent }}% prekročilo prah {{ .Threshold }}%",
+      "memoryNormal": "Memory load is back to normal: {{ .Percent }}%, below the threshold of {{ .Threshold }}%",
       "inboundsCount": "🔌 Inboundy: {{ .Count }}\r\n",
       "clientsCount": "👥 Klienti: {{ .Count }}\r\n",
       "category_server": "🖥 Server",

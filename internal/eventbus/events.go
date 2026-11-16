@@ -60,7 +60,8 @@ type LoginEventData struct {
 
 // SystemMetricData carries raw system metric values for threshold-based events.
 type SystemMetricData struct {
-	Percent   float64 // current usage percentage
+	Percent   float64 // usage held throughout the sample (a node's lowest over the window)
+	Peak      float64 // highest usage in the same sample; below a threshold = back to normal
 	Threshold int     // configured threshold
 }
 

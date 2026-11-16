@@ -5,6 +5,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"unicode"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/eventbus"
@@ -31,11 +32,13 @@ func (t *Tgbot) HandleEvent(e eventbus.Event) {
 	if !t.isEventEnabled(e.Type) {
 		return
 	}
-	msg := t.formatEventMessage(e)
+	msg, kind := t.formatEventMessage(e), t.eventNoticeKind(e)
+	if data, ok := e.Data.(*eventbus.SystemMetricData); ok {
+		kind, msg = t.loadNotice(e, data)
+	}
 	if msg == "" {
 		return
 	}
-	kind := t.eventNoticeKind(e)
 	for _, adminID := range adminSnapshot() {
 		t.liveNotice(adminID, kind, msg)
 	}
@@ -130,30 +133,6 @@ func (t *Tgbot) formatEventMessage(e eventbus.Event) string {
 		}
 		return msg
 
-	case eventbus.EventCPUHigh:
-		if data, ok := e.Data.(*eventbus.SystemMetricData); ok {
-			tgCpu, err := t.settingService.GetTgCpu()
-			if err != nil || tgCpu <= 0 || data.Percent <= float64(tgCpu) {
-				return ""
-			}
-			return header + "🔴 " + t.I18nBot("tgbot.messages.cpuThreshold",
-				"Percent=="+strconv.FormatFloat(data.Percent, 'f', 2, 64),
-				"Threshold=="+strconv.Itoa(tgCpu))
-		}
-		return ""
-
-	case eventbus.EventMemoryHigh:
-		if data, ok := e.Data.(*eventbus.SystemMetricData); ok {
-			tgMemory, err := t.settingService.GetTgMemory()
-			if err != nil || tgMemory <= 0 || data.Percent <= float64(tgMemory) {
-				return ""
-			}
-			return header + "🔴 " + t.I18nBot("tgbot.messages.memoryThreshold",
-				"Percent=="+strconv.FormatFloat(data.Percent, 'f', 2, 64),
-				"Threshold=="+strconv.Itoa(tgMemory))
-		}
-		return ""
-
 	case eventbus.EventMasterLeader:
 		msg := header + "👑 " + t.I18nBot("tgbot.messages.masterLeader", "Master=="+oneLine(e.Source))
 		if data, ok := e.Data.(*eventbus.MasterLeaderData); ok && data.Previous != "" {
@@ -195,4 +174,57 @@ func (t *Tgbot) formatEventMessage(e eventbus.Event) string {
 	}
 
 	return ""
+}
+
+// loadAlerts holds the CPU/RAM cards that are up, keyed by event type and server,
+// so each one gets exactly one "back to normal" message.
+var loadAlerts = struct {
+	mu sync.Mutex
+	on map[string]bool
+}{on: map[string]bool{}}
+
+func resetLoadAlerts() {
+	loadAlerts.mu.Lock()
+	loadAlerts.on = map[string]bool{}
+	loadAlerts.mu.Unlock()
+}
+
+// loadNotice alerts while the held load is over the threshold and recovers once
+// even the peak is under it; in between it stays quiet so a hovering load cannot flap.
+func (t *Tgbot) loadNotice(e eventbus.Event, data *eventbus.SystemMetricData) (kind, msg string) {
+	var threshold int
+	var err error
+	highKey, normalKey := "tgbot.messages.cpuThreshold", "tgbot.messages.cpuNormal"
+	switch e.Type {
+	case eventbus.EventCPUHigh:
+		threshold, err = t.settingService.GetTgCpu()
+	case eventbus.EventMemoryHigh:
+		threshold, err = t.settingService.GetTgMemory()
+		highKey, normalKey = "tgbot.messages.memoryThreshold", "tgbot.messages.memoryNormal"
+	default:
+		return "", ""
+	}
+	key := string(e.Type) + ":" + e.Source
+	server := getHostname()
+	if e.Source != "" {
+		server = oneLine(e.Source)
+	}
+	header := fmt.Sprintf("<b>📡 %s</b>\n", server)
+	loadAlerts.mu.Lock()
+	defer loadAlerts.mu.Unlock()
+	switch {
+	case err != nil || threshold <= 0:
+		delete(loadAlerts.on, key)
+	case data.Percent > float64(threshold):
+		loadAlerts.on[key] = true
+		return key, header + "🔴 " + t.I18nBot(highKey,
+			"Percent=="+strconv.FormatFloat(data.Percent, 'f', 2, 64),
+			"Threshold=="+strconv.Itoa(threshold))
+	case loadAlerts.on[key] && data.Peak <= float64(threshold):
+		delete(loadAlerts.on, key)
+		return key + ":normal", header + "🟢 " + t.I18nBot(normalKey,
+			"Percent=="+strconv.FormatFloat(data.Peak, 'f', 2, 64),
+			"Threshold=="+strconv.Itoa(threshold))
+	}
+	return "", ""
 }
