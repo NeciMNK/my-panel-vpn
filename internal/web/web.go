@@ -439,6 +439,8 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 		_, _ = s.cron.AddJob(cadenceCheckHash, job.NewCheckHashStorageJob())
 		// Hourly so a restart cannot skip a day; each bill is announced once.
 		_, _ = s.cron.AddJob("@hourly", job.LeaderOnly(job.NewLedgerReminderJob()))
+		// Clients' own payment reminders: each chosen day once per due date.
+		_, _ = s.cron.AddJob("@hourly", job.LeaderOnly(job.NewPaymentReminderJob()))
 	}
 
 	// Outside the bot block: an invoice paid while the bot is off must still be applied.

@@ -3285,7 +3285,8 @@
       "deplete": "Running out",
       "commands": "Commands",
       "broadcast": "Broadcast",
-      "pay": "Payment"
+      "pay": "Payment",
+      "reminders": "Reminders"
     },
     "inline": {
       "noneTitle": "Nothing found",
@@ -3299,6 +3300,16 @@
     "noValue": "—",
     "notices": {
       "repeat": "\r\n\r\n🔁 repeated {{ .Count }}× · last {{ .Time }}"
+    },
+    "reminders": {
+      "button": "🔔 Reminders",
+      "message": "⏰ Your subscription ends in {{ .Days }} d., on {{ .Date }}.\r\nYou can change or turn off these reminders with the 🔔 Reminders button.\r\n",
+      "screen": "🔔 <b>Payment reminders</b>\r\n\r\nStatus: {{ .Status }}\r\nRemind me before the end: {{ .Days }} d.\r\n\r\nTap a day to add or remove it.",
+      "on": "on",
+      "off": "off",
+      "turnOn": "🔔 Turn on",
+      "turnOff": "🔕 Turn off",
+      "day": "{{ .Days }} d."
     },
     "payment": {
       "title": "\r\n💳 <b>Payment</b>\r\n",

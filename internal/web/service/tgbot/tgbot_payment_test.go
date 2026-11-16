@@ -239,6 +239,11 @@ func TestExpiryReminderCarriesPaymentDetails(t *testing.T) {
 	}
 
 	tb.notifyExhausted()
+	if n := len(adminMessages(calls(), 5555)); n != 0 {
+		t.Fatalf("the daily report sent %d expiry messages: the hourly reminder owns them now", n)
+	}
+	tb.SendPaymentReminders(time.Now())
+	tb.SendPaymentReminders(time.Now().Add(time.Hour))
 
 	reminders := adminMessages(calls(), 5555)
 	if len(reminders) != 1 {

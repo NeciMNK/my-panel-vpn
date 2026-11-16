@@ -80,6 +80,7 @@ func migrationModels() []any {
 		&model.MasterMember{},
 		&model.TlsCertificate{},
 		&model.TelegramTag{},
+		&model.PaymentReminder{},
 	}
 }
 

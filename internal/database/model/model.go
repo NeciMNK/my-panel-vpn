@@ -1876,3 +1876,14 @@ const (
 	TlsCertStatusValid   = "valid"
 	TlsCertStatusError   = "error"
 )
+
+// PaymentReminder is a Telegram account's own payment-reminder choice. Days
+// lists how many days before the due date to remind ("" = the panel default).
+type PaymentReminder struct {
+	TgID     int64  `json:"tgId" gorm:"primaryKey;autoIncrement:false;column:tg_id"`
+	Disabled bool   `json:"disabled" gorm:"column:disabled;default:false"`
+	Days     string `json:"days" gorm:"column:days;default:''"`
+	// SentDue and SentDay (unix ms, days) are the due date and the threshold last reminded of.
+	SentDue int64 `json:"-" gorm:"column:sent_due;default:0"`
+	SentDay int   `json:"-" gorm:"column:sent_day;default:0"`
+}

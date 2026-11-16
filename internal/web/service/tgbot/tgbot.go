@@ -251,6 +251,7 @@ type Tgbot struct {
 	billingService service.BillingService
 	// paymentOrderService sells terms through the acquiring provider, when one is set.
 	paymentOrderService service.PaymentOrderService
+	reminderService     service.PaymentReminderService
 	lastStatus          *service.Status
 }
 

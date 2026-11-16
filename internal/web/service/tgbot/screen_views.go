@@ -67,7 +67,9 @@ func (t *Tgbot) screenClientHome(chatID, userID int64, delivery ...screenDeliver
 		}
 	}
 	if t.loadPaymentInfo().billed() {
-		rows = append(rows, tu.InlineKeyboardRow(t.btn("tgbot.buttons.pay", cbClientPay)))
+		rows = append(rows, tu.InlineKeyboardRow(t.btn("tgbot.buttons.pay", cbClientPay), t.btn("tgbot.reminders.button", cbReminders)))
+	} else {
+		rows = append(rows, tu.InlineKeyboardRow(t.btn("tgbot.reminders.button", cbReminders)))
 	}
 	rows = append(rows, t.aiExitRows(userID)...)
 	if t.levelOf(userID) == levelAdmin {
