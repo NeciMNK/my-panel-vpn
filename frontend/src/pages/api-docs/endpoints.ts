@@ -1885,7 +1885,7 @@ export const sections: readonly Section[] = [
         method: 'GET',
         path: '/panel/api/speed/overview',
         summary:
-          'User limits, server link speeds, and the live load of every server with a link speed.',
+          'User and group limits, server link speeds, and the live load of every server with a link speed.',
         responseSchema: 'SpeedOverview',
       },
       {
@@ -1893,6 +1893,13 @@ export const sections: readonly Section[] = [
         path: '/panel/api/speed/client',
         summary: "Set one user's minimum and maximum speed in Mbit/s; both 0 removes them.",
         body: '{\n  "email": "anna",\n  "minMbps": 20,\n  "maxMbps": 100\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/speed/group',
+        summary:
+          "Set a client group's speed in Mbit/s; all 0 removes it. A client's own speed replaces their group's. minMbps is guaranteed on the server the client connects to; floorMbps > 0 makes the cap float between floorMbps and maxMbps by what the guarantees leave free.",
+        body: '{\n  "group": "users",\n  "minMbps": 0,\n  "maxMbps": 100,\n  "floorMbps": 50\n}',
       },
       {
         method: 'POST',

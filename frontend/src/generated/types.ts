@@ -716,6 +716,14 @@ export interface GeodataTokenIssue {
   token: string;
 }
 
+export interface GroupSpeed {
+  floorMbps: number;
+  group: string;
+  id: number;
+  maxMbps: number;
+  minMbps: number;
+}
+
 export interface HappLinkResult {
   encryptedLink: string;
 }
@@ -1268,6 +1276,7 @@ export interface ServerFreeSpeed {
   freePerUserMbps: number;
   nodeId: number;
   online: number;
+  reservedMbps: number;
   usedMbps: number;
 }
 
@@ -1320,6 +1329,7 @@ export interface Setting {
 
 export interface SpeedOverview {
   clients: ClientSpeed[];
+  groups: GroupSpeed[];
   load: ServerFreeSpeed[];
   servers: ServerCapacity[];
   testSettings: SpeedTestSettings;

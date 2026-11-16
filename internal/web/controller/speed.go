@@ -11,8 +11,8 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 )
 
-// SpeedController serves /panel/api/speed: users' minimum and maximum speed
-// and the link speed of each server.
+// SpeedController serves /panel/api/speed: users' and groups' minimum and
+// maximum speed and the link speed of each server.
 type SpeedController struct {
 	speed service.SpeedService
 }
@@ -21,6 +21,7 @@ func NewSpeedController(g *gin.RouterGroup) *SpeedController {
 	a := &SpeedController{}
 	g.GET("/overview", a.overview)
 	g.POST("/client", a.setClient)
+	g.POST("/group", a.setGroup)
 	g.POST("/capacity", a.setCapacity)
 	g.POST("/test", a.startTest)
 	g.GET("/tests", a.testHistory)
@@ -39,6 +40,14 @@ func (a *SpeedController) setClient(c *gin.Context) {
 		return
 	}
 	jsonMsg(c, I18nWeb(c, "pages.nodes.speed.toasts.saved"), a.speed.SetClient(req))
+}
+
+func (a *SpeedController) setGroup(c *gin.Context) {
+	req, ok := middleware.BindAndValidate[service.GroupSpeedRequest](c)
+	if !ok {
+		return
+	}
+	jsonMsg(c, I18nWeb(c, "pages.nodes.speed.toasts.saved"), a.speed.SetGroup(req))
 }
 
 func (a *SpeedController) setCapacity(c *gin.Context) {

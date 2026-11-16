@@ -3096,6 +3096,39 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "GroupSpeed": {
+    "description": "GroupSpeed is the speed every member of a client group gets unless the client\nhas its own ClientSpeed. FloorMbps \u003e 0 makes MaxMbps float between it and MaxMbps.",
+    "properties": {
+      "floorMbps": {
+        "example": 50,
+        "type": "integer"
+      },
+      "group": {
+        "example": "users",
+        "type": "string"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "maxMbps": {
+        "example": 100,
+        "type": "integer"
+      },
+      "minMbps": {
+        "example": 0,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "floorMbps",
+      "group",
+      "id",
+      "maxMbps",
+      "minMbps"
+    ],
+    "type": "object"
+  },
   "HappLinkResult": {
     "properties": {
       "encryptedLink": {
@@ -5633,7 +5666,7 @@ export const SCHEMAS: Record<string, unknown> = {
     "type": "object"
   },
   "ServerFreeSpeed": {
-    "description": "ServerFreeSpeed is the live load of a server with a known capacity.",
+    "description": "ServerFreeSpeed is the live load of a server with a known capacity;\nReservedMbps is what the guarantees of the users it carries add up to.",
     "properties": {
       "capacityMbps": {
         "example": 1000,
@@ -5651,6 +5684,10 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": 12,
         "type": "integer"
       },
+      "reservedMbps": {
+        "example": 300,
+        "type": "integer"
+      },
       "usedMbps": {
         "example": 420.5,
         "type": "number"
@@ -5661,6 +5698,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "freePerUserMbps",
       "nodeId",
       "online",
+      "reservedMbps",
       "usedMbps"
     ],
     "type": "object"
@@ -5842,6 +5880,12 @@ export const SCHEMAS: Record<string, unknown> = {
         },
         "type": "array"
       },
+      "groups": {
+        "items": {
+          "$ref": "#/components/schemas/GroupSpeed"
+        },
+        "type": "array"
+      },
       "load": {
         "items": {
           "$ref": "#/components/schemas/ServerFreeSpeed"
@@ -5875,6 +5919,7 @@ export const SCHEMAS: Record<string, unknown> = {
     },
     "required": [
       "clients",
+      "groups",
       "load",
       "servers",
       "testSettings",

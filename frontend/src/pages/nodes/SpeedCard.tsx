@@ -20,7 +20,7 @@ import { HttpUtil, IntlUtil } from '@/utils';
 import { selectTagRender } from '@/components/form/SelectTag';
 import { useClientOptions } from '@/api/queries/useClientOptions';
 import type { NodeRecord } from '@/api/queries/useNodesQuery';
-import type { SpeedTestSettings, SpeedTestStats } from '@/generated/types';
+import type { GroupSpeed, SpeedTestSettings, SpeedTestStats } from '@/generated/types';
 
 import SpeedTestHistoryModal, { speedTestProviderKey } from './SpeedTestHistoryModal';
 
@@ -36,10 +36,12 @@ export interface ServerLoadRecord {
   usedMbps: number;
   online: number;
   freePerUserMbps: number;
+  reservedMbps: number;
 }
 
 export interface SpeedOverviewRecord {
   clients: ClientSpeedRecord[] | null;
+  groups?: GroupSpeed[] | null;
   servers: { nodeId: number; capacityMbps: number }[] | null;
   load: ServerLoadRecord[] | null;
   testing?: number[] | null;
@@ -56,7 +58,7 @@ export interface SpeedServerRow {
   testing: boolean;
 }
 
-const SPEED_KEY = ['speed', 'overview'] as const;
+export const SPEED_KEY = ['speed', 'overview'] as const;
 const SPEED_INPUT_WIDTH = 140;
 const JSON_HEADERS = { headers: { 'Content-Type': 'application/json' } };
 const TIME_ZONES = Intl.supportedValuesOf('timeZone');
@@ -76,7 +78,7 @@ export function speedServerRows(
   }));
 }
 
-async function fetchOverview(): Promise<SpeedOverviewRecord> {
+export async function fetchSpeedOverview(): Promise<SpeedOverviewRecord> {
   const msg = await HttpUtil.get<SpeedOverviewRecord>('/panel/api/speed/overview', undefined, {
     silent: true,
   });
@@ -89,13 +91,20 @@ export default function SpeedCard({ nodes }: { nodes: NodeRecord[] }) {
   const queryClient = useQueryClient();
   const { data: overview, isFetching } = useQuery({
     queryKey: SPEED_KEY,
-    queryFn: fetchOverview,
+    queryFn: fetchSpeedOverview,
     refetchInterval: (q) => (q.state.data?.testing?.length ? 4_000 : 30_000),
   });
   const { data: emails = [] } = useClientOptions();
   const [capDrafts, setCapDrafts] = useState<Record<number, number>>({});
-  const [draft, setDraft] = useState<ClientSpeedRecord>({ email: '', minMbps: 0, maxMbps: 0 });
-  const [historyFor, setHistoryFor] = useState<{ nodeId: number; name: string } | null>(null);
+  const [draft, setDraft] = useState<ClientSpeedRecord>({
+    email: '',
+    minMbps: 0,
+    maxMbps: 0,
+  });
+  const [historyFor, setHistoryFor] = useState<{
+    nodeId: number;
+    name: string;
+  } | null>(null);
   const [scheduleDraft, setScheduleDraft] = useState<SpeedTestSettings | null>(null);
 
   const servers = useMemo(
@@ -184,6 +193,7 @@ export default function SpeedCard({ nodes }: { nodes: NodeRecord[] }) {
               used: r.load.usedMbps.toFixed(0),
               online: r.load.online,
               free: r.load.freePerUserMbps.toFixed(1),
+              reserved: r.load.reservedMbps,
             })
           : '—',
     },

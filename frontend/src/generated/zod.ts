@@ -766,6 +766,15 @@ export const GeodataTokenIssueSchema = z.object({
 });
 export type GeodataTokenIssue = z.infer<typeof GeodataTokenIssueSchema>;
 
+export const GroupSpeedSchema = z.object({
+  floorMbps: z.number().int(),
+  group: z.string(),
+  id: z.number().int(),
+  maxMbps: z.number().int(),
+  minMbps: z.number().int(),
+});
+export type GroupSpeed = z.infer<typeof GroupSpeedSchema>;
+
 export const HappLinkResultSchema = z.object({
   encryptedLink: z.string(),
 });
@@ -1359,6 +1368,7 @@ export const ServerFreeSpeedSchema = z.object({
   freePerUserMbps: z.number(),
   nodeId: z.number().int(),
   online: z.number().int(),
+  reservedMbps: z.number().int(),
   usedMbps: z.number(),
 });
 export type ServerFreeSpeed = z.infer<typeof ServerFreeSpeedSchema>;
@@ -1414,6 +1424,7 @@ export type Setting = z.infer<typeof SettingSchema>;
 
 export const SpeedOverviewSchema = z.object({
   clients: z.array(z.lazy(() => ClientSpeedSchema)),
+  groups: z.array(z.lazy(() => GroupSpeedSchema)),
   load: z.array(z.lazy(() => ServerFreeSpeedSchema)),
   servers: z.array(z.lazy(() => ServerCapacitySchema)),
   testSettings: z.lazy(() => SpeedTestSettingsSchema),

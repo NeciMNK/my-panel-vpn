@@ -102,6 +102,7 @@ func allModels() []any {
 		&model.HomeNetwork{},
 		&model.WarpSwitch{},
 		&model.ClientSpeed{},
+		&model.GroupSpeed{},
 		&model.ServerCapacity{},
 		&model.SpeedTestResult{},
 		&model.MasterMember{},
@@ -1556,6 +1557,9 @@ func runSeeders(isUsersEmpty bool) error {
 				return err
 			}
 		}
+		if err := seedGroupSpeedDefaults(); err != nil {
+			return err
+		}
 		return seedApiTokens()
 	}
 
@@ -1753,6 +1757,12 @@ func runSeeders(isUsersEmpty bool) error {
 
 	if !slices.Contains(seedersHistory, "ClientAutoGroups") {
 		if err := assignClientAutoGroups(); err != nil {
+			return err
+		}
+	}
+
+	if !slices.Contains(seedersHistory, "GroupSpeedDefaults") {
+		if err := seedGroupSpeedDefaults(); err != nil {
 			return err
 		}
 	}
@@ -2140,6 +2150,21 @@ func renameLegacyTechGroup(tx *gorm.DB) error {
 		}
 	}
 	return nil
+}
+
+// Free users share 50-100 Mbit/s by load and paying users are promised 100; runs on
+// fresh installs too and only once, so an admin's later edit or removal sticks.
+func seedGroupSpeedDefaults() error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		defaults := []model.GroupSpeed{
+			{Group: model.ClientGroupUsers, FloorMbps: 50, MaxMbps: 100},
+			{Group: model.ClientGroupPaid, MinMbps: 100},
+		}
+		if err := tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&defaults).Error; err != nil {
+			return err
+		}
+		return tx.Create(&model.HistoryOfSeeders{SeederName: "GroupSpeedDefaults"}).Error
+	})
 }
 
 // The groups page addresses a group by its trimmed name, so a padded stored name listed as

@@ -802,6 +802,13 @@ export const EXAMPLES: Record<string, unknown> = {
     "reason": "categoryMissing",
     "token": "geosite:blabla"
   },
+  "GroupSpeed": {
+    "floorMbps": 50,
+    "group": "users",
+    "id": 1,
+    "maxMbps": 100,
+    "minMbps": 0
+  },
   "HappLinkResult": {
     "encryptedLink": "happ://crypt5/example"
   },
@@ -1456,6 +1463,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "freePerUserMbps": 44.5,
     "nodeId": 0,
     "online": 12,
+    "reservedMbps": 300,
     "usedMbps": 420.5
   },
   "ServerSettings": {
@@ -1512,12 +1520,22 @@ export const EXAMPLES: Record<string, unknown> = {
         "minMbps": 20
       }
     ],
+    "groups": [
+      {
+        "floorMbps": 50,
+        "group": "users",
+        "id": 1,
+        "maxMbps": 100,
+        "minMbps": 0
+      }
+    ],
     "load": [
       {
         "capacityMbps": 1000,
         "freePerUserMbps": 44.5,
         "nodeId": 0,
         "online": 12,
+        "reservedMbps": 300,
         "usedMbps": 420.5
       }
     ],

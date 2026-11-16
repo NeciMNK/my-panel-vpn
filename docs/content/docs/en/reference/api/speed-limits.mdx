@@ -12,12 +12,18 @@ _openapi:
     - ./public/openapi.json
   toc:
     - depth: 2
-      title: User limits, server link speeds, and the live load of every server with a
-        link speed.
-      url: '#user-limits-server-link-speeds-and-the-live-load-of-every-server-with-a-link-speed'
+      title: User and group limits, server link speeds, and the live load of every
+        server with a link speed.
+      url: '#user-and-group-limits-server-link-speeds-and-the-live-load-of-every-server-with-a-link-speed'
     - depth: 2
       title: Set one user's minimum and maximum speed in Mbit/s; both 0 removes them.
       url: '#set-one-users-minimum-and-maximum-speed-in-mbits-both-0-removes-them'
+    - depth: 2
+      title: Set a client group's speed in Mbit/s; all 0 removes it. A client's own
+        speed replaces their group's. minMbps is guaranteed on the server the
+        client connects to; floorMbps > 0 makes the cap float between floorMbps
+        and maxMbps by what the guarantees leave free.
+      url: '#set-a-client-groups-speed-in-mbits-all-0-removes-it-a-clients-own-speed-replaces-their-groups-minmbps-is-guaranteed-on-the-server-the-client-connects-to-floormbps--0-makes-the-cap-float-between-floormbps-and-maxmbps-by-what-the-guarantees-leave-free'
     - depth: 2
       title: Set one server's link speed in Mbit/s (node id 0 = this panel); 0 removes
         it.
@@ -41,12 +47,17 @@ _openapi:
       url: '#whether-speed-tests-set-link-speeds-automatically-and-when-every-server-is-tested-every-n-hours-0--off-max-168-andor-at-clock-times-hhmm-in-an-iana-time-zone-a-clock-time-missed-by-more-than-15-minutes-is-skipped'
   structuredData:
     headings:
-      - content: User limits, server link speeds, and the live load of every server with
-          a link speed.
-        id: user-limits-server-link-speeds-and-the-live-load-of-every-server-with-a-link-speed
+      - content: User and group limits, server link speeds, and the live load of every
+          server with a link speed.
+        id: user-and-group-limits-server-link-speeds-and-the-live-load-of-every-server-with-a-link-speed
       - content: Set one user's minimum and maximum speed in Mbit/s; both 0 removes
           them.
         id: set-one-users-minimum-and-maximum-speed-in-mbits-both-0-removes-them
+      - content: Set a client group's speed in Mbit/s; all 0 removes it. A client's own
+          speed replaces their group's. minMbps is guaranteed on the server the
+          client connects to; floorMbps > 0 makes the cap float between
+          floorMbps and maxMbps by what the guarantees leave free.
+        id: set-a-client-groups-speed-in-mbits-all-0-removes-it-a-clients-own-speed-replaces-their-groups-minmbps-is-guaranteed-on-the-server-the-client-connects-to-floormbps--0-makes-the-cap-float-between-floormbps-and-maxmbps-by-what-the-guarantees-leave-free
       - content: Set one server's link speed in Mbit/s (node id 0 = this panel); 0
           removes it.
         id: set-one-servers-link-speed-in-mbits-node-id-0--this-panel-0-removes-it
@@ -74,7 +85,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/speed/overview","method":"get"},{"path":"/panel/api/speed/client","method":"post"},{"path":"/panel/api/speed/capacity","method":"post"},{"path":"/panel/api/speed/test","method":"post"},{"path":"/panel/api/speed/tests","method":"get"},{"path":"/panel/api/speed/testSettings","method":"post"}]} showTitle />
+      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/speed/overview","method":"get"},{"path":"/panel/api/speed/client","method":"post"},{"path":"/panel/api/speed/group","method":"post"},{"path":"/panel/api/speed/capacity","method":"post"},{"path":"/panel/api/speed/test","method":"post"},{"path":"/panel/api/speed/tests","method":"get"},{"path":"/panel/api/speed/testSettings","method":"post"}]} showTitle />
     </>
   );
 }

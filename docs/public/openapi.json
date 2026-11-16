@@ -3122,6 +3122,39 @@
         ],
         "type": "object"
       },
+      "GroupSpeed": {
+        "description": "GroupSpeed is the speed every member of a client group gets unless the client\nhas its own ClientSpeed. FloorMbps > 0 makes MaxMbps float between it and MaxMbps.",
+        "properties": {
+          "floorMbps": {
+            "example": 50,
+            "type": "integer"
+          },
+          "group": {
+            "example": "users",
+            "type": "string"
+          },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "maxMbps": {
+            "example": 100,
+            "type": "integer"
+          },
+          "minMbps": {
+            "example": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "floorMbps",
+          "group",
+          "id",
+          "maxMbps",
+          "minMbps"
+        ],
+        "type": "object"
+      },
       "HappLinkResult": {
         "properties": {
           "encryptedLink": {
@@ -5659,7 +5692,7 @@
         "type": "object"
       },
       "ServerFreeSpeed": {
-        "description": "ServerFreeSpeed is the live load of a server with a known capacity.",
+        "description": "ServerFreeSpeed is the live load of a server with a known capacity;\nReservedMbps is what the guarantees of the users it carries add up to.",
         "properties": {
           "capacityMbps": {
             "example": 1000,
@@ -5677,6 +5710,10 @@
             "example": 12,
             "type": "integer"
           },
+          "reservedMbps": {
+            "example": 300,
+            "type": "integer"
+          },
           "usedMbps": {
             "example": 420.5,
             "type": "number"
@@ -5687,6 +5724,7 @@
           "freePerUserMbps",
           "nodeId",
           "online",
+          "reservedMbps",
           "usedMbps"
         ],
         "type": "object"
@@ -5868,6 +5906,12 @@
             },
             "type": "array"
           },
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/GroupSpeed"
+            },
+            "type": "array"
+          },
           "load": {
             "items": {
               "$ref": "#/components/schemas/ServerFreeSpeed"
@@ -5901,6 +5945,7 @@
         },
         "required": [
           "clients",
+          "groups",
           "load",
           "servers",
           "testSettings",
@@ -13889,7 +13934,7 @@
         "tags": [
           "Speed limits"
         ],
-        "summary": "User limits, server link speeds, and the live load of every server with a link speed.",
+        "summary": "User and group limits, server link speeds, and the live load of every server with a link speed.",
         "operationId": "get_panel_api_speed_overview",
         "responses": {
           "200": {
@@ -13921,12 +13966,22 @@
                         "minMbps": 20
                       }
                     ],
+                    "groups": [
+                      {
+                        "floorMbps": 50,
+                        "group": "users",
+                        "id": 1,
+                        "maxMbps": 100,
+                        "minMbps": 0
+                      }
+                    ],
                     "load": [
                       {
                         "capacityMbps": 1000,
                         "freePerUserMbps": 44.5,
                         "nodeId": 0,
                         "online": 12,
+                        "reservedMbps": 300,
                         "usedMbps": 420.5
                       }
                     ],
@@ -13986,6 +14041,52 @@
                 "email": "anna",
                 "minMbps": 20,
                 "maxMbps": 100
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/speed/group": {
+      "post": {
+        "tags": [
+          "Speed limits"
+        ],
+        "summary": "Set a client group's speed in Mbit/s; all 0 removes it. A client's own speed replaces their group's. minMbps is guaranteed on the server the client connects to; floorMbps > 0 makes the cap float between floorMbps and maxMbps by what the guarantees leave free.",
+        "operationId": "post_panel_api_speed_group",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "group": "users",
+                "minMbps": 0,
+                "maxMbps": 100,
+                "floorMbps": 50
               }
             }
           }
