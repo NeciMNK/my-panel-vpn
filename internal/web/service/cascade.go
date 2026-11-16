@@ -27,19 +27,35 @@ import (
 // and, on the entry, an outbound per exit plus a catch-all rule or balancer.
 type CascadeService struct{}
 
-// CascadeRequest is the "two clicks" form: an entry, its exits, optionally
-// which entry inbounds to chain (empty = all) and the multi-exit strategy.
+// CascadeRequest is the body of /cascades/add and /cascades/update. Update
+// replaces the whole cascade: an omitted field is cleared, not kept.
 type CascadeRequest struct {
-	Name             string   `json:"name" example:"RU → DE"`
-	Enable           bool     `json:"enable" example:"true"`
-	EntryNodeId      int      `json:"entryNodeId" example:"1"`
-	ExitNodeIds      []int    `json:"exitNodeIds" example:"2"`
-	ExitCountry      string   `json:"exitCountry" example:"DE"`
+	Name   string `json:"name" example:"RU → DE"`
+	Enable bool   `json:"enable" example:"true"`
+	// EntryNodeId is the server users connect to; 0 is this panel.
+	EntryNodeId int `json:"entryNodeId" example:"1"`
+	// ExitNodeIds are the servers traffic leaves from; ignored when exitCountry
+	// is set. Several exits share a balancer and keep each user on one exit.
+	ExitNodeIds []int `json:"exitNodeIds" example:"[2,3]"`
+	// ExitCountry (ISO code) makes every enabled node of that country except the
+	// entry an exit, re-resolved whenever nodes are added, moved or disabled.
+	ExitCountry string `json:"exitCountry" example:"DE"`
+	// EntryInboundTags are the entry inbounds whose users are chained; empty
+	// chains every inbound of the entry.
 	EntryInboundTags []string `json:"entryInboundTags"`
-	Strategy         string   `json:"strategy" example:"leastPing"`
-	Mode             string   `json:"mode" example:"split"`
-	DirectDomains    []string `json:"directDomains"`
-	DirectIPs        []string `json:"directIps"`
+	// Strategy picks an exit for a new user when there are several (default
+	// leastPing); the user then stays there, see the section description.
+	Strategy string `json:"strategy" validate:"omitempty,oneof=leastPing leastLoad random roundRobin" example:"leastPing"`
+	// Mode (default split): split sends the entry country's sites direct and the
+	// rest to the exit, relay sends everything, both mixes them per inbound.
+	Mode string `json:"mode" validate:"omitempty,oneof=split relay both" example:"split"`
+	// DirectDomains extend the split's direct list: a plain domain or domain:,
+	// full:, keyword:, regexp:, geosite: rules. Ignored in relay mode.
+	DirectDomains []string `json:"directDomains"`
+	// DirectIPs extend the split's direct list: IPs, CIDRs or geoip: rules.
+	DirectIPs []string `json:"directIps"`
+	// RelayInboundTags are, in both mode only (and then required), the entry
+	// inbounds that relay everything; they must not be in entryInboundTags.
 	RelayInboundTags []string `json:"relayInboundTags"`
 }
 
@@ -100,6 +116,13 @@ func (s *CascadeService) validate(req *CascadeRequest) error {
 	}
 	if !slices.Contains(cascadeStrategies, req.Strategy) {
 		return common.NewError("unknown balancing strategy " + req.Strategy)
+	}
+	var err error
+	if req.EntryInboundTags, err = masterInboundTags(req.EntryNodeId, req.EntryInboundTags); err != nil {
+		return err
+	}
+	if req.RelayInboundTags, err = masterInboundTags(req.EntryNodeId, req.RelayInboundTags); err != nil {
+		return err
 	}
 	if err := normalizeCascadeRouting(req); err != nil {
 		return err
@@ -265,14 +288,18 @@ func (s *CascadeService) rewriteEntry(ctx context.Context, nodeID int, c *model.
 		if err != nil {
 			return err
 		}
-		applyCascadeToTemplate(tmpl.Config, c, pins, ai, splitZone(nodeCountry(nodeID)))
+		applyCascadeToTemplate(tmpl.Config, c, nodeID, pins, ai, splitZone(nodeCountry(nodeID)))
 	}
 	return store.Save(ctx, tmpl)
 }
 
 // applyCascadeToTemplate adds one outbound per exit and tail rules: relay-only
 // inbounds first, then the split's direct rules, then the catch-all to the exit.
-func applyCascadeToTemplate(cfg map[string]any, c *model.Cascade, pins []model.CascadePin, ai aiExitPlan, zone cascadeZone) {
+func applyCascadeToTemplate(cfg map[string]any, stored *model.Cascade, nodeID int, pins []model.CascadePin, ai aiExitPlan, zone cascadeZone) {
+	local := *stored
+	local.EntryInboundTags = nodeLocalInboundTags(nodeID, stored.EntryInboundTags)
+	local.RelayInboundTags = nodeLocalInboundTags(nodeID, stored.RelayInboundTags)
+	c := &local
 	for _, l := range c.Links {
 		appendOutbounds(cfg, cascadeOutbound(c.Id, l))
 	}
@@ -531,4 +558,45 @@ func (s *CascadeService) ReconcileCountryCascades(ctx context.Context) {
 		err = s.apply(ctx, c, c.EntryNodeId, 1, "")
 		s.saveState(c, err)
 	}
+}
+
+// nodeLocalInboundTags maps master-form tags to the ones the node's Xray uses:
+// wireInbound pushes every inbound without its n<id>- prefix.
+func nodeLocalInboundTags(nodeID int, tags []string) []string {
+	if nodeID == 0 || len(tags) == 0 {
+		return tags
+	}
+	prefix := nodeTagPrefix(&nodeID)
+	out := make([]string, 0, len(tags))
+	for _, tag := range tags {
+		if local := strings.TrimPrefix(tag, prefix); !slices.Contains(out, local) {
+			out = append(out, local)
+		}
+	}
+	return out
+}
+
+// masterInboundTags stores tags as the master names the entry's inbounds, which
+// cascadeEnters matches; a node-form tag of a known inbound gets its prefix.
+func masterInboundTags(entryNodeID int, tags []string) ([]string, error) {
+	tags = cleanList(tags)
+	if entryNodeID == 0 || len(tags) == 0 {
+		return tags, nil
+	}
+	var known []string
+	if err := database.GetDB().Model(&model.Inbound{}).Where("node_id = ?", entryNodeID).
+		Pluck("tag", &known).Error; err != nil {
+		return nil, err
+	}
+	prefix := nodeTagPrefix(&entryNodeID)
+	out := make([]string, 0, len(tags))
+	for _, tag := range tags {
+		if !slices.Contains(known, tag) && slices.Contains(known, prefix+tag) {
+			tag = prefix + tag
+		}
+		if !slices.Contains(out, tag) {
+			out = append(out, tag)
+		}
+	}
+	return out, nil
 }

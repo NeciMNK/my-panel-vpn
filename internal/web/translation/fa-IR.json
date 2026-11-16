@@ -838,7 +838,11 @@
         "peerNumberConfig": "پیکربندی Peer {n}"
       },
       "sniffingDestOverride": "بازنویسی مقصد",
-      "advancedTitle": "تنظیمات پیشرفته"
+      "advancedTitle": "تنظیمات پیشرفته",
+      "copyAsXhttp": "کپی به‌صورت XHTTP",
+      "copyAsXhttpContent": "یک ورودی XHTTP روی پورت جدید با همان کاربران و امنیت می‌سازد. ورودی gRPC همچنان کار می‌کند؛ پس از به‌روزرسانی اشتراک کاربران آن را حذف کنید.",
+      "grpcDeprecated": "انتقال gRPC در Xray منسوخ شده و ممکن است حذف شود. این ورودی را به XHTTP منتقل کنید.",
+      "deprecated": "منسوخ"
     },
     "clients": {
       "tabBasics": "پایه",
@@ -3084,6 +3088,8 @@
       "paymentReported": "💳 {{ .User }} paid for {{ .Months }} mo ({{ .Total }}): ",
       "paymentConfirmed": "✅ Payment confirmed: {{ .Email }} is active until {{ .Date }}.",
       "paymentConfirmedBy": "✅ {{ .Email }}: confirmed by {{ .Admin }}, active until {{ .Date }}",
+      "paymentRefusedBy": "❌ Not received: {{ .Admin }}",
+      "paymentNotReceived": "❌ The admin has not received your payment for {{ .Months }} mo. Check the payment details and report the payment again, or write to the admin.",
       "graceTaken": "⏳ {{ .User }} deferred payment by {{ .Days }} days for: ",
       "aiExitIntro": "🤖 AI services (ChatGPT, Claude, Gemini…) block accounts whose IP keeps changing. Your exit IP is pinned per country and stays the same on every connection.\r\n\r\n",
       "aiExitPinnedLine": "{{ .Country }}: 📌 pinned to {{ .Server }}\r\n",
@@ -3184,9 +3190,11 @@
       "attachInbound": "افزودن ورودی ({{ .Count }})",
       "attachDone": "✅ انجام شد",
       "iPaid": "✅ I have paid",
+      "pay": "💳 Payment",
       "planOption": "{{ .Months }} mo",
       "payLater": "⏳ Pay later (up to {{ .Days }} days)",
       "confirmPayment": "✅ {{ .Email }}: +{{ .Months }} mo",
+      "paymentNotReceived": "❌ Not received",
       "trusted": "⭐ Trusted (pay later): {{ .State }}",
       "requestFree": "🆓 Request a free subscription ({{ .GB }} GB/month)",
       "approve": "✅ Approve",

@@ -12,11 +12,19 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/runtime"
+
+	"gorm.io/gorm"
 )
 
 // Everything this fork writes into an Xray template carries a tag that starts
 // with managedTagPrefix, so a feature can strip and rewrite only its own part.
 const managedTagPrefix = "mp-"
+
+// excludeServiceClients hides the panel's own link clients from client lists:
+// they belong to cascades and home links, and attaching them breaks bulk ops.
+func excludeServiceClients(tx *gorm.DB, emailColumn string) *gorm.DB {
+	return tx.Where(emailColumn+" NOT LIKE ?", managedTagPrefix+"%")
+}
 
 var errManagedInboundClient = common.NewError("this is a service inbound of a cascade or home network link: only the panel's own clients can be on it")
 

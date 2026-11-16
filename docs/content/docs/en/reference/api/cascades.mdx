@@ -1,9 +1,24 @@
 ---
 title: Cascades
-description: Entry → exit server chains. The panel provisions a hidden
-  VLESS+REALITY inbound on every exit and an outbound plus a catch-all routing
-  rule (or a balancer for several exits) on the entry. Node id 0 means this
-  panel. All endpoints under /panel/api/cascades.
+description: 'Entry → exit server chains. The panel provisions a hidden
+  VLESS+REALITY inbound on every exit and an outbound plus routing rules (or a
+  balancer for several exits) on the entry. Node id 0 means this panel. Exits
+  are either listed in exitNodeIds or picked by country: exitCountry "DE" makes
+  every enabled node of that country (except the entry) an exit, and the list is
+  re-resolved whenever a node is added, removed, disabled or moved to another
+  country. Sticky sessions are always on for a cascade with several exits; there
+  is no switch. Every 15 seconds each newly online user is pinned to the
+  least-loaded healthy exit that still has their minMbps free
+  (/panel/api/speed); the pin keeps them on that exit, so on that IP, while they
+  stay connected and for 15 minutes after they go offline. A pin is dropped at
+  once when its exit goes offline (the user moves to another exit), when the
+  user connects to a different server themselves, or when the admin pins them
+  with /cascades/fixedExits. strategy only spreads traffic that has no pin yet.
+  Modes: split (default) sends the entry country’s own sites (its TLDs, geoip
+  and geosite list, Russia when the entry has no country) plus
+  directDomains/directIps straight out of the entry and the rest to the exit;
+  relay sends everything to the exit; both runs split on entryInboundTags and
+  relay on relayInboundTags. All endpoints under /panel/api/cascades.'
 full: true
 _openapi:
   preload:
@@ -14,14 +29,17 @@ _openapi:
       url: '#list-every-cascade-with-its-provisioned-links-and-the-last-apply-error'
     - depth: 2
       title: 'Create a cascade and apply it: exits get their link inbound, the entry
-        gets the outbound(s) and the routing rule. Empty entryInboundTags chains
-        every inbound of the entry.'
-      url: '#create-a-cascade-and-apply-it-exits-get-their-link-inbound-the-entry-gets-the-outbounds-and-the-routing-rule-empty-entryinboundtags-chains-every-inbound-of-the-entry'
+        gets the outbound(s) and the routing rules. Give either exitNodeIds or
+        exitCountry; when both are set, exitCountry wins. Empty entryInboundTags
+        chains every inbound of the entry. A failed apply still saves the
+        cascade, with the reason in lastError.'
+      url: '#create-a-cascade-and-apply-it-exits-get-their-link-inbound-the-entry-gets-the-outbounds-and-the-routing-rules-give-either-exitnodeids-or-exitcountry-when-both-are-set-exitcountry-wins-empty-entryinboundtags-chains-every-inbound-of-the-entry-a-failed-apply-still-saves-the-cascade-with-the-reason-in-lasterror'
     - depth: 2
-      title: Change a cascade (entry, exits, chained inbounds, strategy, enable) and
-        re-apply it. Removed exits lose their link inbound; adding an exit adds
-        it to the balancer.
-      url: '#change-a-cascade-entry-exits-chained-inbounds-strategy-enable-and-re-apply-it-removed-exits-lose-their-link-inbound-adding-an-exit-adds-it-to-the-balancer'
+      title: 'Replace a cascade and re-apply it. The body is the full cascade as for
+        add: a field left out is cleared, not kept, so send back everything from
+        list. Removed exits lose their link inbound; an added exit joins the
+        balancer.'
+      url: '#replace-a-cascade-and-re-apply-it-the-body-is-the-full-cascade-as-for-add-a-field-left-out-is-cleared-not-kept-so-send-back-everything-from-list-removed-exits-lose-their-link-inbound-an-added-exit-joins-the-balancer'
     - depth: 2
       title: Remove a cascade from the entry template and delete its link inbounds on
         every exit.
@@ -46,13 +64,16 @@ _openapi:
       - content: List every cascade with its provisioned links and the last apply error.
         id: list-every-cascade-with-its-provisioned-links-and-the-last-apply-error
       - content: 'Create a cascade and apply it: exits get their link inbound, the entry
-          gets the outbound(s) and the routing rule. Empty entryInboundTags
-          chains every inbound of the entry.'
-        id: create-a-cascade-and-apply-it-exits-get-their-link-inbound-the-entry-gets-the-outbounds-and-the-routing-rule-empty-entryinboundtags-chains-every-inbound-of-the-entry
-      - content: Change a cascade (entry, exits, chained inbounds, strategy, enable) and
-          re-apply it. Removed exits lose their link inbound; adding an exit
-          adds it to the balancer.
-        id: change-a-cascade-entry-exits-chained-inbounds-strategy-enable-and-re-apply-it-removed-exits-lose-their-link-inbound-adding-an-exit-adds-it-to-the-balancer
+          gets the outbound(s) and the routing rules. Give either exitNodeIds or
+          exitCountry; when both are set, exitCountry wins. Empty
+          entryInboundTags chains every inbound of the entry. A failed apply
+          still saves the cascade, with the reason in lastError.'
+        id: create-a-cascade-and-apply-it-exits-get-their-link-inbound-the-entry-gets-the-outbounds-and-the-routing-rules-give-either-exitnodeids-or-exitcountry-when-both-are-set-exitcountry-wins-empty-entryinboundtags-chains-every-inbound-of-the-entry-a-failed-apply-still-saves-the-cascade-with-the-reason-in-lasterror
+      - content: 'Replace a cascade and re-apply it. The body is the full cascade as for
+          add: a field left out is cleared, not kept, so send back everything
+          from list. Removed exits lose their link inbound; an added exit joins
+          the balancer.'
+        id: replace-a-cascade-and-re-apply-it-the-body-is-the-full-cascade-as-for-add-a-field-left-out-is-cleared-not-kept-so-send-back-everything-from-list-removed-exits-lose-their-link-inbound-an-added-exit-joins-the-balancer
       - content: Remove a cascade from the entry template and delete its link inbounds
           on every exit.
         id: remove-a-cascade-from-the-entry-template-and-delete-its-link-inbounds-on-every-exit

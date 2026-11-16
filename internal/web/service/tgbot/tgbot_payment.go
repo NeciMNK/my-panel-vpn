@@ -21,6 +21,7 @@ import (
 )
 
 const (
+	cbClientPay   = "client_pay"
 	cbClientPaid  = "client_paid"
 	cbClientDefer = "client_defer"
 	cbFreeRequest = "free_req"
@@ -116,7 +117,6 @@ func (t *Tgbot) paymentBlock(info paymentInfo, traffics []*xray.ClientTraffic) s
 		return ""
 	}
 	var b strings.Builder
-	b.WriteString(t.I18nBot("tgbot.payment.title"))
 	free, deferred := false, false
 	owner := &model.ClientBilling{}
 	for i, traffic := range traffics {
@@ -209,7 +209,29 @@ func (t *Tgbot) sendExpiryReminder(chatID int64, text string, due []*xray.Client
 		return
 	}
 	rows := append(t.paymentRows(info, due), t.hideButton().InlineKeyboard...)
-	t.SendMsgToTgbot(chatID, text+"\r\n"+t.paymentBlock(info, due), tu.InlineKeyboard(rows...))
+	t.SendMsgToTgbot(chatID, text+"\r\n"+t.I18nBot("tgbot.payment.title")+t.paymentBlock(info, due), tu.InlineKeyboard(rows...))
+}
+
+// screenClientPay is what the home screen's "Payment" button opens: the block
+// alone fits one caption, where under the subscriptions it spilled onto page two.
+func (t *Tgbot) screenClientPay(chatID, userID int64) {
+	traffics, err := t.inboundService.GetClientTrafficTgBot(userID)
+	info := t.loadPaymentInfo()
+	if err != nil || len(traffics) == 0 || !info.billed() {
+		t.screenClientHome(chatID, userID)
+		return
+	}
+	rows := append(t.paymentRows(info, traffics), t.backTo(t.clientHomeCallback(userID)))
+	t.renderScreen(chatID, t.newScreen("pay", t.paymentBlock(info, traffics), rows...))
+}
+
+// clientHomeCallback leads back to the viewer's own subscriptions: an admin's
+// "home" is the panel menu, so it returns through "My subscription" instead.
+func (t *Tgbot) clientHomeCallback(userID int64) string {
+	if t.levelOf(userID) == levelAdmin {
+		return cbMySubscription
+	}
+	return cbHome
 }
 
 type actionThrottle struct {
@@ -263,6 +285,7 @@ func (t *Tgbot) screenPlanPicker(chatID, userID int64) {
 		}
 		rows = append(rows, tu.InlineKeyboardRow(t.btn2(label, cbClientPaid+" "+strconv.Itoa(plan.Months))))
 	}
+	rows = append(rows, t.backTo(cbClientPay))
 	t.renderScreen(chatID, t.newScreen("pay", t.I18nBot("tgbot.payment.choosePlan"), rows...))
 }
 
@@ -286,25 +309,22 @@ func (t *Tgbot) reportClientPayment(callbackQuery *telego.CallbackQuery, monthsT
 	if total == "" {
 		total = "—"
 	}
-	emails := make([]string, 0, len(traffics))
-	rows := make([][]telego.InlineKeyboardButton, 0, len(traffics)+1)
+	report := &paymentReport{months: monthsText}
 	for _, traffic := range traffics {
 		if err := t.clientService.SetPendingPayment(t.billingFor(traffic.Email).ClientId, months); err != nil {
 			logger.Warning("reportClientPayment: saving the pending report failed:", err)
 			continue
 		}
-		emails = append(emails, html.EscapeString(traffic.Email))
-		rows = append(rows, tu.InlineKeyboardRow(t.btn2(
-			t.I18nBot("tgbot.buttons.confirmPayment", "Email=="+traffic.Email, "Months=="+monthsText),
-			t.encodeQuery("pay_ok "+traffic.Email+" "+monthsText))))
-	}
-	rows = append(rows, t.hideButton().InlineKeyboard...)
-	msg := t.I18nBot("tgbot.messages.paymentReported",
-		"User=="+userLabel(from), "Months=="+monthsText, "Total=="+total) + strings.Join(emails, ", ")
-	report := &paymentReport{text: msg, months: monthsText}
-	for _, traffic := range traffics {
 		report.emails = append(report.emails, traffic.Email)
 	}
+	escaped := make([]string, 0, len(report.emails))
+	for _, email := range report.emails {
+		escaped = append(escaped, html.EscapeString(email))
+	}
+	msg := t.I18nBot("tgbot.messages.paymentReported",
+		"User=="+userLabel(from), "Months=="+monthsText, "Total=="+total) + strings.Join(escaped, ", ")
+	report.text = msg
+	rows := t.paymentReportRows(report.emails, monthsText)
 	for _, admin := range adminSnapshot() {
 		if id := t.SendMsgToTgbot(admin, msg, tu.InlineKeyboard(rows...)); id != 0 {
 			report.notices = append(report.notices, paymentNotice{chatID: admin, msgID: id})
@@ -400,6 +420,24 @@ func (b *paymentNoticeBook) settle(email, line string) (report paymentReport, ok
 	return paymentReport{text: r.text, months: r.months, emails: slices.Clone(r.emails), notices: slices.Clone(r.notices)}, true
 }
 
+// drop removes the whole report email belongs to and returns it with line
+// appended; emails are the subscriptions that were still awaiting a confirm.
+func (b *paymentNoticeBook) drop(email, line string) (report paymentReport, ok bool) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	r, found := b.byEmail[email]
+	if !found {
+		return paymentReport{}, false
+	}
+	for _, pending := range r.emails {
+		delete(b.byEmail, pending)
+	}
+	r.text += "\n" + line
+	report = paymentReport{text: r.text, months: r.months, emails: r.emails, notices: slices.Clone(r.notices)}
+	r.emails = nil
+	return report, true
+}
+
 func (b *paymentNoticeBook) covers(chatID int64, msgID int) bool {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -430,16 +468,85 @@ func (t *Tgbot) closePaymentNotices(email, line string) {
 	if !ok {
 		return
 	}
-	rows := make([][]telego.InlineKeyboardButton, 0, len(report.emails)+1)
-	for _, pending := range report.emails {
-		rows = append(rows, tu.InlineKeyboardRow(t.btn2(
-			t.I18nBot("tgbot.buttons.confirmPayment", "Email=="+pending, "Months=="+report.months),
-			t.encodeQuery("pay_ok "+pending+" "+report.months))))
-	}
-	rows = append(rows, t.hideButton().InlineKeyboard...)
+	rows := t.paymentReportRows(report.emails, report.months)
 	for _, notice := range report.notices {
 		t.editMessageTgBot(notice.chatID, notice.msgID, report.text, tu.InlineKeyboard(rows...))
 	}
+}
+
+// paymentReportRows are an admin's answers to a report: a confirm per subscription
+// still pending, one refusal for the whole transfer, and Hide.
+func (t *Tgbot) paymentReportRows(pending []string, months string) [][]telego.InlineKeyboardButton {
+	rows := make([][]telego.InlineKeyboardButton, 0, len(pending)+2)
+	for _, email := range pending {
+		rows = append(rows, tu.InlineKeyboardRow(t.btn2(
+			t.I18nBot("tgbot.buttons.confirmPayment", "Email=="+email, "Months=="+months),
+			t.encodeQuery("pay_ok "+email+" "+months))))
+	}
+	if len(pending) > 0 {
+		rows = append(rows, tu.InlineKeyboardRow(t.btn("tgbot.buttons.paymentNotReceived",
+			t.encodeQuery("pay_no "+pending[0]+" "+months))))
+	}
+	return append(rows, t.hideButton().InlineKeyboard...)
+}
+
+// refusePayment is the admin's "not received": it withdraws every subscription
+// still pending in the report, so no later confirm applies it, and tells the client.
+func (t *Tgbot) refusePayment(callbackQuery *telego.CallbackQuery, email, monthsText string) {
+	months, err := strconv.Atoi(monthsText)
+	if err != nil || months <= 0 {
+		t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
+		return
+	}
+	line := t.I18nBot("tgbot.messages.paymentRefusedBy", "Admin=="+userLabel(callbackQuery.From))
+	emails := t.reportEmails(email)
+	if report, ok := paymentNotices.drop(email, line); ok {
+		emails = report.emails
+		for _, notice := range report.notices {
+			t.editMessageTgBot(notice.chatID, notice.msgID, report.text, t.hideButton())
+		}
+	}
+	refused := false
+	for _, pending := range emails {
+		billing, err := t.clientService.GetBillingByEmail(pending)
+		if err != nil {
+			continue
+		}
+		claimed, err := t.clientService.ClaimPendingPayment(billing.ClientId, months)
+		if err != nil {
+			logger.Warning("refusePayment:", err)
+		}
+		refused = refused || claimed
+	}
+	if !refused {
+		t.retireStaleConfirm(callbackQuery)
+		t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.paymentAlreadyConfirmed", "Email=="+email))
+		return
+	}
+	logger.Infof("tgbot: admin %s refused a %d mo report for %s", userLabel(callbackQuery.From), months, strings.Join(emails, ", "))
+	if tgID := t.clientTgID(email); tgID != 0 {
+		paymentReports.forget(tgID)
+		t.sendNotice(tgID, t.I18nBot("tgbot.messages.paymentNotReceived", "Months=="+monthsText))
+	}
+	t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.successfulOperation"))
+}
+
+// reportEmails falls back, for a report sent before a restart, to every
+// subscription of the client that owns email, as reportClientPayment marked them all.
+func (t *Tgbot) reportEmails(email string) []string {
+	emails := []string{email}
+	tgID := t.clientTgID(email)
+	if tgID == 0 {
+		return emails
+	}
+	if traffics, err := t.inboundService.GetClientTrafficTgBot(tgID); err == nil {
+		for _, traffic := range traffics {
+			if traffic.Email != email {
+				emails = append(emails, traffic.Email)
+			}
+		}
+	}
+	return emails
 }
 
 // restorePendingPayment re-arms a claimed report whose term was not applied, so an admin can retry it.
