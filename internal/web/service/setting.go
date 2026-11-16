@@ -261,6 +261,7 @@ var defaultValueMap = map[string]string{
 
 	// Event bus — per-subscriber event filtering (empty = all disabled)
 	"tgEnabledEvents":   "login.attempt,cpu.high,memory.high,speed.low,speed.drop,master.leader",
+	"tgEventRecipients": "{}",
 	"smtpEnabledEvents": "login.attempt,cpu.high",
 	"smtpCpu":           "80",
 	"smtpMemory":        "80",
@@ -1895,6 +1896,15 @@ func (s *SettingService) UpdateAllSetting(allSetting *entity.AllSetting, clears 
 	default:
 		return errors.New("subscription profile mode must be none, builtin, or custom")
 	}
+	recipients, err := parseTgEventRecipients(allSetting.TgEventRecipients)
+	if err != nil {
+		return err
+	}
+	normalized, err := json.Marshal(recipients)
+	if err != nil {
+		return err
+	}
+	allSetting.TgEventRecipients = string(normalized)
 	if err := s.preserveRedactedSecrets(allSetting, clears); err != nil {
 		return err
 	}

@@ -3,12 +3,14 @@ package tgbot
 import (
 	"fmt"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
 	"unicode"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/eventbus"
+	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 )
 
 var cachedHostname string
@@ -39,8 +41,18 @@ func (t *Tgbot) HandleEvent(e eventbus.Event) {
 	if msg == "" {
 		return
 	}
-	for _, adminID := range adminSnapshot() {
-		t.liveNotice(adminID, kind, msg)
+	recipients := adminSnapshot()
+	chats, err := t.settingService.TgEventChats(string(e.Type))
+	if err != nil {
+		logger.Warning("telegram event recipients:", err)
+	}
+	for _, chatID := range chats {
+		if !slices.Contains(recipients, chatID) {
+			recipients = append(recipients, chatID)
+		}
+	}
+	for _, chatID := range recipients {
+		t.liveNotice(chatID, kind, msg)
 	}
 }
 

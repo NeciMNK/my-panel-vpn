@@ -170,6 +170,7 @@ export class AllSetting {
   ldapDefaultExpiryDays = 0;
   ldapDefaultLimitIP = 0;
   tgEnabledEvents = 'login.attempt,cpu.high,memory.high,speed.low,speed.drop,master.leader';
+  tgEventRecipients = '{}';
   smtpEnable = false;
   smtpHost = '';
   smtpPort = 587;

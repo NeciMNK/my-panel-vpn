@@ -9,6 +9,7 @@ import {
 import type { AllSetting } from '@/models/setting';
 import { NotificationLayout } from './NotificationLayout';
 import { NotificationGroup } from './NotificationGroup';
+import { TelegramEventRecipients } from './TelegramEventRecipients';
 import type { NotificationGroupConfig } from './types';
 
 const GROUPS: NotificationGroupConfig[] = [
@@ -141,18 +142,26 @@ export function TelegramNotifications({ allSetting, updateSetting }: Props) {
   }
 
   return (
-    <NotificationLayout>
-      {GROUPS.map((group, i) => (
-        <NotificationGroup
-          key={i}
-          config={group}
-          selected={selected}
-          onToggle={toggle}
-          onToggleAll={toggleAll}
-          allSetting={allSetting}
-          updateSetting={updateSetting}
-        />
-      ))}
-    </NotificationLayout>
+    <>
+      <NotificationLayout>
+        {GROUPS.map((group, i) => (
+          <NotificationGroup
+            key={i}
+            config={group}
+            selected={selected}
+            onToggle={toggle}
+            onToggleAll={toggleAll}
+            allSetting={allSetting}
+            updateSetting={updateSetting}
+          />
+        ))}
+      </NotificationLayout>
+      <TelegramEventRecipients
+        groups={GROUPS}
+        selected={selected}
+        value={allSetting.tgEventRecipients}
+        onChange={(next) => updateSetting({ tgEventRecipients: next })}
+      />
+    </>
   );
 }

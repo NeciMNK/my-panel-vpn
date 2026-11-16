@@ -57,6 +57,8 @@ type AllSetting struct {
 	TgMemory         int    `json:"tgMemory" form:"tgMemory" validate:"gte=0,lte=100"`
 	TgLang           string `json:"tgLang" form:"tgLang"`
 	TgEnabledEvents  string `json:"tgEnabledEvents" form:"tgEnabledEvents"`
+	// TgEventRecipients maps an event type to the client groups and emails whose Telegram chats also get it.
+	TgEventRecipients string `json:"tgEventRecipients" form:"tgEventRecipients"`
 	// Prices and discounts are edited on the Finance page (LedgerService.SavePayment), not here.
 	TgFreePlanEnable bool `json:"tgFreePlanEnable" form:"tgFreePlanEnable"`
 	TgFreePlanGB     int  `json:"tgFreePlanGB" form:"tgFreePlanGB" validate:"gte=1,lte=100000"`

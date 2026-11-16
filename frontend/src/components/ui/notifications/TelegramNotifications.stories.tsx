@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+import { keys } from '@/api/queryKeys';
 
 import { AllSetting } from '@/models/setting';
 import { TelegramNotifications } from './TelegramNotifications';
@@ -13,7 +16,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Grid of event-group cards (outbound, Xray, node, system, security) that pick which panel events the Telegram bot reports, with per-group select-all and CPU/RAM threshold inputs. Used on the settings page Telegram tab to edit `tgEnabledEvents`.',
+          'Grid of event-group cards (outbound, Xray, node, system, security) that pick which panel events the Telegram bot reports, with per-group select-all and CPU/RAM threshold inputs. Below them, each enabled event (except login alerts) can also go to chosen client groups and clients. Used on the settings page Telegram tab to edit `tgEnabledEvents` and `tgEventRecipients`.',
       },
     },
   },
@@ -33,13 +36,28 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
+const CLIENTS = [
+  { email: 'anna', group: 'paid' },
+  { email: 'boris', group: 'friends' },
+  { email: 'vera', group: 'friends' },
+];
+
 function Demo({ initial }: { initial: AllSetting }) {
   const [settings, setSettings] = useState(initial);
+  const [client] = useState(() => {
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false, staleTime: Infinity } },
+    });
+    qc.setQueryData(keys.clients.all(), CLIENTS);
+    return qc;
+  });
   return (
-    <TelegramNotifications
-      allSetting={settings}
-      updateSetting={(patch) => setSettings((prev) => new AllSetting({ ...prev, ...patch }))}
-    />
+    <QueryClientProvider client={client}>
+      <TelegramNotifications
+        allSetting={settings}
+        updateSetting={(patch) => setSettings((prev) => new AllSetting({ ...prev, ...patch }))}
+      />
+    </QueryClientProvider>
   );
 }
 
@@ -64,6 +82,7 @@ export const TypicalMonitoring: Story = {
           tgEnabledEvents: 'xray.crash,node.down,cpu.high,memory.high,login.attempt',
           tgCpu: 85,
           tgMemory: 90,
+          tgEventRecipients: '{"node.down":{"groups":["friends"],"clients":["anna"]}}',
         })
       }
     />

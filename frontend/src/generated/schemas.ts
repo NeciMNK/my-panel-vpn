@@ -600,6 +600,10 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgEnabledEvents": {
         "type": "string"
       },
+      "tgEventRecipients": {
+        "description": "TgEventRecipients maps an event type to the client groups and emails whose Telegram chats also get it.",
+        "type": "string"
+      },
       "tgFreePlanEnable": {
         "description": "Prices and discounts are edited on the Finance page (LedgerService.SavePayment), not here.",
         "type": "boolean"
@@ -853,6 +857,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgBotVpnFallback",
       "tgCpu",
       "tgEnabledEvents",
+      "tgEventRecipients",
       "tgFreePlanEnable",
       "tgFreePlanGB",
       "tgFreePlanInbounds",
@@ -1439,6 +1444,10 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgEnabledEvents": {
         "type": "string"
       },
+      "tgEventRecipients": {
+        "description": "TgEventRecipients maps an event type to the client groups and emails whose Telegram chats also get it.",
+        "type": "string"
+      },
       "tgFreePlanEnable": {
         "description": "Prices and discounts are edited on the Finance page (LedgerService.SavePayment), not here.",
         "type": "boolean"
@@ -1701,6 +1710,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgBotVpnFallback",
       "tgCpu",
       "tgEnabledEvents",
+      "tgEventRecipients",
       "tgFreePlanEnable",
       "tgFreePlanGB",
       "tgFreePlanInbounds",
