@@ -301,30 +301,31 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 // node/xray state is unchanged, and export per-job duration/skipped/error
 // counters.
 const (
-	cadenceXrayRunning   = "@every 1s"
-	cadenceXrayRestart   = "@every 30s"
-	cadenceXrayTraffic   = "@every 5s"
-	cadenceMtproto       = "@every 10s"
-	cadenceAmneziaWG     = "@every 10s"
-	cadenceTuic          = "@every 10s"
-	cadenceClientIPScan  = "@every 10s"
-	cadenceNodeHeartbeat = "@every 5s"
-	cadenceNodeTraffic   = "@every 5s"
-	cadenceOutboundSub   = "@every 5m"
-	cadenceReapOrphans   = "@every 5m"
-	cadenceRemoteRouting = "@every 5m"
-	cadenceTgVpnFallback = "@every 2m"
-	cadencePanelProxyPin = "@every 15s"
-	cadenceCascadeSticky = "@every 15s"
-	cadenceHomeNetwork   = "@every 1m"
-	cadenceSpeed         = "@every 30s"
-	cadenceShaping       = "@every 5s"
-	cadenceSpeedTest     = "@every 1m"
-	cadenceMasterBeat    = "@every 5s"
-	cadenceXrayLogPrune  = "@every 10m"
-	cadenceTlsCertRenew  = "@every 1h"
-	cadenceCheckHash     = "@every 2m"
-	cadencePaymentOrders = "@every 15s"
+	cadenceXrayRunning    = "@every 1s"
+	cadenceXrayRestart    = "@every 30s"
+	cadenceXrayTraffic    = "@every 5s"
+	cadenceMtproto        = "@every 10s"
+	cadenceAmneziaWG      = "@every 10s"
+	cadenceTuic           = "@every 10s"
+	cadenceClientIPScan   = "@every 10s"
+	cadenceNodeHeartbeat  = "@every 5s"
+	cadenceNodeTraffic    = "@every 5s"
+	cadenceOutboundSub    = "@every 5m"
+	cadenceReapOrphans    = "@every 5m"
+	cadenceRemoteRouting  = "@every 5m"
+	cadenceTgVpnFallback  = "@every 2m"
+	cadencePanelProxyPin  = "@every 15s"
+	cadenceCascadeSticky  = "@every 15s"
+	cadenceSubEdgeTunnels = "@every 15s"
+	cadenceHomeNetwork    = "@every 1m"
+	cadenceSpeed          = "@every 30s"
+	cadenceShaping        = "@every 5s"
+	cadenceSpeedTest      = "@every 1m"
+	cadenceMasterBeat     = "@every 5s"
+	cadenceXrayLogPrune   = "@every 10m"
+	cadenceTlsCertRenew   = "@every 1h"
+	cadenceCheckHash      = "@every 2m"
+	cadencePaymentOrders  = "@every 15s"
 	// cpu.Percent samples over a full minute (blocking), so a finer cadence just
 	// stacks overlapping samplers; subscribers rate-limit alerts to 1/min anyway.
 	cadenceCPUAlarm    = "@every 1m"
@@ -380,6 +381,7 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	_, _ = s.cron.AddJob(cadenceReapOrphans, job.LeaderOnly(job.NewReapSyncOrphansJob()))
 
 	_, _ = s.cron.AddJob(cadenceCascadeSticky, job.LeaderOnly(job.NewCascadeStickyJob()))
+	_, _ = s.cron.AddJob(cadenceSubEdgeTunnels, job.NewSubEdgeTunnelJob())
 	_, _ = s.cron.AddJob(cadenceHomeNetwork, job.LeaderOnly(job.NewHomeNetworkJob()))
 	_, _ = s.cron.AddJob(cadenceTgVpnFallback, job.LeaderOnly(job.NewTgVpnFallbackJob()))
 	// Every master runs its own Xray, so each pins its own panel proxy exit.
@@ -610,6 +612,7 @@ func (s *Server) start(restartXray bool, startTgBot bool) (err error) {
 	if err != nil {
 		return err
 	}
+	s.settingService.ApplySavedSubEdge()
 
 	certFile, err := s.settingService.GetCertFile()
 	if err != nil {
@@ -823,6 +826,8 @@ func (s *Server) StopPanelOnly() error {
 
 func (s *Server) stop(stopXray bool, stopTgBot bool) error {
 	s.cancel()
+	service.StopSubEdgeTunnels()
+	service.SubEdgeNode().Stop()
 	var err1 error
 	var err2 error
 	if s.httpServer != nil {

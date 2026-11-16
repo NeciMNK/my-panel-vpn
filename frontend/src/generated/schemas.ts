@@ -4519,6 +4519,34 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "ListenerConfig": {
+    "description": "ListenerConfig is what a master tells a node about its edge listener. Empty cert\nfiles serve plain HTTP, for an edge behind the admin's own TLS proxy.",
+    "properties": {
+      "certFile": {
+        "example": "/etc/x-ui/certs/sub.example.com/fullchain.pem",
+        "type": "string"
+      },
+      "enable": {
+        "example": true,
+        "type": "boolean"
+      },
+      "keyFile": {
+        "example": "/etc/x-ui/certs/sub.example.com/privkey.pem",
+        "type": "string"
+      },
+      "port": {
+        "example": 443,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "certFile",
+      "enable",
+      "keyFile",
+      "port"
+    ],
+    "type": "object"
+  },
   "LogEntry": {
     "properties": {
       "DateTime": {
@@ -6241,6 +6269,98 @@ export const SCHEMAS: Record<string, unknown> = {
       "sortOrder",
       "strategy",
       "updatedAt"
+    ],
+    "type": "object"
+  },
+  "SubEdge": {
+    "description": "SubEdge makes a node serve this panel's subscriptions on its own port: every\nmaster keeps a tunnel to the node and the node forwards requests through it.",
+    "properties": {
+      "certId": {
+        "description": "CertId is the panel-managed certificate the edge serves; 0 serves plain HTTP.",
+        "example": 1,
+        "type": "integer"
+      },
+      "createdAt": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "enable": {
+        "example": true,
+        "type": "boolean"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "lastError": {
+        "type": "string"
+      },
+      "lastSeen": {
+        "example": 1762736400,
+        "format": "int64",
+        "type": "integer"
+      },
+      "nodeId": {
+        "example": 2,
+        "type": "integer"
+      },
+      "port": {
+        "example": 443,
+        "type": "integer"
+      },
+      "status": {
+        "description": "Status is online while this master's tunnel to the node is up.",
+        "example": "online",
+        "type": "string"
+      },
+      "updatedAt": {
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "certId",
+      "createdAt",
+      "enable",
+      "id",
+      "lastError",
+      "lastSeen",
+      "nodeId",
+      "port",
+      "status",
+      "updatedAt"
+    ],
+    "type": "object"
+  },
+  "SubEdgeRequest": {
+    "description": "SubEdgeRequest is the admin's add/update body for an edge node.",
+    "properties": {
+      "certId": {
+        "example": 1,
+        "minimum": 0,
+        "type": "integer"
+      },
+      "enable": {
+        "example": true,
+        "type": "boolean"
+      },
+      "nodeId": {
+        "example": 2,
+        "minimum": 1,
+        "type": "integer"
+      },
+      "port": {
+        "example": 443,
+        "maximum": 65535,
+        "minimum": 1,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "certId",
+      "enable",
+      "nodeId",
+      "port"
     ],
     "type": "object"
   },

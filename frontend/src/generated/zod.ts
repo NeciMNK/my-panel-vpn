@@ -1083,6 +1083,14 @@ export const LedgerServerDueSchema = z.object({
 });
 export type LedgerServerDue = z.infer<typeof LedgerServerDueSchema>;
 
+export const ListenerConfigSchema = z.object({
+  certFile: z.string(),
+  enable: z.boolean(),
+  keyFile: z.string(),
+  port: z.number().int(),
+});
+export type ListenerConfig = z.infer<typeof ListenerConfigSchema>;
+
 export const LogEntrySchema = z.object({
   DateTime: z.string(),
   Email: z.string(),
@@ -1494,6 +1502,28 @@ export const SubBalancerSchema = z.object({
   updatedAt: z.number().int(),
 });
 export type SubBalancer = z.infer<typeof SubBalancerSchema>;
+
+export const SubEdgeSchema = z.object({
+  certId: z.number().int(),
+  createdAt: z.number().int(),
+  enable: z.boolean(),
+  id: z.number().int(),
+  lastError: z.string(),
+  lastSeen: z.number().int(),
+  nodeId: z.number().int(),
+  port: z.number().int(),
+  status: z.string(),
+  updatedAt: z.number().int(),
+});
+export type SubEdge = z.infer<typeof SubEdgeSchema>;
+
+export const SubEdgeRequestSchema = z.object({
+  certId: z.number().int().min(0),
+  enable: z.boolean(),
+  nodeId: z.number().int().min(1),
+  port: z.number().int().min(1).max(65535),
+});
+export type SubEdgeRequest = z.infer<typeof SubEdgeRequestSchema>;
 
 export const TgBotCapabilitiesSchema = z.object({
   groupPrivacy: z.boolean(),

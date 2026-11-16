@@ -4545,6 +4545,34 @@
         ],
         "type": "object"
       },
+      "ListenerConfig": {
+        "description": "ListenerConfig is what a master tells a node about its edge listener. Empty cert\nfiles serve plain HTTP, for an edge behind the admin's own TLS proxy.",
+        "properties": {
+          "certFile": {
+            "example": "/etc/x-ui/certs/sub.example.com/fullchain.pem",
+            "type": "string"
+          },
+          "enable": {
+            "example": true,
+            "type": "boolean"
+          },
+          "keyFile": {
+            "example": "/etc/x-ui/certs/sub.example.com/privkey.pem",
+            "type": "string"
+          },
+          "port": {
+            "example": 443,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "certFile",
+          "enable",
+          "keyFile",
+          "port"
+        ],
+        "type": "object"
+      },
       "LogEntry": {
         "properties": {
           "DateTime": {
@@ -6270,6 +6298,98 @@
         ],
         "type": "object"
       },
+      "SubEdge": {
+        "description": "SubEdge makes a node serve this panel's subscriptions on its own port: every\nmaster keeps a tunnel to the node and the node forwards requests through it.",
+        "properties": {
+          "certId": {
+            "description": "CertId is the panel-managed certificate the edge serves; 0 serves plain HTTP.",
+            "example": 1,
+            "type": "integer"
+          },
+          "createdAt": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "enable": {
+            "example": true,
+            "type": "boolean"
+          },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "lastError": {
+            "type": "string"
+          },
+          "lastSeen": {
+            "example": 1762736400,
+            "format": "int64",
+            "type": "integer"
+          },
+          "nodeId": {
+            "example": 2,
+            "type": "integer"
+          },
+          "port": {
+            "example": 443,
+            "type": "integer"
+          },
+          "status": {
+            "description": "Status is online while this master's tunnel to the node is up.",
+            "example": "online",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "certId",
+          "createdAt",
+          "enable",
+          "id",
+          "lastError",
+          "lastSeen",
+          "nodeId",
+          "port",
+          "status",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "SubEdgeRequest": {
+        "description": "SubEdgeRequest is the admin's add/update body for an edge node.",
+        "properties": {
+          "certId": {
+            "example": 1,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "enable": {
+            "example": true,
+            "type": "boolean"
+          },
+          "nodeId": {
+            "example": 2,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "port": {
+            "example": 443,
+            "maximum": 65535,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "certId",
+          "enable",
+          "nodeId",
+          "port"
+        ],
+        "type": "object"
+      },
       "TgBotCapabilities": {
         "description": "TgBotCapabilities is the browser-safe shape of the bot's own capabilities.",
         "properties": {
@@ -6692,6 +6812,10 @@
     {
       "name": "Cascades",
       "description": "Entry → exit server chains. The panel provisions a hidden VLESS+REALITY inbound on every exit and an outbound plus routing rules (or a balancer for several exits) on the entry. Node id 0 means this panel. Exits are either listed in exitNodeIds or picked by country: exitCountry \"DE\" makes every enabled node of that country (except the entry) an exit, and the list is re-resolved whenever a node is added, removed, disabled or moved to another country. Sticky sessions are always on for a cascade with several exits; there is no switch. Every 15 seconds each newly online user is pinned to the least-loaded healthy exit that still has their minMbps free (/panel/api/speed); the pin keeps them on that exit, so on that IP, while they stay connected and for 15 minutes after they go offline. A pin is dropped at once when its exit goes offline (the user moves to another exit), when the user connects to a different server themselves, or when the admin pins them with /cascades/fixedExits. strategy only spreads traffic that has no pin yet. Modes: split (default) sends the entry country’s own sites (its TLDs, geoip and geosite list, Russia when the entry has no country) plus directDomains/directIps straight out of the entry and the rest to the exit; relay sends everything to the exit; both runs split on entryInboundTags and relay on relayInboundTags. All endpoints under /panel/api/cascades."
+    },
+    {
+      "name": "Subscription edges",
+      "description": "Nodes that serve this panel’s subscriptions on their own port, so the master’s subscription server needs no public address. Every master keeps a tunnel to each enabled edge over the node’s API connection; the edge forwards each request to the highest-priority master that answers without a server error, and answers 503 while no master is reachable. certId names a panel-managed certificate (/panel/api/certs) that the panel has already pushed to the node; 0 serves plain HTTP. Point the subscription domain’s DNS at the edge nodes and set subURI to it. All endpoints under /panel/api/subEdges."
     },
     {
       "name": "Home networks",
@@ -13553,6 +13677,312 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/subEdges/list": {
+      "get": {
+        "tags": [
+          "Subscription edges"
+        ],
+        "summary": "List every subscription edge with the state of this master’s tunnel to it.",
+        "operationId": "get_panel_api_subEdges_list",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SubEdge"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "certId": 1,
+                      "createdAt": 0,
+                      "enable": true,
+                      "id": 1,
+                      "lastError": "",
+                      "lastSeen": 1762736400,
+                      "nodeId": 2,
+                      "port": 443,
+                      "status": "online",
+                      "updatedAt": 0
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/subEdges/add": {
+      "post": {
+        "tags": [
+          "Subscription edges"
+        ],
+        "summary": "Make a node a subscription edge: the node starts its edge listener and every master opens a tunnel to it. One edge per node.",
+        "operationId": "post_panel_api_subEdges_add",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubEdgeRequest"
+              },
+              "example": {
+                "nodeId": 2,
+                "enable": true,
+                "port": 443,
+                "certId": 1
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/SubEdge"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "certId": 1,
+                    "createdAt": 0,
+                    "enable": true,
+                    "id": 1,
+                    "lastError": "",
+                    "lastSeen": 1762736400,
+                    "nodeId": 2,
+                    "port": 443,
+                    "status": "online",
+                    "updatedAt": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/subEdges/update/{id}": {
+      "post": {
+        "tags": [
+          "Subscription edges"
+        ],
+        "summary": "Replace an edge’s node, port, certificate or switch. Moving it to another node stops the listener on the old one.",
+        "operationId": "post_panel_api_subEdges_update_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Edge ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubEdgeRequest"
+              },
+              "example": {
+                "nodeId": 2,
+                "enable": true,
+                "port": 8443,
+                "certId": 1
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/SubEdge"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "certId": 1,
+                    "createdAt": 0,
+                    "enable": true,
+                    "id": 1,
+                    "lastError": "",
+                    "lastSeen": 1762736400,
+                    "nodeId": 2,
+                    "port": 443,
+                    "status": "online",
+                    "updatedAt": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/subEdges/del/{id}": {
+      "post": {
+        "tags": [
+          "Subscription edges"
+        ],
+        "summary": "Stop the edge listener on the node and close the tunnels to it.",
+        "operationId": "post_panel_api_subEdges_del_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Edge ID.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/subEdges/node/configure": {
+      "post": {
+        "tags": [
+          "Subscription edges"
+        ],
+        "summary": "Node side: start, move or stop this node’s edge listener. The certificate files must be under the node’s certificate folder. Allowed for node-sync tokens.",
+        "operationId": "post_panel_api_subEdges_node_configure",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ListenerConfig"
+              },
+              "example": {
+                "enable": true,
+                "port": 443,
+                "certFile": "/etc/x-ui/certs/sub.example.com/fullchain.pem",
+                "keyFile": "/etc/x-ui/certs/sub.example.com/privkey.pem"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/subEdges/node/tunnel": {
+      "post": {
+        "tags": [
+          "Subscription edges"
+        ],
+        "summary": "Node side: a master upgrades this request (Connection: Upgrade, Upgrade: x-ui-sub-edge/1) into the tunnel the edge forwards subscription requests through. Answers 101 Switching Protocols. Allowed for node-sync tokens.",
+        "operationId": "post_panel_api_subEdges_node_tunnel",
         "responses": {
           "200": {
             "description": "Successful response",

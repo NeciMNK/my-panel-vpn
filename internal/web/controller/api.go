@@ -125,6 +125,8 @@ var nodeSyncScopeAllow = map[string]map[string]struct{}{
 	"/clients/clientIpsByGuid":     {http.MethodPost: {}},
 	"/hosts/list":                  {http.MethodGet: {}},
 	"/certs/install":               {http.MethodPost: {}},
+	"/subEdges/node/configure":     {http.MethodPost: {}},
+	"/subEdges/node/tunnel":        {http.MethodPost: {}},
 }
 
 // nodeXrayScopeAllow lets a master manage a node's Xray template (outbounds,
@@ -255,6 +257,7 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	a.nodeController = NewNodeController(nodes)
 
 	NewCascadeController(api.Group("/cascades"))
+	NewSubEdgeController(api.Group("/subEdges"))
 	NewHomeNetworkController(api.Group("/homeNetworks"))
 	NewWarpSwitchController(api.Group("/warpSwitch"))
 	NewSpeedController(api.Group("/speed"))

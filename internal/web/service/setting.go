@@ -205,6 +205,7 @@ var defaultValueMap = map[string]string{
 	"subPort":                     "2096",
 	"subPath":                     "/sub/",
 	"subPathAliases":              "",
+	"subEdgeNode":                 "",
 	"subDomain":                   "",
 	"subCertFile":                 "",
 	"subKeyFile":                  "",

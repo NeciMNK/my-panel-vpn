@@ -1,6 +1,7 @@
 package web
 
 import (
+	"bufio"
 	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
@@ -9,7 +10,9 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
+	"io"
 	"math/big"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -28,6 +31,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/dbtest"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/subedge"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/crypto"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/global"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/runtime"
@@ -86,6 +90,11 @@ type statusRecorder struct {
 func (r *statusRecorder) WriteHeader(code int) {
 	r.status = code
 	r.ResponseWriter.WriteHeader(code)
+}
+
+// Hijack lets the sub edge tunnel take over the connection, as on a real node.
+func (r *statusRecorder) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	return http.NewResponseController(r.ResponseWriter).Hijack()
 }
 
 func (n *nodeUnderContract) takeRefused() []string {
@@ -343,6 +352,32 @@ func TestMasterNodeContract(t *testing.T) {
 					}
 					return nil
 				}, nil},
+				{"a subscription edge on the node forwards through the master's tunnel", []string{"ConfigureSubEdge", "OpenSubEdgeTunnel"}, func() error {
+					port := contractFreePort(t)
+					if err := master.ConfigureSubEdge(ctx, subedge.ListenerConfig{Enable: true, Port: port}); err != nil {
+						return err
+					}
+					defer func() { _ = master.ConfigureSubEdge(ctx, subedge.ListenerConfig{}) }()
+					conn, err := master.OpenSubEdgeTunnel(ctx, subedge.Master{Name: "master-1", Priority: 1})
+					if err != nil {
+						return err
+					}
+					tctx, stop := context.WithCancel(ctx)
+					defer stop()
+					go subedge.ServeTunnel(tctx, conn, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						fmt.Fprint(w, "master answered "+r.URL.Path)
+					}))
+					resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/sub/abc", port))
+					if err != nil {
+						return err
+					}
+					defer resp.Body.Close()
+					body, _ := io.ReadAll(resp.Body)
+					if resp.StatusCode != http.StatusOK || string(body) != "master answered /sub/abc" {
+						return fmt.Errorf("edge answered %d %q", resp.StatusCode, body)
+					}
+					return nil
+				}, nil},
 				{"RestartXray is accepted by the node", []string{"RestartXray"}, func() error {
 					// No core binary here: only the node's own restart failure may come back.
 					if err := master.RestartXray(ctx); err != nil && !strings.Contains(err.Error(), "rebooting the Xray") {
@@ -445,4 +480,14 @@ func contractCertPair(t *testing.T) (certPEM, keyPEM []byte) {
 	}
 	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}),
 		pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER})
+}
+
+func contractFreePort(t *testing.T) int {
+	t.Helper()
+	l, err := (&net.ListenConfig{}).Listen(context.Background(), "tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer l.Close()
+	return l.Addr().(*net.TCPAddr).Port
 }

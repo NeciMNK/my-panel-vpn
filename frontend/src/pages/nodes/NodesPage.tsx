@@ -35,6 +35,7 @@ import NodeList from './NodeList';
 import NodeFormModal from './NodeFormModal';
 import NodeJoinModal from './NodeJoinModal';
 import CascadesCard from './CascadesCard';
+import SubEdgesCard from './SubEdgesCard';
 import HomeNetworksCard from './HomeNetworksCard';
 import WarpSwitchCard from './WarpSwitchCard';
 import SpeedCard from './SpeedCard';
@@ -391,6 +392,10 @@ export default function NodesPage() {
 
                   <Col span={24}>
                     <CascadesCard nodes={nodes} />
+                  </Col>
+
+                  <Col span={24}>
+                    <SubEdgesCard nodes={nodes} />
                   </Col>
 
                   <Col span={24}>

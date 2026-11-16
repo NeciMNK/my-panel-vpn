@@ -1816,6 +1816,62 @@ export const sections: readonly Section[] = [
   },
 
   {
+    id: 'sub-edges',
+    title: 'Subscription edges',
+    description:
+      'Nodes that serve this panel\u2019s subscriptions on their own port, so the master\u2019s subscription server needs no public address. Every master keeps a tunnel to each enabled edge over the node\u2019s API connection; the edge forwards each request to the highest-priority master that answers without a server error, and answers 503 while no master is reachable. ' +
+      'certId names a panel-managed certificate (/panel/api/certs) that the panel has already pushed to the node; 0 serves plain HTTP. Point the subscription domain\u2019s DNS at the edge nodes and set subURI to it. All endpoints under /panel/api/subEdges.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/subEdges/list',
+        summary: 'List every subscription edge with the state of this master\u2019s tunnel to it.',
+        responseSchema: 'SubEdge',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/subEdges/add',
+        summary:
+          'Make a node a subscription edge: the node starts its edge listener and every master opens a tunnel to it. One edge per node.',
+        body: '{\n  "nodeId": 2,\n  "enable": true,\n  "port": 443,\n  "certId": 1\n}',
+        requestSchema: { $ref: '#/components/schemas/SubEdgeRequest' },
+        responseSchema: 'SubEdge',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/subEdges/update/:id',
+        summary:
+          'Replace an edge\u2019s node, port, certificate or switch. Moving it to another node stops the listener on the old one.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Edge ID.' }],
+        body: '{\n  "nodeId": 2,\n  "enable": true,\n  "port": 8443,\n  "certId": 1\n}',
+        requestSchema: { $ref: '#/components/schemas/SubEdgeRequest' },
+        responseSchema: 'SubEdge',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/subEdges/del/:id',
+        summary: 'Stop the edge listener on the node and close the tunnels to it.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Edge ID.' }],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/subEdges/node/configure',
+        summary:
+          'Node side: start, move or stop this node\u2019s edge listener. The certificate files must be under the node\u2019s certificate folder. Allowed for node-sync tokens.',
+        body: '{\n  "enable": true,\n  "port": 443,\n  "certFile": "/etc/x-ui/certs/sub.example.com/fullchain.pem",\n  "keyFile": "/etc/x-ui/certs/sub.example.com/privkey.pem"\n}',
+        requestSchema: { $ref: '#/components/schemas/ListenerConfig' },
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/subEdges/node/tunnel',
+        summary:
+          'Node side: a master upgrades this request (Connection: Upgrade, Upgrade: x-ui-sub-edge/1) into the tunnel the edge forwards subscription requests through. Answers 101 Switching Protocols. Allowed for node-sync tokens.',
+      },
+    ],
+  },
+
+  {
     id: 'home-networks',
     title: 'Home networks',
     description:

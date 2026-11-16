@@ -25,6 +25,7 @@ func run(root, outDir string) error {
 			Path: resolveRel(root, "internal/database/model"),
 			StructAllow: setOf(
 				"Cascade",
+				"SubEdge",
 				"CascadeLink",
 				"CascadeFixedExit",
 				"HomeNetwork",
@@ -148,6 +149,7 @@ func run(root, outDir string) error {
 				"AIDomainsView",
 				"CascadeRequest",
 				"CascadeFixedExitRequest",
+				"SubEdgeRequest",
 			),
 		},
 		{
@@ -161,6 +163,10 @@ func run(root, outDir string) error {
 		{
 			Path:        resolveRel(root, "internal/web/controller"),
 			StructAllow: setOf("TgBotCapabilities"),
+		},
+		{
+			Path:        resolveRel(root, "internal/subedge"),
+			StructAllow: setOf("ListenerConfig"),
 		},
 		{
 			Path:        resolveRel(root, "internal/amneziawg"),
