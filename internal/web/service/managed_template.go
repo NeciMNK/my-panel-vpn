@@ -18,7 +18,7 @@ import (
 
 // Everything this fork writes into an Xray template carries a tag that starts
 // with managedTagPrefix, so a feature can strip and rewrite only its own part.
-const managedTagPrefix = "mp-"
+const managedTagPrefix = model.ManagedClientPrefix
 
 // excludeServiceClients hides the panel's own link clients from client lists:
 // they belong to cascades and home links, and attaching them breaks bulk ops.

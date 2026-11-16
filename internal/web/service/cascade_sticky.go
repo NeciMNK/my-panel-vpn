@@ -213,8 +213,8 @@ func cascadeOnline(entryNodeID int, byGuid map[string][]string, guidOf map[int]s
 	return here, elsewhere
 }
 
-// appliedAIRules is the AI rule set last written per cascade; empty after a
-// restart, so the first pass rewrites each entry once. Guarded by cascadeMu.
+// appliedAIRules is the AI rule set last written per cascade; empty after a restart,
+// so the first pass rewrites every entry once, single-exit too. Guarded by cascadeMu.
 var appliedAIRules = map[int]string{}
 
 // StickCascadeUsers keeps every online user of a multi-exit cascade on one exit
@@ -272,6 +272,10 @@ func (s *CascadeService) StickCascadeUsers(ctx context.Context) {
 			continue
 		}
 		if len(c.Links) < 2 && len(old) == 0 {
+			if _, written := appliedAIRules[c.Id]; !written {
+				appliedAIRules[c.Id] = ""
+				s.rewriteStickyEntry(ctx, c)
+			}
 			continue
 		}
 		view := stickyView{Now: now, Healthy: healthy, FreeMbps: free, MinMbps: mins}
@@ -293,8 +297,12 @@ func (s *CascadeService) StickCascadeUsers(ctx context.Context) {
 		if !changed {
 			continue
 		}
-		if err := s.rewriteEntry(ctx, c.EntryNodeId, c, true); err != nil {
-			logger.Warning("cascade", c.Id, ": apply pins on", nodeLabel(c.EntryNodeId), ":", err)
-		}
+		s.rewriteStickyEntry(ctx, c)
+	}
+}
+
+func (s *CascadeService) rewriteStickyEntry(ctx context.Context, c *model.Cascade) {
+	if err := s.rewriteEntry(ctx, c.EntryNodeId, c, true); err != nil {
+		logger.Warning("cascade", c.Id, ": apply pins on", nodeLabel(c.EntryNodeId), ":", err)
 	}
 }
