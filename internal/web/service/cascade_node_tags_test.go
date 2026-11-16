@@ -20,7 +20,7 @@ func TestCascadeRulesOnANodeUseTheNodesInboundTags(t *testing.T) {
 		Links:            []model.CascadeLink{{NodeId: 2}, {NodeId: 5}},
 	}
 	pins := []model.CascadePin{{CascadeId: 4, NodeId: 2, Email: "a@x"}}
-	applyCascadeToTemplate(cfg, c, 3, pins, aiExitPlan{}, cascadeZone{})
+	applyCascadeToTemplate(cfg, c, 3, pins, aiExitPlan{}, cascadeZone{Domains: []string{"domain:ru"}, IPs: []string{"geoip:ru"}})
 
 	byTag := map[string][]string{}
 	for _, r := range templateRouting(cfg)["rules"].([]any) {
