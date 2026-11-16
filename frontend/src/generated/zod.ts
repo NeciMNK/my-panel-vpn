@@ -503,6 +503,12 @@ export const CascadeFixedExitSchema = z.object({
 });
 export type CascadeFixedExit = z.infer<typeof CascadeFixedExitSchema>;
 
+export const CascadeFixedExitRequestSchema = z.object({
+  email: z.string(),
+  nodeId: z.number().int(),
+});
+export type CascadeFixedExitRequest = z.infer<typeof CascadeFixedExitRequestSchema>;
+
 export const CascadeLinkSchema = z.object({
   address: z.string(),
   clientId: z.string(),
@@ -515,6 +521,21 @@ export const CascadeLinkSchema = z.object({
   shortId: z.string(),
 });
 export type CascadeLink = z.infer<typeof CascadeLinkSchema>;
+
+export const CascadeRequestSchema = z.object({
+  directDomains: z.array(z.string()),
+  directIps: z.array(z.string()),
+  enable: z.boolean(),
+  entryInboundTags: z.array(z.string()),
+  entryNodeId: z.number().int(),
+  exitCountry: z.string(),
+  exitNodeIds: z.array(z.number().int()),
+  mode: z.enum(['split', 'relay', 'both']),
+  name: z.string(),
+  relayInboundTags: z.array(z.string()),
+  strategy: z.enum(['leastPing', 'leastLoad', 'random', 'roundRobin']),
+});
+export type CascadeRequest = z.infer<typeof CascadeRequestSchema>;
 
 export const ClientSchema = z.object({
   adTag: z.string().optional(),

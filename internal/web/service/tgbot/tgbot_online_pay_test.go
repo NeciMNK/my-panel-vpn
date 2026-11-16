@@ -94,13 +94,13 @@ func TestFriendPaysByCardAndIsExtendedAutomatically(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	tb.screenClientHome(7070, 7070)
+	tap(tb, 7070, cbClientPay, false)
 	body, markup := screenMarkup(t, tb, 7070)
 	if !strings.Contains(markup, `"`+cbPayOnline+`"`) || strings.Contains(markup, `"`+cbClientPaid+`"`) {
-		t.Errorf("home should offer card payment and no manual report without details: %s", markup)
+		t.Errorf("payment screen should offer card payment and no manual report without details: %s", markup)
 	}
 	if !strings.Contains(body, "150 RUB") || !strings.Contains(body, "50%") {
-		t.Errorf("home does not show the friends price: %q", body)
+		t.Errorf("payment screen does not show the friends price: %q", body)
 	}
 
 	tap(tb, 7070, cbPayOnline, false)

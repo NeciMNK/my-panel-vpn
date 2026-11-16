@@ -473,6 +473,11 @@ export interface CascadeFixedExit {
   nodeId: number;
 }
 
+export interface CascadeFixedExitRequest {
+  email: string;
+  nodeId: number;
+}
+
 export interface CascadeLink {
   address: string;
   clientId: string;
@@ -483,6 +488,20 @@ export interface CascadeLink {
   publicKey: string;
   serverName: string;
   shortId: string;
+}
+
+export interface CascadeRequest {
+  directDomains: string[];
+  directIps: string[];
+  enable: boolean;
+  entryInboundTags: string[];
+  entryNodeId: number;
+  exitCountry: string;
+  exitNodeIds: number[];
+  mode: string;
+  name: string;
+  relayInboundTags: string[];
+  strategy: string;
 }
 
 export interface Client {

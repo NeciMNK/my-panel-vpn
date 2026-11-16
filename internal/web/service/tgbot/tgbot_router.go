@@ -389,8 +389,10 @@ func isCommandForBot(text string, username string) bool {
 func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool) {
 	chatId := callbackQuery.Message.GetChat().ID
 	actor := callbackActor(callbackQuery)
-	if data, err := t.decodeQuery(callbackQuery.Data); err == nil && t.answerOnlinePayment(callbackQuery, data) {
-		return
+	if data, err := t.decodeQuery(callbackQuery.Data); err == nil {
+		if t.answerOnlinePayment(callbackQuery, data) || t.answerOwnSubscriptionCallback(callbackQuery, data) {
+			return
+		}
 	}
 
 	// Only an admin's wizard callbacks touch a draft, so only they take its lock:
@@ -455,6 +457,12 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 					return
 				}
 				t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
+			case "pay_no":
+				if len(dataArray) == 3 {
+					t.refusePayment(callbackQuery, email, dataArray[2])
+					return
+				}
+				t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
 			case "trust":
 				t.toggleTrusted(callbackQuery, email)
 			case "friend":
@@ -499,8 +507,6 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 				t.answerSilent(callbackQuery.ID)
 			case "free_no":
 				t.declineFreePlan(callbackQuery, dataArray[1])
-			case cbClientPaid:
-				t.reportClientPayment(callbackQuery, dataArray[1])
 			case "client_get_usage":
 				t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.messages.email", "Email=="+email))
 				t.searchClientScreen(chatId, email)
@@ -1071,15 +1077,6 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 		}
 	}
 
-	if months, ok := strings.CutPrefix(callbackQuery.Data, cbClientPaid+" "); ok {
-		t.reportClientPayment(callbackQuery, months)
-		return
-	}
-	if isAIExitCallback(callbackQuery.Data) {
-		t.answerAIExit(callbackQuery)
-		return
-	}
-
 	switch callbackQuery.Data {
 	case "home":
 		t.screenHome(chatId, callbackQuery.From.ID)
@@ -1147,6 +1144,9 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 	case cbMySubscription:
 		t.answerSilent(callbackQuery.ID)
 		t.screenClientHome(chatId, callbackQuery.From.ID)
+	case cbClientPay:
+		t.answerSilent(callbackQuery.ID)
+		t.screenClientPay(chatId, callbackQuery.From.ID)
 	case cbClientPaid:
 		t.answerSilent(callbackQuery.ID)
 		t.screenPlanPicker(chatId, callbackQuery.From.ID)
@@ -1357,6 +1357,21 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 	}
 }
 
+// answerOwnSubscriptionCallback serves the caller's own "I paid" term and AI quiz taps
+// ahead of the admin switch, whose default refused an admin's own "<action> <arg>".
+func (t *Tgbot) answerOwnSubscriptionCallback(callbackQuery *telego.CallbackQuery, data string) bool {
+	if months, ok := strings.CutPrefix(data, cbClientPaid+" "); ok {
+		t.reportClientPayment(callbackQuery, months)
+		return true
+	}
+	if isAIExitCallback(data) {
+		callbackQuery.Data = data
+		t.answerAIExit(callbackQuery)
+		return true
+	}
+	return false
+}
+
 // checkAdmin checks if the given Telegram ID is an admin.
 func checkAdmin(tgId int64) bool {
 	return slices.Contains(adminSnapshot(), tgId)
@@ -1369,16 +1384,10 @@ func isClientSelfCallback(data string) bool {
 	// "hide" is how any recipient puts a message away: it carries no target of its
 	// own (it is the message it sits on), so it is safe for anyone to reach.
 	case "home", "hide", "client_traffic", "client_commands", "client_sub_links",
-		"client_individual_links", "client_qr_links", cbClientPaid, cbClientDefer:
+		"client_individual_links", "client_qr_links", cbClientPay, cbClientPaid, cbClientDefer:
 		return true
 	// Paging only turns the screen already tracked for the caller's own chat.
 	case cbPageNext, cbPagePrev, cbPageNone:
-		return true
-	}
-	if _, isReport := strings.CutPrefix(data, cbClientPaid+" "); isReport {
-		return true
-	}
-	if isAIExitCallback(data) {
 		return true
 	}
 	_, _, ok := splitClientLinkCallback(data)
