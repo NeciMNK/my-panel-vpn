@@ -195,7 +195,7 @@ func TestSplitZoneFollowsTheEntryCountry(t *testing.T) {
 func TestCascadeSplitSkipsEmptyDomainRule(t *testing.T) {
 	cfg := baseTemplate(t)
 	c := &model.Cascade{Id: 4, Mode: CascadeModeSplit, Links: []model.CascadeLink{{NodeId: 2}}}
-	applyCascadeToTemplate(cfg, c, nil, aiExitPlan{}, splitZone("DE"))
+	applyCascadeToTemplate(cfg, c, 0, nil, aiExitPlan{}, splitZone("DE"))
 	got := summaries(cascadeRules(t, cfg, 4))
 	if want := []string{"direct-ip ip ->direct", "route ->n2"}; !slices.Equal(got, want) {
 		t.Fatalf("rules = %v, want %v", got, want)

@@ -71,7 +71,7 @@ func TestCascadeSplitRoutesByServerCountry(t *testing.T) {
 
 	cfg := baseTemplate(t)
 	c := &model.Cascade{Id: 4, Mode: CascadeModeSplit, Strategy: "leastPing", Links: []model.CascadeLink{{NodeId: 2}}}
-	applyCascadeToTemplate(cfg, c, nil, aiExitPlan{}, splitZone("RU"))
+	applyCascadeToTemplate(cfg, c, 0, nil, aiExitPlan{}, splitZone("RU"))
 	raw, err := json.Marshal(templateRouting(cfg))
 	if err != nil {
 		t.Fatal(err)
@@ -134,7 +134,7 @@ func TestStickyPassRewritesSingleExitEntriesOnceAfterRestart(t *testing.T) {
 		t.Fatal(err)
 	}
 	stale := baseTemplate(t)
-	applyCascadeToTemplate(stale, c, nil, aiExitPlan{}, cascadeZone{Domains: []string{"domain:ru"}, IPs: []string{"geoip:ru"}})
+	applyCascadeToTemplate(stale, c, 0, nil, aiExitPlan{}, cascadeZone{Domains: []string{"domain:ru"}, IPs: []string{"geoip:ru"}})
 	delete(templateRouting(stale), "domainStrategy")
 	if err := (&XraySettingService{}).SaveXraySetting(string(mustJSON(t, stale))); err != nil {
 		t.Fatal(err)
