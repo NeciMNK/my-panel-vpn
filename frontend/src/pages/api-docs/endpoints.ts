@@ -995,7 +995,12 @@ export const sections: readonly Section[] = [
           type: 'object',
           properties: {
             address: { type: 'string' },
-            ports: { type: 'array', items: { type: 'integer', minimum: 1, maximum: 65535 }, minItems: 1, maxItems: 4 },
+            ports: {
+              type: 'array',
+              items: { type: 'integer', minimum: 1, maximum: 65535 },
+              minItems: 1,
+              maxItems: 4,
+            },
           },
           required: ['address', 'ports'],
         },
