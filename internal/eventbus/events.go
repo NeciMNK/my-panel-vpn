@@ -83,3 +83,15 @@ type SpeedLowData struct {
 	MinMbps         int
 	Users           []string
 }
+
+// EventSpeedDrop fires when a server's scheduled speed test and both rechecks
+// after it stayed far below its 30-day average.
+const EventSpeedDrop EventType = "speed.drop"
+
+// SpeedDropData is the server's average and the low results that confirmed it.
+type SpeedDropData struct {
+	AvgDownloadMbps float64
+	AvgUploadMbps   float64
+	DownloadMbps    []float64
+	UploadMbps      []float64
+}

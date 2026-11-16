@@ -1551,7 +1551,7 @@ func runSeeders(isUsersEmpty bool) error {
 	}
 
 	if empty && isUsersEmpty {
-		seeders := []string{"UserPasswordHash", "ClientsTable", "InboundClientsArrayFix", "InboundClientTgIdFix2", "InboundClientSubIdFix", "FreedomFinalRulesReverseFix", "FreedomFinalRulesPrivateEgressBlock", "UppercaseFreedomFinalRulesFix", "InboundRealityFinalmaskTcpStrip", "ApiTokensHash", "LegacyProxySettingsCleanup", "SessionSecretRotation", "OutboundRemovedKeysFix", "FreedomDomainStrategyFix", "DNSOutboundLegacyKeysFix", "DNSOutboundQTypeZeroFix", "WireguardDomainStrategyFix", "XdnsFinalmaskNamesAddrsFix", "UDPHopClientMaskFix", "HostVerifyPeerCertByNameBoolFix", "HostMihomoX25519Reset", "WireguardPeersToClients", "MtprotoSecretsToClients", "NodeInboundsAdopted", "NodeDownNotified", "ResetIpLimitNoFail2ban", "ClientGroupNameTrim", "OwnerlessClientHwidPurge", "ClientForwardedPortsBackfill"}
+		seeders := []string{"UserPasswordHash", "ClientsTable", "InboundClientsArrayFix", "InboundClientTgIdFix2", "InboundClientSubIdFix", "FreedomFinalRulesReverseFix", "FreedomFinalRulesPrivateEgressBlock", "UppercaseFreedomFinalRulesFix", "InboundRealityFinalmaskTcpStrip", "ApiTokensHash", "LegacyProxySettingsCleanup", "SessionSecretRotation", "OutboundRemovedKeysFix", "FreedomDomainStrategyFix", "DNSOutboundLegacyKeysFix", "DNSOutboundQTypeZeroFix", "WireguardDomainStrategyFix", "XdnsFinalmaskNamesAddrsFix", "UDPHopClientMaskFix", "HostVerifyPeerCertByNameBoolFix", "HostMihomoX25519Reset", "WireguardPeersToClients", "MtprotoSecretsToClients", "NodeInboundsAdopted", "NodeDownNotified", "ResetIpLimitNoFail2ban", "ClientGroupNameTrim", "OwnerlessClientHwidPurge", "ClientForwardedPortsBackfill", "TgNodeLoadSpeedDropEvents"}
 		for _, name := range seeders {
 			if err := db.Create(&model.HistoryOfSeeders{SeederName: name}).Error; err != nil {
 				return err
@@ -1746,6 +1746,12 @@ func runSeeders(isUsersEmpty bool) error {
 		}
 	}
 
+	if !slices.Contains(seedersHistory, "TgNodeLoadSpeedDropEvents") {
+		if err := seedTgNodeLoadSpeedDropEvents(); err != nil {
+			return err
+		}
+	}
+
 	if !slices.Contains(seedersHistory, "ClientForwardedPortsBackfill") {
 		if err := backfillClientForwardedPorts(); err != nil {
 			return err
@@ -1799,6 +1805,30 @@ func seedNodeInboundsAdopted() error {
 		return err
 	}
 	return db.Create(&model.HistoryOfSeeders{SeederName: "NodeInboundsAdopted"}).Error
+}
+
+// seedTgNodeLoadSpeedDropEvents turns on RAM and speed-drop alerts for an install
+// that already saved its Telegram event list; a fresh one gets them by default.
+func seedTgNodeLoadSpeedDropEvents() error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		var setting model.Setting
+		err := tx.Where("key = ?", "tgEnabledEvents").First(&setting).Error
+		switch {
+		case err == nil:
+			events := setting.Value
+			for _, e := range []string{"memory.high", "speed.drop"} {
+				if !slices.Contains(strings.Split(events, ","), e) {
+					events = strings.TrimPrefix(events+","+e, ",")
+				}
+			}
+			if err := tx.Model(&model.Setting{}).Where("id = ?", setting.Id).Update("value", events).Error; err != nil {
+				return err
+			}
+		case !errors.Is(err, gorm.ErrRecordNotFound):
+			return err
+		}
+		return tx.Create(&model.HistoryOfSeeders{SeederName: "TgNodeLoadSpeedDropEvents"}).Error
+	})
 }
 
 // seedNodeDownNotified treats nodes already offline at upgrade as announced,

@@ -23,6 +23,8 @@ import (
 const (
 	SpeedTestManual   = "manual"
 	SpeedTestSchedule = "schedule"
+	// SpeedTestRecheck re-measures a suspiciously slow result; it stays out of averages.
+	SpeedTestRecheck = "recheck"
 
 	// speedTestKeep is how long results stay in the history.
 	speedTestKeep = 180 * 24 * time.Hour
@@ -258,18 +260,22 @@ func (s *SpeedService) StartTest(nodeID int) error {
 
 // RunScheduled measures, one after another, every server whose last test is
 // older than the schedule; servers sharing an uplink would skew each other.
-func (s *SpeedService) RunScheduled(now time.Time) {
+// It returns the speed drops its rechecks confirmed.
+func (s *SpeedService) RunScheduled(now time.Time) []SpeedDrop {
+	drops := s.runRechecks(now)
 	settings, err := s.TestSettings()
 	if err != nil {
-		return
+		return drops
 	}
 	for _, id := range s.dueForTest(now, settings) {
 		if !claimSpeedTest(id) {
 			continue
 		}
-		s.runTest(id, SpeedTestSchedule)
+		row := s.runTest(id, SpeedTestSchedule)
 		releaseSpeedTest(id)
+		watchSpeedDrop(row, now)
 	}
+	return drops
 }
 
 // dueForTest lists the panel and every enabled online node that is past its
@@ -421,7 +427,7 @@ func speedTestStats(now time.Time) ([]SpeedTestStats, error) {
 			order = append(order, r.NodeId)
 		}
 		st.Last = r
-		if r.Error != "" {
+		if r.Error != "" || r.Trigger == SpeedTestRecheck {
 			continue
 		}
 		if st.Count == 0 || r.DownloadMbps < st.MinDownloadMbps {

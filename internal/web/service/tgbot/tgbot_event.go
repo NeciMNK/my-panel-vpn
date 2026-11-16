@@ -150,6 +150,23 @@ func (t *Tgbot) formatEventMessage(e eventbus.Event) string {
 		}
 		return ""
 
+	case eventbus.EventSpeedDrop:
+		if data, ok := e.Data.(*eventbus.SpeedDropData); ok {
+			mbps := func(v float64) string { return strconv.FormatFloat(v, 'f', 1, 64) }
+			results := make([]string, 0, len(data.DownloadMbps))
+			for i, down := range data.DownloadMbps {
+				if i < len(data.UploadMbps) {
+					results = append(results, "↓"+mbps(down)+" ↑"+mbps(data.UploadMbps[i]))
+				}
+			}
+			return header + "📉 " + t.I18nBot("tgbot.messages.speedDrop",
+				"Server=="+oneLine(e.Source),
+				"AvgDown=="+mbps(data.AvgDownloadMbps),
+				"AvgUp=="+mbps(data.AvgUploadMbps),
+				"Results=="+strings.Join(results, ", "))
+		}
+		return ""
+
 	case eventbus.EventLoginAttempt:
 		if data, ok := e.Data.(*eventbus.LoginEventData); ok {
 			if data.Status == "success" {

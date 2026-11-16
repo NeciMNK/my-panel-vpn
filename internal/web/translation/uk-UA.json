@@ -2180,6 +2180,7 @@
         }
       },
       "eventSpeedLow": "Speed below user minimum",
+      "eventSpeedDrop": "Швидкість значно нижча за середню",
       "eventMasterLeader": "Another master took over",
       "tgPaymentMoved": "The price, discounts and where to pay are set on the Finance page.",
       "tgFreePlanPrice": "Ціна безкоштовного тарифу (онлайн)",
@@ -3097,6 +3098,7 @@
       "freeApproved": "🎉 Безкоштовна підписка готова: {{ .GB }} ГБ на місяць. Сплатіть будь-який термін, щоб зняти ліміт.",
       "freeDeclined": "❌ Запит на безкоштовну підписку відхилено.",
       "speedLow": "Server {{ .Server }} has {{ .Free }} Mbit/s free per user, below the {{ .Min }} Mbit/s minimum of {{ .Users }}, and no other server has room. Add a server or raise its link speed.",
+      "speedDrop": "Швидкість на {{ .Server }} значно нижча за середню за 30 днів (↓{{ .AvgDown }} ↑{{ .AvgUp }} Мбіт/с) і не відновилася на двох перевірках за 10 хвилин: {{ .Results }} Мбіт/с.",
       "masterLeader": "Master {{ .Master }} now leads the panel cluster.",
       "masterLeaderPrevious": "It took over from {{ .Previous }}.",
       "attachedInbounds": "🔗 Підключення: {{ .Inbounds }}\r\n",
