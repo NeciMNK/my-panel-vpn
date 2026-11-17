@@ -99,15 +99,20 @@ func allModels() []any {
 		&model.CascadeFixedExit{},
 		&model.CascadeAICountry{},
 		&model.AIDomainSuggestion{},
+		&model.AIOutageChoice{},
 		&model.HomeNetwork{},
 		&model.WarpSwitch{},
 		&model.ClientSpeed{},
+		&model.GroupSpeed{},
+		&model.SpeedTier{},
 		&model.ServerCapacity{},
 		&model.SpeedTestResult{},
 		&model.MasterMember{},
 		&model.TlsCertificate{},
 		&model.TelegramTag{},
 		&model.PaymentReminder{},
+		&model.TrafficUsageHour{},
+		&model.TrafficUsageDay{},
 	}
 }
 
@@ -1574,11 +1579,14 @@ func runSeeders(isUsersEmpty bool) error {
 	}
 
 	if empty && isUsersEmpty {
-		seeders := []string{"UserPasswordHash", "ClientsTable", "InboundClientsArrayFix", "InboundClientTgIdFix2", "InboundClientSubIdFix", "FreedomFinalRulesReverseFix", "FreedomFinalRulesPrivateEgressBlock", "UppercaseFreedomFinalRulesFix", "InboundRealityFinalmaskTcpStrip", "ApiTokensHash", "LegacyProxySettingsCleanup", "SessionSecretRotation", "OutboundRemovedKeysFix", "FreedomDomainStrategyFix", "DNSOutboundLegacyKeysFix", "DNSOutboundQTypeZeroFix", "WireguardDomainStrategyFix", "XdnsFinalmaskNamesAddrsFix", "UDPHopClientMaskFix", "HostVerifyPeerCertByNameBoolFix", "HostMihomoX25519Reset", "WireguardPeersToClients", "MtprotoSecretsToClients", "NodeInboundsAdopted", "NodeDownNotified", "ResetIpLimitNoFail2ban", "ClientGroupNameTrim", "OwnerlessClientHwidPurge", "ClientForwardedPortsBackfill", "ClientAutoGroups", "AutoNameRemarkTemplate", "TgNodeLoadSpeedDropEvents"}
+		seeders := []string{"UserPasswordHash", "ClientsTable", "InboundClientsArrayFix", "InboundClientTgIdFix2", "InboundClientSubIdFix", "FreedomFinalRulesReverseFix", "FreedomFinalRulesPrivateEgressBlock", "UppercaseFreedomFinalRulesFix", "InboundRealityFinalmaskTcpStrip", "ApiTokensHash", "LegacyProxySettingsCleanup", "SessionSecretRotation", "OutboundRemovedKeysFix", "FreedomDomainStrategyFix", "DNSOutboundLegacyKeysFix", "DNSOutboundQTypeZeroFix", "WireguardDomainStrategyFix", "XdnsFinalmaskNamesAddrsFix", "UDPHopClientMaskFix", "HostVerifyPeerCertByNameBoolFix", "HostMihomoX25519Reset", "WireguardPeersToClients", "MtprotoSecretsToClients", "NodeInboundsAdopted", "NodeDownNotified", "ResetIpLimitNoFail2ban", "ClientGroupNameTrim", "OwnerlessClientHwidPurge", "ClientForwardedPortsBackfill", "ClientAutoGroups", "AutoNameRemarkTemplate", "SubUpdatesHourly", "TgNodeLoadSpeedDropEvents"}
 		for _, name := range seeders {
 			if err := db.Create(&model.HistoryOfSeeders{SeederName: name}).Error; err != nil {
 				return err
 			}
+		}
+		if err := seedGroupSpeedDefaults(); err != nil {
+			return err
 		}
 		return seedApiTokens()
 	}
@@ -1781,8 +1789,20 @@ func runSeeders(isUsersEmpty bool) error {
 		}
 	}
 
+	if !slices.Contains(seedersHistory, "SubUpdatesHourly") {
+		if err := seedSubUpdatesHourly(); err != nil {
+			return err
+		}
+	}
+
 	if !slices.Contains(seedersHistory, "ClientAutoGroups") {
 		if err := assignClientAutoGroups(); err != nil {
+			return err
+		}
+	}
+
+	if !slices.Contains(seedersHistory, "GroupSpeedDefaults") {
+		if err := seedGroupSpeedDefaults(); err != nil {
 			return err
 		}
 	}
@@ -1862,6 +1882,17 @@ func seedTgNodeLoadSpeedDropEvents() error {
 		}
 		return tx.Create(&model.HistoryOfSeeders{SeederName: "TgNodeLoadSpeedDropEvents"}).Error
 	})
+}
+
+// seedSubUpdatesHourly moves the old 12-hour subscription refresh default to hourly,
+// so a node dropped from the subscription leaves client apps within the hour.
+func seedSubUpdatesHourly() error {
+	if err := db.Model(&model.Setting{}).
+		Where("key = ? AND value = ?", "subUpdates", "12").
+		Update("value", "1").Error; err != nil {
+		return err
+	}
+	return db.Create(&model.HistoryOfSeeders{SeederName: "SubUpdatesHourly"}).Error
 }
 
 // seedNodeDownNotified treats nodes already offline at upgrade as announced,
@@ -2198,6 +2229,21 @@ func renameLegacyTechGroup(tx *gorm.DB) error {
 		}
 	}
 	return nil
+}
+
+// Free users share 50-100 Mbit/s by load and paying users are promised 100; runs on
+// fresh installs too and only once, so an admin's later edit or removal sticks.
+func seedGroupSpeedDefaults() error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		defaults := []model.GroupSpeed{
+			{Group: model.ClientGroupUsers, FloorMbps: 50, MaxMbps: 100},
+			{Group: model.ClientGroupPaid, MinMbps: 100},
+		}
+		if err := tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&defaults).Error; err != nil {
+			return err
+		}
+		return tx.Create(&model.HistoryOfSeeders{SeederName: "GroupSpeedDefaults"}).Error
+	})
 }
 
 // The groups page addresses a group by its trimmed name, so a padded stored name listed as

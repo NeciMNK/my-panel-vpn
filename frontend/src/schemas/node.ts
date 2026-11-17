@@ -13,6 +13,8 @@ export const NodeRecordSchema = z
     hasApiToken: z.boolean().optional(),
     enable: z.boolean().optional(),
     status: z.string().optional(),
+    // Set while status=isolated: the nodes that still reach this node the master lost.
+    seenBy: z.string().optional(),
     latencyMs: z.number().optional(),
     cpuPct: z.number().optional(),
     memPct: z.number().optional(),

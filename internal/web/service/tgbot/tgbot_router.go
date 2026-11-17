@@ -453,14 +453,22 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 				t.screenClientQR(chatId, email)
 				return
 			case "pay_ok":
-				if len(dataArray) == 3 {
-					t.confirmPayment(callbackQuery, email, dataArray[2])
+				switch len(dataArray) {
+				case 3:
+					t.confirmPayment(callbackQuery, email, dataArray[2], "0")
+					return
+				case 4:
+					t.confirmPayment(callbackQuery, email, dataArray[2], dataArray[3])
 					return
 				}
 				t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
 			case "pay_no":
-				if len(dataArray) == 3 {
-					t.refusePayment(callbackQuery, email, dataArray[2])
+				switch len(dataArray) {
+				case 3:
+					t.refusePayment(callbackQuery, email, dataArray[2], "0")
+					return
+				case 4:
+					t.refusePayment(callbackQuery, email, dataArray[2], dataArray[3])
 					return
 				}
 				t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
@@ -1150,7 +1158,7 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 		t.screenClientPay(chatId, callbackQuery.From.ID)
 	case cbClientPaid:
 		t.answerSilent(callbackQuery.ID)
-		t.screenPlanPicker(chatId, callbackQuery.From.ID)
+		t.screenPlanPicker(chatId, callbackQuery.From.ID, 0, false)
 	case cbClientDefer:
 		t.deferPayment(callbackQuery)
 	case "client_traffic":
@@ -1361,13 +1369,18 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 // answerOwnSubscriptionCallback serves the caller's own "I paid" term and AI quiz taps
 // ahead of the admin switch, whose default refused an admin's own "<action> <arg>".
 func (t *Tgbot) answerOwnSubscriptionCallback(callbackQuery *telego.CallbackQuery, data string) bool {
-	if months, ok := strings.CutPrefix(data, cbClientPaid+" "); ok {
-		t.reportClientPayment(callbackQuery, months)
+	if args, ok := strings.CutPrefix(data, cbClientPaid+" "); ok {
+		t.answerClientPaid(callbackQuery, args)
 		return true
 	}
 	if isAIExitCallback(data) {
 		callbackQuery.Data = data
 		t.answerAIExit(callbackQuery)
+		return true
+	}
+	if isAIOutageCallback(data) {
+		callbackQuery.Data = data
+		t.answerAIOutage(callbackQuery)
 		return true
 	}
 	return false

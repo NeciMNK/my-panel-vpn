@@ -125,6 +125,7 @@ var nodeSyncScopeAllow = map[string]map[string]struct{}{
 	"/clients/clientIpsByGuid":     {http.MethodPost: {}},
 	"/hosts/list":                  {http.MethodGet: {}},
 	"/certs/install":               {http.MethodPost: {}},
+	"/server/probePeer":            {http.MethodPost: {}},
 }
 
 // nodeXrayScopeAllow lets a master manage a node's Xray template (outbounds,
@@ -258,6 +259,7 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	NewHomeNetworkController(api.Group("/homeNetworks"))
 	NewWarpSwitchController(api.Group("/warpSwitch"))
 	NewSpeedController(api.Group("/speed"))
+	NewTrafficUsageController(api.Group("/trafficUsage"))
 	NewMasterClusterController(api.Group("/masters"))
 
 	// Hosts API — per-inbound override endpoints for subscription links

@@ -35,6 +35,9 @@ type AllSetting struct {
 	PageSize                   int    `json:"pageSize" form:"pageSize" validate:"gte=0,lte=1000"`
 	ExpireDiff                 int    `json:"expireDiff" form:"expireDiff" validate:"gte=0"`
 	TrafficDiff                int    `json:"trafficDiff" form:"trafficDiff" validate:"gte=0,lte=100"`
+	TrafficResetAllMonthly     bool   `json:"trafficResetAllMonthly" form:"trafficResetAllMonthly"`
+	TrafficResetAllDay         int    `json:"trafficResetAllDay" form:"trafficResetAllDay" validate:"gte=1,lte=31"`
+	TrafficUsagePeriods        string `json:"trafficUsagePeriods" form:"trafficUsagePeriods"`
 	RemarkTemplate             string `json:"remarkTemplate" form:"remarkTemplate"`
 	SubShowIdentityOnAllLinks  bool   `json:"subShowIdentityOnAllLinks" form:"subShowIdentityOnAllLinks"`
 	SubInfoNodeEnable          bool   `json:"subInfoNodeEnable" form:"subInfoNodeEnable"`

@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Input, InputNumber, Select, Switch, Tabs } from 'antd';
+import { Checkbox, Input, InputNumber, Select, Switch, Tabs } from 'antd';
 import {
   ApartmentOutlined,
+  BarChartOutlined,
   BellOutlined,
   ClockCircleOutlined,
   GlobalOutlined,
@@ -18,6 +19,7 @@ import { DefaultSettingTag, SettingListItem } from '@/components/ui';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { catTabLabel } from './catTabLabel';
 import { sanitizePath } from './uriPath';
+import { TRAFFIC_USAGE_PERIODS } from '@/pages/traffic-usage/periods';
 import SecretInput from './SecretInput';
 import PanelProxyControl from './PanelProxyControl';
 import type { PanelProxyStatus } from '@/generated/zod';
@@ -397,6 +399,62 @@ export default function GeneralTab({ allSetting, updateSetting }: GeneralTabProp
                   max={100}
                   style={{ width: '100%' }}
                   onChange={onNumber((v) => updateSetting({ trafficDiff: v }))}
+                />
+              </SettingListItem>
+            </>
+          ),
+        },
+        {
+          key: 'traffic',
+          label: catTabLabel(
+            <BarChartOutlined aria-hidden />,
+            t('pages.settings.trafficAccounting'),
+            isMobile,
+          ),
+          children: (
+            <>
+              <SettingListItem
+                paddings="small"
+                title={t('pages.settings.trafficResetAllMonthly')}
+                description={t('pages.settings.trafficResetAllMonthlyDesc')}
+              >
+                <Switch
+                  checked={allSetting.trafficResetAllMonthly}
+                  onChange={(v) => updateSetting({ trafficResetAllMonthly: v })}
+                />
+              </SettingListItem>
+              <SettingListItem
+                paddings="small"
+                title={t('pages.settings.trafficResetAllDay')}
+                description={t('pages.settings.trafficResetAllDayDesc')}
+              >
+                <InputNumber
+                  value={allSetting.trafficResetAllDay}
+                  min={1}
+                  max={31}
+                  disabled={!allSetting.trafficResetAllMonthly}
+                  style={{ width: '100%' }}
+                  onChange={onNumber((v) => updateSetting({ trafficResetAllDay: v }))}
+                />
+              </SettingListItem>
+              <SettingListItem
+                paddings="small"
+                title={t('pages.settings.trafficUsagePeriods')}
+                description={t('pages.settings.trafficUsagePeriodsDesc')}
+              >
+                <Checkbox.Group
+                  value={(allSetting.trafficUsagePeriods || '').split(',').filter(Boolean)}
+                  onChange={(v) =>
+                    updateSetting({
+                      trafficUsagePeriods: TRAFFIC_USAGE_PERIODS.filter((p) => v.includes(p)).join(
+                        ',',
+                      ),
+                    })
+                  }
+                  options={TRAFFIC_USAGE_PERIODS.map((p) => ({
+                    value: p,
+                    label: t(`pages.trafficUsage.periods.${p}`),
+                  }))}
                 />
               </SettingListItem>
             </>

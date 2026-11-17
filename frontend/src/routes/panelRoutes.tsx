@@ -2,6 +2,7 @@ import { lazy } from 'react';
 import type { ComponentType } from 'react';
 import {
   ApiOutlined,
+  BarChartOutlined,
   ClusterOutlined,
   DashboardOutlined,
   DollarOutlined,
@@ -22,6 +23,7 @@ const ClientsPage = lazy(() => import('@/pages/clients/ClientsPage'));
 const GroupsPage = lazy(() => import('@/pages/groups/GroupsPage'));
 const LedgerPage = lazy(() => import('@/pages/ledger/LedgerPage'));
 const AIDomainsPage = lazy(() => import('@/pages/ai-domains/AIDomainsPage'));
+const TrafficUsagePage = lazy(() => import('@/pages/traffic-usage/TrafficUsagePage'));
 const NodesPage = lazy(() => import('@/pages/nodes/NodesPage'));
 const HostsPage = lazy(() => import('@/pages/hosts/HostsPage'));
 const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage'));
@@ -48,6 +50,12 @@ export const PANEL_ROUTES: PanelRoute[] = [
     titleKey: 'menu.aiDomains',
     icon: RobotOutlined,
     component: AIDomainsPage,
+  },
+  {
+    path: '/traffic-usage',
+    titleKey: 'menu.trafficUsage',
+    icon: BarChartOutlined,
+    component: TrafficUsagePage,
   },
   { path: '/nodes', titleKey: 'menu.nodes', icon: ClusterOutlined, component: NodesPage },
   { path: '/hosts', titleKey: 'menu.hosts', icon: GlobalOutlined, component: HostsPage },

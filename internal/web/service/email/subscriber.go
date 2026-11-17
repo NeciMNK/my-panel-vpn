@@ -124,6 +124,14 @@ func (s *Subscriber) formatMessage(e eventbus.Event) (subject, body string) {
 		body = wrap(i18n("tgbot.messages.eventXrayCrash"), content)
 
 	case eventbus.EventNodeDown:
+		if data, ok := e.Data.(*eventbus.NodeHealthData); ok && len(data.SeenBy) > 0 {
+			title := i18n("tgbot.messages.eventNodeIsolated", "Name=="+e.Source, "SeenBy=="+strings.Join(data.SeenBy, ", "))
+			subject = host + " " + title
+			content := kv(i18n("email.labelStatus"), `<span style="color:orange">`+i18n("email.statusIsolated")+`</span>`)
+			content += kv(i18n("email.labelNode"), e.Source)
+			body = wrap(title, content)
+			break
+		}
 		subject = host + " " + i18n("tgbot.messages.eventNodeDown", "Name=="+e.Source)
 		content := kv(i18n("email.labelStatus"), `<span style="color:red">`+i18n("email.statusDown")+`</span>`)
 		content += kv(i18n("email.labelNode"), e.Source)

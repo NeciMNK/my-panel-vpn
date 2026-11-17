@@ -21,6 +21,7 @@ type Period string
 type PeriodicTrafficResetJob struct {
 	inboundService service.InboundService
 	clientService  service.ClientService
+	settingService service.SettingService
 	xrayService    service.XrayService
 	period         Period
 	location       *time.Location
@@ -62,6 +63,9 @@ func forEachResetBounded(n int, reset func(i int)) {
 func (j *PeriodicTrafficResetJob) Run() {
 	j.resetInboundsOnSchedule()
 	j.resetClientsOnTheirOwnCycle()
+	if j.period == "monthly" {
+		j.resetClientsOnGlobalMonthly()
+	}
 }
 
 func (j *PeriodicTrafficResetJob) resetInboundsOnSchedule() {
@@ -129,11 +133,36 @@ func (j *PeriodicTrafficResetJob) resetClientsOnTheirOwnCycle() {
 	}
 
 	now := time.Now().In(j.location)
-	due := make([]service.ClientResetCycle, 0, len(cycles))
-	for _, c := range cycles {
+	j.resetClients(cycles, func(c service.ClientResetCycle) bool {
 		// Monthly clients come due on their own day, the rule the inbound-level
 		// schedule already follows.
-		if j.period == "monthly" && !monthlyResetDue(c.TrafficResetDay, now) {
+		return j.period != "monthly" || monthlyResetDue(c.TrafficResetDay, now)
+	})
+}
+
+// resetClientsOnGlobalMonthly applies the panel-wide monthly reset to clients
+// that have no cycle of their own; any cycle a client or its inbound sets wins.
+func (j *PeriodicTrafficResetJob) resetClientsOnGlobalMonthly() {
+	enable, day, err := j.settingService.GetTrafficResetAllMonthly()
+	if err != nil {
+		logger.Warning("Failed to read the global monthly traffic reset:", err)
+		return
+	}
+	if !enable || !monthlyResetDue(day, time.Now().In(j.location)) {
+		return
+	}
+	cycles, err := j.clientService.GetClientsFollowingGlobalReset()
+	if err != nil {
+		logger.Warning("Failed to get clients for the global monthly traffic reset:", err)
+		return
+	}
+	j.resetClients(cycles, func(service.ClientResetCycle) bool { return true })
+}
+
+func (j *PeriodicTrafficResetJob) resetClients(cycles []service.ClientResetCycle, isDue func(service.ClientResetCycle) bool) {
+	due := make([]service.ClientResetCycle, 0, len(cycles))
+	for _, c := range cycles {
+		if !isDue(c) {
 			continue
 		}
 		// A reset re-enables, which is right for a client the quota switched off

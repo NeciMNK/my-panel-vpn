@@ -17,6 +17,9 @@ export class AllSetting {
   pageSize = 25;
   expireDiff = 0;
   trafficDiff = 0;
+  trafficResetAllMonthly = true;
+  trafficResetAllDay = 1;
+  trafficUsagePeriods = '24h,7d,30d,month';
   remarkTemplate = '{{AUTO_NAME}}';
   subShowIdentityOnAllLinks = false;
   subInfoNodeEnable = false;
@@ -77,7 +80,7 @@ export class AllSetting {
   subCertFile = '';
   subKeyFile = '';
   externalSubUserAgent = 'v2rayNG/1.8.5';
-  subUpdates = 12;
+  subUpdates = 1;
   subEncrypt = true;
   subURI = '';
   subJsonURI = '';

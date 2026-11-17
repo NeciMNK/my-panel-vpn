@@ -29,6 +29,7 @@ const (
 	VMESS       Protocol = "vmess"
 	VLESS       Protocol = "vless"
 	Tunnel      Protocol = "tunnel"
+	TUN         Protocol = "tun"
 	HTTP        Protocol = "http"
 	Trojan      Protocol = "trojan"
 	Shadowsocks Protocol = "shadowsocks"
@@ -838,6 +839,13 @@ type Setting struct {
 	Value string `json:"value" form:"value"`
 }
 
+// Node heartbeat statuses. Isolated: the master lost the node, other nodes still reach it.
+const (
+	NodeStatusOnline   = "online"
+	NodeStatusOffline  = "offline"
+	NodeStatusIsolated = "isolated"
+)
+
 // Node represents a remote 3x-ui panel registered with the central panel.
 // The central panel polls each node's existing /panel/api/server/status
 // endpoint over HTTP using the per-node ApiToken to populate the runtime
@@ -874,7 +882,7 @@ type Node struct {
 	// Heartbeat-updated fields. UpdatedAt advances on every probe even when
 	// the row is otherwise unchanged so the UI's "last seen" tooltip is
 	// truthful without us having to read LastHeartbeat separately.
-	Status        string  `json:"status" gorm:"default:unknown" example:"online"` // online|offline|unknown
+	Status        string  `json:"status" gorm:"default:unknown" example:"online"` // online|offline|isolated|unknown
 	LastHeartbeat int64   `json:"lastHeartbeat" example:"1700000000"`             // unix seconds, 0 = never
 	LatencyMs     int     `json:"latencyMs" example:"42"`
 	XrayVersion   string  `json:"xrayVersion" example:"25.10.31"`
@@ -893,6 +901,8 @@ type Node struct {
 	// (status=online) from "Xray core itself has failed on the node" for monitoring.
 	XrayState string `json:"xrayState" gorm:"column:xray_state"`
 	XrayError string `json:"xrayError" gorm:"column:xray_error"`
+	// SeenBy names the nodes that still reached this node while the master could not.
+	SeenBy string `json:"seenBy" gorm:"column:seen_by" example:""`
 
 	ConfigDirty   bool  `json:"configDirty" gorm:"default:false"`
 	ConfigDirtyAt int64 `json:"configDirtyAt"`
@@ -1187,6 +1197,10 @@ type ClientBilling struct {
 	Credit int `json:"credit" gorm:"column:credit;default:0"`
 	// AIPaid is the one-off purchase of the bot's AI button (a permanent exit IP).
 	AIPaid bool `json:"aiPaid" gorm:"column:ai_paid;default:false"`
+	// SpeedTierId is the speed tier paid with the current term; 0 = the group's speed.
+	SpeedTierId int `json:"speedTierId" gorm:"column:speed_tier_id;default:0"`
+	// PendingSpeedTier is the tier of the term in PendingMonths, claimed together with it.
+	PendingSpeedTier int `json:"pendingSpeedTier" gorm:"column:pending_speed_tier;default:0"`
 }
 
 // PaymentOrder is one online payment through the acquiring provider: a plan term
@@ -1201,6 +1215,7 @@ type PaymentOrder struct {
 	TgID      int64  `json:"tgId" gorm:"column:tg_id;index"`
 	Email     string `json:"email" gorm:"default:''"`
 	Months    int    `json:"months" gorm:"default:0"`
+	SpeedTier int    `json:"speedTier" gorm:"column:speed_tier;default:0"`
 	Amount    int    `json:"amount" gorm:"not null"`
 	Currency  string `json:"currency" gorm:"not null"`
 	// Status moves pending -> paid -> done (or canceled/failed); each step is a guarded UPDATE.
@@ -1913,4 +1928,10 @@ type PaymentReminder struct {
 	// SentDue and SentDay (unix ms, days) are the due date and the threshold last reminded of.
 	SentDue int64 `json:"-" gorm:"column:sent_due;default:0"`
 	SentDay int   `json:"-" gorm:"column:sent_day;default:0"`
+}
+
+// Serving reports whether users can still connect to the node, even when the
+// master itself cannot reach it.
+func (n *Node) Serving() bool {
+	return n.Enable && (n.Status == NodeStatusOnline || n.Status == NodeStatusIsolated)
 }

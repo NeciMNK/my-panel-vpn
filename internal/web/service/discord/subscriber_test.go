@@ -589,3 +589,24 @@ func TestFormatEmbed_NodeOwnThreshold(t *testing.T) {
 		}
 	}
 }
+
+// A node only the master lost is a warning, not an outage, and names who reaches it.
+func TestFormatEmbed_NodeOnlyTheMasterLost(t *testing.T) {
+	settingService := setupTestDB(t)
+	sub := NewSubscriber(settingService, NewDiscordService(settingService))
+
+	embed, ok := sub.FormatEmbed(eventbus.Event{
+		Type:   eventbus.EventNodeDown,
+		Source: "node-de",
+		Data:   &eventbus.NodeHealthData{SeenBy: []string{"node-nl", "node-fi"}},
+	})
+	if !ok {
+		t.Fatal("expected embed to be formatted")
+	}
+	if embed.Color != ColorOrange {
+		t.Errorf("color = 0x%X, want ColorOrange", embed.Color)
+	}
+	if len(embed.Fields) != 2 || embed.Fields[1].Value != "node-nl, node-fi" {
+		t.Fatalf("fields = %+v, want the node and who reaches it", embed.Fields)
+	}
+}

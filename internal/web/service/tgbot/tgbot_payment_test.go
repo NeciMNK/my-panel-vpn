@@ -3,6 +3,7 @@ package tgbot
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -181,11 +182,11 @@ func TestClientPaidReportsChosenTermToAdmins(t *testing.T) {
 
 	tap(tb, 5454, cbClientPaid, false)
 	_, markup := screenMarkup(t, tb, 5454)
-	if !strings.Contains(markup, `"client_paid 3"`) {
+	if !strings.Contains(markup, `"client_paid 3 0"`) {
 		t.Fatalf("the term picker does not offer the 3-month term: %s", markup)
 	}
 
-	tap(tb, 5454, "client_paid 3", false)
+	tap(tb, 5454, "client_paid 3 0", false)
 	sent := adminMessages(calls(), 9001)
 	if len(sent) != 1 {
 		t.Fatalf("admin messages = %d, want 1 (calls: %v)", len(sent), methods(calls()))
@@ -196,13 +197,85 @@ func TestClientPaidReportsChosenTermToAdmins(t *testing.T) {
 		}
 	}
 	adminMarkup, _ := json.Marshal(sent[0].Payload["reply_markup"])
-	if !strings.Contains(string(adminMarkup), `"pay_ok reporter@x 3"`) {
+	if !strings.Contains(string(adminMarkup), `"pay_ok reporter@x 3 0"`) {
 		t.Errorf("the admin notice has no confirm button for 3 months: %s", adminMarkup)
 	}
 
-	tap(tb, 5454, "client_paid 3", false)
+	tap(tb, 5454, "client_paid 3 0", false)
 	if n := len(adminMessages(calls(), 9001)); n != 1 {
 		t.Errorf("admin messages after a repeat report = %d, want 1: the report is not throttled", n)
+	}
+}
+
+// With speed tiers on sale, "I paid" asks for the speed first; the term's price,
+// the admin's notice and the confirmed payment all carry the chosen tier.
+func TestClientPaidWithASpeedTierChargesAndGrantsIt(t *testing.T) {
+	tb, calls := newScreenTgbot(t, false)
+	initReportDB(t)
+	localizeWithRealBundle(t)
+	setTestAdmins(t, 9001)
+	resetThrottles(t)
+	seedClientForTgUser(t, 5460, "fast@x")
+	seedPaymentSettings(t, "300", "card")
+	seedSettings(t, map[string]string{"tgPaymentDiscounts": "3:10"})
+	plus := &model.SpeedTier{Name: "Plus", MinMbps: 200, MonthlyPrice: 100}
+	if err := database.GetDB().Create(plus).Error; err != nil {
+		t.Fatal(err)
+	}
+	id := strconv.Itoa(plus.Id)
+
+	tap(tb, 5460, cbClientPaid, false)
+	if _, markup := screenMarkup(t, tb, 5460); !strings.Contains(markup, `"client_paid s`+id+`"`) || !strings.Contains(markup, `"client_paid s0"`) {
+		t.Fatalf("the first step does not offer the speed tiers: %s", markup)
+	}
+	tap(tb, 5460, "client_paid s"+id, false)
+	if _, markup := screenMarkup(t, tb, 5460); !strings.Contains(markup, `3 mo · 1110","callback_data":"client_paid 3 `+id+`"`) {
+		t.Fatalf("the term picker does not price 3 months with Plus at 810 + 3 x 100: %s", markup)
+	}
+	tap(tb, 5460, "client_paid 3 "+id, false)
+	sent := adminMessages(calls(), 9001)
+	if len(sent) != 1 || !strings.Contains(sent[0].text(), "1110") || !strings.Contains(sent[0].text(), "Plus") {
+		t.Fatalf("admin notices = %d, want one naming 1110 and Plus: %v", len(sent), sent)
+	}
+	tap(tb, 9001, "pay_ok fast@x 3 "+id, true)
+	billing, err := (&service.ClientService{}).GetBillingByEmail("fast@x")
+	if err != nil || billing.SpeedTierId != plus.Id {
+		t.Fatalf("billing after confirm = %+v (%v), want speed tier %d", billing, err, plus.Id)
+	}
+}
+
+// "Not received" on a tier report must withdraw that report: a refusal that only
+// matched tier-less reports left it pending, and a later confirm still applied it.
+func TestPaymentNotReceivedWithdrawsASpeedTierReport(t *testing.T) {
+	tb, calls := newScreenTgbot(t, false)
+	initReportDB(t)
+	localizeWithRealBundle(t)
+	setTestAdmins(t, 9001, 9002)
+	resetThrottles(t)
+	seedBilledClient(t, 6363, "slowpay@x")
+	seedPaymentSettings(t, "300", "card")
+	due := time.Now().Add(5 * 24 * time.Hour)
+	setClientExpiry(t, "slowpay@x", due)
+	plus := &model.SpeedTier{Name: "Plus", MinMbps: 200, MonthlyPrice: 100}
+	if err := database.GetDB().Create(plus).Error; err != nil {
+		t.Fatal(err)
+	}
+	id := strconv.Itoa(plus.Id)
+
+	tap(tb, 6363, "client_paid 1 "+id, false)
+	sent := adminMessages(calls(), 9001)
+	if len(sent) != 1 {
+		t.Fatalf("admin reports = %d, want 1", len(sent))
+	}
+	markup, _ := json.Marshal(sent[0].Payload["reply_markup"])
+	refuse := "pay_no slowpay@x 1 " + id
+	if !strings.Contains(string(markup), `"`+refuse+`"`) {
+		t.Fatalf("the 'not received' button does not carry the tier: %s", markup)
+	}
+	tap(tb, 9001, refuse, true)
+	tap(tb, 9002, "pay_ok slowpay@x 1 "+id, true)
+	if got := trafficOf(t, "slowpay@x").ExpiryTime; got != due.UnixMilli() {
+		t.Errorf("a refused tier report was still confirmed: expiry %v, want %v", time.UnixMilli(got), due)
 	}
 }
 
@@ -658,12 +731,12 @@ func TestPaymentNotReceivedTellsClientAndClosesReport(t *testing.T) {
 		t.Fatalf("admin reports = %d, want 1", len(sent))
 	}
 	reportMarkup, _ := json.Marshal(sent[0].Payload["reply_markup"])
-	if !strings.Contains(string(reportMarkup), `"pay_no nomoney@x 1"`) {
+	if !strings.Contains(string(reportMarkup), `"pay_no nomoney@x 1 0"`) {
 		t.Fatalf("the admin report has no 'not received' button: %s", reportMarkup)
 	}
 
 	tb.answerCallback(&telego.CallbackQuery{
-		ID: "q", From: telego.User{ID: 9001, Username: "boss"}, Data: "pay_no nomoney@x 1",
+		ID: "q", From: telego.User{ID: 9001, Username: "boss"}, Data: "pay_no nomoney@x 1 0",
 		Message: &telego.Message{Chat: telego.Chat{ID: 9001}},
 	}, true)
 

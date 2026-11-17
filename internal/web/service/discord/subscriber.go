@@ -221,6 +221,16 @@ func (s *Subscriber) FormatEmbed(e eventbus.Event) (Embed, bool) {
 		case eventbus.NodeHealthData:
 			data = &d
 		}
+		if data != nil && len(data.SeenBy) > 0 {
+			fields = append(fields, cleanField(tr("discord.fields.seenBy"), strings.Join(data.SeenBy, ", "), false))
+			return Embed{
+				Title:     tr("discord.alerts.nodeIsolated"),
+				Color:     ColorOrange,
+				Timestamp: ts,
+				Fields:    fields,
+				Footer:    footer,
+			}, true
+		}
 		if data != nil && data.XrayError != "" {
 			fields = append(fields, cleanField(tr("discord.fields.error"), data.XrayError, false))
 		}

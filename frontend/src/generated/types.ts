@@ -208,6 +208,9 @@ export interface AllSetting {
   tgRunTime: string;
   timeLocation: string;
   trafficDiff: number;
+  trafficResetAllDay: number;
+  trafficResetAllMonthly: boolean;
+  trafficUsagePeriods: string;
   trustedProxyCIDRs: string;
   twoFactorEnable: boolean;
   twoFactorToken: string;
@@ -412,6 +415,9 @@ export interface AllSettingView {
   tgRunTime: string;
   timeLocation: string;
   trafficDiff: number;
+  trafficResetAllDay: number;
+  trafficResetAllMonthly: boolean;
+  trafficUsagePeriods: string;
   trustedProxyCIDRs: string;
   twoFactorEnable: boolean;
   twoFactorToken: string;
@@ -561,6 +567,8 @@ export interface ClientBillingView {
   nonPaying: boolean;
   pendingMonths: number;
   plans: PaymentPlanPrice[];
+  speedTierId: number;
+  speedTiers: SpeedTier[];
   trusted: boolean;
 }
 
@@ -743,6 +751,14 @@ export interface GeodataTokenIssue {
   file?: string;
   reason: string;
   token: string;
+}
+
+export interface GroupSpeed {
+  floorMbps: number;
+  group: string;
+  id: number;
+  maxMbps: number;
+  minMbps: number;
 }
 
 export interface HappLinkResult {
@@ -1103,6 +1119,7 @@ export interface Node {
   port: number;
   remark: string;
   scheme: string;
+  seenBy: string;
   status: string;
   tlsVerifyMode: string;
   transitive?: boolean;
@@ -1179,6 +1196,7 @@ export interface NodeView {
   port: number;
   remark: string;
   scheme: string;
+  seenBy: string;
   status: string;
   tlsVerifyMode: string;
   transitive?: boolean;
@@ -1248,6 +1266,13 @@ export interface PeerActivity {
   up: number;
 }
 
+export interface PeerProbeResult {
+  error: string;
+  latencyMs: number;
+  port: number;
+  reachable: boolean;
+}
+
 export interface ProbeResultUI {
   cpuPct: number;
   error: string;
@@ -1303,6 +1328,7 @@ export interface ServerFreeSpeed {
   freePerUserMbps: number;
   nodeId: number;
   online: number;
+  reservedMbps: number;
   usedMbps: number;
 }
 
@@ -1355,11 +1381,13 @@ export interface Setting {
 
 export interface SpeedOverview {
   clients: ClientSpeed[];
+  groups: GroupSpeed[];
   load: ServerFreeSpeed[];
   servers: ServerCapacity[];
   testSettings: SpeedTestSettings;
   testStats: SpeedTestStats[];
   testing: number[];
+  tiers: SpeedTier[];
 }
 
 export interface SpeedTestResult {
@@ -1393,6 +1421,13 @@ export interface SpeedTestStats {
   maxDownloadMbps: number;
   minDownloadMbps: number;
   nodeId: number;
+}
+
+export interface SpeedTier {
+  id: number;
+  minMbps: number;
+  monthlyPrice: number;
+  name: string;
 }
 
 export interface SubBalancer {
@@ -1458,6 +1493,23 @@ export interface Traffic {
   IsOutbound: boolean;
   Tag: string;
   Up: number;
+}
+
+export interface TrafficUsageAmount {
+  down: number;
+  up: number;
+}
+
+export interface TrafficUsageReport {
+  clients: TrafficUsageRow[];
+  periods: string[];
+  servers: TrafficUsageRow[];
+}
+
+export interface TrafficUsageRow {
+  name: string;
+  subject: string;
+  usage: TrafficUsageAmount[];
 }
 
 export interface TuicClientSettings {
