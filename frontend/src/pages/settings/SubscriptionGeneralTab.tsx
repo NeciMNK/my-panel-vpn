@@ -159,6 +159,17 @@ export default function SubscriptionGeneralTab({
               </SettingListItem>
               <SettingListItem
                 paddings="small"
+                title={t('pages.settings.subPathAliases')}
+                description={t('pages.settings.subPathAliasesDesc')}
+              >
+                <Input
+                  value={allSetting.subPathAliases}
+                  placeholder="/old-sub/"
+                  onChange={(e) => updateSetting({ subPathAliases: e.target.value })}
+                />
+              </SettingListItem>
+              <SettingListItem
+                paddings="small"
                 title={t('pages.settings.subURI')}
                 description={t('pages.settings.subURIDesc')}
               >

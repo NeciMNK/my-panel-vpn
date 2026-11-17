@@ -83,7 +83,13 @@ func (a *TlsCertController) issue(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "pages.settings.tlsCerts.toasts.issue"), err)
 		return
 	}
-	cert, err := a.service.Create(c.PostFormArray("domains"), autoRenew, applyToPanel)
+	applyToSub, err := formBool(c, "applyToSub")
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.settings.tlsCerts.toasts.issue"), err)
+		return
+	}
+	opts := tlscert.IssueOptions{AutoRenew: autoRenew, ApplyToPanel: applyToPanel, ApplyToSub: applyToSub}
+	cert, err := a.service.Create(c.PostFormArray("domains"), opts)
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.settings.tlsCerts.toasts.issue"), err)
 		return

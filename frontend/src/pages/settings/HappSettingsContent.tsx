@@ -99,6 +99,17 @@ export default function HappSettingsContent({
 
                 <SettingListItem
                   paddings="small"
+                  title={t('pages.settings.subHappRoutingUpdate')}
+                  description={t('pages.settings.subHappRoutingUpdateDesc')}
+                >
+                  <Switch
+                    checked={allSetting.subHappRoutingUpdate}
+                    onChange={(v) => updateSetting({ subHappRoutingUpdate: v })}
+                  />
+                </SettingListItem>
+
+                <SettingListItem
+                  paddings="small"
                   title={t('pages.settings.subHappPresets')}
                   description={t('pages.settings.subHappPresetsDesc')}
                 >

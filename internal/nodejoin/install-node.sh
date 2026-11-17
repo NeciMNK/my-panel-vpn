@@ -13,6 +13,7 @@ INSECURE=0
 REPLACE=0
 XUI_DIR="${XUI_MAIN_FOLDER:-/usr/local/x-ui}"
 CERT_DIR="/etc/x-ui/node-cert"
+LOGIN_FILE="/etc/x-ui/node-login.txt"
 
 # Names shared with install.sh, whose panel-replacement functions are copied below.
 xui_repo="NeciMNK/my-panel-vpn"
@@ -84,6 +85,17 @@ done
 CURL=(curl -fsSL --retry 3 --connect-timeout 15)
 [[ $INSECURE -eq 1 ]] && CURL+=(-k)
 
+# save_emergency_login keeps the node panel login out of terminal scrollback and
+# CI/cloud-init logs: it goes to a root-only file and only the path is printed.
+save_emergency_login() {
+    local file="$1" url="$2" user="$3" pass="$4"
+    mkdir -p "$(dirname "$file")"
+    rm -f "$file"
+    (umask 077 && printf 'url=%s\nusername=%s\npassword=%s\n' "$url" "$user" "$pass" >"$file")
+    chmod 600 "$file"
+    echo -e "Node panel login (for emergencies): ${yellow}${file}${plain} (readable by root only)"
+}
+
 rand_hex() { head -c "$1" /dev/urandom | od -An -tx1 | tr -d ' \n'; }
 
 port_in_use() {
@@ -130,6 +142,8 @@ remove_foreign_xui() {
     if [[ $release == "alpine" ]]; then
         rc-service x-ui stop > /dev/null 2>&1
     else
+        # Reload first: a unit replaced on disk makes systemctl stop warn about it.
+        systemctl daemon-reload > /dev/null 2>&1
         systemctl stop x-ui > /dev/null 2>&1
     fi
     pkill -f 'mtg-linux-[^ ]* run ' > /dev/null 2>&1 || true
@@ -290,5 +304,4 @@ NODE_HOST="$(printf '%s' "$RESPONSE" | sed -n 's/.*"address":"\([^"]*\)".*/\1/p'
 
 echo
 echo -e "${green}This server is now a node of ${MASTER}.${plain}"
-echo -e "Node panel (for emergencies): https://${NODE_HOST}:${PANEL_PORT}${BASE_PATH}"
-echo -e "Login: ${yellow}${ADMIN_USER}${plain}  Password: ${yellow}${ADMIN_PASS}${plain}"
+save_emergency_login "$LOGIN_FILE" "https://${NODE_HOST}:${PANEL_PORT}${BASE_PATH}" "$ADMIN_USER" "$ADMIN_PASS"
