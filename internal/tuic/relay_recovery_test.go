@@ -220,6 +220,36 @@ func TestAudit3FirstTransportReturnsPositiveEchoAfterOppositeModePacket(t *testi
 	}
 }
 
+// A client that stopped reading one response stream costs that packet only; the
+// relay used to return the stream error and blackhole the whole association.
+func TestResponseStreamStoppedByClientDropsOnlyThatPacket(t *testing.T) {
+	server, c, clientID, _ := startLifecycleTestServer(t, "127.0.0.1:1", "stream-stop@x")
+	serverConn, _ := authenticatedServerConnection(t, server, clientID)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	stream, err := serverConn.OpenUniStreamSync(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := stream.Write([]byte{ProtocolVersion}); err != nil {
+		t.Fatal(err)
+	}
+	accepted, err := c.AcceptUniStream(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	accepted.CancelRead(0)
+	select {
+	case <-stream.Context().Done():
+	case <-ctx.Done():
+		t.Fatal("STOP_SENDING never reached the server stream")
+	}
+	if err := writeResponseStream(stream, []byte("response")); err != nil {
+		t.Fatalf("a client-stopped response stream ended the relay: %v", err)
+	}
+}
+
 func TestUDPReaderCleanupCannotDeleteReplacementAssociation(t *testing.T) {
 	registry := newUdpAssociationRegistry(1500)
 	header := &PacketHeader{AssocID: 7, FragTotal: 1, Size: 1, Addr: &Address{Type: AddrTypeIPv4, IP: net.IPv4(1, 1, 1, 1), Port: 53}}
