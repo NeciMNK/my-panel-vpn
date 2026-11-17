@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { fixedExitDown } from '@/pages/nodes/FixedExitsCard';
+import { aiOnlyAllowed, fixedExitDown } from '@/pages/nodes/FixedExitsCard';
 
 describe('fixedExitDown', () => {
   const nodes = [
@@ -15,5 +15,19 @@ describe('fixedExitDown', () => {
 
   it('never flags this panel, which has no node row', () => {
     expect(fixedExitDown(0, [])).toBe(false);
+  });
+});
+
+describe('aiOnlyAllowed', () => {
+  it('offers AI sites only just where the backend accepts it: a server with a country', () => {
+    const nodes = [{ id: 2, country: 'DE' }, { id: 3, country: '' }, { id: 4 }];
+    expect([undefined, 0, 2, 3, 4, 9].map((id) => aiOnlyAllowed(id, nodes))).toEqual([
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+    ]);
   });
 });
