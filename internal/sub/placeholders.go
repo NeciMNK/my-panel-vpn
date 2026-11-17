@@ -77,7 +77,9 @@ func subMetadataUsesPlaceholders(values ...string) bool {
 	return false
 }
 
-func (a *SUBController) metadataForSubRequest(getSubReq func() *SubService, subID, builtinURL string) renderedSubMetadata {
+// metadataForSubRequest renders the profile metadata; an unset title falls back
+// to the subscription host so clients never list a nameless subscription.
+func (a *SUBController) metadataForSubRequest(getSubReq func() *SubService, subID, builtinURL, host string) renderedSubMetadata {
 	profileURL := ""
 	switch a.subProfileMode {
 	case service.SubProfileModeBuiltin:
@@ -98,8 +100,12 @@ func (a *SUBController) metadataForSubRequest(getSubReq func() *SubService, subI
 	// Disabled modes ignore the retained custom URL and never fall back to the request URL.
 	profileURL = renderSubPlaceholders(profileURL, subPlaceholderData{SubID: subID, Context: context, HasCtx: hasContext, Escape: true})
 	data := subPlaceholderData{SubID: subID, Context: context, HasCtx: hasContext}
+	title := renderSubPlaceholders(a.subTitle, data)
+	if strings.TrimSpace(title) == "" {
+		title = host
+	}
 	return renderedSubMetadata{
-		Title:      renderSubPlaceholders(a.subTitle, data),
+		Title:      title,
 		SupportURL: a.supportURL(renderSubPlaceholders(a.subSupportUrl, subPlaceholderData{SubID: subID, Context: context, HasCtx: hasContext, Escape: true})),
 		ProfileURL: profileURL,
 		Announce:   renderSubPlaceholders(a.subAnnounce, data),

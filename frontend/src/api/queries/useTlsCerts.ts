@@ -48,6 +48,7 @@ export interface IssueTlsCertInput {
   domains: string[];
   autoRenew: boolean;
   applyToPanel: boolean;
+  applyToSub: boolean;
 }
 
 export function useTlsCertMutations() {

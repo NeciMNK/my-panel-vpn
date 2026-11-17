@@ -94,17 +94,17 @@ func TestFriendPaysByCardAndIsExtendedAutomatically(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	tb.screenClientHome(7070, 7070)
+	tap(tb, 7070, cbClientPay, false)
 	body, markup := screenMarkup(t, tb, 7070)
 	if !strings.Contains(markup, `"`+cbPayOnline+`"`) || strings.Contains(markup, `"`+cbClientPaid+`"`) {
-		t.Errorf("home should offer card payment and no manual report without details: %s", markup)
+		t.Errorf("payment screen should offer card payment and no manual report without details: %s", markup)
 	}
 	if !strings.Contains(body, "150 RUB") || !strings.Contains(body, "50%") {
-		t.Errorf("home does not show the friends price: %q", body)
+		t.Errorf("payment screen does not show the friends price: %q", body)
 	}
 
 	tap(tb, 7070, cbPayOnline, false)
-	if _, markup := screenMarkup(t, tb, 7070); !strings.Contains(markup, `"pay_card pal@x 1"`) {
+	if _, markup := screenMarkup(t, tb, 7070); !strings.Contains(markup, `"pay_card pal@x 1 0"`) {
 		t.Fatalf("the term picker lacks the 1-month term: %s", markup)
 	}
 	tap(tb, 7070, "pay_card pal@x 1", false)
@@ -132,6 +132,44 @@ func TestFriendPaysByCardAndIsExtendedAutomatically(t *testing.T) {
 	tb.CheckPaymentOrders(time.Now())
 	if n := len(adminMessages(calls(), 9001)); n != 1 {
 		t.Errorf("the job re-announced an applied order: %d admin notices", n)
+	}
+}
+
+// Paying by card with speed tiers on sale asks for the speed first, charges its
+// surcharge per month and grants the tier once the provider reports the payment.
+func TestCardPaymentWithASpeedTierGrantsIt(t *testing.T) {
+	tb, _ := newScreenTgbot(t, false)
+	initReportDB(t)
+	localizeWithRealBundle(t)
+	setTestAdmins(t, 9001)
+	resetThrottles(t)
+	fake := useBotFakeProvider(t)
+	seedBilledClient(t, 7272, "speedy@x")
+	setClientExpiry(t, "speedy@x", time.Now().Add(3*24*time.Hour))
+	seedPaymentSettings(t, "300", "")
+	seedSettings(t, map[string]string{"tgPaymentCurrency": "RUB"})
+	plus := &model.SpeedTier{Name: "Plus", MinMbps: 200, MonthlyPrice: 100}
+	if err := database.GetDB().Create(plus).Error; err != nil {
+		t.Fatal(err)
+	}
+	id := strconv.Itoa(plus.Id)
+
+	tap(tb, 7272, cbPayOnline, false)
+	if _, markup := screenMarkup(t, tb, 7272); !strings.Contains(markup, `"pay_card speedy@x s`+id+`"`) {
+		t.Fatalf("card payment does not ask for the speed first: %s", markup)
+	}
+	tap(tb, 7272, "pay_card speedy@x s"+id, false)
+	if _, markup := screenMarkup(t, tb, 7272); !strings.Contains(markup, `"pay_card speedy@x 1 `+id+`"`) {
+		t.Fatalf("the term picker does not carry Plus: %s", markup)
+	}
+	tap(tb, 7272, "pay_card speedy@x 1 "+id, false)
+	if len(fake.orders) != 1 || fake.orders[0].Amount != 400 {
+		t.Fatalf("invoices = %+v, want one for 300 + 100", fake.orders)
+	}
+	fake.payAll()
+	tb.CheckPaymentOrders(time.Now())
+	if got := billingOf(t, "speedy@x").SpeedTierId; got != plus.Id {
+		t.Errorf("speed tier after the card payment = %d, want %d", got, plus.Id)
 	}
 }
 

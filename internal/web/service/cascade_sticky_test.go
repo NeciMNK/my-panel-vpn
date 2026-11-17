@@ -88,7 +88,7 @@ func TestNextCascadePins(t *testing.T) {
 			pins: []model.CascadePin{{Id: 1, Email: "anna", NodeId: 5, LastSeen: now}},
 			view: stickyView{
 				Now: now, Exits: []int{2, 5}, Healthy: allUp, OnlineHere: emailSet("anna", "bob"),
-				FreeMbps: map[int]float64{2: 10, 5: 60}, MinMbps: map[string]int{"bob": 50},
+				RoomMbps: map[int]float64{2: 10, 5: 60}, MinMbps: map[string]int{"bob": 50},
 			},
 			want:        map[string]int{"anna": 5, "bob": 5},
 			wantChanged: true,
@@ -98,7 +98,7 @@ func TestNextCascadePins(t *testing.T) {
 			pins: []model.CascadePin{{Id: 1, Email: "anna", NodeId: 2, LastSeen: now}},
 			view: stickyView{
 				Now: now, Exits: []int{2, 5}, Healthy: allUp, OnlineHere: emailSet("anna", "bob"),
-				FreeMbps: map[int]float64{2: 60, 5: 10}, MinMbps: map[string]int{"bob": 50},
+				RoomMbps: map[int]float64{2: 60, 5: 10}, MinMbps: map[string]int{"bob": 50},
 			},
 			want:        map[string]int{"anna": 2, "bob": 2},
 			wantChanged: true,
@@ -108,7 +108,7 @@ func TestNextCascadePins(t *testing.T) {
 			pins: []model.CascadePin{{Id: 1, Email: "anna", NodeId: 2, LastSeen: now}},
 			view: stickyView{
 				Now: now, Exits: []int{2, 5}, Healthy: allUp, OnlineHere: emailSet("anna", "bob"),
-				FreeMbps: map[int]float64{2: 5, 5: 10}, MinMbps: map[string]int{"bob": 50},
+				RoomMbps: map[int]float64{2: 5, 5: 10}, MinMbps: map[string]int{"bob": 50},
 			},
 			want:        map[string]int{"anna": 2, "bob": 5},
 			wantChanged: true,
@@ -134,7 +134,7 @@ func TestNextCascadePins(t *testing.T) {
 			pins: []model.CascadePin{{Id: 1, Email: "bob", NodeId: 5, LastSeen: now}},
 			view: stickyView{
 				Now: now, Exits: []int{2, 5}, Healthy: allUp, OnlineHere: emailSet("anna", "bob"),
-				FreeMbps: map[int]float64{2: 60, 5: 1}, MinMbps: map[string]int{"anna": 50},
+				RoomMbps: map[int]float64{2: 60, 5: 1}, MinMbps: map[string]int{"anna": 50},
 				Fixed: map[string]int{"anna": 5},
 			},
 			want:        map[string]int{"anna": 5, "bob": 5},
@@ -205,7 +205,7 @@ func TestCascadePinRulesGoRightBeforeTheBalancerRule(t *testing.T) {
 		{NodeId: 2, Address: "a", Port: 1}, {NodeId: 5, Address: "b", Port: 2},
 	}}
 	pins := []model.CascadePin{{Email: "bob", NodeId: 5}, {Email: "anna", NodeId: 5}, {Email: "carl", NodeId: 9}}
-	applyCascadeToTemplate(cfg, c, pins, aiExitPlan{}, cascadeZone{})
+	applyCascadeToTemplate(cfg, c, 0, pins, aiExitPlan{}, cascadeZone{})
 
 	tags := ruleTags(cfg)
 	want := []string{"->api", "->blocked", "mp-cascade-7-pin-n5", "mp-cascade-7-route"}

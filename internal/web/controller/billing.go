@@ -32,9 +32,10 @@ func (a *BillingController) client(c *gin.Context) {
 }
 
 type billingPayBody struct {
-	Email  string `json:"email"`
-	Months int    `json:"months"`
-	Note   string `json:"note"`
+	Email       string `json:"email"`
+	Months      int    `json:"months"`
+	SpeedTierId int    `json:"speedTierId"`
+	Note        string `json:"note"`
 }
 
 func (a *BillingController) pay(c *gin.Context) {
@@ -46,7 +47,7 @@ func (a *BillingController) pay(c *gin.Context) {
 	if body.Note == "" {
 		body.Note = I18nWeb(c, "tgbot.ledger.paymentNote", "Months=="+strconv.Itoa(body.Months))
 	}
-	result, err := a.billingService.ApplyPayment(body.Email, body.Months, body.Note, time.Now())
+	result, err := a.billingService.ApplyPayment(body.Email, body.Months, body.SpeedTierId, body.Note, time.Now())
 	if err != nil {
 		jsonMsg(c, I18nWeb(c, "somethingWentWrong"), err)
 		return

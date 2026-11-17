@@ -21,6 +21,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/mtproto"
+	"github.com/mhsanaei/3x-ui/v3/internal/protocol"
 	"github.com/mhsanaei/3x-ui/v3/internal/tuic"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/maskcompat"
@@ -650,18 +651,7 @@ func (s *InboundService) emailSubIDsForClients(clients []model.Client) (map[stri
 // "network" — are canonicalized to "network", which every panel reader (link
 // generation, port-conflict detection, flow eligibility) keys on.
 func (s *InboundService) normalizeStreamSettings(inbound *model.Inbound) {
-	protocolsWithStream := map[model.Protocol]bool{
-		model.VMESS:       true,
-		model.VLESS:       true,
-		model.Trojan:      true,
-		model.Shadowsocks: true,
-		model.Hysteria:    true,
-		model.WireGuard:   true,
-		model.Tunnel:      true,
-		model.MASQUE:      true,
-	}
-
-	if !protocolsWithStream[inbound.Protocol] {
+	if spec, ok := protocol.Lookup(inbound.Protocol); !ok || !spec.UsesStreamSettings {
 		inbound.StreamSettings = ""
 		return
 	}
@@ -2402,8 +2392,8 @@ func (s *InboundService) UpdateInbound(inbound *model.Inbound) (*model.Inbound, 
 
 // servedOutsideXray: these protocols run under their own manager, whose update
 // reconfigures in place where a Del+Add would drop every live session.
-func servedOutsideXray(protocol model.Protocol) bool {
-	return protocol == model.MTProto || protocol == model.TUIC || protocol == model.AmneziaWG
+func servedOutsideXray(p model.Protocol) bool {
+	return !protocol.ServedByXray(p)
 }
 
 // applyInboundUserOps reports whether per-user core ops moved running to next, so

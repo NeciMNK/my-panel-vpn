@@ -28,6 +28,7 @@ func getHostname() string {
 // HandleEvent is the eventbus subscriber callback: one kind of event keeps ONE
 // live card per admin chat, so a repeat edits it instead of a wall of messages.
 func (t *Tgbot) HandleEvent(e eventbus.Event) {
+	t.notifyAIPinOutage(e)
 	if !t.isEventEnabled(e.Type) {
 		return
 	}

@@ -116,6 +116,7 @@ export interface AllSetting {
   subHappPerAppMode: string;
   subHappPingType: string;
   subHappProviderId: string;
+  subHappRoutingUpdate: boolean;
   subHappSubExpire: boolean;
   subHappSubExpireButtonLink: string;
   subHappSubInfoButtonLink: string;
@@ -172,6 +173,7 @@ export interface AllSetting {
   subKeyFile: string;
   subListen: string;
   subPath: string;
+  subPathAliases: string;
   subPort: number;
   subProfileMode: string;
   subProfileUrl: string;
@@ -316,6 +318,7 @@ export interface AllSettingView {
   subHappPerAppMode: string;
   subHappPingType: string;
   subHappProviderId: string;
+  subHappRoutingUpdate: boolean;
   subHappSubExpire: boolean;
   subHappSubExpireButtonLink: string;
   subHappSubInfoButtonLink: string;
@@ -372,6 +375,7 @@ export interface AllSettingView {
   subKeyFile: string;
   subListen: string;
   subPath: string;
+  subPathAliases: string;
   subPort: number;
   subProfileMode: string;
   subProfileUrl: string;
@@ -466,11 +470,18 @@ export interface Cascade {
   updatedAt: number;
 }
 
-export interface CascadeFixedExit {
+export interface CascadeFixedExitRequest {
+  email: string;
+  nodeId: number;
+  trafficMode: string;
+}
+
+export interface CascadeFixedExitRow {
   createdAt: number;
   email: string;
   id: number;
   nodeId: number;
+  trafficMode: string;
 }
 
 export interface CascadeLink {
@@ -483,6 +494,20 @@ export interface CascadeLink {
   publicKey: string;
   serverName: string;
   shortId: string;
+}
+
+export interface CascadeRequest {
+  directDomains: string[];
+  directIps: string[];
+  enable: boolean;
+  entryInboundTags: string[];
+  entryNodeId: number;
+  exitCountry: string;
+  exitNodeIds: number[];
+  mode: string;
+  name: string;
+  relayInboundTags: string[];
+  strategy: string;
 }
 
 export interface Client {
@@ -532,6 +557,8 @@ export interface ClientBillingView {
   nonPaying: boolean;
   pendingMonths: number;
   plans: PaymentPlanPrice[];
+  speedTierId: number;
+  speedTiers: SpeedTier[];
   trusted: boolean;
 }
 
@@ -714,6 +741,14 @@ export interface GeodataTokenIssue {
   file?: string;
   reason: string;
   token: string;
+}
+
+export interface GroupSpeed {
+  floorMbps: number;
+  group: string;
+  id: number;
+  maxMbps: number;
+  minMbps: number;
 }
 
 export interface HappLinkResult {
@@ -1268,6 +1303,7 @@ export interface ServerFreeSpeed {
   freePerUserMbps: number;
   nodeId: number;
   online: number;
+  reservedMbps: number;
   usedMbps: number;
 }
 
@@ -1320,11 +1356,13 @@ export interface Setting {
 
 export interface SpeedOverview {
   clients: ClientSpeed[];
+  groups: GroupSpeed[];
   load: ServerFreeSpeed[];
   servers: ServerCapacity[];
   testSettings: SpeedTestSettings;
   testStats: SpeedTestStats[];
   testing: number[];
+  tiers: SpeedTier[];
 }
 
 export interface SpeedTestResult {
@@ -1357,6 +1395,13 @@ export interface SpeedTestStats {
   maxDownloadMbps: number;
   minDownloadMbps: number;
   nodeId: number;
+}
+
+export interface SpeedTier {
+  id: number;
+  minMbps: number;
+  monthlyPrice: number;
+  name: string;
 }
 
 export interface SubBalancer {
@@ -1402,6 +1447,7 @@ export interface TlsCertSettings {
 
 export interface TlsCertificate {
   applyToPanel: boolean;
+  applyToSub: boolean;
   autoRenew: boolean;
   certFile: string;
   createdAt: number;

@@ -18,15 +18,19 @@ import (
 	"time"
 )
 
-// Limit caps every connection from one client IP.
+// Limit caps every connection from one client IP at Mbps (0 = no cap) and,
+// when the plan knows the link speed, keeps MinMbps of it for that IP.
 type Limit struct {
-	IP   string `json:"ip"`
-	Mbps int    `json:"mbps"`
+	IP      string `json:"ip"`
+	Mbps    int    `json:"mbps"`
+	MinMbps int    `json:"minMbps,omitempty"`
 }
 
-// Plan is the full set of limits one server must enforce.
+// Plan is the full set of limits one server must enforce; LinkMbps is the
+// server's link speed, which guarantees are carved out of.
 type Plan struct {
-	Limits []Limit `json:"limits"`
+	Limits   []Limit `json:"limits"`
+	LinkMbps int     `json:"linkMbps,omitempty"`
 }
 
 // Status is what a server reports after applying a plan.
@@ -35,29 +39,56 @@ type Status struct {
 	Limited   int    `json:"limited" example:"3"`
 }
 
-// Normalize validates IPs and rates, keeps the strictest limit per IP and
-// sorts, so equal plans render identical commands.
+// Normalize validates IPs and rates, merges the users of one IP (strictest cap,
+// biggest guarantee) and sorts, so equal plans render identical commands.
 func (p *Plan) Normalize() error {
-	by := map[string]int{}
+	if p.LinkMbps < 0 {
+		return fmt.Errorf("link speed cannot be negative")
+	}
+	by := map[string]Limit{}
 	for _, l := range p.Limits {
 		a, err := netip.ParseAddr(strings.TrimSpace(l.IP))
 		if err != nil {
 			return fmt.Errorf("limit: %q is not an IP address", l.IP)
 		}
-		if l.Mbps <= 0 {
+		if l.Mbps < 0 || l.MinMbps < 0 || l.Mbps == 0 && l.MinMbps == 0 {
 			return fmt.Errorf("limit for %s: speed must be above 0 Mbit/s", a)
 		}
 		ip := a.Unmap().String()
-		if cur, ok := by[ip]; !ok || l.Mbps < cur {
-			by[ip] = l.Mbps
+		cur, ok := by[ip]
+		if !ok {
+			by[ip] = Limit{IP: ip, Mbps: l.Mbps, MinMbps: l.MinMbps}
+			continue
 		}
+		if l.Mbps > 0 && (cur.Mbps == 0 || l.Mbps < cur.Mbps) {
+			cur.Mbps = l.Mbps
+		}
+		cur.MinMbps = max(cur.MinMbps, l.MinMbps)
+		by[ip] = cur
 	}
 	p.Limits = p.Limits[:0]
-	for ip, mbps := range by {
-		p.Limits = append(p.Limits, Limit{IP: ip, Mbps: mbps})
+	for _, l := range by {
+		if p.LinkMbps == 0 {
+			l.MinMbps = 0
+		}
+		if l.Mbps > 0 && l.MinMbps > l.Mbps {
+			l.MinMbps = l.Mbps
+		}
+		if l.Mbps > 0 || l.MinMbps > 0 {
+			p.Limits = append(p.Limits, l)
+		}
 	}
 	sort.Slice(p.Limits, func(i, j int) bool { return p.Limits[i].IP < p.Limits[j].IP })
 	return nil
+}
+
+func (p Plan) guarantees() bool {
+	for _, l := range p.Limits {
+		if l.MinMbps > 0 {
+			return true
+		}
+	}
+	return false
 }
 
 // Commands renders the tc invocations that turn dev's shaping into exactly the
@@ -70,29 +101,58 @@ func Commands(dev string, p Plan) [][]string {
 	if len(p.Limits) == 0 {
 		return cmds
 	}
-	cmds = append(cmds,
-		[]string{"qdisc", "add", "dev", dev, "root", "handle", "1:", "htb", "default", "ffff"},
-		[]string{"class", "add", "dev", dev, "parent", "1:", "classid", "1:ffff", "htb", "rate", "100gbit"},
-		[]string{"qdisc", "add", "dev", dev, "handle", "ffff:", "ingress"},
-	)
+	// Guaranteed classes only win the link from the rest when they share one
+	// parent bounded at the link speed; plain caps need no tree.
+	parent, ceilOf := "1:", func(l Limit) int { return l.Mbps }
+	cmds = append(cmds, []string{"qdisc", "add", "dev", dev, "root", "handle", "1:", "htb", "default", "ffff"})
+	if p.guarantees() {
+		parent = "1:fffe"
+		link := fmt.Sprintf("%dmbit", p.LinkMbps)
+		rest := p.LinkMbps
+		for _, l := range p.Limits {
+			rest -= rateOf(l)
+		}
+		cmds = append(cmds,
+			[]string{"class", "add", "dev", dev, "parent", "1:", "classid", parent, "htb", "rate", link, "ceil", link},
+			[]string{"class", "add", "dev", dev, "parent", parent, "classid", "1:ffff", "htb", "rate", fmt.Sprintf("%dmbit", max(rest, 1)), "ceil", link},
+		)
+		ceilOf = func(l Limit) int {
+			if l.Mbps > 0 {
+				return l.Mbps
+			}
+			return p.LinkMbps
+		}
+	} else {
+		cmds = append(cmds, []string{"class", "add", "dev", dev, "parent", "1:", "classid", "1:ffff", "htb", "rate", "100gbit"})
+	}
+	cmds = append(cmds, []string{"qdisc", "add", "dev", dev, "handle", "ffff:", "ingress"})
 	for i, l := range p.Limits {
 		class := fmt.Sprintf("1:%x", i+1)
-		rate := fmt.Sprintf("%dmbit", l.Mbps)
 		proto, match, bits := "ip", "ip", "32"
 		if strings.Contains(l.IP, ":") {
 			proto, match, bits = "ipv6", "ip6", "128"
 		}
 		cidr := l.IP + "/" + bits
 		cmds = append(cmds,
-			[]string{"class", "add", "dev", dev, "parent", "1:", "classid", class, "htb", "rate", rate, "ceil", rate},
+			[]string{"class", "add", "dev", dev, "parent", parent, "classid", class, "htb", "rate", fmt.Sprintf("%dmbit", rateOf(l)), "ceil", fmt.Sprintf("%dmbit", ceilOf(l))},
 			[]string{"filter", "add", "dev", dev, "parent", "1:", "protocol", proto, "prio", "1", "u32", "match", match, "dst", cidr, "flowid", class},
-			[]string{
-				"filter", "add", "dev", dev, "parent", "ffff:", "protocol", proto, "prio", "1", "u32", "match", match, "src", cidr,
-				"police", "rate", rate, "burst", burstFor(l.Mbps), "drop", "flowid", ":1",
-			},
 		)
+		if l.Mbps > 0 {
+			cmds = append(cmds, []string{
+				"filter", "add", "dev", dev, "parent", "ffff:", "protocol", proto, "prio", "1", "u32", "match", match, "src", cidr,
+				"police", "rate", fmt.Sprintf("%dmbit", l.Mbps), "burst", burstFor(l.Mbps), "drop", "flowid", ":1",
+			})
+		}
 	}
 	return cmds
+}
+
+// rateOf is what HTB promises the IP: its guarantee, or its cap when it has none.
+func rateOf(l Limit) int {
+	if l.MinMbps > 0 {
+		return l.MinMbps
+	}
+	return l.Mbps
 }
 
 // burstFor sizes the policer bucket to ~10ms of traffic, never below 64k, so

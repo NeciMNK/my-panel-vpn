@@ -85,11 +85,11 @@ func TestApplyPaymentSettlesPendingReportAndBooksIncome(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := clients.SetPendingPayment(billing.ClientId, 3); err != nil {
+	if err := clients.SetPendingPayment(billing.ClientId, 3, 0); err != nil {
 		t.Fatal(err)
 	}
 
-	result, err := (&BillingService{}).ApplyPayment("api@x", 3, "3 mo", now)
+	result, err := (&BillingService{}).ApplyPayment("api@x", 3, 0, "3 mo", now)
 	if err != nil {
 		t.Fatalf("ApplyPayment: %v", err)
 	}
@@ -101,7 +101,7 @@ func TestApplyPaymentSettlesPendingReportAndBooksIncome(t *testing.T) {
 	if err != nil || traffic.ExpiryTime != wantExpiry {
 		t.Errorf("stored expiry = %v (%v), want %d", traffic, err, wantExpiry)
 	}
-	if claimed, _ := clients.ClaimPendingPayment(billing.ClientId, 3); claimed {
+	if claimed, _ := clients.ClaimPendingPayment(billing.ClientId, 3, 0); claimed {
 		t.Error("the bot report was still pending after the payment was applied")
 	}
 	report, err := (&LedgerService{}).Report(LedgerMonthOf(now))
@@ -124,7 +124,7 @@ func TestApplyPaymentRejectsBadInput(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			if _, err := (&BillingService{}).ApplyPayment(tc.email, tc.months, "", time.Now()); !errors.Is(err, tc.want) {
+			if _, err := (&BillingService{}).ApplyPayment(tc.email, tc.months, 0, "", time.Now()); !errors.Is(err, tc.want) {
 				t.Errorf("err = %v, want %v", err, tc.want)
 			}
 		})
@@ -174,7 +174,7 @@ func TestApplyPaymentSpendsFreePlanCreditOnce(t *testing.T) {
 	}
 	billingSvc := &BillingService{}
 	for i, want := range []int{235, 240} {
-		result, err := billingSvc.ApplyPayment("pal@x", 1, "1 mo", now)
+		result, err := billingSvc.ApplyPayment("pal@x", 1, 0, "1 mo", now)
 		if err != nil {
 			t.Fatalf("payment %d: %v", i+1, err)
 		}
@@ -192,12 +192,73 @@ func TestApplyPaymentSpendsFreePlanCreditOnce(t *testing.T) {
 func TestApplyOnlinePaymentBooksTheChargedAmount(t *testing.T) {
 	now := time.Date(2026, 11, 10, 12, 0, 0, 0, time.UTC)
 	seedPayingClient(t, "web@x", now.UnixMilli())
-	result, err := (&BillingService{}).ApplyOnlinePayment("web@x", 1, 250, "online", now)
+	result, err := (&BillingService{}).ApplyOnlinePayment("web@x", 1, 0, 250, "online", now)
 	if err != nil || result.Amount != 250 {
 		t.Fatalf("result = %+v, %v; want 250 booked", result, err)
 	}
 	report, _ := (&LedgerService{}).Report(LedgerMonthOf(now))
 	if len(report.Entries) != 1 || report.Entries[0].Amount != 250 {
 		t.Errorf("ledger = %+v, want one 250 entry", report.Entries)
+	}
+}
+
+// A speed tier is a monthly surcharge: paying a term with it adds the surcharge
+// per month and grants the tier's guarantee; a later plain term takes it away.
+func TestApplyPaymentWithASpeedTierChargesItAndGrantsItsSpeed(t *testing.T) {
+	now := time.Date(2026, 11, 10, 12, 0, 0, 0, time.UTC)
+	seedPayingClient(t, "fast@x", now.Add(24*time.Hour).UnixMilli())
+	plus := &model.SpeedTier{Name: "Plus", MinMbps: 200, MonthlyPrice: 100}
+	if err := database.GetDB().Create(plus).Error; err != nil {
+		t.Fatal(err)
+	}
+	billing := &BillingService{}
+	if _, err := billing.ApplyPayment("fast@x", 1, plus.Id+1, "1 mo", now); !errors.Is(err, ErrSpeedTier) {
+		t.Fatalf("unknown tier: err = %v, want ErrSpeedTier", err)
+	}
+	result, err := billing.ApplyPayment("fast@x", 3, plus.Id, "3 mo", now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Amount != 810+3*100 {
+		t.Errorf("amount = %d, want 1110 (810 for 3 months plus 3 x 100 for Plus)", result.Amount)
+	}
+	rules, err := speedRules()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := rules["fast@x"]; got != (speedRule{Min: 200}) {
+		t.Errorf("rule with Plus = %+v, want min 200 over the paid group's 100", got)
+	}
+	if _, err := billing.ApplyPayment("fast@x", 1, 0, "1 mo", now); err != nil {
+		t.Fatal(err)
+	}
+	rules, _ = speedRules()
+	if got := rules["fast@x"]; got != (speedRule{Min: 100}) {
+		t.Errorf("rule after a plain term = %+v, want the paid group's min 100", got)
+	}
+}
+
+func TestSpeedTierLapsesWithTheClientsTerm(t *testing.T) {
+	now := time.Now()
+	seedPayingClient(t, "late@x", now.Add(-time.Hour).UnixMilli())
+	db := database.GetDB()
+	plus := &model.SpeedTier{Name: "Plus", MinMbps: 200, MonthlyPrice: 100}
+	if err := db.Create(plus).Error; err != nil {
+		t.Fatal(err)
+	}
+	billing, err := (&ClientService{}).GetBillingByEmail("late@x")
+	if err != nil {
+		t.Fatal(err)
+	}
+	billing.SpeedTierId = plus.Id
+	if err := db.Save(billing).Error; err != nil {
+		t.Fatal(err)
+	}
+	rules, err := speedRules()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, ok := rules["late@x"]; ok && got.Min == 200 {
+		t.Errorf("an expired client still gets the Plus guarantee: %+v", got)
 	}
 }

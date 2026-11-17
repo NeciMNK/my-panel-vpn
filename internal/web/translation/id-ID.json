@@ -838,7 +838,11 @@
         "peerNumberConfig": "Konfig Peer {n}"
       },
       "sniffingDestOverride": "Penggantian tujuan",
-      "advancedTitle": "Pengaturan Lanjutan"
+      "advancedTitle": "Pengaturan Lanjutan",
+      "copyAsXhttp": "Salin sebagai XHTTP",
+      "copyAsXhttpContent": "Membuat inbound XHTTP di port baru dengan klien dan keamanan yang sama. Inbound gRPC tetap berjalan; hapus setelah klien memperbarui langganan.",
+      "grpcDeprecated": "Xray telah menghentikan transport gRPC dan dapat menghapusnya. Pindahkan inbound ini ke XHTTP.",
+      "deprecated": "usang"
     },
     "clients": {
       "tabBasics": "Dasar",
@@ -1276,6 +1280,7 @@
         "strategy": "How to pick the exit",
         "inbounds": "Only these entry inbounds",
         "inboundsHint": "Empty = all traffic of the entry server goes through the cascade.",
+        "inboundsAllWarning": "No inbounds chosen: the cascade takes over every inbound of the entry server, direct ones included. Pick the inbounds that should go through the exit.",
         "desc": "Users connect to the entry server and reach the internet through the exit. The panel creates the link between the servers itself. Several exits = load balancing.",
         "deleteConfirm": "Delete the cascade and its link inbounds?",
         "toasts": {
@@ -1288,7 +1293,7 @@
         "country": "Exit country",
         "countryHint": "Traffic leaves through the fastest server of this country. New nodes of the country join automatically.",
         "split": "Split traffic",
-        "splitHint": "Sites and IPs of the entry server's country (Russia: .ru, .su, .рф, geosite:category-ru, geoip:ru) and the entries below leave the internet from the entry itself; everything else goes through the exit.",
+        "splitHint": "Sites whose servers are in the entry server's country (by server IP, geoip; for Russia also geosite:category-ru) and the entries below leave the internet from the entry itself; everything else goes through the exit, even a .ru site hosted abroad.",
         "relay": "Pure relay",
         "relayHint": "The entry only forwards traffic: everything goes through the exit.",
         "relayInbounds": "Inbounds that only relay",
@@ -1305,9 +1310,12 @@
       },
       "fixedExits": {
         "title": "Pinned exits",
-        "desc": "The user always leaves to the internet through the chosen server (with its IP) in every cascade that has this server as an exit, e.g. \"all servers of DE\". One pinned server per country. While it is down the user is moved to another exit for the time being and comes back as soon as the server is online again.",
+        "desc": "The user always leaves to the internet through the chosen server (with its IP) in every cascade that has this server as an exit, e.g. \"all servers of DE\". One pinned server per country. While it is down the user is moved to another exit for the time being and comes back as soon as the server is online again. Traffic: “All traffic” sends everything through this server; “AI sites only” sends only AI services (the list on the AI domains page) and picks the rest automatically. AI sites only works in one country per user, the same choice as the bot’s AI button.",
         "user": "User",
         "exit": "Exit server",
+        "traffic": "Traffic",
+        "trafficAll": "All traffic",
+        "trafficAI": "AI sites only",
         "pin": "Pin",
         "fallback": "down — on another exit for now",
         "toasts": {
@@ -1381,11 +1389,11 @@
       },
       "speed": {
         "title": "Speed limits",
-        "desc": "Max caps a user's speed on every server they use. Min is the speed a server must still have free for the user: when a server drops below it, new connections go to another server of the cascade, and if no server has room the admin gets a Telegram alert. Set each server's link speed so free speed can be measured.",
+        "desc": "Max caps a user's speed. Min is guaranteed: on the server the user connects to, their downloads keep at least that much of the link (uploads can only be capped). Guarantees are counted on the cascade's entry and exit; when an exit cannot cover a new user's guarantee they go to another exit, and if no server can the admin gets a Telegram alert. A user's own speed replaces their group's. Set each server's link speed so guarantees and free speed can be measured.",
         "server": "Server",
         "capacity": "Link speed, Mbit/s",
         "load": "Load",
-        "loadValue": "{used} Mbit/s used, {online} online, {free} Mbit/s free per user",
+        "loadValue": "{used} Mbit/s used, {online} online, {free} Mbit/s free per user, {reserved} Mbit/s guaranteed",
         "user": "User",
         "min": "Min, Mbit/s",
         "max": "Max, Mbit/s",
@@ -1467,6 +1475,16 @@
         "addDbHost": "Database address for the new master",
         "addDbHostHint": "Fill in when this master reaches PostgreSQL over 127.0.0.1: the new master gets this address instead. PostgreSQL must accept connections from the new server (listen_addresses and pg_hba.conf).",
         "setupDbLocal": "XUI_DB_DSN still points to this server's own database (127.0.0.1 or a socket), which the new master cannot reach. Put the database address into the DSN, or add the master again with the database address filled in."
+      },
+      "groupSpeed": {
+        "title": "Speed by group",
+        "desc": "Every member of a group gets its speed unless the user has their own in the speed limits above. Min is guaranteed. With \"Floating from\" set, the max floats between that and Max: what the guarantees of the users on the server leave free, shared among the floating users, in 10 Mbit/s steps. A cascade user gets the smaller share of the entry and the exit.",
+        "group": "Group",
+        "floor": "Floating from, Mbit/s"
+      },
+      "tabs": {
+        "nodes": "Nodes",
+        "speed": "Speed"
       }
     },
     "settings": {
@@ -1579,9 +1597,9 @@
       "subClashUserAgentRegex": "Regex User-Agent Clash/Mihomo",
       "subClashUserAgentRegexDesc": "Ekspresi reguler Go RE2 yang dicocokkan dengan User-Agent klien untuk mengenali klien Clash/Mihomo pada URL langganan standar. Kosongkan untuk memakai pola bawaan. Mulai ulang panel setelah mengubahnya.",
       "subTitle": "Judul Langganan",
-      "subTitleDesc": "Judul yang ditampilkan di klien VPN. Mendukung token identitas klien: {{EMAIL}}, {{ID}}, {{SHORT_ID}}, {{SUB_ID}}, {{TELEGRAM_ID}}.",
+      "subTitleDesc": "Judul yang ditampilkan di klien VPN. Mendukung token identitas klien: {{EMAIL}}, {{ID}}, {{SHORT_ID}}, {{SUB_ID}}, {{TELEGRAM_ID}}. Empty uses the subscription domain.",
       "subSupportUrl": "URL Dukungan",
-      "subSupportUrlDesc": "Tautan dukungan teknis yang ditampilkan di klien VPN. Mendukung token identitas klien: {{EMAIL}}, {{ID}}, {{SHORT_ID}}, {{SUB_ID}}, {{TELEGRAM_ID}}.",
+      "subSupportUrlDesc": "Tautan dukungan teknis yang ditampilkan di klien VPN. Mendukung token identitas klien: {{EMAIL}}, {{ID}}, {{SHORT_ID}}, {{SUB_ID}}, {{TELEGRAM_ID}}. Empty uses the subscription domain.",
       "subProfileMode": "Halaman profil",
       "subProfileModeDesc": "Pilih tautan situs web yang ditampilkan di klien VPN.",
       "subProfileModeNone": "Tanpa tautan",
@@ -1591,7 +1609,7 @@
       "subProfileUrl": "URL Profil",
       "subProfileUrlDesc": "Tautan ke situs web Anda yang ditampilkan di klien VPN. Mendukung token identitas klien: {{EMAIL}}, {{ID}}, {{SHORT_ID}}, {{SUB_ID}}, {{TELEGRAM_ID}}. Biarkan kosong agar tautan situs web tidak ditampilkan di klien VPN.",
       "subAnnounce": "Pengumuman",
-      "subAnnounceDesc": "Teks pengumuman yang ditampilkan di klien VPN. Mendukung token identitas klien: {{EMAIL}}, {{ID}}, {{SHORT_ID}}, {{SUB_ID}}, {{TELEGRAM_ID}}.",
+      "subAnnounceDesc": "Teks pengumuman yang ditampilkan di klien VPN. Mendukung token identitas klien: {{EMAIL}}, {{ID}}, {{SHORT_ID}}, {{SUB_ID}}, {{TELEGRAM_ID}}. Empty uses the subscription domain.",
       "subThemeDir": "Direktori Tema Langganan",
       "subThemeDirDesc": "Path absolut ke folder yang berisi template kustom (index.html/sub.html) untuk halaman langganan (mis. /etc/3x-ui/sub_templates/my-theme/). Biarkan kosong untuk menggunakan halaman default.",
       "subThemeDirDocs": "Panduan templat ↗",
@@ -1599,6 +1617,8 @@
       "happLinkEnable": "Tautan langganan terenkripsi",
       "happLinkEnableDesc": "Izinkan pembuatan tautan Happ terenkripsi di jendela kode QR klien. URL langganan diproses secara lokal.",
       "subEnableRoutingDesc": "Pengaturan global untuk mengaktifkan perutean (routing) di klien VPN. (Hanya untuk Happ)",
+      "subHappRoutingUpdate": "Update routing on added subscriptions",
+      "subHappRoutingUpdateDesc": "Sends routing as happ://routing/add, so rule changes reach users who already added the subscription. Off: happ://routing/onadd, applied only when the subscription is first added.",
       "subRoutingRules": "Aturan routing",
       "subRoutingRulesDesc": "Tempel deeplink happ:// siap pakai atau satu URL HTTPS permanen. Panel memperbarui aturan jarak jauh di latar belakang dan menyimpan nilai valid terakhir, sehingga permintaan langganan tidak menunggu sumber. (Hanya untuk Happ)",
       "subHideSettings": "Sembunyikan pengaturan server",
@@ -1623,6 +1643,12 @@
       "subKeyPathDesc": "Path berkas kunci privat untuk layanan langganan. (dimulai dengan ‘/‘)",
       "subPath": "Path URI",
       "subPathDesc": "URI path untuk layanan langganan. (dimulai dengan ‘/‘ dan diakhiri dengan ‘/‘)",
+      "subPathAliases": "Old subscription paths",
+      "subPathAliasesDesc": "Earlier paths that keep serving the same subscriptions, comma separated. Remove one to stop links on it.",
+      "subPathChangeTitle": "Change the subscription path?",
+      "subPathChangeDesc": "Links already handed out use {old}. They stop working unless the old path is kept as an extra one.",
+      "subPathKeepOld": "Keep old links working",
+      "subPathDropOld": "Break old links",
       "subDomain": "Domain Pendengar",
       "subDomainDesc": "Nama domain untuk layanan langganan. (biarkan kosong untuk mendengarkan semua domain dan IP). Juga digunakan sebagai domain cadangan untuk tautan langganan yang ditampilkan ketika \"URI Proxy Terbalik\" kosong — atur \"URI Proxy Terbalik\" jika panel dan langganan diakses melalui domain yang berbeda (misalnya di belakang reverse proxy).",
       "subUpdates": "Interval Pembaruan",
@@ -2151,6 +2177,8 @@
         "autoRenew": "Auto-renew",
         "applyToPanel": "Use for the panel",
         "applyToPanelDesc": "Once issued, the panel switches to this certificate and restarts.",
+        "applyToSub": "Use for the subscription server",
+        "applyToSubDesc": "The subscription server switches to HTTPS on this certificate and the panel restarts. Leave it off when a reverse proxy reaches the subscription port over plain HTTP.",
         "status": "Status",
         "statusPending": "Issuing…",
         "statusValid": "Valid",
@@ -2177,7 +2205,7 @@
       },
       "eventSpeedLow": "Speed below user minimum",
       "eventMasterLeader": "Another master took over",
-      "tgPaymentMoved": "The price, discounts and where to pay are set on the Finance page.",
+      "tgPaymentMoved": "Prices, discounts, payment details, the free plan and online payment (YooKassa, which confirms payments by itself) are set on the Finance page, Prices and payment tab.",
       "tgFreePlanPrice": "Free plan price (online)",
       "tgFreePlanPriceDesc": "A one-off payment that keeps spam bots out. Above 0 and with a payment provider connected, a new user pays it by card in the bot and gets the free plan automatically, with no admin approval; the amount comes off their first paid plan. 0, or no provider, keeps the free request that an admin approves.",
       "tgFreePlanInbounds": "Inbounds for paid free plans",
@@ -2813,6 +2841,7 @@
         },
         "descEMAIL": "Email klien",
         "descINBOUND": "Catatan inbound itu sendiri (nama konfigurasi)",
+        "descAUTO_NAME": "Server name built automatically: entry flag, Pure / Split / Auto, exit country, protocol",
         "descHOST": "Catatan host",
         "descID": "UUID klien",
         "descSHORT_ID": "8 karakter pertama dari UUID",
@@ -2921,7 +2950,18 @@
       "nodeHint": "Pick the node this server runs; its address is shown and follows the node's settings. For a server that is not a node (e.g. this panel) type the IP below.",
       "noNode": "— not a node —",
       "aiExitPrice": "AI button price",
-      "aiExitPriceDesc": "One-off price of the bot's \"🤖 I will use AI\" button (a permanent exit IP). Friends always get it free. 0 hides it from everyone else. It is paid by card when a provider is connected, or by hand to the payment details with an admin's confirm in the bot. Clients who already paid keep it."
+      "aiExitPriceDesc": "One-off price of the bot's \"🤖 I will use AI\" button (a permanent exit IP). Friends always get it free. 0 hides it from everyone else. It is paid by card when a provider is connected, or by hand to the payment details with an admin's confirm in the bot. Clients who already paid keep it.",
+      "tabs": {
+        "summary": "Servers and totals",
+        "payment": "Prices and payment",
+        "nonPaying": "Not paying"
+      },
+      "speedTiers": {
+        "title": "Speed tiers",
+        "desc": "A speed upgrade clients can buy in the bot when they pay: its price is added to every month of the term, and its minimum is guaranteed until the term ends. It beats the group's speed; a speed set on the client itself still wins. Deleting a tier returns its buyers to their group's speed.",
+        "name": "Name",
+        "price": "Price per month"
+      }
     },
     "aiDomains": {
       "list": "Sites for the AI pin",
@@ -3073,6 +3113,8 @@
       "paymentReported": "💳 {{ .User }} paid for {{ .Months }} mo ({{ .Total }}): ",
       "paymentConfirmed": "✅ Payment confirmed: {{ .Email }} is active until {{ .Date }}.",
       "paymentConfirmedBy": "✅ {{ .Email }}: confirmed by {{ .Admin }}, active until {{ .Date }}",
+      "paymentRefusedBy": "❌ Not received: {{ .Admin }}",
+      "paymentNotReceived": "❌ The admin has not received your payment for {{ .Months }} mo. Check the payment details and report the payment again, or write to the admin.",
       "graceTaken": "⏳ {{ .User }} deferred payment by {{ .Days }} days for: ",
       "aiExitIntro": "🤖 AI services (ChatGPT, Claude, Gemini…) block accounts whose IP keeps changing. Your exit IP is pinned per country and stays the same on every connection.\r\n\r\n",
       "aiExitPinnedLine": "{{ .Country }}: 📌 pinned to {{ .Server }}\r\n",
@@ -3113,7 +3155,23 @@
       "aiSuggestAdded": "✅ Your suggestion was accepted: {{ .Domains }} now go through your AI IP.",
       "aiSuggestPartial": "➗ An admin added some of the sites you suggested ({{ .Domains }}), but not all of them.",
       "aiSuggestDeclined": "❌ An admin decided not to add {{ .Domains }}.",
-      "aiSuggestPresent": "📋 {{ .Domains }} already go through your AI IP, so nothing needed adding."
+      "aiSuggestPresent": "📋 {{ .Domains }} already go through your AI IP, so nothing needed adding.",
+      "aiOutageNotice": "🔴 The server {{ .Server }} with your pinned IP is down.\r\n\r\n",
+      "aiOutageBack": "🟢 The server {{ .Server }} is back: your pinned IP works again.",
+      "aiOutageDownLine": "🔴 {{ .Server }} is down. ",
+      "aiOutageNowSwapped": "Until it is back, its traffic goes via {{ .Server }}.\r\n",
+      "aiOutageNowOff": "Your VPN is off until it is back.\r\n",
+      "aiOutageNowBlocked": "Blocked until it is back: {{ .Services }}.\r\n",
+      "aiOutageChoiceBlockAll": "\r\nIf a server with your pinned IP goes down: AI services are blocked so they never see another IP, and the rest of your traffic goes through other servers.\r\n",
+      "aiOutageChoiceBlock": "\r\nIf a server with your pinned IP goes down: {{ .Services }} are blocked, everything else goes through other servers.\r\n",
+      "aiOutageChoiceOther": "\r\nIf a server with your pinned IP goes down: you get another IP of the same country until it is back.\r\n",
+      "aiOutageChoiceOtherIn": "\r\nIf a server with your pinned IP goes down: you get another IP of the same country, or of {{ .Country }} when it has none left.\r\n",
+      "aiOutageChoiceOff": "\r\nIf a server with your pinned IP goes down: your VPN is off until it is back.\r\n",
+      "aiOutageNoUse": "How should the server not be used while it is down?\r\n\r\n🚫 Not at all: your VPN is off until it is back.\r\n🤖 For AI only: the AI services you tick are cut off, the rest goes through other servers.",
+      "aiOutagePickCountry": "There is no live server left in that country. Which country should the temporary IP come from?",
+      "aiOutageNoCountry": "No other country has a live server either, so AI services stay blocked for now.",
+      "aiOutageServices": "Tick the AI services to cut off while the server is down:",
+      "paymentReportedTier": "{{ .Total }}, speed {{ .Name }} from {{ .Mbps }} Mbit/s"
     },
     "buttons": {
       "closeKeyboard": "❌ Tutup Papan Ketik",
@@ -3173,9 +3231,11 @@
       "attachInbound": "Lampirkan inbound ({{ .Count }})",
       "attachDone": "✅ Selesai",
       "iPaid": "✅ I have paid",
+      "pay": "💳 Payment",
       "planOption": "{{ .Months }} mo",
       "payLater": "⏳ Pay later (up to {{ .Days }} days)",
       "confirmPayment": "✅ {{ .Email }}: +{{ .Months }} mo",
+      "paymentNotReceived": "❌ Not received",
       "trusted": "⭐ Trusted (pay later): {{ .State }}",
       "requestFree": "🆓 Request a free subscription ({{ .GB }} GB/month)",
       "approve": "✅ Approve",
@@ -3213,7 +3273,15 @@
       "aiSuggestAdded": "✅ Added all",
       "aiSuggestPartial": "➗ Added some",
       "aiSuggestDeclined": "❌ Added none",
-      "aiSuggestPresent": "📋 All already listed"
+      "aiSuggestPresent": "📋 All already listed",
+      "aiOutage": "⚠️ If my server goes down",
+      "aiOutageOther": "🔁 Use another IP for now",
+      "aiOutageNoUse": "🚫 Don't use it",
+      "aiOutageOff": "🚫 Not at all",
+      "aiOutageBlock": "🤖 For AI only",
+      "aiOutageAll": "✅ All AI services",
+      "tierNone": "Standard speed",
+      "tierOption": "{{ .Name }}: from {{ .Mbps }} Mbit/s, +{{ .Total }}/mo"
     },
     "answers": {
       "broadcastStarted": "🚀 Siaran dimulai.",
@@ -3257,7 +3325,8 @@
       "paymentCanceled": "This invoice is closed. Open a new one if you still want to pay.",
       "aiExitLocked": "The AI button is not available on your subscription.",
       "aiSuggestAnswered": "Done, the client has been told.",
-      "aiSuggestAlreadyAnswered": "This suggestion has already been answered."
+      "aiSuggestAlreadyAnswered": "This suggestion has already been answered.",
+      "aiOutageKeepOne": "Keep at least one service ticked."
     },
     "screens": {
       "panel": "Panel",
@@ -3311,7 +3380,11 @@
       "orderDescription": "VPN {{ .Email }}, {{ .Months }} mo",
       "aiExitDescription": "VPN: permanent exit IP for AI services",
       "aiExitInvoice": "🧾 <b>🤖 I will use AI</b>: a permanent exit IP, so AI services do not block your account — {{ .Total }} once, yours for good.\r\nThe button unlocks automatically after payment.",
-      "aiExitManual": "🧾 <b>🤖 I will use AI</b>: a permanent exit IP, so AI services do not block your account — {{ .Total }} once, yours for good.\r\n🏦 Where to pay:\r\n{{ .Details }}\r\n\r\nThen tap \"I paid\": the button opens once an admin confirms the payment."
+      "aiExitManual": "🧾 <b>🤖 I will use AI</b>: a permanent exit IP, so AI services do not block your account — {{ .Total }} once, yours for good.\r\n🏦 Where to pay:\r\n{{ .Details }}\r\n\r\nThen tap \"I paid\": the button opens once an admin confirms the payment.",
+      "tiersTitle": "⚡ Faster speed, added to every month:\r\n",
+      "tier": "• {{ .Name }}: at least {{ .Mbps }} Mbit/s, +{{ .Total }} a month\r\n",
+      "tierCurrent": "Your speed now: {{ .Name }}.\r\n",
+      "chooseTier": "⚡ Which speed do you pay for? A faster tier adds its price to every month of the term."
     },
     "ledger": {
       "summary": "💰 <b>Finance for {{ .Month }}</b>\r\n\r\n➕ Income: {{ .Income }}\r\n➖ Expenses: {{ .Expenses }} (servers {{ .Servers }})\r\n{{ .Sign }} <b>Result: {{ .Balance }}</b>\r\n👥 Paying clients: {{ .Paying }}, expected {{ .Expected }}\r\n",

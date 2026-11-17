@@ -363,6 +363,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "subHappProviderId": {
         "type": "string"
       },
+      "subHappRoutingUpdate": {
+        "type": "boolean"
+      },
       "subHappSubExpire": {
         "type": "boolean"
       },
@@ -531,6 +534,9 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "string"
       },
       "subPath": {
+        "type": "string"
+      },
+      "subPathAliases": {
         "type": "string"
       },
       "subPort": {
@@ -777,6 +783,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "subHappPerAppMode",
       "subHappPingType",
       "subHappProviderId",
+      "subHappRoutingUpdate",
       "subHappSubExpire",
       "subHappSubExpireButtonLink",
       "subHappSubInfoButtonLink",
@@ -833,6 +840,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "subKeyFile",
       "subListen",
       "subPath",
+      "subPathAliases",
       "subPort",
       "subProfileMode",
       "subProfileUrl",
@@ -1202,6 +1210,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "subHappProviderId": {
         "type": "string"
       },
+      "subHappRoutingUpdate": {
+        "type": "boolean"
+      },
       "subHappSubExpire": {
         "type": "boolean"
       },
@@ -1370,6 +1381,9 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "string"
       },
       "subPath": {
+        "type": "string"
+      },
+      "subPathAliases": {
         "type": "string"
       },
       "subPort": {
@@ -1625,6 +1639,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "subHappPerAppMode",
       "subHappPingType",
       "subHappProviderId",
+      "subHappRoutingUpdate",
       "subHappSubExpire",
       "subHappSubExpireButtonLink",
       "subHappSubInfoButtonLink",
@@ -1681,6 +1696,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "subKeyFile",
       "subListen",
       "subPath",
+      "subPathAliases",
       "subPort",
       "subProfileMode",
       "subProfileUrl",
@@ -1862,12 +1878,14 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "integer"
       },
       "directDomains": {
+        "description": "DirectDomains are the admin's domain rules added to the split's direct list.",
         "items": {
           "type": "string"
         },
         "type": "array"
       },
       "directIps": {
+        "description": "DirectIPs are the admin's IP rules added to the split's direct list.",
         "items": {
           "type": "string"
         },
@@ -1878,6 +1896,7 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "boolean"
       },
       "entryInboundTags": {
+        "description": "EntryInboundTags are the chained entry inbounds; empty means all of them.",
         "items": {
           "type": "string"
         },
@@ -1893,6 +1912,7 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "string"
       },
       "exitNodeIds": {
+        "description": "ExitNodeIds are the exits in use; for a country cascade, the resolved list.",
         "items": {
           "type": "integer"
         },
@@ -1903,9 +1923,11 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "integer"
       },
       "lastError": {
+        "description": "LastError is why the last apply failed; empty when the cascade is live.",
         "type": "string"
       },
       "links": {
+        "description": "Links are the provisioned hops, one per exit; read-only, set by the panel.",
         "items": {
           "$ref": "#/components/schemas/CascadeLink"
         },
@@ -1921,12 +1943,14 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "string"
       },
       "relayInboundTags": {
+        "description": "RelayInboundTags are the entry inbounds that relay everything in both mode.",
         "items": {
           "type": "string"
         },
         "type": "array"
       },
       "strategy": {
+        "description": "Strategy is the balancer strategy used when there are several exits.",
         "example": "leastPing",
         "type": "string"
       },
@@ -1955,8 +1979,38 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
-  "CascadeFixedExit": {
-    "description": "CascadeFixedExit is an admin's permanent choice of exit for one user: every\ncascade with that exit sends the user there while it is up.",
+  "CascadeFixedExitRequest": {
+    "description": "CascadeFixedExitRequest pins (or unpins) one user to one exit server.",
+    "properties": {
+      "email": {
+        "description": "Email is the client's email, as in the client list.",
+        "example": "anna",
+        "type": "string"
+      },
+      "nodeId": {
+        "description": "NodeId is the exit server; 0 is this panel.",
+        "example": 2,
+        "type": "integer"
+      },
+      "trafficMode": {
+        "description": "TrafficMode is what the pin carries: \"all\" traffic or \"ai\" sites only; empty keeps the current mode.",
+        "enum": [
+          "all",
+          "ai"
+        ],
+        "example": "all",
+        "type": "string"
+      }
+    },
+    "required": [
+      "email",
+      "nodeId",
+      "trafficMode"
+    ],
+    "type": "object"
+  },
+  "CascadeFixedExitRow": {
+    "description": "CascadeFixedExitRow is one pin as the panel lists it, with what it carries.",
     "properties": {
       "createdAt": {
         "example": 1762862400,
@@ -1974,13 +2028,22 @@ export const SCHEMAS: Record<string, unknown> = {
       "nodeId": {
         "example": 2,
         "type": "integer"
+      },
+      "trafficMode": {
+        "enum": [
+          "all",
+          "ai"
+        ],
+        "example": "all",
+        "type": "string"
       }
     },
     "required": [
       "createdAt",
       "email",
       "id",
-      "nodeId"
+      "nodeId",
+      "trafficMode"
     ],
     "type": "object"
   },
@@ -2025,6 +2088,103 @@ export const SCHEMAS: Record<string, unknown> = {
       "publicKey",
       "serverName",
       "shortId"
+    ],
+    "type": "object"
+  },
+  "CascadeRequest": {
+    "description": "CascadeRequest is the body of /cascades/add and /cascades/update. Update\nreplaces the whole cascade: an omitted field is cleared, not kept.",
+    "properties": {
+      "directDomains": {
+        "description": "DirectDomains extend the split's direct list: a plain domain or domain:,\nfull:, keyword:, regexp:, geosite: rules. Ignored in relay mode.",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "directIps": {
+        "description": "DirectIPs extend the split's direct list: IPs, CIDRs or geoip: rules.",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "enable": {
+        "example": true,
+        "type": "boolean"
+      },
+      "entryInboundTags": {
+        "description": "EntryInboundTags are the entry inbounds whose users are chained; empty\nchains every inbound of the entry.",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "entryNodeId": {
+        "description": "EntryNodeId is the server users connect to; 0 is this panel.",
+        "example": 1,
+        "type": "integer"
+      },
+      "exitCountry": {
+        "description": "ExitCountry (ISO code) makes every enabled node of that country except the\nentry an exit, re-resolved whenever nodes are added, moved or disabled.",
+        "example": "DE",
+        "type": "string"
+      },
+      "exitNodeIds": {
+        "description": "ExitNodeIds are the servers traffic leaves from; ignored when exitCountry\nis set. Several exits share a balancer and keep each user on one exit.",
+        "example": [
+          2,
+          3
+        ],
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      },
+      "mode": {
+        "description": "Mode (default split): split sends the entry country's sites direct and the\nrest to the exit, relay sends everything, both mixes them per inbound.",
+        "enum": [
+          "split",
+          "relay",
+          "both"
+        ],
+        "example": "split",
+        "type": "string"
+      },
+      "name": {
+        "example": "RU → DE",
+        "type": "string"
+      },
+      "relayInboundTags": {
+        "description": "RelayInboundTags are, in both mode only (and then required), the entry\ninbounds that relay everything; they must not be in entryInboundTags.",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "strategy": {
+        "description": "Strategy picks an exit for a new user when there are several (default\nleastPing); the user then stays there, see the section description.",
+        "enum": [
+          "leastPing",
+          "leastLoad",
+          "random",
+          "roundRobin"
+        ],
+        "example": "leastPing",
+        "type": "string"
+      }
+    },
+    "required": [
+      "directDomains",
+      "directIps",
+      "enable",
+      "entryInboundTags",
+      "entryNodeId",
+      "exitCountry",
+      "exitNodeIds",
+      "mode",
+      "name",
+      "relayInboundTags",
+      "strategy"
     ],
     "type": "object"
   },
@@ -2265,6 +2425,16 @@ export const SCHEMAS: Record<string, unknown> = {
         },
         "type": "array"
       },
+      "speedTierId": {
+        "example": 0,
+        "type": "integer"
+      },
+      "speedTiers": {
+        "items": {
+          "$ref": "#/components/schemas/SpeedTier"
+        },
+        "type": "array"
+      },
       "trusted": {
         "example": false,
         "type": "boolean"
@@ -2281,6 +2451,8 @@ export const SCHEMAS: Record<string, unknown> = {
       "nonPaying",
       "pendingMonths",
       "plans",
+      "speedTierId",
+      "speedTiers",
       "trusted"
     ],
     "type": "object"
@@ -3093,6 +3265,39 @@ export const SCHEMAS: Record<string, unknown> = {
     "required": [
       "reason",
       "token"
+    ],
+    "type": "object"
+  },
+  "GroupSpeed": {
+    "description": "GroupSpeed is the speed every member of a client group gets unless the client\nhas its own ClientSpeed. FloorMbps \u003e 0 makes MaxMbps float between it and MaxMbps.",
+    "properties": {
+      "floorMbps": {
+        "example": 50,
+        "type": "integer"
+      },
+      "group": {
+        "example": "users",
+        "type": "string"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "maxMbps": {
+        "example": 100,
+        "type": "integer"
+      },
+      "minMbps": {
+        "example": 0,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "floorMbps",
+      "group",
+      "id",
+      "maxMbps",
+      "minMbps"
     ],
     "type": "object"
   },
@@ -5633,7 +5838,7 @@ export const SCHEMAS: Record<string, unknown> = {
     "type": "object"
   },
   "ServerFreeSpeed": {
-    "description": "ServerFreeSpeed is the live load of a server with a known capacity.",
+    "description": "ServerFreeSpeed is the live load of a server with a known capacity;\nReservedMbps is what the guarantees of the users it carries add up to.",
     "properties": {
       "capacityMbps": {
         "example": 1000,
@@ -5651,6 +5856,10 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": 12,
         "type": "integer"
       },
+      "reservedMbps": {
+        "example": 300,
+        "type": "integer"
+      },
       "usedMbps": {
         "example": 420.5,
         "type": "number"
@@ -5661,6 +5870,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "freePerUserMbps",
       "nodeId",
       "online",
+      "reservedMbps",
       "usedMbps"
     ],
     "type": "object"
@@ -5842,6 +6052,12 @@ export const SCHEMAS: Record<string, unknown> = {
         },
         "type": "array"
       },
+      "groups": {
+        "items": {
+          "$ref": "#/components/schemas/GroupSpeed"
+        },
+        "type": "array"
+      },
       "load": {
         "items": {
           "$ref": "#/components/schemas/ServerFreeSpeed"
@@ -5871,15 +6087,23 @@ export const SCHEMAS: Record<string, unknown> = {
           "type": "integer"
         },
         "type": "array"
+      },
+      "tiers": {
+        "items": {
+          "$ref": "#/components/schemas/SpeedTier"
+        },
+        "type": "array"
       }
     },
     "required": [
       "clients",
+      "groups",
       "load",
       "servers",
       "testSettings",
       "testStats",
-      "testing"
+      "testing",
+      "tiers"
     ],
     "type": "object"
   },
@@ -6028,6 +6252,34 @@ export const SCHEMAS: Record<string, unknown> = {
       "maxDownloadMbps",
       "minDownloadMbps",
       "nodeId"
+    ],
+    "type": "object"
+  },
+  "SpeedTier": {
+    "description": "SpeedTier is a paid speed upgrade: a guaranteed MinMbps for MonthlyPrice on\ntop of every month of the client's term.",
+    "properties": {
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "minMbps": {
+        "example": 200,
+        "type": "integer"
+      },
+      "monthlyPrice": {
+        "example": 100,
+        "type": "integer"
+      },
+      "name": {
+        "example": "Plus",
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "minMbps",
+      "monthlyPrice",
+      "name"
     ],
     "type": "object"
   },
@@ -6221,6 +6473,10 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": false,
         "type": "boolean"
       },
+      "applyToSub": {
+        "example": false,
+        "type": "boolean"
+      },
       "autoRenew": {
         "example": true,
         "type": "boolean"
@@ -6278,6 +6534,7 @@ export const SCHEMAS: Record<string, unknown> = {
     },
     "required": [
       "applyToPanel",
+      "applyToSub",
       "autoRenew",
       "certFile",
       "createdAt",

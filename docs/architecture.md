@@ -142,6 +142,8 @@ node heartbeat every 5s, periodic traffic resets (hourly/daily/weekly/monthly). 
 │   │   └── model/              # **ALL GORM models** (model.go ~1.1k lines + siblings:
 │   │                           #   node_client_traffic.go, node_client_ip.go,
 │   │                           #   client_global_traffic.go). ⭐ Start here for data shape.
+│   ├── protocol/               # Inbound protocol registry: one Spec per protocol (runtime,
+│   │                           #   stream use, listen transport, node eligibility). See §8 rule 10.
 │   ├── pia/                    # PIA WireGuard protocol client (auth, signed server list, /addKey)
 │   ├── eventbus/               # In-process pub/sub (buffered channel): outbound.down|up,
 │   │                           #   xray.crash, node.down|up, cpu.high, memory.high, login.attempt
@@ -417,6 +419,7 @@ All registered in `web.go` → `startTask()`. Each is a struct with a `Run()` me
 | `@every 10s`        | `check_client_ip_job`                                                                            | Record client IPs (30-min window) and enforce per-client IP limits                                                                       |
 | `@every 10s`        | `mtproto_job`                                                                                    | Reconcile `mtg` sidecars against enabled MTProto inbounds                                                                                |
 | `@every 10s`        | `amneziawg_job`                                                                                  | Reconcile embedded AmneziaWG interfaces against enabled local inbounds                                                                   |
+| `@every 10s`        | `expired_free_plan_job`                                                                          | Clients whose term ended (and will not auto-renew) move to the free plan: `tgFreePlanGB`/month, no end date, usage zeroed                |
 | `@every 15s`        | `cascade_sticky_job`                                                                             | Keep users of multi-exit cascades on one exit; release 15 min after they go offline                                                      |
 | `@every 1m`         | `home_network_job`                                                                               | Re-apply home networks whose groups, servers or last apply changed                                                                       |
 | `@every 2m`         | `tg_vpn_fallback_job`                                                                            | Telegram unreachable directly twice in a row: route the panel through its own `panel-tech` client on the nodes                           |
@@ -587,6 +590,9 @@ for AutoMigrate in `internal/database/db.go`.
    fetches goes in `internal/sub`. Don't blur them.
 9. **Cross-cutting notifications go through `internal/eventbus/`** — publish an event instead
    of importing the Telegram/Discord/email services into producers.
+10. **Per-protocol facts live in `internal/protocol`.** A new inbound protocol starts with a
+    `model.Protocol` constant, its `Spec` and the validator's `oneof` (tests pin all three);
+    one served outside Xray also needs a `localEngine` in `internal/web/runtime/local_engine.go`.
 
 ---
 

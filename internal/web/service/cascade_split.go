@@ -37,28 +37,23 @@ type cascadeZone struct {
 	IPs     []string
 }
 
-// Country codes whose top-level domain is not the code itself.
-var countryTLD = map[string]string{"gb": "uk"}
-
-// splitZone builds the zone of the entry's country (Russia when unset): its
-// TLDs and geoip, plus the curated geosite list where geosite.dat has one.
+// splitZone is the entry country's server IPs (Russia when unset) plus its curated
+// geosite list; no TLDs, since a .ru site may be hosted abroad (bug 23).
 func splitZone(country string) cascadeZone {
 	cc := strings.ToLower(strings.TrimSpace(country))
 	if cc == "" {
 		cc = "ru"
 	}
+	zone := cascadeZone{IPs: []string{"geoip:" + cc}}
 	if cc == "ru" {
-		return cascadeZone{
-			Domains: []string{"domain:ru", "domain:su", "domain:xn--p1ai", "geosite:category-ru"},
-			IPs:     []string{"geoip:ru"},
-		}
+		zone.Domains = []string{"geosite:category-ru"}
 	}
-	tld := cc
-	if t, ok := countryTLD[cc]; ok {
-		tld = t
-	}
-	return cascadeZone{Domains: []string{"domain:" + tld}, IPs: []string{"geoip:" + cc}}
+	return zone
 }
+
+// splitDomainStrategy makes the entry resolve a sniffed domain when it meets an
+// IP rule; under AsIs or IPIfNonMatch the catch-all wins before geoip is tried.
+const splitDomainStrategy = "IPOnDemand"
 
 func nodeCountry(nodeID int) string {
 	if nodeID == 0 {

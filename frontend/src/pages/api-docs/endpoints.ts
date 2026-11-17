@@ -347,6 +347,16 @@ export const sections: readonly Section[] = [
       },
       {
         method: 'POST',
+        path: '/panel/api/inbounds/:id/copyAsXhttp',
+        summary:
+          'Add an XHTTP copy of a gRPC inbound (gRPC is deprecated since Xray 26.10) on the given port: same node, security and clients; serviceName becomes the XHTTP path. The gRPC inbound keeps running until you delete it.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'ID of the gRPC inbound.' }],
+        body: '{\n  "port": 34567\n}',
+        errorResponse:
+          '{\n  "success": false,\n  "msg": "Something went wrong: inbound does not use the gRPC transport"\n}',
+      },
+      {
+        method: 'POST',
         path: '/panel/api/inbounds/:id/resetTraffic',
         summary:
           'Zero out upload + download counters for a single inbound. Does not touch per-client counters.',
@@ -1739,7 +1749,11 @@ export const sections: readonly Section[] = [
     id: 'cascades',
     title: 'Cascades',
     description:
-      'Entry → exit server chains. The panel provisions a hidden VLESS+REALITY inbound on every exit and an outbound plus a catch-all routing rule (or a balancer for several exits) on the entry. Node id 0 means this panel. All endpoints under /panel/api/cascades.',
+      'Entry → exit server chains. The panel provisions a hidden VLESS+REALITY inbound on every exit and an outbound plus routing rules (or a balancer for several exits) on the entry. Node id 0 means this panel. ' +
+      'Exits are either listed in exitNodeIds or picked by country: exitCountry "DE" makes every enabled node of that country (except the entry) an exit, and the list is re-resolved whenever a node is added, removed, disabled or moved to another country. ' +
+      'Sticky sessions are always on for a cascade with several exits; there is no switch. Every 15 seconds each newly online user is pinned to the least-loaded healthy exit that still has their minMbps free (/panel/api/speed); the pin keeps them on that exit, so on that IP, while they stay connected and for 15 minutes after they go offline. ' +
+      'A pin is dropped at once when its exit goes offline (the user moves to another exit), when the user connects to a different server themselves, or when the admin pins them with /cascades/fixedExits. strategy only spreads traffic that has no pin yet. ' +
+      'Modes: split (default) sends the entry country\u2019s own sites (its TLDs, geoip and geosite list, Russia when the entry has no country) plus directDomains/directIps straight out of the entry and the rest to the exit; relay sends everything to the exit; both runs split on entryInboundTags and relay on relayInboundTags. All endpoints under /panel/api/cascades.',
     endpoints: [
       {
         method: 'GET',
@@ -1752,17 +1766,19 @@ export const sections: readonly Section[] = [
         method: 'POST',
         path: '/panel/api/cascades/add',
         summary:
-          'Create a cascade and apply it: exits get their link inbound, the entry gets the outbound(s) and the routing rule. Empty entryInboundTags chains every inbound of the entry.',
-        body: '{\n  "name": "RU → DE",\n  "enable": true,\n  "entryNodeId": 1,\n  "exitNodeIds": [2, 3],\n  "entryInboundTags": [],\n  "strategy": "leastPing"\n}',
+          'Create a cascade and apply it: exits get their link inbound, the entry gets the outbound(s) and the routing rules. Give either exitNodeIds or exitCountry; when both are set, exitCountry wins. Empty entryInboundTags chains every inbound of the entry. A failed apply still saves the cascade, with the reason in lastError.',
+        body: '{\n  "name": "RU → DE",\n  "enable": true,\n  "entryNodeId": 1,\n  "exitNodeIds": [],\n  "exitCountry": "DE",\n  "entryInboundTags": [],\n  "strategy": "leastPing",\n  "mode": "split",\n  "directDomains": ["domain:example.ru"],\n  "directIps": [],\n  "relayInboundTags": []\n}',
+        requestSchema: { $ref: '#/components/schemas/CascadeRequest' },
         responseSchema: 'Cascade',
       },
       {
         method: 'POST',
         path: '/panel/api/cascades/update/:id',
         summary:
-          'Change a cascade (entry, exits, chained inbounds, strategy, enable) and re-apply it. Removed exits lose their link inbound; adding an exit adds it to the balancer.',
+          'Replace a cascade and re-apply it. The body is the full cascade as for add: a field left out is cleared, not kept, so send back everything from list. Removed exits lose their link inbound; an added exit joins the balancer.',
         params: [{ name: 'id', in: 'path', type: 'number', desc: 'Cascade ID.' }],
-        body: '{\n  "name": "RU → DE",\n  "enable": true,\n  "entryNodeId": 1,\n  "exitNodeIds": [2, 3],\n  "entryInboundTags": [],\n  "strategy": "leastPing"\n}',
+        body: '{\n  "name": "RU → DE, NL",\n  "enable": true,\n  "entryNodeId": 1,\n  "exitNodeIds": [2, 3],\n  "exitCountry": "",\n  "entryInboundTags": ["inbound-443"],\n  "strategy": "leastPing",\n  "mode": "both",\n  "directDomains": [],\n  "directIps": [],\n  "relayInboundTags": ["inbound-8443"]\n}',
+        requestSchema: { $ref: '#/components/schemas/CascadeRequest' },
         responseSchema: 'Cascade',
       },
       {
@@ -1777,15 +1793,16 @@ export const sections: readonly Section[] = [
         path: '/panel/api/cascades/fixedExits',
         summary:
           'List the exits users are permanently pinned to. In every multi-exit cascade that has the pinned exit, the user always leaves from it, connected or not; while it is down they fall back to another exit and return as soon as it is back.',
-        responseSchema: 'CascadeFixedExit',
+        responseSchema: 'CascadeFixedExitRow',
         responseSchemaArray: true,
       },
       {
         method: 'POST',
         path: '/panel/api/cascades/fixedExits/set',
         summary:
-          'Pin a user to an exit server (node id 0 = this panel). A user keeps one pin per country: pinning another exit of the same country replaces it. Routing is rewritten at once.',
-        body: '{\n  "email": "anna",\n  "nodeId": 2\n}',
+          'Pin a user to an exit server (node id 0 = this panel). A user keeps one pin per country: pinning another exit of the same country replaces it. trafficMode "all" sends all their traffic through it, "ai" only AI sites (one country per user, as the AI button in the bot sets it; needs a server with a country); omitted keeps the current mode. Routing is rewritten at once.',
+        body: '{\n  "email": "anna",\n  "nodeId": 2,\n  "trafficMode": "ai"\n}',
+        requestSchema: { $ref: '#/components/schemas/CascadeFixedExitRequest' },
       },
       {
         method: 'POST',
@@ -1793,6 +1810,7 @@ export const sections: readonly Section[] = [
         summary:
           'Remove a pin: the user goes back to automatic exit choice and keeps their current exit under the usual 15-minute hold.',
         body: '{\n  "email": "anna",\n  "nodeId": 2\n}',
+        requestSchema: { $ref: '#/components/schemas/CascadeFixedExitRequest' },
       },
     ],
   },
@@ -1885,7 +1903,7 @@ export const sections: readonly Section[] = [
         method: 'GET',
         path: '/panel/api/speed/overview',
         summary:
-          'User limits, server link speeds, and the live load of every server with a link speed.',
+          'User and group limits, server link speeds, and the live load of every server with a link speed.',
         responseSchema: 'SpeedOverview',
       },
       {
@@ -1893,6 +1911,26 @@ export const sections: readonly Section[] = [
         path: '/panel/api/speed/client',
         summary: "Set one user's minimum and maximum speed in Mbit/s; both 0 removes them.",
         body: '{\n  "email": "anna",\n  "minMbps": 20,\n  "maxMbps": 100\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/speed/group',
+        summary:
+          "Set a client group's speed in Mbit/s; all 0 removes it. A client's own speed replaces their group's. minMbps is guaranteed on the server the client connects to; floorMbps > 0 makes the cap float between floorMbps and maxMbps by what the guarantees leave free.",
+        body: '{\n  "group": "users",\n  "minMbps": 0,\n  "maxMbps": 100,\n  "floorMbps": 50\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/speed/tier',
+        summary:
+          "Add (id 0) or edit a speed tier clients can buy in the bot: a guaranteed minMbps for monthlyPrice added to every month of the term they pay. It beats the group speed and lapses with the term; a client's own speed still wins.",
+        body: '{\n  "id": 0,\n  "name": "Plus",\n  "minMbps": 200,\n  "monthlyPrice": 100\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/speed/tier/delete',
+        summary: 'Stop selling a speed tier; clients who bought it fall back to their group speed.',
+        body: '{\n  "id": 1\n}',
       },
       {
         method: 'POST',
@@ -2258,8 +2296,8 @@ export const sections: readonly Section[] = [
         method: 'POST',
         path: '/panel/api/billing/pay',
         summary:
-          'Apply a payment for 1-36 months. A running term is extended from its end, a lapsed one restarts from now. Any payment the client reported in the bot is settled, so a later confirm there cannot apply it twice. note defaults to "<months> mo" in the ledger.',
-        body: '{\n  "email": "alice",\n  "months": 3,\n  "note": "YooKassa 2c4f"\n}',
+          'Apply a payment for 1-36 months. A running term is extended from its end, a lapsed one restarts from now. speedTierId (0 = none) buys that speed tier for the term: its monthly price is added per month and its guaranteed speed applies until the term ends; a term without one drops the tier. Any payment the client reported in the bot is settled, so a later confirm there cannot apply it twice. note defaults to "<months> mo" in the ledger.',
+        body: '{\n  "email": "alice",\n  "months": 3,\n  "speedTierId": 0,\n  "note": "YooKassa 2c4f"\n}',
         responseSchema: 'PaymentResult',
       },
     ],
@@ -3394,6 +3432,13 @@ export const sections: readonly Section[] = [
             type: 'boolean',
             optional: true,
             desc: 'Serve the panel over this certificate once issued (restarts the panel when the paths change).',
+          },
+          {
+            name: 'applyToSub',
+            in: 'body (form)',
+            type: 'boolean',
+            optional: true,
+            desc: 'Serve the subscription server over this certificate once issued, when its cert field is empty or the certificate covers the subscription host (restarts the panel). Off by default: a reverse proxy in front of the subscription port usually talks plain HTTP to it.',
           },
         ],
         responseSchema: 'TlsCertificate',

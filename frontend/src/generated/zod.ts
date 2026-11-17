@@ -138,6 +138,7 @@ export const AllSettingSchema = z.object({
   subHappPerAppMode: z.string(),
   subHappPingType: z.string(),
   subHappProviderId: z.string(),
+  subHappRoutingUpdate: z.boolean(),
   subHappSubExpire: z.boolean(),
   subHappSubExpireButtonLink: z.string(),
   subHappSubInfoButtonLink: z.string(),
@@ -194,6 +195,7 @@ export const AllSettingSchema = z.object({
   subKeyFile: z.string(),
   subListen: z.string(),
   subPath: z.string(),
+  subPathAliases: z.string(),
   subPort: z.number().int().min(1).max(65535),
   subProfileMode: z.string(),
   subProfileUrl: z.string(),
@@ -339,6 +341,7 @@ export const AllSettingViewSchema = z.object({
   subHappPerAppMode: z.string(),
   subHappPingType: z.string(),
   subHappProviderId: z.string(),
+  subHappRoutingUpdate: z.boolean(),
   subHappSubExpire: z.boolean(),
   subHappSubExpireButtonLink: z.string(),
   subHappSubInfoButtonLink: z.string(),
@@ -395,6 +398,7 @@ export const AllSettingViewSchema = z.object({
   subKeyFile: z.string(),
   subListen: z.string(),
   subPath: z.string(),
+  subPathAliases: z.string(),
   subPort: z.number().int().min(1).max(65535),
   subProfileMode: z.string(),
   subProfileUrl: z.string(),
@@ -495,13 +499,21 @@ export const CascadeSchema = z.object({
 });
 export type Cascade = z.infer<typeof CascadeSchema>;
 
-export const CascadeFixedExitSchema = z.object({
+export const CascadeFixedExitRequestSchema = z.object({
+  email: z.string(),
+  nodeId: z.number().int(),
+  trafficMode: z.enum(['all', 'ai']),
+});
+export type CascadeFixedExitRequest = z.infer<typeof CascadeFixedExitRequestSchema>;
+
+export const CascadeFixedExitRowSchema = z.object({
   createdAt: z.number().int(),
   email: z.string(),
   id: z.number().int(),
   nodeId: z.number().int(),
+  trafficMode: z.enum(['all', 'ai']),
 });
-export type CascadeFixedExit = z.infer<typeof CascadeFixedExitSchema>;
+export type CascadeFixedExitRow = z.infer<typeof CascadeFixedExitRowSchema>;
 
 export const CascadeLinkSchema = z.object({
   address: z.string(),
@@ -515,6 +527,21 @@ export const CascadeLinkSchema = z.object({
   shortId: z.string(),
 });
 export type CascadeLink = z.infer<typeof CascadeLinkSchema>;
+
+export const CascadeRequestSchema = z.object({
+  directDomains: z.array(z.string()),
+  directIps: z.array(z.string()),
+  enable: z.boolean(),
+  entryInboundTags: z.array(z.string()),
+  entryNodeId: z.number().int(),
+  exitCountry: z.string(),
+  exitNodeIds: z.array(z.number().int()),
+  mode: z.enum(['split', 'relay', 'both']),
+  name: z.string(),
+  relayInboundTags: z.array(z.string()),
+  strategy: z.enum(['leastPing', 'leastLoad', 'random', 'roundRobin']),
+});
+export type CascadeRequest = z.infer<typeof CascadeRequestSchema>;
 
 export const ClientSchema = z.object({
   adTag: z.string().optional(),
@@ -564,6 +591,8 @@ export const ClientBillingViewSchema = z.object({
   nonPaying: z.boolean(),
   pendingMonths: z.number().int(),
   plans: z.array(z.lazy(() => PaymentPlanPriceSchema)),
+  speedTierId: z.number().int(),
+  speedTiers: z.array(z.lazy(() => SpeedTierSchema)),
   trusted: z.boolean(),
 });
 export type ClientBillingView = z.infer<typeof ClientBillingViewSchema>;
@@ -765,6 +794,15 @@ export const GeodataTokenIssueSchema = z.object({
   token: z.string(),
 });
 export type GeodataTokenIssue = z.infer<typeof GeodataTokenIssueSchema>;
+
+export const GroupSpeedSchema = z.object({
+  floorMbps: z.number().int(),
+  group: z.string(),
+  id: z.number().int(),
+  maxMbps: z.number().int(),
+  minMbps: z.number().int(),
+});
+export type GroupSpeed = z.infer<typeof GroupSpeedSchema>;
 
 export const HappLinkResultSchema = z.object({
   encryptedLink: z.string(),
@@ -1359,6 +1397,7 @@ export const ServerFreeSpeedSchema = z.object({
   freePerUserMbps: z.number(),
   nodeId: z.number().int(),
   online: z.number().int(),
+  reservedMbps: z.number().int(),
   usedMbps: z.number(),
 });
 export type ServerFreeSpeed = z.infer<typeof ServerFreeSpeedSchema>;
@@ -1414,11 +1453,13 @@ export type Setting = z.infer<typeof SettingSchema>;
 
 export const SpeedOverviewSchema = z.object({
   clients: z.array(z.lazy(() => ClientSpeedSchema)),
+  groups: z.array(z.lazy(() => GroupSpeedSchema)),
   load: z.array(z.lazy(() => ServerFreeSpeedSchema)),
   servers: z.array(z.lazy(() => ServerCapacitySchema)),
   testSettings: z.lazy(() => SpeedTestSettingsSchema),
   testStats: z.array(z.lazy(() => SpeedTestStatsSchema)),
   testing: z.array(z.number().int()),
+  tiers: z.array(z.lazy(() => SpeedTierSchema)),
 });
 export type SpeedOverview = z.infer<typeof SpeedOverviewSchema>;
 
@@ -1456,6 +1497,14 @@ export const SpeedTestStatsSchema = z.object({
   nodeId: z.number().int(),
 });
 export type SpeedTestStats = z.infer<typeof SpeedTestStatsSchema>;
+
+export const SpeedTierSchema = z.object({
+  id: z.number().int(),
+  minMbps: z.number().int(),
+  monthlyPrice: z.number().int(),
+  name: z.string(),
+});
+export type SpeedTier = z.infer<typeof SpeedTierSchema>;
 
 export const SubBalancerSchema = z.object({
   createdAt: z.number().int(),
@@ -1506,6 +1555,7 @@ export type TlsCertSettings = z.infer<typeof TlsCertSettingsSchema>;
 
 export const TlsCertificateSchema = z.object({
   applyToPanel: z.boolean(),
+  applyToSub: z.boolean(),
   autoRenew: z.boolean(),
   certFile: z.string(),
   createdAt: z.number().int(),

@@ -75,10 +75,11 @@ func TestUserExitGroupsOffersOnlyTheUsersCascadesAndMarksFullServers(t *testing.
 	}
 }
 
-func TestUserExitGroupsHonoursTheUsersMinimumSpeed(t *testing.T) {
+func TestUserExitGroupsHonoursTheUsersGuarantee(t *testing.T) {
 	initJoinDB(t)
 	seedUserExitWorld(t)
-	setNodeLoad(t, 2, 100, 70)
+	setNodeLoad(t, 2, 40, 0)
+	setNodeLoad(t, 3, 100, 90)
 	if err := (&SpeedService{}).SetClient(&ClientSpeedRequest{Email: "anna", MinMbps: 50}); err != nil {
 		t.Fatal(err)
 	}
@@ -87,7 +88,7 @@ func TestUserExitGroupsHonoursTheUsersMinimumSpeed(t *testing.T) {
 		t.Fatal(err)
 	}
 	if got := groupSummary(groups)["DE"]; !reflect.DeepEqual(got, map[int]bool{2: true, 3: false}) {
-		t.Fatalf("DE = %v, want node 2 saturated (30 Mbit/s free < 50 minimum)", got)
+		t.Fatalf("DE = %v, want node 2 saturated (a 40 Mbit/s link cannot guarantee 50), node 3 open (busy, but its link covers 50)", got)
 	}
 }
 
