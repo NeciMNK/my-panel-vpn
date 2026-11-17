@@ -22,6 +22,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/protocol"
 	"github.com/mhsanaei/3x-ui/v3/internal/tuic"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/maskcompat"
@@ -848,9 +849,9 @@ func (s *SubService) loadInboundsBySubId(subId string) ([]*model.Inbound, error)
 		JOIN client_inbounds ON client_inbounds.inbound_id = inbounds.id
 		JOIN clients ON clients.id = client_inbounds.client_id
 		WHERE
-			inbounds.protocol in ('vmess','vless','trojan','shadowsocks','hysteria','wireguard','amneziawg','mtproto','tuic','masque')
+			inbounds.protocol IN ?
 			AND clients.sub_id = ? AND inbounds.enable = ?
-	)`, subId, true).Order("sub_sort_index ASC").Order("id ASC")
+	)`, protocol.WithClients(), subId, true).Order("sub_sort_index ASC").Order("id ASC")
 	if cached {
 		query = query.Omit("settings")
 	}
@@ -1008,27 +1009,23 @@ func (s *SubService) GetLink(inbound *model.Inbound, email string) string {
 	if network, _ := unmarshalStreamSettings(inbound.StreamSettings)["network"].(string); network == "xdrive" {
 		return ""
 	}
-	switch inbound.Protocol {
-	case "vmess":
-		return s.genVmessLink(inbound, email)
-	case "vless":
-		return s.genVlessLink(inbound, email)
-	case "trojan":
-		return s.genTrojanLink(inbound, email)
-	case "shadowsocks":
-		return s.genShadowsocksLink(inbound, email)
-	case "hysteria":
-		return s.genHysteriaLink(inbound, email)
-	case "mtproto":
-		return s.genMtprotoLink(inbound, email)
-	case "wireguard":
-		return s.genWireguardLink(inbound, email)
-	case "amneziawg":
-		return s.genAmneziaWGLink(inbound, email)
-	case "tuic":
-		return s.genTuicLink(inbound, email)
+	if gen, ok := shareLinkGenerators[inbound.Protocol]; ok {
+		return gen(s, inbound, email)
 	}
 	return ""
+}
+
+// shareLinkGenerators holds one raw-link builder per protocol.Spec with ShareLink set.
+var shareLinkGenerators = map[model.Protocol]func(s *SubService, inbound *model.Inbound, email string) string{
+	model.VMESS:       (*SubService).genVmessLink,
+	model.VLESS:       (*SubService).genVlessLink,
+	model.Trojan:      (*SubService).genTrojanLink,
+	model.Shadowsocks: (*SubService).genShadowsocksLink,
+	model.Hysteria:    (*SubService).genHysteriaLink,
+	model.MTProto:     (*SubService).genMtprotoLink,
+	model.WireGuard:   (*SubService).genWireguardLink,
+	model.AmneziaWG:   (*SubService).genAmneziaWGLink,
+	model.TUIC:        (*SubService).genTuicLink,
 }
 
 func (s *SubService) genTuicLink(inbound *model.Inbound, email string) string {
