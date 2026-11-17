@@ -201,6 +201,9 @@ func (s *ClientService) ImportClients(inboundSvc *InboundService, items []Client
 
 		rec := client.ToRecord()
 		rec.LimitHwid = orphans[i].LimitHwid
+		if strings.TrimSpace(rec.Group) == "" {
+			rec.Group = model.DefaultClientGroup(email)
+		}
 		if err := db.Create(rec).Error; err != nil {
 			skip(email, err.Error())
 			continue

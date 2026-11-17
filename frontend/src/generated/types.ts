@@ -470,16 +470,18 @@ export interface Cascade {
   updatedAt: number;
 }
 
-export interface CascadeFixedExit {
+export interface CascadeFixedExitRequest {
+  email: string;
+  nodeId: number;
+  trafficMode: string;
+}
+
+export interface CascadeFixedExitRow {
   createdAt: number;
   email: string;
   id: number;
   nodeId: number;
-}
-
-export interface CascadeFixedExitRequest {
-  email: string;
-  nodeId: number;
+  trafficMode: string;
 }
 
 export interface CascadeLink {

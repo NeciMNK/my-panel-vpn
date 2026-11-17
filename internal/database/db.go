@@ -543,6 +543,29 @@ func seedMtprotoCustomShareAddrToHosts() error {
 	})
 }
 
+// legacyDefaultRemarkTemplate is the remark template before {{AUTO_NAME}}; a
+// panel still on it never chose a template, so it moves to the new default.
+const legacyDefaultRemarkTemplate = "{{INBOUND}}-{{EMAIL}}|📊{{TRAFFIC_LEFT}}|⏳{{DAYS_LEFT}}D"
+
+func seedAutoNameRemarkTemplate() error {
+	const seederName = "AutoNameRemarkTemplate"
+	var count int64
+	if err := db.Model(&model.HistoryOfSeeders{}).Where("seeder_name = ?", seederName).Count(&count).Error; err != nil {
+		return err
+	}
+	if count > 0 {
+		return nil
+	}
+	return db.Transaction(func(tx *gorm.DB) error {
+		err := tx.Model(&model.Setting{}).Where("key = ? AND value = ?", "remarkTemplate", legacyDefaultRemarkTemplate).
+			Update("value", "{{AUTO_NAME}}").Error
+		if err != nil {
+			return err
+		}
+		return tx.Create(&model.HistoryOfSeeders{SeederName: seederName}).Error
+	})
+}
+
 func CreateHostFromMtprotoCustomShareAddr(tx *gorm.DB, inboundId int, rawAddress string) error {
 	address := strings.TrimPrefix(strings.TrimSuffix(strings.TrimSpace(rawAddress), "]"), "[")
 	if address == "" {
@@ -1551,7 +1574,7 @@ func runSeeders(isUsersEmpty bool) error {
 	}
 
 	if empty && isUsersEmpty {
-		seeders := []string{"UserPasswordHash", "ClientsTable", "InboundClientsArrayFix", "InboundClientTgIdFix2", "InboundClientSubIdFix", "FreedomFinalRulesReverseFix", "FreedomFinalRulesPrivateEgressBlock", "UppercaseFreedomFinalRulesFix", "InboundRealityFinalmaskTcpStrip", "ApiTokensHash", "LegacyProxySettingsCleanup", "SessionSecretRotation", "OutboundRemovedKeysFix", "FreedomDomainStrategyFix", "DNSOutboundLegacyKeysFix", "DNSOutboundQTypeZeroFix", "WireguardDomainStrategyFix", "XdnsFinalmaskNamesAddrsFix", "UDPHopClientMaskFix", "HostVerifyPeerCertByNameBoolFix", "HostMihomoX25519Reset", "WireguardPeersToClients", "MtprotoSecretsToClients", "NodeInboundsAdopted", "NodeDownNotified", "ResetIpLimitNoFail2ban", "ClientGroupNameTrim", "OwnerlessClientHwidPurge", "ClientForwardedPortsBackfill"}
+		seeders := []string{"UserPasswordHash", "ClientsTable", "InboundClientsArrayFix", "InboundClientTgIdFix2", "InboundClientSubIdFix", "FreedomFinalRulesReverseFix", "FreedomFinalRulesPrivateEgressBlock", "UppercaseFreedomFinalRulesFix", "InboundRealityFinalmaskTcpStrip", "ApiTokensHash", "LegacyProxySettingsCleanup", "SessionSecretRotation", "OutboundRemovedKeysFix", "FreedomDomainStrategyFix", "DNSOutboundLegacyKeysFix", "DNSOutboundQTypeZeroFix", "WireguardDomainStrategyFix", "XdnsFinalmaskNamesAddrsFix", "UDPHopClientMaskFix", "HostVerifyPeerCertByNameBoolFix", "HostMihomoX25519Reset", "WireguardPeersToClients", "MtprotoSecretsToClients", "NodeInboundsAdopted", "NodeDownNotified", "ResetIpLimitNoFail2ban", "ClientGroupNameTrim", "OwnerlessClientHwidPurge", "ClientForwardedPortsBackfill", "ClientAutoGroups", "AutoNameRemarkTemplate"}
 		for _, name := range seeders {
 			if err := db.Create(&model.HistoryOfSeeders{SeederName: name}).Error; err != nil {
 				return err
@@ -1752,11 +1775,21 @@ func runSeeders(isUsersEmpty bool) error {
 		}
 	}
 
+	if !slices.Contains(seedersHistory, "ClientAutoGroups") {
+		if err := assignClientAutoGroups(); err != nil {
+			return err
+		}
+	}
+
 	if err := seedHostsFromExternalProxy(); err != nil {
 		return err
 	}
 
 	if err := seedMtprotoCustomShareAddrToHosts(); err != nil {
+		return err
+	}
+
+	if err := seedAutoNameRemarkTemplate(); err != nil {
 		return err
 	}
 
@@ -2038,6 +2071,103 @@ func purgeOwnerlessClientHwids() error {
 		}
 		return tx.Create(&model.HistoryOfSeeders{SeederName: "OwnerlessClientHwidPurge"}).Error
 	})
+}
+
+// legacyTechGroup is the Russian name the panel's tech group had before groups
+// were assigned automatically under English names.
+const legacyTechGroup = "тех"
+
+// Clients predating automatic groups: тех becomes tech wherever a group name is
+// stored, and a group-less client joins tech, friends, paid or users.
+func assignClientAutoGroups() error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		if err := renameLegacyTechGroup(tx); err != nil {
+			return err
+		}
+		if err := tx.Model(&model.ClientRecord{}).
+			Where("COALESCE(group_name, '') = '' AND email LIKE ?", model.ManagedClientPrefix+"%").
+			UpdateColumn("group_name", model.ClientGroupTech).Error; err != nil {
+			return err
+		}
+		if err := tx.Model(&model.ClientRecord{}).
+			Where("COALESCE(group_name, '') = '' AND id IN (?)",
+				tx.Model(&model.ClientBilling{}).Select("client_id").Where("friend = ?", true)).
+			UpdateColumn("group_name", model.ClientGroupFriends).Error; err != nil {
+			return err
+		}
+		payers := tx.Model(&model.LedgerEntry{}).Select("email").Where("kind = ?", model.LedgerIncome)
+		onFreePlan := tx.Model(&model.ClientBilling{}).Select("client_id").Where("free_plan = ?", true)
+		if err := tx.Model(&model.ClientRecord{}).
+			Where("COALESCE(group_name, '') = '' AND email IN (?) AND id NOT IN (?)", payers, onFreePlan).
+			UpdateColumn("group_name", model.ClientGroupPaid).Error; err != nil {
+			return err
+		}
+		if err := tx.Model(&model.ClientRecord{}).Where("COALESCE(group_name, '') = ''").
+			UpdateColumn("group_name", model.ClientGroupUsers).Error; err != nil {
+			return err
+		}
+		return tx.Create(&model.HistoryOfSeeders{SeederName: "ClientAutoGroups"}).Error
+	})
+}
+
+func renameLegacyTechGroup(tx *gorm.DB) error {
+	if err := tx.Model(&model.ClientRecord{}).Where("group_name = ?", legacyTechGroup).
+		UpdateColumn("group_name", model.ClientGroupTech).Error; err != nil {
+		return err
+	}
+	var techRows int64
+	if err := tx.Model(&model.ClientGroup{}).Where("name = ?", model.ClientGroupTech).Count(&techRows).Error; err != nil {
+		return err
+	}
+	if techRows > 0 {
+		if err := tx.Where("name = ?", legacyTechGroup).Delete(&model.ClientGroup{}).Error; err != nil {
+			return err
+		}
+	} else if err := tx.Model(&model.ClientGroup{}).Where("name = ?", legacyTechGroup).
+		Update("name", model.ClientGroupTech).Error; err != nil {
+		return err
+	}
+	var freeRows int64
+	if err := tx.Model(&model.LedgerFreeGroup{}).Where("name = ?", legacyTechGroup).Count(&freeRows).Error; err != nil {
+		return err
+	}
+	if freeRows > 0 {
+		if err := tx.Where("name = ?", legacyTechGroup).Delete(&model.LedgerFreeGroup{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&model.LedgerFreeGroup{Name: model.ClientGroupTech}).Error; err != nil {
+			return err
+		}
+	}
+	var inbounds []model.Inbound
+	if err := tx.Select("id", "settings").Where("settings LIKE ?", "%"+legacyTechGroup+"%").Find(&inbounds).Error; err != nil {
+		return err
+	}
+	for _, ib := range inbounds {
+		var settings map[string]any
+		if json.Unmarshal([]byte(ib.Settings), &settings) != nil {
+			continue
+		}
+		clients, _ := settings["clients"].([]any)
+		changed := false
+		for _, c := range clients {
+			if cm, ok := c.(map[string]any); ok && cm["group"] == legacyTechGroup {
+				cm["group"] = model.ClientGroupTech
+				changed = true
+			}
+		}
+		if !changed {
+			continue
+		}
+		raw, err := json.Marshal(settings)
+		if err != nil {
+			return err
+		}
+		if err := tx.Model(&model.Inbound{}).Where("id = ?", ib.Id).UpdateColumn("settings", string(raw)).Error; err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // The groups page addresses a group by its trimmed name, so a padded stored name listed as

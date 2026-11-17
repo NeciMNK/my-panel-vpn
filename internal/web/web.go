@@ -326,6 +326,7 @@ const (
 	cadenceTlsCertRenew   = "@every 1h"
 	cadenceCheckHash      = "@every 2m"
 	cadencePaymentOrders  = "@every 15s"
+	cadenceExpiredFree    = "@every 10s"
 	// cpu.Percent samples over a full minute (blocking), so a finer cadence just
 	// stacks overlapping samplers; subscribers rate-limit alerts to 1/min anyway.
 	cadenceCPUAlarm    = "@every 1m"
@@ -384,6 +385,7 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	_, _ = s.cron.AddJob(cadenceSubEdgeTunnels, job.NewSubEdgeTunnelJob())
 	_, _ = s.cron.AddJob(cadenceHomeNetwork, job.LeaderOnly(job.NewHomeNetworkJob()))
 	_, _ = s.cron.AddJob(cadenceTgVpnFallback, job.LeaderOnly(job.NewTgVpnFallbackJob()))
+	_, _ = s.cron.AddJob(cadenceExpiredFree, job.LeaderOnly(job.NewExpiredFreePlanJob()))
 	// Every master runs its own Xray, so each pins its own panel proxy exit.
 	_, _ = s.cron.AddJob(cadencePanelProxyPin, job.NewPanelProxyPinJob())
 	_, _ = s.cron.AddJob(cadenceSpeed, job.LeaderOnly(job.NewSpeedJob()))
