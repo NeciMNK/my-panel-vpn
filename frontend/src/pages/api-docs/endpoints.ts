@@ -1896,6 +1896,29 @@ export const sections: readonly Section[] = [
         body: '{\n  "subIds": ["abc123"],\n  "responses": [\n    {\n      "host": "sub.example.com",\n      "uri": "/sub/abc123",\n      "agent": "happ",\n      "device": "",\n      "subId": "abc123",\n      "header": { "Profile-Title": ["My VPN"] },\n      "body": "dmxlc3M6Ly8uLi4=",\n      "stored": 1762736400\n    }\n  ]\n}',
         requestSchema: { $ref: '#/components/schemas/CacheUpdate' },
       },
+      {
+        method: 'POST',
+        path: '/panel/api/subEdges/node/dns',
+        summary:
+          'Node side: the DNS plan this edge node follows while no master reaches it and no edge in edgesBefore answers. An empty plan turns node-side switching off. Allowed for node-sync tokens.',
+        body: '{\n  "domain": "sub.example.com",\n  "token": "cf-dns-token",\n  "tiers": [["198.51.100.1"], ["203.0.113.7"], []],\n  "edgesBefore": []\n}',
+        requestSchema: { $ref: '#/components/schemas/DNSPlan' },
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/subEdges/dns',
+        summary:
+          'DNS switching for the subscription domain: the domain, whether the Cloudflare token is set, the masters\u2019 IPv4 addresses (tier 1), and what the last step published.',
+        responseSchema: 'SubEdgeDNSView',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/subEdges/dns',
+        summary:
+          'Save DNS switching. The leading master points the domain\u2019s A records at the masters, else the edge nodes in Russia, else the others, and returns to a better tier after it stays up for 2 minutes. Only records it created (comment managed-by: my-panel-vpn) are touched. An empty token keeps the saved one; an empty domain turns switching off.',
+        body: '{\n  "domain": "sub.example.com",\n  "token": "cf-dns-token",\n  "masterIps": ["198.51.100.1"]\n}',
+        requestSchema: { $ref: '#/components/schemas/SubEdgeDNSRequest' },
+      },
     ],
   },
 

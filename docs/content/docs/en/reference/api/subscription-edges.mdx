@@ -44,6 +44,23 @@ _openapi:
         cache (with Age and Warning: 110) while no master answers, for up to 7
         days. Allowed for node-sync tokens.'
       url: '#node-side-store-subscription-responses-a-master-gave-client-apps-and-drop-those-of-subscriptions-not-in-subids-the-edge-answers-from-this-cache-with-age-and-warning-110-while-no-master-answers-for-up-to-7-days-allowed-for-node-sync-tokens'
+    - depth: 2
+      title: 'Node side: the DNS plan this edge node follows while no master reaches
+        it and no edge in edgesBefore answers. An empty plan turns node-side
+        switching off. Allowed for node-sync tokens.'
+      url: '#node-side-the-dns-plan-this-edge-node-follows-while-no-master-reaches-it-and-no-edge-in-edgesbefore-answers-an-empty-plan-turns-node-side-switching-off-allowed-for-node-sync-tokens'
+    - depth: 2
+      title: 'DNS switching for the subscription domain: the domain, whether the
+        Cloudflare token is set, the masters’ IPv4 addresses (tier 1), and what
+        the last step published.'
+      url: '#dns-switching-for-the-subscription-domain-the-domain-whether-the-cloudflare-token-is-set-the-masters-ipv4-addresses-tier-1-and-what-the-last-step-published'
+    - depth: 2
+      title: 'Save DNS switching. The leading master points the domain’s A records at
+        the masters, else the edge nodes in Russia, else the others, and returns
+        to a better tier after it stays up for 2 minutes. Only records it
+        created (comment managed-by: my-panel-vpn) are touched. An empty token
+        keeps the saved one; an empty domain turns switching off.'
+      url: '#save-dns-switching-the-leading-master-points-the-domains-a-records-at-the-masters-else-the-edge-nodes-in-russia-else-the-others-and-returns-to-a-better-tier-after-it-stays-up-for-2-minutes-only-records-it-created-comment-managed-by-my-panel-vpn-are-touched-an-empty-token-keeps-the-saved-one-an-empty-domain-turns-switching-off'
   structuredData:
     headings:
       - content: List every subscription edge with the state of this master’s tunnel to
@@ -71,6 +88,20 @@ _openapi:
           cache (with Age and Warning: 110) while no master answers, for up to 7
           days. Allowed for node-sync tokens.'
         id: node-side-store-subscription-responses-a-master-gave-client-apps-and-drop-those-of-subscriptions-not-in-subids-the-edge-answers-from-this-cache-with-age-and-warning-110-while-no-master-answers-for-up-to-7-days-allowed-for-node-sync-tokens
+      - content: 'Node side: the DNS plan this edge node follows while no master reaches
+          it and no edge in edgesBefore answers. An empty plan turns node-side
+          switching off. Allowed for node-sync tokens.'
+        id: node-side-the-dns-plan-this-edge-node-follows-while-no-master-reaches-it-and-no-edge-in-edgesbefore-answers-an-empty-plan-turns-node-side-switching-off-allowed-for-node-sync-tokens
+      - content: 'DNS switching for the subscription domain: the domain, whether the
+          Cloudflare token is set, the masters’ IPv4 addresses (tier 1), and
+          what the last step published.'
+        id: dns-switching-for-the-subscription-domain-the-domain-whether-the-cloudflare-token-is-set-the-masters-ipv4-addresses-tier-1-and-what-the-last-step-published
+      - content: 'Save DNS switching. The leading master points the domain’s A records
+          at the masters, else the edge nodes in Russia, else the others, and
+          returns to a better tier after it stays up for 2 minutes. Only records
+          it created (comment managed-by: my-panel-vpn) are touched. An empty
+          token keeps the saved one; an empty domain turns switching off.'
+        id: save-dns-switching-the-leading-master-points-the-domains-a-records-at-the-masters-else-the-edge-nodes-in-russia-else-the-others-and-returns-to-a-better-tier-after-it-stays-up-for-2-minutes-only-records-it-created-comment-managed-by-my-panel-vpn-are-touched-an-empty-token-keeps-the-saved-one-an-empty-domain-turns-switching-off
     contents: []
 ---
 
@@ -81,7 +112,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/subEdges/list","method":"get"},{"path":"/panel/api/subEdges/add","method":"post"},{"path":"/panel/api/subEdges/update/{id}","method":"post"},{"path":"/panel/api/subEdges/del/{id}","method":"post"},{"path":"/panel/api/subEdges/node/configure","method":"post"},{"path":"/panel/api/subEdges/node/tunnel","method":"post"},{"path":"/panel/api/subEdges/node/cache","method":"post"}]} showTitle />
+      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/subEdges/list","method":"get"},{"path":"/panel/api/subEdges/add","method":"post"},{"path":"/panel/api/subEdges/update/{id}","method":"post"},{"path":"/panel/api/subEdges/del/{id}","method":"post"},{"path":"/panel/api/subEdges/node/configure","method":"post"},{"path":"/panel/api/subEdges/node/tunnel","method":"post"},{"path":"/panel/api/subEdges/node/cache","method":"post"},{"path":"/panel/api/subEdges/node/dns","method":"post"},{"path":"/panel/api/subEdges/dns","method":"get"},{"path":"/panel/api/subEdges/dns","method":"post"}]} showTitle />
     </>
   );
 }

@@ -3232,6 +3232,94 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "DNSPlan": {
+    "description": "DNSPlan is what decides the subscription domain's A records: the addresses\nof each tier, best first. EdgesBefore is set only for an edge node.",
+    "properties": {
+      "domain": {
+        "example": "sub.example.com",
+        "type": "string"
+      },
+      "edgesBefore": {
+        "example": [
+          "203.0.113.7"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "tiers": {
+        "example": [
+          [
+            "198.51.100.1"
+          ],
+          [
+            "203.0.113.7"
+          ],
+          []
+        ],
+        "items": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "type": "array"
+      },
+      "token": {
+        "example": "cf-dns-token",
+        "type": "string"
+      }
+    },
+    "required": [
+      "domain",
+      "edgesBefore",
+      "tiers",
+      "token"
+    ],
+    "type": "object"
+  },
+  "DNSStatus": {
+    "description": "DNSStatus is the outcome of the last switching step.",
+    "properties": {
+      "at": {
+        "example": 1762736400,
+        "format": "int64",
+        "type": "integer"
+      },
+      "error": {
+        "type": "string"
+      },
+      "published": {
+        "example": [
+          "198.51.100.1"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "tier": {
+        "example": 0,
+        "type": "integer"
+      },
+      "unmanaged": {
+        "example": [],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "at",
+      "error",
+      "published",
+      "tier",
+      "unmanaged"
+    ],
+    "type": "object"
+  },
   "FallbackParentInfo": {
     "description": "FallbackParentInfo carries everything the frontend needs to rewrite a\nchild inbound's client link: where to connect (the master's address\nand port) and which path matched on the master's fallbacks array.\nThe frontend already has the master inbound in its dbInbounds list,\nso we only ship identifiers + the match path here.",
     "properties": {
@@ -6641,6 +6729,65 @@ export const SCHEMAS: Record<string, unknown> = {
       "port",
       "status",
       "updatedAt"
+    ],
+    "type": "object"
+  },
+  "SubEdgeDNSRequest": {
+    "description": "SubEdgeDNSRequest is the admin's DNS switching setup; an empty token keeps\nthe saved one.",
+    "properties": {
+      "domain": {
+        "example": "sub.example.com",
+        "type": "string"
+      },
+      "masterIps": {
+        "example": [
+          "198.51.100.1"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "token": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "domain",
+      "masterIps",
+      "token"
+    ],
+    "type": "object"
+  },
+  "SubEdgeDNSView": {
+    "description": "SubEdgeDNSView is the DNS switching setup without its token, and what the\nlast switching step did.",
+    "properties": {
+      "domain": {
+        "example": "sub.example.com",
+        "type": "string"
+      },
+      "masterIps": {
+        "example": [
+          "198.51.100.1"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "status": {
+        "$ref": "#/components/schemas/DNSStatus"
+      },
+      "tokenSet": {
+        "example": true,
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "domain",
+      "masterIps",
+      "status",
+      "tokenSet"
     ],
     "type": "object"
   },

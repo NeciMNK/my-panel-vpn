@@ -727,6 +727,21 @@ export interface ClientsSummary {
   total: number;
 }
 
+export interface DNSPlan {
+  domain: string;
+  edgesBefore: string[];
+  tiers: string[][];
+  token: string;
+}
+
+export interface DNSStatus {
+  at: number;
+  error: string;
+  published: string[];
+  tier: number;
+  unmanaged: string[];
+}
+
 export interface FallbackParentInfo {
   masterId: number;
   path?: string;
@@ -1476,6 +1491,19 @@ export interface SubEdge {
   port: number;
   status: string;
   updatedAt: number;
+}
+
+export interface SubEdgeDNSRequest {
+  domain: string;
+  masterIps: string[];
+  token: string;
+}
+
+export interface SubEdgeDNSView {
+  domain: string;
+  masterIps: string[];
+  status: DNSStatus;
+  tokenSet: boolean;
 }
 
 export interface SubEdgeRequest {
