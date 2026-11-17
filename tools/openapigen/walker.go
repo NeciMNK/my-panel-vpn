@@ -180,6 +180,9 @@ func exprToType(expr ast.Expr) TypeRef {
 		inner := exprToType(e.X)
 		return TypeRef{Kind: KindRef, Name: "nullable", Inner: &inner}
 	case *ast.ArrayType:
+		if id, ok := e.Elt.(*ast.Ident); ok && id.Name == "byte" && e.Len == nil {
+			return TypeRef{Kind: KindString} // encoding/json writes []byte as base64.
+		}
 		elem := exprToType(e.Elt)
 		return TypeRef{Kind: KindArray, Element: &elem}
 	case *ast.MapType:
