@@ -87,6 +87,7 @@ export const AllSettingSchema = z.object({
   ldapUserFilter: z.string(),
   ldapVlessField: z.string(),
   nodeDownThreshold: z.number().int().min(1).max(100),
+  nodeLoadMinutes: z.number().int().min(1).max(60),
   outboundDownThreshold: z.number().int().min(1).max(100),
   pageSize: z.number().int().min(0).max(1000),
   panelOutbound: z.string(),
@@ -216,6 +217,7 @@ export const AllSettingSchema = z.object({
   tgBotVpnFallback: z.boolean(),
   tgCpu: z.number().int().min(0).max(100),
   tgEnabledEvents: z.string(),
+  tgEventRecipients: z.string(),
   tgFreePlanEnable: z.boolean(),
   tgFreePlanGB: z.number().int().min(1).max(100000),
   tgFreePlanInbounds: z.string(),
@@ -293,6 +295,7 @@ export const AllSettingViewSchema = z.object({
   ldapUserFilter: z.string(),
   ldapVlessField: z.string(),
   nodeDownThreshold: z.number().int().min(1).max(100),
+  nodeLoadMinutes: z.number().int().min(1).max(60),
   outboundDownThreshold: z.number().int().min(1).max(100),
   pageSize: z.number().int().min(0).max(1000),
   panelOutbound: z.string(),
@@ -422,6 +425,7 @@ export const AllSettingViewSchema = z.object({
   tgBotVpnFallback: z.boolean(),
   tgCpu: z.number().int().min(0).max(100),
   tgEnabledEvents: z.string(),
+  tgEventRecipients: z.string(),
   tgFreePlanEnable: z.boolean(),
   tgFreePlanGB: z.number().int().min(1).max(100000),
   tgFreePlanInbounds: z.string(),
@@ -1187,6 +1191,8 @@ export type NewUUIDResponse = z.infer<typeof NewUUIDResponseSchema>;
 export const NodeSchema = z.object({
   activeCount: z.number().int(),
   address: z.string(),
+  alertCpu: z.number().int(),
+  alertMemory: z.number().int(),
   allowPrivateAddress: z.boolean(),
   basePath: z.string(),
   clientCount: z.number().int(),
@@ -1240,6 +1246,8 @@ export type NodeJoinTokenView = z.infer<typeof NodeJoinTokenViewSchema>;
 
 export const NodeMutationRequestSchema = z.object({
   address: z.string(),
+  alertCpu: z.number().int(),
+  alertMemory: z.number().int(),
   allowPrivateAddress: z.boolean(),
   apiToken: z.string().nullable().optional(),
   basePath: z.string(),
@@ -1262,6 +1270,8 @@ export type NodeMutationRequest = z.infer<typeof NodeMutationRequestSchema>;
 export const NodeViewSchema = z.object({
   activeCount: z.number().int(),
   address: z.string(),
+  alertCpu: z.number().int(),
+  alertMemory: z.number().int(),
   allowPrivateAddress: z.boolean(),
   basePath: z.string(),
   clientCount: z.number().int(),
@@ -1523,6 +1533,7 @@ export type SpeedTestResult = z.infer<typeof SpeedTestResultSchema>;
 
 export const SpeedTestSettingsSchema = z.object({
   autoCapacity: z.boolean(),
+  dropPercent: z.number().int(),
   everyHours: z.number().int(),
   times: z.array(z.string()),
   timezone: z.string(),

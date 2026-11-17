@@ -330,8 +330,9 @@ const (
 	cadenceExpiredFree    = "@every 10s"
 	// cpu.Percent samples over a full minute (blocking), so a finer cadence just
 	// stacks overlapping samplers; subscribers rate-limit alerts to 1/min anyway.
-	cadenceCPUAlarm    = "@every 1m"
-	cadenceMemoryAlarm = "@every 1m"
+	cadenceCPUAlarm      = "@every 1m"
+	cadenceMemoryAlarm   = "@every 1m"
+	cadenceNodeLoadAlarm = "@every 1m"
 )
 
 // startTask schedules background jobs (Xray checks, traffic jobs, cron
@@ -447,6 +448,8 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 		_, _ = s.cron.AddJob(cadenceCheckHash, job.NewCheckHashStorageJob())
 		// Hourly so a restart cannot skip a day; each bill is announced once.
 		_, _ = s.cron.AddJob("@hourly", job.LeaderOnly(job.NewLedgerReminderJob()))
+		// Clients' own payment reminders: each chosen day once per due date.
+		_, _ = s.cron.AddJob("@hourly", job.LeaderOnly(job.NewPaymentReminderJob()))
 	}
 
 	// Outside the bot block: an invoice paid while the bot is off must still be applied.
@@ -470,6 +473,10 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	// Memory monitor publishes memory.high events; register it whenever any notifier wants them.
 	if s.memoryAlarmWanted() {
 		_, _ = s.cron.AddJob(cadenceMemoryAlarm, job.NewCheckMemJob())
+	}
+	// Node load reads the heartbeat history, which only the leader keeps.
+	if s.cpuAlarmWanted() || s.memoryAlarmWanted() {
+		_, _ = s.cron.AddJob(cadenceNodeLoadAlarm, job.LeaderOnly(job.NewNodeLoadAlarmJob()))
 	}
 
 	if mins := sys.MemoryReleaseIntervalMinutes(); mins > 0 {

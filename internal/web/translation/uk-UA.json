@@ -1327,6 +1327,9 @@
       },
       "country": "Країна",
       "countryHint": "Дволітерний код країни (DE, NL, FI). Ноди однієї країни разом потрапляють у каскади «за країною».",
+      "alertCpu": "Поріг CPU, %",
+      "alertMemory": "Поріг RAM, %",
+      "alertHint": "Власний поріг сповіщення для цієї ноди. 0 — поріг з налаштувань сповіщень.",
       "countryInvalid": "Потрібен дволітерний код країни, наприклад DE",
       "home": {
         "title": "Home networks",
@@ -1402,6 +1405,8 @@
         "test": "Speed test",
         "testDesc": "A speed test measures the server's own internet link with Speedtest by Ookla, or with Yandex Internetometer when Speedtest is unreachable. With automatic link speed on, the result sets the server's link speed: the slower direction plus what users were using during the test.",
         "autoCapacity": "Set link speed from speed tests",
+        "dropPercent": "Сповіщати при падінні на",
+        "dropPercentHint": "Якщо плановий замір нижчий за середній за 30 днів на стільки відсотків, за 10 хвилин робляться ще два заміри; сповіщення прийде, якщо обидва теж низькі. 0 — вимкнено.",
         "everyHours": "Test every, hours (0 = button only)",
         "testNow": "Test",
         "testing": "Testing…",
@@ -2228,6 +2233,13 @@
         }
       },
       "eventSpeedLow": "Speed below user minimum",
+      "eventSpeedDrop": "Швидкість значно нижча за середню",
+      "nodeLoadMinutes": "Тримається, хв",
+      "nodeLoadMinutesHint": "Сповіщення про ноду прийде, лише якщо CPU або RAM тримається вище порогу стільки хвилин.",
+      "tgRecipientsTitle": "Кому ще надсилати",
+      "tgRecipientsHint": "Окрім адмінів, подію отримають Telegram-чати вибраних груп і клієнтів. Сповіщення про вхід у панель завжди лише для адмінів.",
+      "tgRecipientsGroups": "Групи клієнтів",
+      "tgRecipientsClients": "Клієнти",
       "eventMasterLeader": "Another master took over",
       "tgPaymentMoved": "Prices, discounts, payment details, the free plan and online payment (YooKassa, which confirms payments by itself) are set on the Finance page, Prices and payment tab.",
       "tgFreePlanPrice": "Ціна безкоштовного тарифу (онлайн)",
@@ -3069,6 +3081,7 @@
     },
     "messages": {
       "cpuThreshold": "Навантаження ЦП  {{ .Percent }}% перевищує порогове значення {{ .Threshold }}%",
+      "cpuNormal": "Завантаження процесора знову в нормі: {{ .Percent }}%, нижче порогу {{ .Threshold }}%",
       "selectUserFailed": "❌ Помилка під час вибору користувача!",
       "userSaved": "✅ Користувача Telegram збережено.",
       "loginSuccess": "✅ Успішно ввійшли в панель\r\n",
@@ -3147,6 +3160,7 @@
       "eventNodeIsolated": "Майстер не бачить вузол {{ .Name }}, але він працює: його бачать {{ .SeenBy }}",
       "eventLoginFallback": "Невдала спроба входу з {{ .Source }}",
       "memoryThreshold": "Використання пам'яті {{ .Percent }}% перевищує порогове значення {{ .Threshold }}%",
+      "memoryNormal": "Використання пам'яті знову в нормі: {{ .Percent }}%, нижче порогу {{ .Threshold }}%",
       "inboundsCount": "🔌 Підключень: {{ .Count }}\r\n",
       "clientsCount": "👥 Клієнтів: {{ .Count }}\r\n",
       "category_server": "🖥 Сервер",
@@ -3183,6 +3197,7 @@
       "freeApproved": "🎉 Безкоштовна підписка готова: {{ .GB }} ГБ на місяць. Сплатіть будь-який термін, щоб зняти ліміт.",
       "freeDeclined": "❌ Запит на безкоштовну підписку відхилено.",
       "speedLow": "Server {{ .Server }} has {{ .Free }} Mbit/s free per user, below the {{ .Min }} Mbit/s minimum of {{ .Users }}, and no other server has room. Add a server or raise its link speed.",
+      "speedDrop": "Швидкість на {{ .Server }} значно нижча за середню за 30 днів (↓{{ .AvgDown }} ↑{{ .AvgUp }} Мбіт/с) і не відновилася на двох перевірках за 10 хвилин: {{ .Results }} Мбіт/с.",
       "masterLeader": "Master {{ .Master }} now leads the panel cluster.",
       "masterLeaderPrevious": "It took over from {{ .Previous }}.",
       "attachedInbounds": "🔗 Підключення: {{ .Inbounds }}\r\n",
@@ -3396,7 +3411,8 @@
       "deplete": "Закінчуються",
       "commands": "Команди",
       "broadcast": "Розсилка",
-      "pay": "Оплата"
+      "pay": "Оплата",
+      "reminders": "Нагадування"
     },
     "inline": {
       "noneTitle": "Нічого не знайдено",
@@ -3410,6 +3426,16 @@
     "noValue": "—",
     "notices": {
       "repeat": "\r\n\r\n🔁 повторилося {{ .Count }}× · востаннє {{ .Time }}"
+    },
+    "reminders": {
+      "button": "🔔 Нагадування",
+      "message": "⏰ Підписка закінчується через {{ .Days }} дн., {{ .Date }}.\r\nЗмінити або вимкнути ці нагадування можна кнопкою «🔔 Нагадування».\r\n",
+      "screen": "🔔 <b>Нагадування про оплату</b>\r\n\r\nСтатус: {{ .Status }}\r\nНагадувати до закінчення за: {{ .Days }} дн.\r\n\r\nНатисніть на день, щоб додати або прибрати його.",
+      "on": "увімкнені",
+      "off": "вимкнені",
+      "turnOn": "🔔 Увімкнути",
+      "turnOff": "🔕 Вимкнути",
+      "day": "{{ .Days }} дн."
     },
     "payment": {
       "title": "\r\n💳 <b>Оплата</b>\r\n",

@@ -48,6 +48,7 @@ export const AllSettingSchema = z
     tgCpu: z.number().int().min(0).max(100).optional(),
     outboundDownThreshold: z.number().int().min(1).max(100).optional(),
     nodeDownThreshold: z.number().int().min(1).max(100).optional(),
+    nodeLoadMinutes: z.number().int().min(1).max(60).optional(),
     tgLang: z.string().optional(),
     tgFreePlanEnable: z.boolean().optional(),
     tgFreePlanGB: z.number().int().min(1).max(100000).optional(),

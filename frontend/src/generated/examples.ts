@@ -63,6 +63,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "ldapUserFilter": "",
     "ldapVlessField": "",
     "nodeDownThreshold": 1,
+    "nodeLoadMinutes": 1,
     "outboundDownThreshold": 1,
     "pageSize": 0,
     "panelOutbound": "",
@@ -192,6 +193,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "tgBotVpnFallback": false,
     "tgCpu": 0,
     "tgEnabledEvents": "",
+    "tgEventRecipients": "",
     "tgFreePlanEnable": false,
     "tgFreePlanGB": 1,
     "tgFreePlanInbounds": "1,2",
@@ -267,6 +269,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "ldapUserFilter": "",
     "ldapVlessField": "",
     "nodeDownThreshold": 1,
+    "nodeLoadMinutes": 1,
     "outboundDownThreshold": 1,
     "pageSize": 0,
     "panelOutbound": "",
@@ -396,6 +399,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "tgBotVpnFallback": false,
     "tgCpu": 0,
     "tgEnabledEvents": "",
+    "tgEventRecipients": "",
     "tgFreePlanEnable": false,
     "tgFreePlanGB": 1,
     "tgFreePlanInbounds": "1,2",
@@ -1312,6 +1316,8 @@ export const EXAMPLES: Record<string, unknown> = {
   "Node": {
     "activeCount": 23,
     "address": "node1.example.com",
+    "alertCpu": 90,
+    "alertMemory": 0,
     "allowPrivateAddress": false,
     "basePath": "/",
     "clientCount": 27,
@@ -1365,6 +1371,8 @@ export const EXAMPLES: Record<string, unknown> = {
   },
   "NodeMutationRequest": {
     "address": "",
+    "alertCpu": 0,
+    "alertMemory": 0,
     "allowPrivateAddress": false,
     "apiToken": null,
     "basePath": "",
@@ -1387,6 +1395,8 @@ export const EXAMPLES: Record<string, unknown> = {
   "NodeView": {
     "activeCount": 20,
     "address": "node.example.com",
+    "alertCpu": 90,
+    "alertMemory": 0,
     "allowPrivateAddress": false,
     "basePath": "/",
     "clientCount": 25,
@@ -1638,6 +1648,7 @@ export const EXAMPLES: Record<string, unknown> = {
     ],
     "testSettings": {
       "autoCapacity": true,
+      "dropPercent": 30,
       "everyHours": 6,
       "times": [
         "03:00",
@@ -1684,6 +1695,7 @@ export const EXAMPLES: Record<string, unknown> = {
   },
   "SpeedTestSettings": {
     "autoCapacity": true,
+    "dropPercent": 30,
     "everyHours": 6,
     "times": [
       "03:00",

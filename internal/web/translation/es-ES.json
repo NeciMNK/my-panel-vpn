@@ -1327,6 +1327,9 @@
       },
       "country": "Country",
       "countryHint": "Two-letter country code (DE, NL, FI). Nodes of one country together join \"by country\" cascades.",
+      "alertCpu": "CPU alert, %",
+      "alertMemory": "RAM alert, %",
+      "alertHint": "This node's own alert threshold. 0 uses the threshold from the notification settings.",
       "countryInvalid": "Use a two-letter country code such as DE",
       "home": {
         "title": "Home networks",
@@ -1402,6 +1405,8 @@
         "test": "Speed test",
         "testDesc": "A speed test measures the server's own internet link with Speedtest by Ookla, or with Yandex Internetometer when Speedtest is unreachable. With automatic link speed on, the result sets the server's link speed: the slower direction plus what users were using during the test.",
         "autoCapacity": "Set link speed from speed tests",
+        "dropPercent": "Alert on a drop of",
+        "dropPercentHint": "A scheduled test this far below the 30-day average is measured twice more within 10 minutes, then alerts if both are low too. 0 turns it off.",
         "everyHours": "Test every, hours (0 = button only)",
         "testNow": "Test",
         "testing": "Testing…",
@@ -2228,6 +2233,13 @@
         }
       },
       "eventSpeedLow": "Speed below user minimum",
+      "eventSpeedDrop": "Speed far below average",
+      "nodeLoadMinutes": "Hold time, min",
+      "nodeLoadMinutesHint": "Nodes alert only when their CPU or RAM stays over the threshold this long.",
+      "tgRecipientsTitle": "Who else gets these alerts",
+      "tgRecipientsHint": "Besides the admins, the Telegram chats of the chosen client groups and clients get the event too. Login alerts always stay with the admins.",
+      "tgRecipientsGroups": "Client groups",
+      "tgRecipientsClients": "Clients",
       "eventMasterLeader": "Another master took over",
       "tgPaymentMoved": "Prices, discounts, payment details, the free plan and online payment (YooKassa, which confirms payments by itself) are set on the Finance page, Prices and payment tab.",
       "tgFreePlanPrice": "Free plan price (online)",
@@ -3069,6 +3081,7 @@
     },
     "messages": {
       "cpuThreshold": "El uso de CPU {{ .Percent }}% es mayor que el umbral {{ .Threshold }}%",
+      "cpuNormal": "CPU load is back to normal: {{ .Percent }}%, below the threshold of {{ .Threshold }}%",
       "selectUserFailed": "❌ ¡Error al seleccionar usuario!",
       "userSaved": "✅ Usuario de Telegram guardado.",
       "loginSuccess": "✅ Has iniciado sesión en el panel con éxito.\r\n",
@@ -3147,6 +3160,7 @@
       "eventNodeIsolated": "El maestro perdió el nodo {{ .Name }}, pero sigue funcionando: {{ .SeenBy }} lo alcanzan",
       "eventLoginFallback": "Inicio de sesión fallido desde {{ .Source }}",
       "memoryThreshold": "Uso de memoria {{ .Percent }}% supera el umbral de {{ .Threshold }}%",
+      "memoryNormal": "Memory load is back to normal: {{ .Percent }}%, below the threshold of {{ .Threshold }}%",
       "inboundsCount": "🔌 Inbounds: {{ .Count }}\r\n",
       "clientsCount": "👥 Clients: {{ .Count }}\r\n",
       "category_server": "🖥 Servidor",
@@ -3183,6 +3197,7 @@
       "freeApproved": "🎉 Your free subscription is ready: {{ .GB }} GB a month. Pay for any term to remove the limit.",
       "freeDeclined": "❌ Your request for a free subscription was declined.",
       "speedLow": "Server {{ .Server }} has {{ .Free }} Mbit/s free per user, below the {{ .Min }} Mbit/s minimum of {{ .Users }}, and no other server has room. Add a server or raise its link speed.",
+      "speedDrop": "Speed on {{ .Server }} dropped well below its 30-day average (↓{{ .AvgDown }} ↑{{ .AvgUp }} Mbit/s) and stayed there on two rechecks within 10 minutes: {{ .Results }} Mbit/s.",
       "masterLeader": "Master {{ .Master }} now leads the panel cluster.",
       "masterLeaderPrevious": "It took over from {{ .Previous }}.",
       "attachedInbounds": "🔗 Inbounds: {{ .Inbounds }}\r\n",
@@ -3396,7 +3411,8 @@
       "deplete": "Running out",
       "commands": "Commands",
       "broadcast": "Broadcast",
-      "pay": "Payment"
+      "pay": "Payment",
+      "reminders": "Reminders"
     },
     "inline": {
       "noneTitle": "Nothing found",
@@ -3410,6 +3426,16 @@
     "noValue": "—",
     "notices": {
       "repeat": "\r\n\r\n🔁 repeated {{ .Count }}× · last {{ .Time }}"
+    },
+    "reminders": {
+      "button": "🔔 Reminders",
+      "message": "⏰ Your subscription ends in {{ .Days }} d., on {{ .Date }}.\r\nYou can change or turn off these reminders with the 🔔 Reminders button.\r\n",
+      "screen": "🔔 <b>Payment reminders</b>\r\n\r\nStatus: {{ .Status }}\r\nRemind me before the end: {{ .Days }} d.\r\n\r\nTap a day to add or remove it.",
+      "on": "on",
+      "off": "off",
+      "turnOn": "🔔 Turn on",
+      "turnOff": "🔕 Turn off",
+      "day": "{{ .Days }} d."
     },
     "payment": {
       "title": "\r\n💳 <b>Payment</b>\r\n",

@@ -868,6 +868,9 @@ type Node struct {
 	OutboundTag         string   `json:"outboundTag" form:"outboundTag" gorm:"column:outbound_tag"`
 	// Country is the ISO 3166-1 alpha-2 code country cascades group exits by.
 	Country string `json:"country" form:"country" gorm:"column:country" example:"DE"`
+	// AlertCpu and AlertMemory (percent) replace the notifiers' CPU/RAM threshold for this node; 0 keeps them.
+	AlertCpu    int `json:"alertCpu" form:"alertCpu" gorm:"column:alert_cpu;default:0" example:"90"`
+	AlertMemory int `json:"alertMemory" form:"alertMemory" gorm:"column:alert_memory;default:0" example:"0"`
 
 	// Guid is the remote panel's stable self-identifier (its panelGuid),
 	// learned from each heartbeat. It is the globally stable node identity used
@@ -1915,6 +1918,17 @@ const (
 	TlsCertStatusValid   = "valid"
 	TlsCertStatusError   = "error"
 )
+
+// PaymentReminder is a Telegram account's own payment-reminder choice. Days
+// lists how many days before the due date to remind ("" = the panel default).
+type PaymentReminder struct {
+	TgID     int64  `json:"tgId" gorm:"primaryKey;autoIncrement:false;column:tg_id"`
+	Disabled bool   `json:"disabled" gorm:"column:disabled;default:false"`
+	Days     string `json:"days" gorm:"column:days;default:''"`
+	// SentDue and SentDay (unix ms, days) are the due date and the threshold last reminded of.
+	SentDue int64 `json:"-" gorm:"column:sent_due;default:0"`
+	SentDay int   `json:"-" gorm:"column:sent_day;default:0"`
+}
 
 // Serving reports whether users can still connect to the node, even when the
 // master itself cannot reach it.

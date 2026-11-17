@@ -453,6 +453,9 @@ func (s *NodeService) normalize(n *model.Node) error {
 	if n.Country != "" && !isCountryCode(n.Country) {
 		return common.NewError("country must be a two-letter code such as DE")
 	}
+	if n.AlertCpu < 0 || n.AlertCpu > 100 || n.AlertMemory < 0 || n.AlertMemory > 100 {
+		return common.NewError("a node's CPU and RAM alert thresholds must be 0 to 100")
+	}
 	return nil
 }
 
@@ -557,6 +560,8 @@ func (s *NodeService) Update(id int, in *model.Node) error {
 		"inbound_tags":          string(inboundTagsJSON),
 		"outbound_tag":          in.OutboundTag,
 		"country":               in.Country,
+		"alert_cpu":             in.AlertCpu,
+		"alert_memory":          in.AlertMemory,
 	}
 	if nodeSelectionGrew(existing, in) {
 		updates["inbounds_adopted_at"] = 0
@@ -621,6 +626,8 @@ func (s *NodeService) UpdateFromRequest(id int, req *NodeMutationRequest) error 
 		"inbound_tags":          string(inboundTagsJSON),
 		"outbound_tag":          in.OutboundTag,
 		"country":               in.Country,
+		"alert_cpu":             in.AlertCpu,
+		"alert_memory":          in.AlertMemory,
 	}
 	if nodeSelectionGrew(existing, in) {
 		updates["inbounds_adopted_at"] = 0
@@ -1139,6 +1146,16 @@ func (s *NodeService) IsNodePending(id int) bool {
 
 func nodeMetricKey(id int, metric string) string {
 	return "node:" + strconv.Itoa(id) + ":" + metric
+}
+
+// nodeLoadSlack is how far the first and last heartbeat sample may sit from the
+// window edges: a few missed 5 s heartbeats, not a node that just appeared.
+const nodeLoadSlack = 15 * time.Second
+
+// NodeLoadSpan is a node metric's lowest and highest sample over the window
+// ending at now; ok is false until heartbeats cover the whole window.
+func (s *NodeService) NodeLoadSpan(id int, metric string, window time.Duration, now time.Time) (low, high float64, ok bool) {
+	return nodeMetrics.span(nodeMetricKey(id, metric), now.Add(-window).Unix(), now.Unix(), int64(nodeLoadSlack/time.Second))
 }
 
 func (s *NodeService) AggregateNodeMetric(id int, metric string, bucketSeconds int, maxPoints int) []map[string]any {

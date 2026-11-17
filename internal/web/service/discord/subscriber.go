@@ -145,6 +145,9 @@ func (s *Subscriber) FormatEmbed(e eventbus.Event) (Embed, bool) {
 	if h == "" {
 		h = "unknown"
 	}
+	if (e.Type == eventbus.EventCPUHigh || e.Type == eventbus.EventMemoryHigh) && e.Source != "" {
+		h = e.Source // a node's load event names that node
+	}
 	var ts string
 	if e.Timestamp.IsZero() {
 		ts = time.Now().UTC().Format(time.RFC3339)
@@ -284,6 +287,9 @@ func (s *Subscriber) FormatEmbed(e eventbus.Event) (Embed, bool) {
 		}
 		if data != nil {
 			discordCpu, err := s.settingService.GetDiscordCpu()
+			if data.Threshold > 0 {
+				discordCpu, err = data.Threshold, nil // the node's own threshold
+			}
 			if err != nil || discordCpu <= 0 || data.Percent <= float64(discordCpu) {
 				return Embed{}, false
 			}
@@ -311,6 +317,9 @@ func (s *Subscriber) FormatEmbed(e eventbus.Event) (Embed, bool) {
 		}
 		if data != nil {
 			discordMem, err := s.settingService.GetDiscordMemory()
+			if data.Threshold > 0 {
+				discordMem, err = data.Threshold, nil // the node's own threshold
+			}
 			if err != nil || discordMem <= 0 || data.Percent <= float64(discordMem) {
 				return Embed{}, false
 			}

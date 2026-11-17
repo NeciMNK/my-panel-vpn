@@ -174,7 +174,8 @@ export class AllSetting {
   ldapDefaultTotalGB = 0;
   ldapDefaultExpiryDays = 0;
   ldapDefaultLimitIP = 0;
-  tgEnabledEvents = 'login.attempt,cpu.high,speed.low,master.leader';
+  tgEnabledEvents = 'login.attempt,cpu.high,memory.high,speed.low,speed.drop,master.leader';
+  tgEventRecipients = '{}';
   smtpEnable = false;
   smtpHost = '';
   smtpPort = 587;
@@ -189,6 +190,7 @@ export class AllSetting {
   smtpMemory = 80;
   outboundDownThreshold = 3;
   nodeDownThreshold = 1;
+  nodeLoadMinutes = 2;
   hasTgBotToken = false;
   hasTwoFactorToken = false;
   hasLdapPassword = false;
@@ -237,6 +239,10 @@ export class AllSetting {
     this.nodeDownThreshold = Number.isFinite(nodeThreshold)
       ? Math.min(100, Math.max(1, nodeThreshold))
       : 1;
+    const loadMinutes = Math.round(Number(this.nodeLoadMinutes));
+    this.nodeLoadMinutes = Number.isFinite(loadMinutes)
+      ? Math.min(60, Math.max(1, loadMinutes))
+      : 2;
   }
 
   equals(other: AllSetting): boolean {

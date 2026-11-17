@@ -390,7 +390,8 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 	chatId := callbackQuery.Message.GetChat().ID
 	actor := callbackActor(callbackQuery)
 	if data, err := t.decodeQuery(callbackQuery.Data); err == nil {
-		if t.answerOnlinePayment(callbackQuery, data) || t.answerOwnSubscriptionCallback(callbackQuery, data) {
+		if t.answerOnlinePayment(callbackQuery, data) || t.answerOwnSubscriptionCallback(callbackQuery, data) ||
+			t.answerReminderCallback(callbackQuery, data) {
 			return
 		}
 	}

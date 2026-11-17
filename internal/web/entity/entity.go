@@ -60,6 +60,8 @@ type AllSetting struct {
 	TgMemory         int    `json:"tgMemory" form:"tgMemory" validate:"gte=0,lte=100"`
 	TgLang           string `json:"tgLang" form:"tgLang"`
 	TgEnabledEvents  string `json:"tgEnabledEvents" form:"tgEnabledEvents"`
+	// TgEventRecipients maps an event type to the client groups and emails whose Telegram chats also get it.
+	TgEventRecipients string `json:"tgEventRecipients" form:"tgEventRecipients"`
 	// Prices and discounts are edited on the Finance page (LedgerService.SavePayment), not here.
 	TgFreePlanEnable bool `json:"tgFreePlanEnable" form:"tgFreePlanEnable"`
 	TgFreePlanGB     int  `json:"tgFreePlanGB" form:"tgFreePlanGB" validate:"gte=1,lte=100000"`
@@ -96,6 +98,8 @@ type AllSetting struct {
 
 	OutboundDownThreshold int `json:"outboundDownThreshold" form:"outboundDownThreshold" validate:"gte=1,lte=100"`
 	NodeDownThreshold     int `json:"nodeDownThreshold" form:"nodeDownThreshold" validate:"gte=1,lte=100"`
+	// NodeLoadMinutes is how long a node's CPU or RAM must stay over the threshold before it alerts.
+	NodeLoadMinutes int `json:"nodeLoadMinutes" form:"nodeLoadMinutes" validate:"gte=1,lte=60"`
 
 	TimeLocation    string `json:"timeLocation" form:"timeLocation"`
 	TwoFactorEnable bool   `json:"twoFactorEnable" form:"twoFactorEnable"`

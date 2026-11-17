@@ -71,6 +71,9 @@ func i18n(key string, params ...string) string {
 func (s *Subscriber) formatMessage(e eventbus.Event) (subject, body string) {
 	h, _ := hostname()
 	host := h
+	if isLoadEvent(e) && e.Source != "" {
+		host = e.Source
+	}
 	ts := e.Timestamp.Format("2006-01-02 15:04:05")
 
 	wrap := func(title, content string) string {
@@ -149,6 +152,9 @@ func (s *Subscriber) formatMessage(e eventbus.Event) (subject, body string) {
 	case eventbus.EventCPUHigh:
 		if data, ok := e.Data.(*eventbus.SystemMetricData); ok {
 			smtpCpu, err := s.settingService.GetSmtpCpu()
+			if data.Threshold > 0 {
+				smtpCpu, err = data.Threshold, nil // the node's own threshold
+			}
 			if err != nil || smtpCpu <= 0 || data.Percent <= float64(smtpCpu) {
 				return
 			}
@@ -162,6 +168,9 @@ func (s *Subscriber) formatMessage(e eventbus.Event) (subject, body string) {
 	case eventbus.EventMemoryHigh:
 		if data, ok := e.Data.(*eventbus.SystemMetricData); ok {
 			smtpMemory, err := s.settingService.GetSmtpMemory()
+			if data.Threshold > 0 {
+				smtpMemory, err = data.Threshold, nil // the node's own threshold
+			}
 			if err != nil || smtpMemory <= 0 || data.Percent <= float64(smtpMemory) {
 				return
 			}
@@ -203,4 +212,9 @@ func (s *Subscriber) formatMessage(e eventbus.Event) (subject, body string) {
 
 func hostname() (string, error) {
 	return os.Hostname()
+}
+
+// isLoadEvent: a CPU/RAM event with a Source comes from a node, not this host.
+func isLoadEvent(e eventbus.Event) bool {
+	return e.Type == eventbus.EventCPUHigh || e.Type == eventbus.EventMemoryHigh
 }

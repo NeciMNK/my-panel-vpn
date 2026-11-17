@@ -47,6 +47,26 @@ func TestMasterLeaderAlertNamesTheMasterItReplaced(t *testing.T) {
 	}
 }
 
+// The confirmed-drop alert names the server, its usual speed and all three
+// low results, so the admin sees it was not a one-off.
+func TestSpeedDropAlertShowsAverageAndEveryLowResult(t *testing.T) {
+	draftLocalizer(t, &i18n.Message{
+		ID:    "tgbot.messages.speedDrop",
+		Other: "{{ .Server }}|{{ .AvgDown }}/{{ .AvgUp }}|{{ .Results }}",
+	})
+	got := (&Tgbot{}).formatEventMessage(eventbus.Event{
+		Type:   eventbus.EventSpeedDrop,
+		Source: "de-1",
+		Data: &eventbus.SpeedDropData{
+			AvgDownloadMbps: 902.55, AvgUploadMbps: 880,
+			DownloadMbps: []float64{480, 510.26, 495}, UploadMbps: []float64{870, 860, 875.5},
+		},
+	})
+	if want := "📉 de-1|902.5/880.0|↓480.0 ↑870.0, ↓510.3 ↑860.0, ↓495.0 ↑875.5"; !strings.HasSuffix(got, want) {
+		t.Fatalf("message = %q, want it to end with %q", got, want)
+	}
+}
+
 // A node only the master lost still serves users: the alert must say so and name
 // who reaches it, not read as an outage.
 func TestNodeDownAlertTellsAMasterSideLossFromAnOutage(t *testing.T) {

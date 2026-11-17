@@ -111,6 +111,7 @@ func (j *SpeedJob) alert() {
 // SpeedTestJob measures the servers whose scheduled speed test is due.
 type SpeedTestJob struct {
 	speed   service.SpeedService
+	nodes   service.NodeService
 	running sync.Mutex
 }
 
@@ -121,5 +122,24 @@ func (j *SpeedTestJob) Run() {
 		return
 	}
 	defer j.running.Unlock()
-	j.speed.RunScheduled(time.Now())
+	for _, d := range j.speed.RunScheduled(time.Now()) {
+		if EventBus == nil {
+			return
+		}
+		data := &eventbus.SpeedDropData{AvgDownloadMbps: d.AvgDownloadMbps, AvgUploadMbps: d.AvgUploadMbps}
+		for _, r := range d.Results {
+			data.DownloadMbps = append(data.DownloadMbps, r.DownloadMbps)
+			data.UploadMbps = append(data.UploadMbps, r.UploadMbps)
+		}
+		EventBus.Publish(eventbus.Event{Type: eventbus.EventSpeedDrop, Source: j.serverName(d.NodeId), Data: data, Timestamp: time.Now()})
+	}
+}
+
+func (j *SpeedTestJob) serverName(nodeID int) string {
+	if nodeID != 0 {
+		if n, err := j.nodes.GetById(nodeID); err == nil {
+			return nodeEventSource(n)
+		}
+	}
+	return "this panel"
 }

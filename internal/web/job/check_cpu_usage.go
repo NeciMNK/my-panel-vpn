@@ -41,6 +41,7 @@ func (j *CheckCpuJob) Run() {
 			Type: eventbus.EventCPUHigh,
 			Data: &eventbus.SystemMetricData{
 				Percent: percent,
+				Peak:    percent,
 			},
 		})
 	}

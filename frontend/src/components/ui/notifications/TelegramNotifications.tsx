@@ -9,6 +9,7 @@ import {
 import type { AllSetting } from '@/models/setting';
 import { NotificationLayout } from './NotificationLayout';
 import { NotificationGroup } from './NotificationGroup';
+import { TelegramEventRecipients } from './TelegramEventRecipients';
 import type { NotificationGroupConfig } from './types';
 
 const GROUPS: NotificationGroupConfig[] = [
@@ -84,8 +85,25 @@ const GROUPS: NotificationGroupConfig[] = [
             style={{ width: 80 }}
           />
         ),
+        also: {
+          settingKey: 'nodeLoadMinutes',
+          label: 'nodeLoadMinutes',
+          hint: 'nodeLoadMinutesHint',
+          extra: ({ value, onChange, ariaLabel }) => (
+            <InputNumber
+              size="small"
+              min={1}
+              max={60}
+              value={value}
+              onChange={onChange}
+              aria-label={ariaLabel}
+              style={{ width: 80 }}
+            />
+          ),
+        },
       },
       { key: 'speed.low', label: 'eventSpeedLow', settingKey: '' },
+      { key: 'speed.drop', label: 'eventSpeedDrop', settingKey: '' },
       { key: 'master.leader', label: 'eventMasterLeader', settingKey: '' },
       {
         key: 'memory.high',
@@ -140,18 +158,26 @@ export function TelegramNotifications({ allSetting, updateSetting }: Props) {
   }
 
   return (
-    <NotificationLayout>
-      {GROUPS.map((group, i) => (
-        <NotificationGroup
-          key={i}
-          config={group}
-          selected={selected}
-          onToggle={toggle}
-          onToggleAll={toggleAll}
-          allSetting={allSetting}
-          updateSetting={updateSetting}
-        />
-      ))}
-    </NotificationLayout>
+    <>
+      <NotificationLayout>
+        {GROUPS.map((group, i) => (
+          <NotificationGroup
+            key={i}
+            config={group}
+            selected={selected}
+            onToggle={toggle}
+            onToggleAll={toggleAll}
+            allSetting={allSetting}
+            updateSetting={updateSetting}
+          />
+        ))}
+      </NotificationLayout>
+      <TelegramEventRecipients
+        groups={GROUPS}
+        selected={selected}
+        value={allSetting.tgEventRecipients}
+        onChange={(next) => updateSetting({ tgEventRecipients: next })}
+      />
+    </>
   );
 }

@@ -197,6 +197,12 @@ export const SCHEMAS: Record<string, unknown> = {
         "minimum": 1,
         "type": "integer"
       },
+      "nodeLoadMinutes": {
+        "description": "NodeLoadMinutes is how long a node's CPU or RAM must stay over the threshold before it alerts.",
+        "maximum": 60,
+        "minimum": 1,
+        "type": "integer"
+      },
       "outboundDownThreshold": {
         "maximum": 100,
         "minimum": 1,
@@ -606,6 +612,10 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgEnabledEvents": {
         "type": "string"
       },
+      "tgEventRecipients": {
+        "description": "TgEventRecipients maps an event type to the client groups and emails whose Telegram chats also get it.",
+        "type": "string"
+      },
       "tgFreePlanEnable": {
         "description": "Prices and discounts are edited on the Finance page (LedgerService.SavePayment), not here.",
         "type": "boolean"
@@ -743,6 +753,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "ldapUserFilter",
       "ldapVlessField",
       "nodeDownThreshold",
+      "nodeLoadMinutes",
       "outboundDownThreshold",
       "pageSize",
       "panelOutbound",
@@ -872,6 +883,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgBotVpnFallback",
       "tgCpu",
       "tgEnabledEvents",
+      "tgEventRecipients",
       "tgFreePlanEnable",
       "tgFreePlanGB",
       "tgFreePlanInbounds",
@@ -1058,6 +1070,12 @@ export const SCHEMAS: Record<string, unknown> = {
         "minimum": 1,
         "type": "integer"
       },
+      "nodeLoadMinutes": {
+        "description": "NodeLoadMinutes is how long a node's CPU or RAM must stay over the threshold before it alerts.",
+        "maximum": 60,
+        "minimum": 1,
+        "type": "integer"
+      },
       "outboundDownThreshold": {
         "maximum": 100,
         "minimum": 1,
@@ -1467,6 +1485,10 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgEnabledEvents": {
         "type": "string"
       },
+      "tgEventRecipients": {
+        "description": "TgEventRecipients maps an event type to the client groups and emails whose Telegram chats also get it.",
+        "type": "string"
+      },
       "tgFreePlanEnable": {
         "description": "Prices and discounts are edited on the Finance page (LedgerService.SavePayment), not here.",
         "type": "boolean"
@@ -1613,6 +1635,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "ldapUserFilter",
       "ldapVlessField",
       "nodeDownThreshold",
+      "nodeLoadMinutes",
       "outboundDownThreshold",
       "pageSize",
       "panelOutbound",
@@ -1742,6 +1765,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgBotVpnFallback",
       "tgCpu",
       "tgEnabledEvents",
+      "tgEventRecipients",
       "tgFreePlanEnable",
       "tgFreePlanGB",
       "tgFreePlanInbounds",
@@ -4918,6 +4942,15 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": "node1.example.com",
         "type": "string"
       },
+      "alertCpu": {
+        "description": "AlertCpu and AlertMemory (percent) replace the notifiers' CPU/RAM threshold for this node; 0 keeps them.",
+        "example": 90,
+        "type": "integer"
+      },
+      "alertMemory": {
+        "example": 0,
+        "type": "integer"
+      },
       "allowPrivateAddress": {
         "type": "boolean"
       },
@@ -5106,6 +5139,8 @@ export const SCHEMAS: Record<string, unknown> = {
     "required": [
       "activeCount",
       "address",
+      "alertCpu",
+      "alertMemory",
       "allowPrivateAddress",
       "basePath",
       "clientCount",
@@ -5176,6 +5211,12 @@ export const SCHEMAS: Record<string, unknown> = {
     "properties": {
       "address": {
         "type": "string"
+      },
+      "alertCpu": {
+        "type": "integer"
+      },
+      "alertMemory": {
+        "type": "integer"
       },
       "allowPrivateAddress": {
         "type": "boolean"
@@ -5248,6 +5289,8 @@ export const SCHEMAS: Record<string, unknown> = {
     },
     "required": [
       "address",
+      "alertCpu",
+      "alertMemory",
       "allowPrivateAddress",
       "basePath",
       "country",
@@ -5275,6 +5318,14 @@ export const SCHEMAS: Record<string, unknown> = {
       "address": {
         "example": "node.example.com",
         "type": "string"
+      },
+      "alertCpu": {
+        "example": 90,
+        "type": "integer"
+      },
+      "alertMemory": {
+        "example": 0,
+        "type": "integer"
       },
       "allowPrivateAddress": {
         "example": false,
@@ -5457,6 +5508,8 @@ export const SCHEMAS: Record<string, unknown> = {
     "required": [
       "activeCount",
       "address",
+      "alertCpu",
+      "alertMemory",
       "allowPrivateAddress",
       "basePath",
       "clientCount",
@@ -6352,6 +6405,11 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": true,
         "type": "boolean"
       },
+      "dropPercent": {
+        "description": "DropPercent below the 30-day average triggers rechecks and an alert; 0 turns it off.",
+        "example": 30,
+        "type": "integer"
+      },
       "everyHours": {
         "example": 6,
         "type": "integer"
@@ -6373,6 +6431,7 @@ export const SCHEMAS: Record<string, unknown> = {
     },
     "required": [
       "autoCapacity",
+      "dropPercent",
       "everyHours",
       "times",
       "timezone"
