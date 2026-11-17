@@ -592,7 +592,8 @@ for AutoMigrate in `internal/database/db.go`.
    of importing the Telegram/Discord/email services into producers.
 10. **Per-protocol facts live in `internal/protocol`.** A new inbound protocol starts with a
     `model.Protocol` constant, its `Spec` and the validator's `oneof` (tests pin all three);
-    one served outside Xray also needs a `localEngine` in `internal/web/runtime/local_engine.go`.
+    one served outside Xray also needs a `localEngine` in `internal/web/runtime/local_engine.go`,
+    and one with `ShareLink` a generator in `internal/sub/service.go`'s `shareLinkGenerators`.
 
 ---
 
