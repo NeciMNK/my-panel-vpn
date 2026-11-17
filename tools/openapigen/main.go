@@ -166,7 +166,7 @@ func run(root, outDir string) error {
 		},
 		{
 			Path:        resolveRel(root, "internal/subedge"),
-			StructAllow: setOf("ListenerConfig"),
+			StructAllow: setOf("ListenerConfig", "CacheUpdate", "CachedResponse"),
 		},
 		{
 			Path:        resolveRel(root, "internal/amneziawg"),

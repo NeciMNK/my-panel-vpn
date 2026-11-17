@@ -27,13 +27,22 @@ const (
 )
 
 var (
-	subEdgeNode = &subedge.Node{}
+	subEdgeNode     = &subedge.Node{CacheDir: func() string { return filepath.Join(config.GetDBFolderPath(), "edge-cache") }}
+	subEdgeRecorder = &subedge.Recorder{}
+	subEdgePushed   = struct {
+		sync.Mutex
+		seq map[int]uint64
+	}{seq: map[int]uint64{}}
 
 	errSubServerOff = errors.New("the subscription server is turned off on this master")
 )
 
 // SubEdgeNode is this panel's own edge listener, used when it is a node.
 func SubEdgeNode() *subedge.Node { return subEdgeNode }
+
+// SubEdgeRecorder keeps the subscription responses this master gave, for its
+// edge nodes' caches.
+func SubEdgeRecorder() *subedge.Recorder { return subEdgeRecorder }
 
 // SubEdgeRequest is the admin's add/update body for an edge node.
 type SubEdgeRequest struct {
@@ -265,6 +274,7 @@ func (t *subEdgeTunnelSet) kick(s *SubEdgeService) {
 			delete(t.keepers, id)
 		}
 	}
+	subEdgeRecorder.SetActive(len(wanted) > 0)
 }
 
 func (t *subEdgeTunnelSet) stopAll() {
@@ -325,6 +335,54 @@ func (s *SubEdgeService) tunnelOnce(ctx context.Context, id int, setOnline func(
 	setSubEdgeStatus(id, subEdgeStatusOnline, "")
 	subedge.ServeTunnel(ctx, conn, subedge.FromEdge(http.HandlerFunc(serveSubThroughEdge)))
 	return errors.New("the tunnel to the node closed")
+}
+
+// PushCaches sends each enabled edge node the responses recorded since its
+// last push, and the subscriptions it may still serve.
+func (s *SubEdgeService) PushCaches(ctx context.Context) {
+	rows, err := s.List()
+	if err != nil {
+		logger.Warning("subscription edges not loaded:", err)
+		return
+	}
+	var subIDs []string
+	if err := database.GetDB().Model(&model.ClientRecord{}).Where("enable = ? AND sub_id <> ''", true).
+		Distinct().Pluck("sub_id", &subIDs).Error; err != nil {
+		logger.Warning("subscriptions for edge caches not loaded:", err)
+		return
+	}
+	for i := range rows {
+		if !rows[i].Enable {
+			continue
+		}
+		if err := s.pushCache(ctx, &rows[i], subIDs); err != nil {
+			logger.Warning("subscription edge cache not sent to node", rows[i].NodeId, ":", err)
+		}
+	}
+}
+
+func (s *SubEdgeService) pushCache(ctx context.Context, row *model.SubEdge, subIDs []string) error {
+	node, err := s.nodeService.GetById(row.NodeId)
+	if err != nil {
+		return err
+	}
+	remote, err := runtime.GetManager().RemoteFor(node)
+	if err != nil {
+		return err
+	}
+	subEdgePushed.Lock()
+	defer subEdgePushed.Unlock()
+	responses, next := subEdgeRecorder.Since(subEdgePushed.seq[row.Id])
+	for _, update := range subedge.SplitCacheUpdate(subIDs, responses) {
+		cctx, cancel := context.WithTimeout(ctx, time.Minute)
+		err := remote.UpdateSubEdgeCache(cctx, update)
+		cancel()
+		if err != nil {
+			return err
+		}
+	}
+	subEdgePushed.seq[row.Id] = next
+	return nil
 }
 
 func thisMaster() subedge.Master {

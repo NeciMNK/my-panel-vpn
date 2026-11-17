@@ -37,6 +37,10 @@ const (
 	tunnelPingTimeout    = 15 * time.Second
 )
 
+// masterAnswerTimeout is how long the edge waits for a master's response
+// headers before it tries the next master or the cache.
+var masterAnswerTimeout = 5 * time.Second
+
 // Master identifies the master panel on the other end of a tunnel; a lower
 // Priority is tried first, as in the master cluster.
 type Master struct {
@@ -61,8 +65,14 @@ type tunnel struct {
 // Node is the node side of the feature: the tunnels masters opened to it and
 // the public edge listener that forwards through them.
 type Node struct {
+	// CacheDir is where cached responses are kept; nil keeps them in memory.
+	CacheDir func() string
+
 	mu      sync.Mutex
 	tunnels []*tunnel
+
+	cacheOnce sync.Once
+	cache     *responseCache
 
 	srvMu  sync.Mutex
 	srv    *http.Server
@@ -149,7 +159,7 @@ func (n *Node) Tunnels() []TunnelInfo {
 }
 
 // ServeHTTP forwards a subscription request to the best master that answers
-// without a server error.
+// without a server error, and answers from the cache when none does.
 func (n *Node) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(io.LimitReader(r.Body, maxEdgeRequestBody+1))
 	if err != nil {
@@ -161,7 +171,7 @@ func (n *Node) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	for _, t := range n.live() {
-		resp, err := t.cc.RoundTrip(forwardedRequest(r, body))
+		resp, err := t.ask(forwardedRequest(r, body))
 		if err != nil {
 			continue
 		}
@@ -172,7 +182,54 @@ func (n *Node) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		relay(w, resp)
 		return
 	}
+	if r.Method == http.MethodGet || r.Method == http.MethodHead {
+		now := time.Now()
+		if cached, ok := n.responses().lookup(r, now); ok {
+			serveCached(w, r, cached, now)
+			return
+		}
+	}
 	http.Error(w, "subscription temporarily unavailable", http.StatusServiceUnavailable)
+}
+
+// UpdateCache stores a master's new responses and drops those of
+// subscriptions it no longer serves.
+func (n *Node) UpdateCache(u CacheUpdate) error {
+	return n.responses().update(u)
+}
+
+func (n *Node) responses() *responseCache {
+	n.cacheOnce.Do(func() { n.cache = &responseCache{dir: n.CacheDir} })
+	return n.cache
+}
+
+// ask sends req to the tunnel's master, giving up when the response headers
+// do not arrive within masterAnswerTimeout.
+func (t *tunnel) ask(req *http.Request) (*http.Response, error) {
+	ctx, cancel := context.WithCancel(req.Context())
+	timer := time.AfterFunc(masterAnswerTimeout, cancel)
+	resp, err := t.cc.RoundTrip(req.WithContext(ctx))
+	if !timer.Stop() && err == nil {
+		resp.Body.Close()
+		err = context.DeadlineExceeded
+	}
+	if err != nil {
+		cancel()
+		return nil, err
+	}
+	resp.Body = &cancelOnClose{ReadCloser: resp.Body, cancel: cancel}
+	return resp, nil
+}
+
+type cancelOnClose struct {
+	io.ReadCloser
+	cancel context.CancelFunc
+}
+
+func (c *cancelOnClose) Close() error {
+	err := c.ReadCloser.Close()
+	c.cancel()
+	return err
 }
 
 // hopHeaders are dropped both ways; the forwarding ones so a client cannot

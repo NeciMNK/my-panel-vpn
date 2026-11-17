@@ -479,6 +479,24 @@ export const BlockerSchema = z.object({
 });
 export type Blocker = z.infer<typeof BlockerSchema>;
 
+export const CacheUpdateSchema = z.object({
+  responses: z.array(z.lazy(() => CachedResponseSchema)),
+  subIds: z.array(z.string()),
+});
+export type CacheUpdate = z.infer<typeof CacheUpdateSchema>;
+
+export const CachedResponseSchema = z.object({
+  agent: z.string(),
+  body: z.string(),
+  device: z.string(),
+  header: z.record(z.string(), z.array(z.string())),
+  host: z.string(),
+  stored: z.number().int(),
+  subId: z.string(),
+  uri: z.string(),
+});
+export type CachedResponse = z.infer<typeof CachedResponseSchema>;
+
 export const CascadeSchema = z.object({
   createdAt: z.number().int(),
   directDomains: z.array(z.string()),

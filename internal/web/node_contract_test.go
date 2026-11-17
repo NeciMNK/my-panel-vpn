@@ -384,6 +384,35 @@ func TestMasterNodeContract(t *testing.T) {
 					}
 					return nil
 				}, nil},
+				{"the node's edge answers from the cache a master sent while no master answers", []string{"UpdateSubEdgeCache"}, func() error {
+					port := contractFreePort(t)
+					if err := master.ConfigureSubEdge(ctx, subedge.ListenerConfig{Enable: true, Port: port}); err != nil {
+						return err
+					}
+					defer func() { _ = master.ConfigureSubEdge(ctx, subedge.ListenerConfig{}) }()
+					update := subedge.CacheUpdate{SubIDs: []string{"cached"}, Responses: []subedge.CachedResponse{{
+						Host: "127.0.0.1", URI: "/sub/cached", Agent: "happ", SubID: "cached",
+						Header: map[string][]string{"Profile-Title": {"My VPN"}}, Body: []byte("vless://cached"), Stored: time.Now().Unix(),
+					}}}
+					if err := master.UpdateSubEdgeCache(ctx, update); err != nil {
+						return err
+					}
+					req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("http://127.0.0.1:%d/sub/cached", port), nil)
+					if err != nil {
+						return err
+					}
+					req.Header.Set("User-Agent", "Happ/3.1.0")
+					resp, err := http.DefaultClient.Do(req)
+					if err != nil {
+						return err
+					}
+					defer resp.Body.Close()
+					body, _ := io.ReadAll(resp.Body)
+					if resp.StatusCode != http.StatusOK || string(body) != "vless://cached" || resp.Header.Get("Profile-Title") != "My VPN" {
+						return fmt.Errorf("edge answered %d %q %v", resp.StatusCode, body, resp.Header)
+					}
+					return nil
+				}, nil},
 				{"RestartXray is accepted by the node", []string{"RestartXray"}, func() error {
 					// No core binary here: only the node's own restart failure may come back.
 					if err := master.RestartXray(ctx); err != nil && !strings.Contains(err.Error(), "rebooting the Xray") {

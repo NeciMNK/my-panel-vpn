@@ -317,6 +317,7 @@ const (
 	cadencePanelProxyPin  = "@every 15s"
 	cadenceCascadeSticky  = "@every 15s"
 	cadenceSubEdgeTunnels = "@every 15s"
+	cadenceSubEdgeCache   = "@every 1m"
 	cadenceHomeNetwork    = "@every 1m"
 	cadenceSpeed          = "@every 30s"
 	cadenceShaping        = "@every 5s"
@@ -383,6 +384,7 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 
 	_, _ = s.cron.AddJob(cadenceCascadeSticky, job.LeaderOnly(job.NewCascadeStickyJob()))
 	_, _ = s.cron.AddJob(cadenceSubEdgeTunnels, job.NewSubEdgeTunnelJob())
+	_, _ = s.cron.AddJob(cadenceSubEdgeCache, job.NewSubEdgeCacheJob())
 	_, _ = s.cron.AddJob(cadenceHomeNetwork, job.LeaderOnly(job.NewHomeNetworkJob()))
 	_, _ = s.cron.AddJob(cadenceTgVpnFallback, job.LeaderOnly(job.NewTgVpnFallbackJob()))
 	_, _ = s.cron.AddJob(cadenceExpiredFree, job.LeaderOnly(job.NewExpiredFreePlanJob()))

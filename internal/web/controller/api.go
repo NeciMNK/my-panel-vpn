@@ -127,6 +127,7 @@ var nodeSyncScopeAllow = map[string]map[string]struct{}{
 	"/certs/install":               {http.MethodPost: {}},
 	"/subEdges/node/configure":     {http.MethodPost: {}},
 	"/subEdges/node/tunnel":        {http.MethodPost: {}},
+	"/subEdges/node/cache":         {http.MethodPost: {}},
 }
 
 // nodeXrayScopeAllow lets a master manage a node's Xray template (outbounds,

@@ -38,6 +38,12 @@ _openapi:
         x-ui-sub-edge/1) into the tunnel the edge forwards subscription requests
         through. Answers 101 Switching Protocols. Allowed for node-sync tokens.'
       url: '#node-side-a-master-upgrades-this-request-connection-upgrade-upgrade-x-ui-sub-edge1-into-the-tunnel-the-edge-forwards-subscription-requests-through-answers-101-switching-protocols-allowed-for-node-sync-tokens'
+    - depth: 2
+      title: 'Node side: store subscription responses a master gave client apps, and
+        drop those of subscriptions not in subIds. The edge answers from this
+        cache (with Age and Warning: 110) while no master answers, for up to 7
+        days. Allowed for node-sync tokens.'
+      url: '#node-side-store-subscription-responses-a-master-gave-client-apps-and-drop-those-of-subscriptions-not-in-subids-the-edge-answers-from-this-cache-with-age-and-warning-110-while-no-master-answers-for-up-to-7-days-allowed-for-node-sync-tokens'
   structuredData:
     headings:
       - content: List every subscription edge with the state of this master’s tunnel to
@@ -60,6 +66,11 @@ _openapi:
           subscription requests through. Answers 101 Switching Protocols.
           Allowed for node-sync tokens.'
         id: node-side-a-master-upgrades-this-request-connection-upgrade-upgrade-x-ui-sub-edge1-into-the-tunnel-the-edge-forwards-subscription-requests-through-answers-101-switching-protocols-allowed-for-node-sync-tokens
+      - content: 'Node side: store subscription responses a master gave client apps, and
+          drop those of subscriptions not in subIds. The edge answers from this
+          cache (with Age and Warning: 110) while no master answers, for up to 7
+          days. Allowed for node-sync tokens.'
+        id: node-side-store-subscription-responses-a-master-gave-client-apps-and-drop-those-of-subscriptions-not-in-subids-the-edge-answers-from-this-cache-with-age-and-warning-110-while-no-master-answers-for-up-to-7-days-allowed-for-node-sync-tokens
     contents: []
 ---
 
@@ -70,7 +81,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/subEdges/list","method":"get"},{"path":"/panel/api/subEdges/add","method":"post"},{"path":"/panel/api/subEdges/update/{id}","method":"post"},{"path":"/panel/api/subEdges/del/{id}","method":"post"},{"path":"/panel/api/subEdges/node/configure","method":"post"},{"path":"/panel/api/subEdges/node/tunnel","method":"post"}]} showTitle />
+      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/subEdges/list","method":"get"},{"path":"/panel/api/subEdges/add","method":"post"},{"path":"/panel/api/subEdges/update/{id}","method":"post"},{"path":"/panel/api/subEdges/del/{id}","method":"post"},{"path":"/panel/api/subEdges/node/configure","method":"post"},{"path":"/panel/api/subEdges/node/tunnel","method":"post"},{"path":"/panel/api/subEdges/node/cache","method":"post"}]} showTitle />
     </>
   );
 }

@@ -458,6 +458,33 @@ export const EXAMPLES: Record<string, unknown> = {
     "code": "tools",
     "detail": "awg"
   },
+  "CacheUpdate": {
+    "responses": [
+      {
+        "agent": "happ",
+        "body": "dmxlc3M6Ly8uLi4=",
+        "device": "",
+        "header": {},
+        "host": "sub.example.com",
+        "stored": 1762736400,
+        "subId": "abc123",
+        "uri": "/sub/abc123"
+      }
+    ],
+    "subIds": [
+      "abc123"
+    ]
+  },
+  "CachedResponse": {
+    "agent": "happ",
+    "body": "dmxlc3M6Ly8uLi4=",
+    "device": "",
+    "header": {},
+    "host": "sub.example.com",
+    "stored": 1762736400,
+    "subId": "abc123",
+    "uri": "/sub/abc123"
+  },
   "Cascade": {
     "createdAt": 0,
     "directDomains": [
