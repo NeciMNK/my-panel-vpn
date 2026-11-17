@@ -75,7 +75,7 @@ func TestPaidPlanOrderIsAppliedOnceUnderConcurrentChecks(t *testing.T) {
 	seedPayingClient(t, "buyer@x", due)
 	fake := useFakeProvider(t)
 	orders := &PaymentOrderService{}
-	order, err := orders.CreatePlanOrder(context.Background(), 77, "buyer@x", 3, "VPN 3 mo", "https://t.me/bot")
+	order, err := orders.CreatePlanOrder(context.Background(), 77, "buyer@x", 3, 0, "VPN 3 mo", "https://t.me/bot")
 	if err != nil {
 		t.Fatalf("CreatePlanOrder: %v", err)
 	}
@@ -126,7 +126,7 @@ func TestPaidOrderWithWrongAmountIsNotApplied(t *testing.T) {
 	seedPayingClient(t, "cheap@x", due)
 	fake := useFakeProvider(t)
 	orders := &PaymentOrderService{}
-	order, err := orders.CreatePlanOrder(context.Background(), 78, "cheap@x", 1, "VPN", "https://t.me/bot")
+	order, err := orders.CreatePlanOrder(context.Background(), 78, "cheap@x", 1, 0, "VPN", "https://t.me/bot")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -175,7 +175,7 @@ func TestPaidFreePlanCreatesClientAndCreditsFirstPlan(t *testing.T) {
 	if !billing.FreePlan || billing.Credit != 5 {
 		t.Errorf("billing = %+v, want free plan with 5 credit", billing)
 	}
-	plan, err := orders.CreatePlanOrder(context.Background(), 4242, "newbie", 1, "VPN", "https://t.me/bot")
+	plan, err := orders.CreatePlanOrder(context.Background(), 4242, "newbie", 1, 0, "VPN", "https://t.me/bot")
 	if err != nil || plan.Amount != 295 {
 		t.Errorf("first plan = %+v, %v; want 295", plan, err)
 	}
@@ -185,7 +185,7 @@ func TestCanceledOrderIsClosed(t *testing.T) {
 	seedPayingClient(t, "quit@x", 0)
 	fake := useFakeProvider(t)
 	orders := &PaymentOrderService{}
-	order, err := orders.CreatePlanOrder(context.Background(), 79, "quit@x", 1, "VPN", "https://t.me/bot")
+	order, err := orders.CreatePlanOrder(context.Background(), 79, "quit@x", 1, 0, "VPN", "https://t.me/bot")
 	if err != nil {
 		t.Fatal(err)
 	}

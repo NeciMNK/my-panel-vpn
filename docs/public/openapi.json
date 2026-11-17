@@ -684,6 +684,17 @@
             "minimum": 0,
             "type": "integer"
           },
+          "trafficResetAllDay": {
+            "maximum": 31,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "trafficResetAllMonthly": {
+            "type": "boolean"
+          },
+          "trafficUsagePeriods": {
+            "type": "string"
+          },
           "trustedProxyCIDRs": {
             "type": "string"
           },
@@ -899,6 +910,9 @@
           "tgRunTime",
           "timeLocation",
           "trafficDiff",
+          "trafficResetAllDay",
+          "trafficResetAllMonthly",
+          "trafficUsagePeriods",
           "trustedProxyCIDRs",
           "twoFactorEnable",
           "twoFactorToken",
@@ -1531,6 +1545,17 @@
             "minimum": 0,
             "type": "integer"
           },
+          "trafficResetAllDay": {
+            "maximum": 31,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "trafficResetAllMonthly": {
+            "type": "boolean"
+          },
+          "trafficUsagePeriods": {
+            "type": "string"
+          },
           "trustedProxyCIDRs": {
             "type": "string"
           },
@@ -1755,6 +1780,9 @@
           "tgRunTime",
           "timeLocation",
           "trafficDiff",
+          "trafficResetAllDay",
+          "trafficResetAllMonthly",
+          "trafficUsagePeriods",
           "trustedProxyCIDRs",
           "twoFactorEnable",
           "twoFactorToken",
@@ -2451,6 +2479,16 @@
             },
             "type": "array"
           },
+          "speedTierId": {
+            "example": 0,
+            "type": "integer"
+          },
+          "speedTiers": {
+            "items": {
+              "$ref": "#/components/schemas/SpeedTier"
+            },
+            "type": "array"
+          },
           "trusted": {
             "example": false,
             "type": "boolean"
@@ -2467,6 +2505,8 @@
           "nonPaying",
           "pendingMonths",
           "plans",
+          "speedTierId",
+          "speedTiers",
           "trusted"
         ],
         "type": "object"
@@ -3279,6 +3319,39 @@
         "required": [
           "reason",
           "token"
+        ],
+        "type": "object"
+      },
+      "GroupSpeed": {
+        "description": "GroupSpeed is the speed every member of a client group gets unless the client\nhas its own ClientSpeed. FloorMbps > 0 makes MaxMbps float between it and MaxMbps.",
+        "properties": {
+          "floorMbps": {
+            "example": 50,
+            "type": "integer"
+          },
+          "group": {
+            "example": "users",
+            "type": "string"
+          },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "maxMbps": {
+            "example": 100,
+            "type": "integer"
+          },
+          "minMbps": {
+            "example": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "floorMbps",
+          "group",
+          "id",
+          "maxMbps",
+          "minMbps"
         ],
         "type": "object"
       },
@@ -4928,8 +5001,12 @@
             "example": "https",
             "type": "string"
           },
+          "seenBy": {
+            "description": "SeenBy names the nodes that still reached this node while the master could not.",
+            "type": "string"
+          },
           "status": {
-            "description": "Heartbeat-updated fields. UpdatedAt advances on every probe even when\nthe row is otherwise unchanged so the UI's \"last seen\" tooltip is\ntruthful without us having to read LastHeartbeat separately.\nonline|offline|unknown",
+            "description": "Heartbeat-updated fields. UpdatedAt advances on every probe even when\nthe row is otherwise unchanged so the UI's \"last seen\" tooltip is\ntruthful without us having to read LastHeartbeat separately.\nonline|offline|isolated|unknown",
             "example": "online",
             "type": "string"
           },
@@ -5007,6 +5084,7 @@
           "port",
           "remark",
           "scheme",
+          "seenBy",
           "status",
           "tlsVerifyMode",
           "updatedAt",
@@ -5281,6 +5359,9 @@
             "example": "https",
             "type": "string"
           },
+          "seenBy": {
+            "type": "string"
+          },
           "status": {
             "example": "online",
             "type": "string"
@@ -5355,6 +5436,7 @@
           "port",
           "remark",
           "scheme",
+          "seenBy",
           "status",
           "tlsVerifyMode",
           "updatedAt",
@@ -5614,6 +5696,33 @@
         ],
         "type": "object"
       },
+      "PeerProbeResult": {
+        "description": "PeerProbeResult is what the asked node saw; Port is the first one that answered.",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "latencyMs": {
+            "example": 38,
+            "type": "integer"
+          },
+          "port": {
+            "example": 443,
+            "type": "integer"
+          },
+          "reachable": {
+            "example": true,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "error",
+          "latencyMs",
+          "port",
+          "reachable"
+        ],
+        "type": "object"
+      },
       "ProbeResultUI": {
         "properties": {
           "cpuPct": {
@@ -5847,7 +5956,7 @@
         "type": "object"
       },
       "ServerFreeSpeed": {
-        "description": "ServerFreeSpeed is the live load of a server with a known capacity.",
+        "description": "ServerFreeSpeed is the live load of a server with a known capacity;\nReservedMbps is what the guarantees of the users it carries add up to.",
         "properties": {
           "capacityMbps": {
             "example": 1000,
@@ -5865,6 +5974,10 @@
             "example": 12,
             "type": "integer"
           },
+          "reservedMbps": {
+            "example": 300,
+            "type": "integer"
+          },
           "usedMbps": {
             "example": 420.5,
             "type": "number"
@@ -5875,6 +5988,7 @@
           "freePerUserMbps",
           "nodeId",
           "online",
+          "reservedMbps",
           "usedMbps"
         ],
         "type": "object"
@@ -6056,6 +6170,12 @@
             },
             "type": "array"
           },
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/GroupSpeed"
+            },
+            "type": "array"
+          },
           "load": {
             "items": {
               "$ref": "#/components/schemas/ServerFreeSpeed"
@@ -6085,15 +6205,23 @@
               "type": "integer"
             },
             "type": "array"
+          },
+          "tiers": {
+            "items": {
+              "$ref": "#/components/schemas/SpeedTier"
+            },
+            "type": "array"
           }
         },
         "required": [
           "clients",
+          "groups",
           "load",
           "servers",
           "testSettings",
           "testStats",
-          "testing"
+          "testing",
+          "tiers"
         ],
         "type": "object"
       },
@@ -6242,6 +6370,34 @@
           "maxDownloadMbps",
           "minDownloadMbps",
           "nodeId"
+        ],
+        "type": "object"
+      },
+      "SpeedTier": {
+        "description": "SpeedTier is a paid speed upgrade: a guaranteed MinMbps for MonthlyPrice on\ntop of every month of the client's term.",
+        "properties": {
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "minMbps": {
+            "example": 200,
+            "type": "integer"
+          },
+          "monthlyPrice": {
+            "example": 100,
+            "type": "integer"
+          },
+          "name": {
+            "example": "Plus",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "minMbps",
+          "monthlyPrice",
+          "name"
         ],
         "type": "object"
       },
@@ -6638,6 +6794,85 @@
         ],
         "type": "object"
       },
+      "TrafficUsageAmount": {
+        "description": "TrafficUsageAmount is the traffic of one period in bytes.",
+        "properties": {
+          "down": {
+            "example": 5368709120,
+            "format": "int64",
+            "type": "integer"
+          },
+          "up": {
+            "example": 1073741824,
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "down",
+          "up"
+        ],
+        "type": "object"
+      },
+      "TrafficUsageReport": {
+        "description": "TrafficUsageReport is the traffic of every server and client over the periods\nthe admin picked in the settings.",
+        "properties": {
+          "clients": {
+            "items": {
+              "$ref": "#/components/schemas/TrafficUsageRow"
+            },
+            "type": "array"
+          },
+          "periods": {
+            "example": [
+              "24h",
+              "30d",
+              "month"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "servers": {
+            "items": {
+              "$ref": "#/components/schemas/TrafficUsageRow"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "clients",
+          "periods",
+          "servers"
+        ],
+        "type": "object"
+      },
+      "TrafficUsageRow": {
+        "description": "TrafficUsageRow is one client (subject = email) or server (subject = node id,\n\"0\" = this panel); Usage lines up with the report's Periods.",
+        "properties": {
+          "name": {
+            "example": "anna",
+            "type": "string"
+          },
+          "subject": {
+            "example": "anna",
+            "type": "string"
+          },
+          "usage": {
+            "items": {
+              "$ref": "#/components/schemas/TrafficUsageAmount"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "subject",
+          "usage"
+        ],
+        "type": "object"
+      },
       "TuicClientSettings": {
         "properties": {
           "email": {
@@ -6843,6 +7078,10 @@
     {
       "name": "Masters",
       "description": "Several master panels can share one database (XUI_MASTER_PRIORITY, XUI_MASTER_NAME, XUI_MASTER_URL). Priorities live in the database: XUI_MASTER_PRIORITY only enables the cluster and asks for a rank on first join. Each writes a heartbeat every 5s; the best-ranked master that has been up for 30s leads and alone runs node sync, traffic resets, cascade pins and the bots. The list is empty on a single master. All endpoints under /panel/api/masters."
+    },
+    {
+      "name": "Traffic by period",
+      "description": "Traffic history that survives counter resets: every server and client, summed over the periods picked in the settings (trafficUsagePeriods). Rolling 24h and 7d are hour-accurate; longer rolling periods count whole days; calendar periods (day, Monday-based week, month, half-year, year) start in the panel timezone. All endpoints under /panel/api/trafficUsage."
     },
     {
       "name": "Speed limits",
@@ -10218,6 +10457,76 @@
                       "type": "string"
                     },
                     "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/server/probePeer": {
+      "post": {
+        "tags": [
+          "Server"
+        ],
+        "summary": "Check from this node whether another node accepts TCP on any of 1-4 ports. The master calls it on its other nodes when it cannot reach a node itself, to tell a dead node from a master-side network problem. It only connects and hangs up.",
+        "operationId": "post_panel_api_server_probePeer",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "address": {
+                    "type": "string"
+                  },
+                  "ports": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 65535
+                    },
+                    "minItems": 1,
+                    "maxItems": 4
+                  }
+                },
+                "required": [
+                  "address",
+                  "ports"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/PeerProbeResult"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "error": "",
+                    "latencyMs": 38,
+                    "port": 443,
+                    "reachable": true
                   }
                 }
               }
@@ -14570,12 +14879,78 @@
         }
       }
     },
+    "/panel/api/trafficUsage/report": {
+      "get": {
+        "tags": [
+          "Traffic by period"
+        ],
+        "summary": "Usage of every server (subject = node id, \"0\" = this panel) and client (subject = email); each usage array lines up with periods.",
+        "operationId": "get_panel_api_trafficUsage_report",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/TrafficUsageReport"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "clients": [
+                      {
+                        "name": "anna",
+                        "subject": "anna",
+                        "usage": [
+                          {
+                            "down": 5368709120,
+                            "up": 1073741824
+                          }
+                        ]
+                      }
+                    ],
+                    "periods": [
+                      "24h",
+                      "30d",
+                      "month"
+                    ],
+                    "servers": [
+                      {
+                        "name": "anna",
+                        "subject": "anna",
+                        "usage": [
+                          {
+                            "down": 5368709120,
+                            "up": 1073741824
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/panel/api/speed/overview": {
       "get": {
         "tags": [
           "Speed limits"
         ],
-        "summary": "User limits, server link speeds, and the live load of every server with a link speed.",
+        "summary": "User and group limits, server link speeds, and the live load of every server with a link speed.",
         "operationId": "get_panel_api_speed_overview",
         "responses": {
           "200": {
@@ -14607,12 +14982,22 @@
                         "minMbps": 20
                       }
                     ],
+                    "groups": [
+                      {
+                        "floorMbps": 50,
+                        "group": "users",
+                        "id": 1,
+                        "maxMbps": 100,
+                        "minMbps": 0
+                      }
+                    ],
                     "load": [
                       {
                         "capacityMbps": 1000,
                         "freePerUserMbps": 44.5,
                         "nodeId": 0,
                         "online": 12,
+                        "reservedMbps": 300,
                         "usedMbps": 420.5
                       }
                     ],
@@ -14645,6 +15030,14 @@
                     ],
                     "testing": [
                       0
+                    ],
+                    "tiers": [
+                      {
+                        "id": 1,
+                        "minMbps": 200,
+                        "monthlyPrice": 100,
+                        "name": "Plus"
+                      }
                     ]
                   }
                 }
@@ -14672,6 +15065,141 @@
                 "email": "anna",
                 "minMbps": 20,
                 "maxMbps": 100
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/speed/group": {
+      "post": {
+        "tags": [
+          "Speed limits"
+        ],
+        "summary": "Set a client group's speed in Mbit/s; all 0 removes it. A client's own speed replaces their group's. minMbps is guaranteed on the server the client connects to; floorMbps > 0 makes the cap float between floorMbps and maxMbps by what the guarantees leave free.",
+        "operationId": "post_panel_api_speed_group",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "group": "users",
+                "minMbps": 0,
+                "maxMbps": 100,
+                "floorMbps": 50
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/speed/tier": {
+      "post": {
+        "tags": [
+          "Speed limits"
+        ],
+        "summary": "Add (id 0) or edit a speed tier clients can buy in the bot: a guaranteed minMbps for monthlyPrice added to every month of the term they pay. It beats the group speed and lapses with the term; a client's own speed still wins.",
+        "operationId": "post_panel_api_speed_tier",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "id": 0,
+                "name": "Plus",
+                "minMbps": 200,
+                "monthlyPrice": 100
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/speed/tier/delete": {
+      "post": {
+        "tags": [
+          "Speed limits"
+        ],
+        "summary": "Stop selling a speed tier; clients who bought it fall back to their group speed.",
+        "operationId": "post_panel_api_speed_tier_delete",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "id": 1
               }
             }
           }
@@ -15092,6 +15620,7 @@
                       "port": 2053,
                       "remark": "Primary edge",
                       "scheme": "https",
+                      "seenBy": "",
                       "status": "online",
                       "tlsVerifyMode": "verify",
                       "transitive": false,
@@ -15297,6 +15826,7 @@
                     "port": 2053,
                     "remark": "Primary edge",
                     "scheme": "https",
+                    "seenBy": "",
                     "status": "online",
                     "tlsVerifyMode": "verify",
                     "transitive": false,
@@ -15589,6 +16119,7 @@
                     "port": 2053,
                     "remark": "Primary edge",
                     "scheme": "https",
+                    "seenBy": "",
                     "status": "online",
                     "tlsVerifyMode": "verify",
                     "transitive": false,
@@ -16789,6 +17320,15 @@
                         "total": 810
                       }
                     ],
+                    "speedTierId": 0,
+                    "speedTiers": [
+                      {
+                        "id": 1,
+                        "minMbps": 200,
+                        "monthlyPrice": 100,
+                        "name": "Plus"
+                      }
+                    ],
                     "trusted": false
                   }
                 }
@@ -16803,7 +17343,7 @@
         "tags": [
           "Billing"
         ],
-        "summary": "Apply a payment for 1-36 months. A running term is extended from its end, a lapsed one restarts from now. Any payment the client reported in the bot is settled, so a later confirm there cannot apply it twice. note defaults to \"<months> mo\" in the ledger.",
+        "summary": "Apply a payment for 1-36 months. A running term is extended from its end, a lapsed one restarts from now. speedTierId (0 = none) buys that speed tier for the term: its monthly price is added per month and its guaranteed speed applies until the term ends; a term without one drops the tier. Any payment the client reported in the bot is settled, so a later confirm there cannot apply it twice. note defaults to \"<months> mo\" in the ledger.",
         "operationId": "post_panel_api_billing_pay",
         "requestBody": {
           "required": true,
@@ -16815,6 +17355,7 @@
               "example": {
                 "email": "alice",
                 "months": 3,
+                "speedTierId": 0,
                 "note": "YooKassa 2c4f"
               }
             }
@@ -22642,6 +23183,7 @@
                   "port": 2053,
                   "remark": "Primary edge",
                   "scheme": "https",
+                  "seenBy": "",
                   "status": "online",
                   "tlsVerifyMode": "verify",
                   "transitive": false,

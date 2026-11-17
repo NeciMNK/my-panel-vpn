@@ -48,6 +48,70 @@ func TestCommandsShapeDownloadAndPoliceUpload(t *testing.T) {
 	}
 }
 
+func TestGuaranteesShareTheLinkUnderOneParentClass(t *testing.T) {
+	plan := Plan{LinkMbps: 1000, Limits: []Limit{
+		{IP: "10.0.0.2", MinMbps: 100},
+		{IP: "10.0.0.3", Mbps: 60},
+		{IP: "10.0.0.4", MinMbps: 200, Mbps: 300},
+	}}
+	if err := plan.Normalize(); err != nil {
+		t.Fatal(err)
+	}
+	got := Commands("eth0", plan)
+	lines := make([]string, len(got))
+	for i, c := range got {
+		lines[i] = strings.Join(c, " ")
+	}
+	want := []string{
+		"qdisc del dev eth0 root",
+		"qdisc del dev eth0 ingress",
+		"qdisc add dev eth0 root handle 1: htb default ffff",
+		"class add dev eth0 parent 1: classid 1:fffe htb rate 1000mbit ceil 1000mbit",
+		"class add dev eth0 parent 1:fffe classid 1:ffff htb rate 640mbit ceil 1000mbit",
+		"qdisc add dev eth0 handle ffff: ingress",
+		"class add dev eth0 parent 1:fffe classid 1:1 htb rate 100mbit ceil 1000mbit",
+		"filter add dev eth0 parent 1: protocol ip prio 1 u32 match ip dst 10.0.0.2/32 flowid 1:1",
+		"class add dev eth0 parent 1:fffe classid 1:2 htb rate 60mbit ceil 60mbit",
+		"filter add dev eth0 parent 1: protocol ip prio 1 u32 match ip dst 10.0.0.3/32 flowid 1:2",
+		"filter add dev eth0 parent ffff: protocol ip prio 1 u32 match ip src 10.0.0.3/32 police rate 60mbit burst 75k drop flowid :1",
+		"class add dev eth0 parent 1:fffe classid 1:3 htb rate 200mbit ceil 300mbit",
+		"filter add dev eth0 parent 1: protocol ip prio 1 u32 match ip dst 10.0.0.4/32 flowid 1:3",
+		"filter add dev eth0 parent ffff: protocol ip prio 1 u32 match ip src 10.0.0.4/32 police rate 300mbit burst 375k drop flowid :1",
+	}
+	if !reflect.DeepEqual(lines, want) {
+		t.Fatalf("commands:\n%s", strings.Join(lines, "\n"))
+	}
+}
+
+func TestNormalizeMergesOneIPsUsersAndDropsGuaranteesWithoutALinkSpeed(t *testing.T) {
+	cases := []struct {
+		name string
+		in   Plan
+		want []Limit
+	}{
+		{
+			name: "two users behind one IP get the strictest cap and the biggest guarantee",
+			in:   Plan{LinkMbps: 1000, Limits: []Limit{{IP: "10.0.0.2", MinMbps: 100}, {IP: "10.0.0.2", Mbps: 80, MinMbps: 20}}},
+			want: []Limit{{IP: "10.0.0.2", Mbps: 80, MinMbps: 80}},
+		},
+		{
+			name: "without the link speed a guarantee cannot be kept, a cap still is",
+			in:   Plan{Limits: []Limit{{IP: "10.0.0.2", MinMbps: 100}, {IP: "10.0.0.3", Mbps: 50, MinMbps: 20}}},
+			want: []Limit{{IP: "10.0.0.3", Mbps: 50}},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if err := tc.in.Normalize(); err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(tc.in.Limits, tc.want) {
+				t.Fatalf("limits = %+v, want %+v", tc.in.Limits, tc.want)
+			}
+		})
+	}
+}
+
 func TestApplyOnlyTouchesTcWhenThePlanChanges(t *testing.T) {
 	stateFile = filepath.Join(t.TempDir(), "shaper.state")
 	var calls []string

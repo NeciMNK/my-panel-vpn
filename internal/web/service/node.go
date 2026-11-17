@@ -52,6 +52,7 @@ type HeartbeatPatch struct {
 	// Xray core health on the node.
 	XrayState string
 	XrayError string
+	SeenBy    string
 }
 
 type NodeService struct{}
@@ -1016,6 +1017,7 @@ func (s *NodeService) UpdateHeartbeat(id int, p HeartbeatPatch) error {
 		"last_error":          p.LastError,
 		"xray_state":          p.XrayState,
 		"xray_error":          p.XrayError,
+		"seen_by":             p.SeenBy,
 	}
 	// Only learn the GUID; never clear a known one if an old-build node (or a
 	// failed probe) reports none, so the stable identity survives blips.

@@ -33,3 +33,22 @@ type SpeedTestResult struct {
 	CapacityMbps int     `json:"capacityMbps" example:"946"`
 	Error        string  `json:"error" example:""`
 }
+
+// GroupSpeed is the speed every member of a client group gets unless the client
+// has its own ClientSpeed. FloorMbps > 0 makes MaxMbps float between it and MaxMbps.
+type GroupSpeed struct {
+	Id        int    `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
+	Group     string `json:"group" gorm:"column:group_name;uniqueIndex" example:"users"`
+	MinMbps   int    `json:"minMbps" gorm:"column:min_mbps" example:"0"`
+	MaxMbps   int    `json:"maxMbps" gorm:"column:max_mbps" example:"100"`
+	FloorMbps int    `json:"floorMbps" gorm:"column:floor_mbps" example:"50"`
+}
+
+// SpeedTier is a paid speed upgrade: a guaranteed MinMbps for MonthlyPrice on
+// top of every month of the client's term.
+type SpeedTier struct {
+	Id           int    `json:"id" gorm:"primaryKey;autoIncrement" example:"1"`
+	Name         string `json:"name" gorm:"not null" example:"Plus"`
+	MinMbps      int    `json:"minMbps" gorm:"column:min_mbps" example:"200"`
+	MonthlyPrice int    `json:"monthlyPrice" gorm:"column:monthly_price" example:"100"`
+}

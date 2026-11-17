@@ -20,6 +20,8 @@ import (
 const (
 	nodeHeartbeatConcurrency    = 32
 	nodeHeartbeatRequestTimeout = 4 * time.Second
+	nodeWitnessTimeout          = 6 * time.Second
+	nodeWitnessRecheck          = 30 * time.Second
 	// Past this many same-direction transitions in one tick, one summary event goes out:
 	// per-node events overflow the notifier queues and every chat's rate limit.
 	nodeTransitionBurst      = 5
@@ -31,11 +33,21 @@ type NodeHeartbeatJob struct {
 	settingService service.SettingService
 	running        sync.Mutex
 	health         map[int]nodeHealth
+	witnessed      map[int]witnessCheck
+	// witnessRecheck spaces the asks about a node the master keeps failing to reach.
+	witnessRecheck time.Duration
 }
 
 type nodeHealth struct {
 	failStreak int
 	notified   bool
+	// announcedIsolated: the last node.down said other nodes still reached it.
+	announcedIsolated bool
+}
+
+type witnessCheck struct {
+	at     time.Time
+	seenBy []string
 }
 
 type nodeProbe struct {
@@ -44,7 +56,7 @@ type nodeProbe struct {
 }
 
 func NewNodeHeartbeatJob() *NodeHeartbeatJob {
-	return &NodeHeartbeatJob{}
+	return &NodeHeartbeatJob{witnessRecheck: nodeWitnessRecheck}
 }
 
 func (j *NodeHeartbeatJob) Run() {
@@ -63,27 +75,20 @@ func (j *NodeHeartbeatJob) Run() {
 		return
 	}
 
-	sem := make(chan struct{}, nodeHeartbeatConcurrency)
-	var wg sync.WaitGroup
-	var probesMu sync.Mutex
-	var probes []nodeProbe
+	var enabled []*model.Node
 	for _, n := range nodes {
-		if !n.Enable {
-			continue
+		if n.Enable {
+			enabled = append(enabled, n)
 		}
-		wg.Add(1)
-		sem <- struct{}{}
-		n := n
-		common.GoRecover("node-heartbeat:"+n.Name, func() {
-			defer wg.Done()
-			defer func() { <-sem }()
-			patch := j.probeOne(n)
-			probesMu.Lock()
-			probes = append(probes, nodeProbe{node: n, patch: patch})
-			probesMu.Unlock()
-		})
 	}
-	wg.Wait()
+	probes := make([]nodeProbe, len(enabled))
+	fanOutNodes(enabled, "node-heartbeat:", func(i int, n *model.Node) {
+		probes[i] = nodeProbe{node: n, patch: j.probeOne(n)}
+	})
+	j.resolveUnreachable(probes)
+	fanOutNodes(enabled, "node-heartbeat-save:", func(i int, n *model.Node) {
+		j.record(probes[i])
+	})
 	publishNodeTransitions(j.healthTransitions(probes))
 
 	if !websocket.HasClients() {
@@ -97,29 +102,93 @@ func (j *NodeHeartbeatJob) Run() {
 	websocket.BroadcastNodes(updated)
 }
 
+func fanOutNodes(nodes []*model.Node, label string, fn func(i int, n *model.Node)) {
+	sem := make(chan struct{}, nodeHeartbeatConcurrency)
+	var wg sync.WaitGroup
+	for i, n := range nodes {
+		wg.Add(1)
+		sem <- struct{}{}
+		common.GoRecover(label+n.Name, func() {
+			defer wg.Done()
+			defer func() { <-sem }()
+			fn(i, n)
+		})
+	}
+	wg.Wait()
+}
+
 func (j *NodeHeartbeatJob) probeOne(n *model.Node) service.HeartbeatPatch {
 	ctx, cancel := context.WithTimeout(context.Background(), nodeHeartbeatRequestTimeout)
 	defer cancel()
 	patch, err := j.nodeService.Probe(ctx, n)
 	if err != nil {
-		patch.Status = "offline"
+		patch.Status = model.NodeStatusOffline
 	} else {
-		patch.Status = "online"
+		patch.Status = model.NodeStatusOnline
 	}
-	if updErr := j.nodeService.UpdateHeartbeat(n.Id, patch); updErr != nil {
+	return patch
+}
+
+// resolveUnreachable asks the nodes the master still reaches about each node it
+// lost: a node any of them reaches is isolated, not dead, and stays offered to users.
+func (j *NodeHeartbeatJob) resolveUnreachable(probes []nodeProbe) {
+	var reachable []*model.Node
+	for _, p := range probes {
+		if p.patch.Status == model.NodeStatusOnline {
+			reachable = append(reachable, p.node)
+		}
+	}
+	prev := j.witnessed
+	j.witnessed = make(map[int]witnessCheck)
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+	for i := range probes {
+		p := &probes[i]
+		if p.patch.Status != model.NodeStatusOffline || len(reachable) == 0 {
+			continue
+		}
+		if c, ok := prev[p.node.Id]; ok && time.Since(c.at) < j.witnessRecheck {
+			j.witnessed[p.node.Id] = c
+			applyWitnesses(p, c.seenBy)
+			continue
+		}
+		wg.Add(1)
+		common.GoRecover("node-witness:"+p.node.Name, func() {
+			defer wg.Done()
+			ctx, cancel := context.WithTimeout(context.Background(), nodeWitnessTimeout)
+			defer cancel()
+			seenBy := j.nodeService.AskWitnesses(ctx, p.node, service.PickWitnesses(reachable))
+			mu.Lock()
+			j.witnessed[p.node.Id] = witnessCheck{at: time.Now(), seenBy: seenBy}
+			mu.Unlock()
+			applyWitnesses(p, seenBy)
+		})
+	}
+	wg.Wait()
+}
+
+func applyWitnesses(p *nodeProbe, seenBy []string) {
+	if len(seenBy) == 0 {
+		return
+	}
+	p.patch.Status = model.NodeStatusIsolated
+	p.patch.SeenBy = strings.Join(seenBy, ", ")
+}
+
+func (j *NodeHeartbeatJob) record(p nodeProbe) {
+	n := p.node
+	if updErr := j.nodeService.UpdateHeartbeat(n.Id, p.patch); updErr != nil {
 		logger.Warning("node heartbeat: update node", n.Id, "failed:", updErr)
 	}
 	// Learn the nodes this node manages so the panel can surface them as
-	// transitive sub-nodes (#4983). Fresh context — the probe budget above may
-	// be spent. Drop them when the node is unreachable.
-	if patch.Status == "online" {
+	// transitive sub-nodes (#4983). Drop them when the master cannot reach it.
+	if p.patch.Status == model.NodeStatusOnline {
 		dctx, dcancel := context.WithTimeout(context.Background(), nodeHeartbeatRequestTimeout)
 		j.nodeService.RefreshDescendants(dctx, n)
 		dcancel()
 	} else {
 		j.nodeService.ClearDescendants(n.Id)
 	}
-	return patch
 }
 
 func (j *NodeHeartbeatJob) healthTransitions(probes []nodeProbe) []eventbus.Event {
@@ -134,19 +203,24 @@ func (j *NodeHeartbeatJob) healthTransitions(probes []nodeProbe) []eventbus.Even
 		h, seen := prev[p.node.Id]
 		if !seen {
 			h.notified = p.node.DownNotified
+			h.announcedIsolated = p.node.Status == model.NodeStatusIsolated
 		}
-		if p.patch.Status == "online" {
+		if p.patch.Status == model.NodeStatusOnline {
 			if h.notified {
 				events = append(events, nodeHealthEvent(eventbus.EventNodeUp, p.node, p.patch))
 				j.saveDownNotified(p.node.Id, false)
 			}
 			h = nodeHealth{}
 		} else {
+			isolated := p.patch.Status == model.NodeStatusIsolated
 			h.failStreak++
-			if h.failStreak >= threshold && !h.notified {
+			// An isolated node that then dies for everyone (or back) is news again.
+			if h.failStreak >= threshold && (!h.notified || h.announcedIsolated != isolated) {
 				events = append(events, nodeHealthEvent(eventbus.EventNodeDown, p.node, p.patch))
-				h.notified = true
-				j.saveDownNotified(p.node.Id, true)
+				if !h.notified {
+					j.saveDownNotified(p.node.Id, true)
+				}
+				h.notified, h.announcedIsolated = true, isolated
 			}
 		}
 		j.health[p.node.Id] = h
@@ -175,8 +249,16 @@ func nodeHealthEvent(eventType eventbus.EventType, n *model.Node, patch service.
 			MemPct:    patch.MemPct,
 			XrayState: patch.XrayState,
 			XrayError: patch.XrayError,
+			SeenBy:    seenByNames(patch.SeenBy),
 		},
 	}
+}
+
+func seenByNames(joined string) []string {
+	if joined == "" {
+		return nil
+	}
+	return strings.Split(joined, ", ")
 }
 
 // publishNodeTransitions sends one tick's transitions, folding a same-direction burst

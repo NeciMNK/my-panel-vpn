@@ -34,6 +34,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/subedge"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/crypto"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/entity"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/global"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/runtime"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
@@ -320,6 +321,22 @@ func TestMasterNodeContract(t *testing.T) {
 					}
 					_, err := master.ListRemoteTags(ctx)
 					return err
+				}, nil},
+				{"ProbePeer dials the peer from the node", []string{"ProbePeer"}, func() error {
+					peer, err := net.Listen("tcp", "127.0.0.1:0")
+					if err != nil {
+						return err
+					}
+					defer peer.Close()
+					port := peer.Addr().(*net.TCPAddr).Port
+					res, err := master.ProbePeer(ctx, entity.PeerProbeRequest{Address: "127.0.0.1", Ports: []int{port}})
+					if err != nil {
+						return err
+					}
+					if !res.Reachable || res.Port != port {
+						return fmt.Errorf("probe = %+v, want reachable on %d", res, port)
+					}
+					return nil
 				}, nil},
 				{"ProxyXray reads and writes the node's Xray template", []string{"ProxyXray"}, func() error {
 					resp, err := master.ProxyXray(ctx, http.MethodPost, "/", "", "", nil)

@@ -204,6 +204,9 @@ export const EXAMPLES: Record<string, unknown> = {
     "tgRunTime": "",
     "timeLocation": "",
     "trafficDiff": 0,
+    "trafficResetAllDay": 1,
+    "trafficResetAllMonthly": false,
+    "trafficUsagePeriods": "",
     "trustedProxyCIDRs": "",
     "twoFactorEnable": false,
     "twoFactorToken": "",
@@ -405,6 +408,9 @@ export const EXAMPLES: Record<string, unknown> = {
     "tgRunTime": "",
     "timeLocation": "",
     "trafficDiff": 0,
+    "trafficResetAllDay": 1,
+    "trafficResetAllMonthly": false,
+    "trafficUsagePeriods": "",
     "trustedProxyCIDRs": "",
     "twoFactorEnable": false,
     "twoFactorToken": "",
@@ -600,6 +606,15 @@ export const EXAMPLES: Record<string, unknown> = {
         "discountPercent": 10,
         "months": 3,
         "total": 810
+      }
+    ],
+    "speedTierId": 0,
+    "speedTiers": [
+      {
+        "id": 1,
+        "minMbps": 200,
+        "monthlyPrice": 100,
+        "name": "Plus"
       }
     ],
     "trusted": false
@@ -835,6 +850,13 @@ export const EXAMPLES: Record<string, unknown> = {
     "file": "geosite.dat",
     "reason": "categoryMissing",
     "token": "geosite:blabla"
+  },
+  "GroupSpeed": {
+    "floorMbps": 50,
+    "group": "users",
+    "id": 1,
+    "maxMbps": 100,
+    "minMbps": 0
   },
   "HappLinkResult": {
     "encryptedLink": "happ://crypt5/example"
@@ -1296,6 +1318,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "port": 2053,
     "remark": "",
     "scheme": "https",
+    "seenBy": "",
     "status": "online",
     "tlsVerifyMode": "verify",
     "transitive": false,
@@ -1371,6 +1394,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "port": 2053,
     "remark": "Primary edge",
     "scheme": "https",
+    "seenBy": "",
     "status": "online",
     "tlsVerifyMode": "verify",
     "transitive": false,
@@ -1436,6 +1460,12 @@ export const EXAMPLES: Record<string, unknown> = {
     "tag": "inbound-51820",
     "up": 1048576
   },
+  "PeerProbeResult": {
+    "error": "",
+    "latencyMs": 38,
+    "port": 443,
+    "reachable": true
+  },
   "ProbeResultUI": {
     "cpuPct": 12.5,
     "error": "",
@@ -1496,6 +1526,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "freePerUserMbps": 44.5,
     "nodeId": 0,
     "online": 12,
+    "reservedMbps": 300,
     "usedMbps": 420.5
   },
   "ServerSettings": {
@@ -1552,12 +1583,22 @@ export const EXAMPLES: Record<string, unknown> = {
         "minMbps": 20
       }
     ],
+    "groups": [
+      {
+        "floorMbps": 50,
+        "group": "users",
+        "id": 1,
+        "maxMbps": 100,
+        "minMbps": 0
+      }
+    ],
     "load": [
       {
         "capacityMbps": 1000,
         "freePerUserMbps": 44.5,
         "nodeId": 0,
         "online": 12,
+        "reservedMbps": 300,
         "usedMbps": 420.5
       }
     ],
@@ -1590,6 +1631,14 @@ export const EXAMPLES: Record<string, unknown> = {
     ],
     "testing": [
       0
+    ],
+    "tiers": [
+      {
+        "id": 1,
+        "minMbps": 200,
+        "monthlyPrice": 100,
+        "name": "Plus"
+      }
     ]
   },
   "SpeedTestResult": {
@@ -1623,6 +1672,12 @@ export const EXAMPLES: Record<string, unknown> = {
     "maxDownloadMbps": 948.1,
     "minDownloadMbps": 640,
     "nodeId": 0
+  },
+  "SpeedTier": {
+    "id": 1,
+    "minMbps": 200,
+    "monthlyPrice": 100,
+    "name": "Plus"
   },
   "SubBalancer": {
     "createdAt": 1710000000000,
@@ -1704,6 +1759,51 @@ export const EXAMPLES: Record<string, unknown> = {
     "IsOutbound": false,
     "Tag": "inbound-443",
     "Up": 1048576
+  },
+  "TrafficUsageAmount": {
+    "down": 5368709120,
+    "up": 1073741824
+  },
+  "TrafficUsageReport": {
+    "clients": [
+      {
+        "name": "anna",
+        "subject": "anna",
+        "usage": [
+          {
+            "down": 5368709120,
+            "up": 1073741824
+          }
+        ]
+      }
+    ],
+    "periods": [
+      "24h",
+      "30d",
+      "month"
+    ],
+    "servers": [
+      {
+        "name": "anna",
+        "subject": "anna",
+        "usage": [
+          {
+            "down": 5368709120,
+            "up": 1073741824
+          }
+        ]
+      }
+    ]
+  },
+  "TrafficUsageRow": {
+    "name": "anna",
+    "subject": "anna",
+    "usage": [
+      {
+        "down": 5368709120,
+        "up": 1073741824
+      }
+    ]
   },
   "TuicClientSettings": {
     "email": "",

@@ -18,6 +18,9 @@ export const keys = {
     root: () => ['ledger'] as const,
     report: (month: string) => ['ledger', 'report', month] as const,
   },
+  trafficUsage: {
+    report: () => ['traffic-usage', 'report'] as const,
+  },
   aiDomains: {
     root: () => ['ai-domains'] as const,
     list: () => ['ai-domains', 'list'] as const,

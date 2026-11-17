@@ -228,6 +228,9 @@ export const AllSettingSchema = z.object({
   tgRunTime: z.string(),
   timeLocation: z.string(),
   trafficDiff: z.number().int().min(0).max(100),
+  trafficResetAllDay: z.number().int().min(1).max(31),
+  trafficResetAllMonthly: z.boolean(),
+  trafficUsagePeriods: z.string(),
   trustedProxyCIDRs: z.string(),
   twoFactorEnable: z.boolean(),
   twoFactorToken: z.string(),
@@ -431,6 +434,9 @@ export const AllSettingViewSchema = z.object({
   tgRunTime: z.string(),
   timeLocation: z.string(),
   trafficDiff: z.number().int().min(0).max(100),
+  trafficResetAllDay: z.number().int().min(1).max(31),
+  trafficResetAllMonthly: z.boolean(),
+  trafficUsagePeriods: z.string(),
   trustedProxyCIDRs: z.string(),
   twoFactorEnable: z.boolean(),
   twoFactorToken: z.string(),
@@ -591,6 +597,8 @@ export const ClientBillingViewSchema = z.object({
   nonPaying: z.boolean(),
   pendingMonths: z.number().int(),
   plans: z.array(z.lazy(() => PaymentPlanPriceSchema)),
+  speedTierId: z.number().int(),
+  speedTiers: z.array(z.lazy(() => SpeedTierSchema)),
   trusted: z.boolean(),
 });
 export type ClientBillingView = z.infer<typeof ClientBillingViewSchema>;
@@ -792,6 +800,15 @@ export const GeodataTokenIssueSchema = z.object({
   token: z.string(),
 });
 export type GeodataTokenIssue = z.infer<typeof GeodataTokenIssueSchema>;
+
+export const GroupSpeedSchema = z.object({
+  floorMbps: z.number().int(),
+  group: z.string(),
+  id: z.number().int(),
+  maxMbps: z.number().int(),
+  minMbps: z.number().int(),
+});
+export type GroupSpeed = z.infer<typeof GroupSpeedSchema>;
 
 export const HappLinkResultSchema = z.object({
   encryptedLink: z.string(),
@@ -1183,6 +1200,7 @@ export const NodeSchema = z.object({
   port: z.number().int().min(1).max(65535),
   remark: z.string(),
   scheme: z.enum(['http', 'https']),
+  seenBy: z.string(),
   status: z.string(),
   tlsVerifyMode: z.enum(['verify', 'skip', 'pin', 'mtls']),
   transitive: z.boolean().optional(),
@@ -1258,6 +1276,7 @@ export const NodeViewSchema = z.object({
   port: z.number().int(),
   remark: z.string(),
   scheme: z.string(),
+  seenBy: z.string(),
   status: z.string(),
   tlsVerifyMode: z.string(),
   transitive: z.boolean().optional(),
@@ -1335,6 +1354,14 @@ export const PeerActivitySchema = z.object({
 });
 export type PeerActivity = z.infer<typeof PeerActivitySchema>;
 
+export const PeerProbeResultSchema = z.object({
+  error: z.string(),
+  latencyMs: z.number().int(),
+  port: z.number().int(),
+  reachable: z.boolean(),
+});
+export type PeerProbeResult = z.infer<typeof PeerProbeResultSchema>;
+
 export const ProbeResultUISchema = z.object({
   cpuPct: z.number(),
   error: z.string(),
@@ -1394,6 +1421,7 @@ export const ServerFreeSpeedSchema = z.object({
   freePerUserMbps: z.number(),
   nodeId: z.number().int(),
   online: z.number().int(),
+  reservedMbps: z.number().int(),
   usedMbps: z.number(),
 });
 export type ServerFreeSpeed = z.infer<typeof ServerFreeSpeedSchema>;
@@ -1449,11 +1477,13 @@ export type Setting = z.infer<typeof SettingSchema>;
 
 export const SpeedOverviewSchema = z.object({
   clients: z.array(z.lazy(() => ClientSpeedSchema)),
+  groups: z.array(z.lazy(() => GroupSpeedSchema)),
   load: z.array(z.lazy(() => ServerFreeSpeedSchema)),
   servers: z.array(z.lazy(() => ServerCapacitySchema)),
   testSettings: z.lazy(() => SpeedTestSettingsSchema),
   testStats: z.array(z.lazy(() => SpeedTestStatsSchema)),
   testing: z.array(z.number().int()),
+  tiers: z.array(z.lazy(() => SpeedTierSchema)),
 });
 export type SpeedOverview = z.infer<typeof SpeedOverviewSchema>;
 
@@ -1491,6 +1521,14 @@ export const SpeedTestStatsSchema = z.object({
   nodeId: z.number().int(),
 });
 export type SpeedTestStats = z.infer<typeof SpeedTestStatsSchema>;
+
+export const SpeedTierSchema = z.object({
+  id: z.number().int(),
+  minMbps: z.number().int(),
+  monthlyPrice: z.number().int(),
+  name: z.string(),
+});
+export type SpeedTier = z.infer<typeof SpeedTierSchema>;
 
 export const SubBalancerSchema = z.object({
   createdAt: z.number().int(),
@@ -1586,6 +1624,26 @@ export const TrafficSchema = z.object({
   Up: z.number().int(),
 });
 export type Traffic = z.infer<typeof TrafficSchema>;
+
+export const TrafficUsageAmountSchema = z.object({
+  down: z.number().int(),
+  up: z.number().int(),
+});
+export type TrafficUsageAmount = z.infer<typeof TrafficUsageAmountSchema>;
+
+export const TrafficUsageReportSchema = z.object({
+  clients: z.array(z.lazy(() => TrafficUsageRowSchema)),
+  periods: z.array(z.string()),
+  servers: z.array(z.lazy(() => TrafficUsageRowSchema)),
+});
+export type TrafficUsageReport = z.infer<typeof TrafficUsageReportSchema>;
+
+export const TrafficUsageRowSchema = z.object({
+  name: z.string(),
+  subject: z.string(),
+  usage: z.array(z.lazy(() => TrafficUsageAmountSchema)),
+});
+export type TrafficUsageRow = z.infer<typeof TrafficUsageRowSchema>;
 
 export const TuicClientSettingsSchema = z.object({
   email: z.string(),

@@ -142,6 +142,8 @@ node heartbeat every 5s, periodic traffic resets (hourly/daily/weekly/monthly). 
 │   │   └── model/              # **ALL GORM models** (model.go ~1.1k lines + siblings:
 │   │                           #   node_client_traffic.go, node_client_ip.go,
 │   │                           #   client_global_traffic.go). ⭐ Start here for data shape.
+│   ├── protocol/               # Inbound protocol registry: one Spec per protocol (runtime,
+│   │                           #   stream use, listen transport, node eligibility). See §8 rule 10.
 │   ├── pia/                    # PIA WireGuard protocol client (auth, signed server list, /addKey)
 │   ├── eventbus/               # In-process pub/sub (buffered channel): outbound.down|up,
 │   │                           #   xray.crash, node.down|up, cpu.high, memory.high, login.attempt
@@ -589,6 +591,9 @@ for AutoMigrate in `internal/database/db.go`.
    fetches goes in `internal/sub`. Don't blur them.
 9. **Cross-cutting notifications go through `internal/eventbus/`** — publish an event instead
    of importing the Telegram/Discord/email services into producers.
+10. **Per-protocol facts live in `internal/protocol`.** A new inbound protocol starts with a
+    `model.Protocol` constant, its `Spec` and the validator's `oneof` (tests pin all three);
+    one served outside Xray also needs a `localEngine` in `internal/web/runtime/local_engine.go`.
 
 ---
 

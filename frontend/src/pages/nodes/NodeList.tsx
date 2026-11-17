@@ -60,6 +60,8 @@ function badgeStatus(status?: string): BadgeProps['status'] {
       return 'success';
     case 'offline':
       return 'error';
+    case 'isolated':
+      return 'warning';
     default:
       return 'default';
   }
@@ -69,6 +71,7 @@ interface HealthProps {
   status?: string;
   xrayState?: string;
   xrayError?: string;
+  seenBy?: string;
 }
 
 // Purple: the node's panel API is reachable (status=online) but its Xray core
@@ -107,8 +110,16 @@ function StatusDot({ status, xrayState }: HealthProps) {
   return <Badge status={badgeStatus(status)} />;
 }
 
-function StatusLabel({ status, xrayState }: HealthProps) {
+function StatusLabel({ status, xrayState, seenBy }: HealthProps) {
   const { t } = useTranslation();
+  if (status === 'isolated') {
+    return (
+      <span style={{ color: 'var(--ant-color-warning)' }}>
+        {t('pages.nodes.statusValues.isolated')}
+        {seenBy ? ` (${seenBy})` : ''}
+      </span>
+    );
+  }
   if (status === 'online') {
     const xs = (xrayState || '').toLowerCase().trim();
     if (xs === 'error' || xs === 'stop') {
@@ -400,7 +411,11 @@ export default function NodeList({
           return (
             <Space size={4}>
               <StatusDot status={record.status} xrayState={record.xrayState} />
-              <StatusLabel status={record.status} xrayState={record.xrayState} />
+              <StatusLabel
+                status={record.status}
+                xrayState={record.xrayState}
+                seenBy={record.seenBy}
+              />
               {tip && (
                 <Tooltip title={tip}>
                   <ExclamationCircleOutlined style={{ color: iconColor }} aria-label={tip} />
@@ -796,7 +811,11 @@ export default function NodeList({
                 <div className="stat-row">
                   <span className="stat-label">{t('pages.nodes.status')}</span>
                   <StatusDot status={statsNode.status} xrayState={statsNode.xrayState} />
-                  <StatusLabel status={statsNode.status} xrayState={statsNode.xrayState} />
+                  <StatusLabel
+                    status={statsNode.status}
+                    xrayState={statsNode.xrayState}
+                    seenBy={statsNode.seenBy}
+                  />
                   {(() => {
                     const { tip, iconColor } = statusIssue(statsNode);
                     return tip ? (

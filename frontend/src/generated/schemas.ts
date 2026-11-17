@@ -658,6 +658,17 @@ export const SCHEMAS: Record<string, unknown> = {
         "minimum": 0,
         "type": "integer"
       },
+      "trafficResetAllDay": {
+        "maximum": 31,
+        "minimum": 1,
+        "type": "integer"
+      },
+      "trafficResetAllMonthly": {
+        "type": "boolean"
+      },
+      "trafficUsagePeriods": {
+        "type": "string"
+      },
       "trustedProxyCIDRs": {
         "type": "string"
       },
@@ -873,6 +884,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgRunTime",
       "timeLocation",
       "trafficDiff",
+      "trafficResetAllDay",
+      "trafficResetAllMonthly",
+      "trafficUsagePeriods",
       "trustedProxyCIDRs",
       "twoFactorEnable",
       "twoFactorToken",
@@ -1505,6 +1519,17 @@ export const SCHEMAS: Record<string, unknown> = {
         "minimum": 0,
         "type": "integer"
       },
+      "trafficResetAllDay": {
+        "maximum": 31,
+        "minimum": 1,
+        "type": "integer"
+      },
+      "trafficResetAllMonthly": {
+        "type": "boolean"
+      },
+      "trafficUsagePeriods": {
+        "type": "string"
+      },
       "trustedProxyCIDRs": {
         "type": "string"
       },
@@ -1729,6 +1754,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgRunTime",
       "timeLocation",
       "trafficDiff",
+      "trafficResetAllDay",
+      "trafficResetAllMonthly",
+      "trafficUsagePeriods",
       "trustedProxyCIDRs",
       "twoFactorEnable",
       "twoFactorToken",
@@ -2425,6 +2453,16 @@ export const SCHEMAS: Record<string, unknown> = {
         },
         "type": "array"
       },
+      "speedTierId": {
+        "example": 0,
+        "type": "integer"
+      },
+      "speedTiers": {
+        "items": {
+          "$ref": "#/components/schemas/SpeedTier"
+        },
+        "type": "array"
+      },
       "trusted": {
         "example": false,
         "type": "boolean"
@@ -2441,6 +2479,8 @@ export const SCHEMAS: Record<string, unknown> = {
       "nonPaying",
       "pendingMonths",
       "plans",
+      "speedTierId",
+      "speedTiers",
       "trusted"
     ],
     "type": "object"
@@ -3253,6 +3293,39 @@ export const SCHEMAS: Record<string, unknown> = {
     "required": [
       "reason",
       "token"
+    ],
+    "type": "object"
+  },
+  "GroupSpeed": {
+    "description": "GroupSpeed is the speed every member of a client group gets unless the client\nhas its own ClientSpeed. FloorMbps \u003e 0 makes MaxMbps float between it and MaxMbps.",
+    "properties": {
+      "floorMbps": {
+        "example": 50,
+        "type": "integer"
+      },
+      "group": {
+        "example": "users",
+        "type": "string"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "maxMbps": {
+        "example": 100,
+        "type": "integer"
+      },
+      "minMbps": {
+        "example": 0,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "floorMbps",
+      "group",
+      "id",
+      "maxMbps",
+      "minMbps"
     ],
     "type": "object"
   },
@@ -4902,8 +4975,12 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": "https",
         "type": "string"
       },
+      "seenBy": {
+        "description": "SeenBy names the nodes that still reached this node while the master could not.",
+        "type": "string"
+      },
       "status": {
-        "description": "Heartbeat-updated fields. UpdatedAt advances on every probe even when\nthe row is otherwise unchanged so the UI's \"last seen\" tooltip is\ntruthful without us having to read LastHeartbeat separately.\nonline|offline|unknown",
+        "description": "Heartbeat-updated fields. UpdatedAt advances on every probe even when\nthe row is otherwise unchanged so the UI's \"last seen\" tooltip is\ntruthful without us having to read LastHeartbeat separately.\nonline|offline|isolated|unknown",
         "example": "online",
         "type": "string"
       },
@@ -4981,6 +5058,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "port",
       "remark",
       "scheme",
+      "seenBy",
       "status",
       "tlsVerifyMode",
       "updatedAt",
@@ -5255,6 +5333,9 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": "https",
         "type": "string"
       },
+      "seenBy": {
+        "type": "string"
+      },
       "status": {
         "example": "online",
         "type": "string"
@@ -5329,6 +5410,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "port",
       "remark",
       "scheme",
+      "seenBy",
       "status",
       "tlsVerifyMode",
       "updatedAt",
@@ -5588,6 +5670,33 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "PeerProbeResult": {
+    "description": "PeerProbeResult is what the asked node saw; Port is the first one that answered.",
+    "properties": {
+      "error": {
+        "type": "string"
+      },
+      "latencyMs": {
+        "example": 38,
+        "type": "integer"
+      },
+      "port": {
+        "example": 443,
+        "type": "integer"
+      },
+      "reachable": {
+        "example": true,
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "error",
+      "latencyMs",
+      "port",
+      "reachable"
+    ],
+    "type": "object"
+  },
   "ProbeResultUI": {
     "properties": {
       "cpuPct": {
@@ -5821,7 +5930,7 @@ export const SCHEMAS: Record<string, unknown> = {
     "type": "object"
   },
   "ServerFreeSpeed": {
-    "description": "ServerFreeSpeed is the live load of a server with a known capacity.",
+    "description": "ServerFreeSpeed is the live load of a server with a known capacity;\nReservedMbps is what the guarantees of the users it carries add up to.",
     "properties": {
       "capacityMbps": {
         "example": 1000,
@@ -5839,6 +5948,10 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": 12,
         "type": "integer"
       },
+      "reservedMbps": {
+        "example": 300,
+        "type": "integer"
+      },
       "usedMbps": {
         "example": 420.5,
         "type": "number"
@@ -5849,6 +5962,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "freePerUserMbps",
       "nodeId",
       "online",
+      "reservedMbps",
       "usedMbps"
     ],
     "type": "object"
@@ -6030,6 +6144,12 @@ export const SCHEMAS: Record<string, unknown> = {
         },
         "type": "array"
       },
+      "groups": {
+        "items": {
+          "$ref": "#/components/schemas/GroupSpeed"
+        },
+        "type": "array"
+      },
       "load": {
         "items": {
           "$ref": "#/components/schemas/ServerFreeSpeed"
@@ -6059,15 +6179,23 @@ export const SCHEMAS: Record<string, unknown> = {
           "type": "integer"
         },
         "type": "array"
+      },
+      "tiers": {
+        "items": {
+          "$ref": "#/components/schemas/SpeedTier"
+        },
+        "type": "array"
       }
     },
     "required": [
       "clients",
+      "groups",
       "load",
       "servers",
       "testSettings",
       "testStats",
-      "testing"
+      "testing",
+      "tiers"
     ],
     "type": "object"
   },
@@ -6216,6 +6344,34 @@ export const SCHEMAS: Record<string, unknown> = {
       "maxDownloadMbps",
       "minDownloadMbps",
       "nodeId"
+    ],
+    "type": "object"
+  },
+  "SpeedTier": {
+    "description": "SpeedTier is a paid speed upgrade: a guaranteed MinMbps for MonthlyPrice on\ntop of every month of the client's term.",
+    "properties": {
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "minMbps": {
+        "example": 200,
+        "type": "integer"
+      },
+      "monthlyPrice": {
+        "example": 100,
+        "type": "integer"
+      },
+      "name": {
+        "example": "Plus",
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "minMbps",
+      "monthlyPrice",
+      "name"
     ],
     "type": "object"
   },
@@ -6609,6 +6765,85 @@ export const SCHEMAS: Record<string, unknown> = {
       "IsOutbound",
       "Tag",
       "Up"
+    ],
+    "type": "object"
+  },
+  "TrafficUsageAmount": {
+    "description": "TrafficUsageAmount is the traffic of one period in bytes.",
+    "properties": {
+      "down": {
+        "example": 5368709120,
+        "format": "int64",
+        "type": "integer"
+      },
+      "up": {
+        "example": 1073741824,
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "down",
+      "up"
+    ],
+    "type": "object"
+  },
+  "TrafficUsageReport": {
+    "description": "TrafficUsageReport is the traffic of every server and client over the periods\nthe admin picked in the settings.",
+    "properties": {
+      "clients": {
+        "items": {
+          "$ref": "#/components/schemas/TrafficUsageRow"
+        },
+        "type": "array"
+      },
+      "periods": {
+        "example": [
+          "24h",
+          "30d",
+          "month"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "servers": {
+        "items": {
+          "$ref": "#/components/schemas/TrafficUsageRow"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "clients",
+      "periods",
+      "servers"
+    ],
+    "type": "object"
+  },
+  "TrafficUsageRow": {
+    "description": "TrafficUsageRow is one client (subject = email) or server (subject = node id,\n\"0\" = this panel); Usage lines up with the report's Periods.",
+    "properties": {
+      "name": {
+        "example": "anna",
+        "type": "string"
+      },
+      "subject": {
+        "example": "anna",
+        "type": "string"
+      },
+      "usage": {
+        "items": {
+          "$ref": "#/components/schemas/TrafficUsageAmount"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "name",
+      "subject",
+      "usage"
     ],
     "type": "object"
   },

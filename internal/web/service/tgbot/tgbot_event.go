@@ -28,6 +28,7 @@ func getHostname() string {
 // HandleEvent is the eventbus subscriber callback: one kind of event keeps ONE
 // live card per admin chat, so a repeat edits it instead of a wall of messages.
 func (t *Tgbot) HandleEvent(e eventbus.Event) {
+	t.notifyAIPinOutage(e)
 	if !t.isEventEnabled(e.Type) {
 		return
 	}
@@ -117,8 +118,13 @@ func (t *Tgbot) formatEventMessage(e eventbus.Event) string {
 		return msg
 
 	case eventbus.EventNodeDown:
+		data, _ := e.Data.(*eventbus.NodeHealthData)
+		if data != nil && len(data.SeenBy) > 0 {
+			return header + "🟠 " + t.I18nBot("tgbot.messages.eventNodeIsolated",
+				"Name=="+e.Source, "SeenBy=="+strings.Join(data.SeenBy, ", "))
+		}
 		msg := header + "🔴 " + t.I18nBot("tgbot.messages.eventNodeDown", "Name=="+e.Source)
-		if data, ok := e.Data.(*eventbus.NodeHealthData); ok && data.XrayError != "" {
+		if data != nil && data.XrayError != "" {
 			msg += "\n" + t.I18nBot("tgbot.messages.eventErrorDetail", "Error=="+data.XrayError)
 		}
 		return msg

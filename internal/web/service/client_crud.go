@@ -155,6 +155,20 @@ func (s *ClientService) GetClientsByTrafficReset(period string) ([]ClientResetCy
 	return cycles, nil
 }
 
+// GetClientsFollowingGlobalReset returns the clients with no reset cycle of their
+// own: none on the client, no renewal schedule, and no inbound that resets them.
+func (s *ClientService) GetClientsFollowingGlobalReset() ([]ClientResetCycle, error) {
+	var cycles []ClientResetCycle
+	err := clientResetCycles(database.GetDB()).
+		Where("c.traffic_reset = ? AND c.reset = 0 AND c.reset_day = 0 AND c.reset_weekday = 0", "never").
+		Where("NOT EXISTS (SELECT 1 FROM client_inbounds ci JOIN inbounds i ON i.id = ci.inbound_id WHERE ci.client_id = c.id AND i.traffic_reset <> ?)", "never").
+		Scan(&cycles).Error
+	if err != nil {
+		return nil, err
+	}
+	return cycles, nil
+}
+
 // quotaDisabledEmails lists the disabled clients whose usage reached their quota,
 // only those in within unless it is nil. Read it before zeroing the counters,
 // which hides why a client is off.

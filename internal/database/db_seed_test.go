@@ -585,3 +585,43 @@ func TestClientGroupsAssignedOnUpgrade(t *testing.T) {
 		t.Errorf("inbound settings = %s, want тех renamed to tech", ib.Settings)
 	}
 }
+
+func TestGroupSpeedDefaultsSeedOnceAndKeepTheAdminsRemoval(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "x-ui.db")
+	read := func() []model.GroupSpeed {
+		t.Helper()
+		if err := InitDB(dbPath); err != nil {
+			t.Fatalf("InitDB: %v", err)
+		}
+		var rows []model.GroupSpeed
+		if err := db.Order("group_name asc").Find(&rows).Error; err != nil {
+			t.Fatal(err)
+		}
+		return rows
+	}
+	rows := read()
+	want := []model.GroupSpeed{
+		{Group: model.ClientGroupPaid, MinMbps: 100},
+		{Group: model.ClientGroupUsers, FloorMbps: 50, MaxMbps: 100},
+	}
+	if len(rows) != len(want) {
+		t.Fatalf("fresh install speeds = %+v, want %+v", rows, want)
+	}
+	for i := range rows {
+		rows[i].Id = 0
+		if rows[i] != want[i] {
+			t.Fatalf("fresh install speeds = %+v, want %+v", rows, want)
+		}
+	}
+	if err := db.Where("group_name = ?", model.ClientGroupUsers).Delete(&model.GroupSpeed{}).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := CloseDB(); err != nil {
+		t.Fatal(err)
+	}
+	rows = read()
+	defer func() { _ = CloseDB() }()
+	if len(rows) != 1 || rows[0].Group != model.ClientGroupPaid {
+		t.Fatalf("after the admin removed users and the panel restarted: %+v", rows)
+	}
+}
