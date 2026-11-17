@@ -25,6 +25,7 @@ func NewSubEdgeController(g *gin.RouterGroup) *SubEdgeController {
 	g.POST("/del/:id", a.del)
 	g.POST("/node/configure", a.configure)
 	g.POST("/node/tunnel", a.tunnel)
+	g.POST("/node/cache", a.cache)
 	return a
 }
 
@@ -76,4 +77,12 @@ func (a *SubEdgeController) tunnel(c *gin.Context) {
 	if err := service.SubEdgeNode().AcceptTunnel(c.Writer, c.Request); err != nil {
 		jsonMsg(c, I18nWeb(c, "pages.nodes.subEdge.toasts.tunnel"), err)
 	}
+}
+
+func (a *SubEdgeController) cache(c *gin.Context) {
+	update, ok := middleware.BindAndValidate[subedge.CacheUpdate](c)
+	if !ok {
+		return
+	}
+	jsonMsg(c, I18nWeb(c, "pages.nodes.subEdge.toasts.saved"), service.SubEdgeNode().UpdateCache(*update))
 }

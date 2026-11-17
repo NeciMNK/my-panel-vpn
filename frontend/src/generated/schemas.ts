@@ -1898,6 +1898,84 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "CacheUpdate": {
+    "description": "CacheUpdate is what a master sends an edge node: new responses, and every\nsubscription that may still be served, so the rest is dropped.",
+    "properties": {
+      "responses": {
+        "items": {
+          "$ref": "#/components/schemas/CachedResponse"
+        },
+        "type": "array"
+      },
+      "subIds": {
+        "example": [
+          "abc123"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "responses",
+      "subIds"
+    ],
+    "type": "object"
+  },
+  "CachedResponse": {
+    "description": "CachedResponse is one subscription answer a master gave a client app, kept\nso an edge can still answer that app while no master does.",
+    "properties": {
+      "agent": {
+        "example": "happ",
+        "type": "string"
+      },
+      "body": {
+        "example": "dmxlc3M6Ly8uLi4=",
+        "type": "string"
+      },
+      "device": {
+        "type": "string"
+      },
+      "header": {
+        "additionalProperties": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "type": "object"
+      },
+      "host": {
+        "example": "sub.example.com",
+        "type": "string"
+      },
+      "stored": {
+        "example": 1762736400,
+        "format": "int64",
+        "type": "integer"
+      },
+      "subId": {
+        "example": "abc123",
+        "type": "string"
+      },
+      "uri": {
+        "example": "/sub/abc123",
+        "type": "string"
+      }
+    },
+    "required": [
+      "agent",
+      "body",
+      "device",
+      "header",
+      "host",
+      "stored",
+      "subId",
+      "uri"
+    ],
+    "type": "object"
+  },
   "Cascade": {
     "description": "Cascade chains an entry server to one or more exit servers: users connect to\nthe entry, their traffic leaves the internet from an exit. Node id 0 means\nthis panel itself.",
     "properties": {

@@ -793,6 +793,13 @@ func (r *Remote) ConfigureSubEdge(ctx context.Context, cfg subedge.ListenerConfi
 	return err
 }
 
+// UpdateSubEdgeCache stores a master's subscription responses in the node's
+// edge cache.
+func (r *Remote) UpdateSubEdgeCache(ctx context.Context, update subedge.CacheUpdate) error {
+	_, err := r.do(ctx, http.MethodPost, "panel/api/subEdges/node/cache", update)
+	return err
+}
+
 // OpenSubEdgeTunnel opens the long-lived tunnel the node forwards subscription
 // requests through; it bypasses the client timeout that would cut it.
 func (r *Remote) OpenSubEdgeTunnel(ctx context.Context, master subedge.Master) (net.Conn, error) {

@@ -457,6 +457,22 @@ export interface Blocker {
   detail?: string;
 }
 
+export interface CacheUpdate {
+  responses: CachedResponse[];
+  subIds: string[];
+}
+
+export interface CachedResponse {
+  agent: string;
+  body: string;
+  device: string;
+  header: Record<string, string[]>;
+  host: string;
+  stored: number;
+  subId: string;
+  uri: string;
+}
+
 export interface Cascade {
   createdAt: number;
   directDomains: string[];

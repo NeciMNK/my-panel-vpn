@@ -1888,6 +1888,14 @@ export const sections: readonly Section[] = [
         summary:
           'Node side: a master upgrades this request (Connection: Upgrade, Upgrade: x-ui-sub-edge/1) into the tunnel the edge forwards subscription requests through. Answers 101 Switching Protocols. Allowed for node-sync tokens.',
       },
+      {
+        method: 'POST',
+        path: '/panel/api/subEdges/node/cache',
+        summary:
+          'Node side: store subscription responses a master gave client apps, and drop those of subscriptions not in subIds. The edge answers from this cache (with Age and Warning: 110) while no master answers, for up to 7 days. Allowed for node-sync tokens.',
+        body: '{\n  "subIds": ["abc123"],\n  "responses": [\n    {\n      "host": "sub.example.com",\n      "uri": "/sub/abc123",\n      "agent": "happ",\n      "device": "",\n      "subId": "abc123",\n      "header": { "Profile-Title": ["My VPN"] },\n      "body": "dmxlc3M6Ly8uLi4=",\n      "stored": 1762736400\n    }\n  ]\n}',
+        requestSchema: { $ref: '#/components/schemas/CacheUpdate' },
+      },
     ],
   },
 
