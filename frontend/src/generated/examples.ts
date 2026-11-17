@@ -468,6 +468,33 @@ export const EXAMPLES: Record<string, unknown> = {
     "code": "tools",
     "detail": "awg"
   },
+  "CacheUpdate": {
+    "responses": [
+      {
+        "agent": "happ",
+        "body": "dmxlc3M6Ly8uLi4=",
+        "device": "",
+        "header": {},
+        "host": "sub.example.com",
+        "stored": 1762736400,
+        "subId": "abc123",
+        "uri": "/sub/abc123"
+      }
+    ],
+    "subIds": [
+      "abc123"
+    ]
+  },
+  "CachedResponse": {
+    "agent": "happ",
+    "body": "dmxlc3M6Ly8uLi4=",
+    "device": "",
+    "header": {},
+    "host": "sub.example.com",
+    "stored": 1762736400,
+    "subId": "abc123",
+    "uri": "/sub/abc123"
+  },
   "Cascade": {
     "createdAt": 0,
     "directDomains": [
@@ -1238,6 +1265,12 @@ export const EXAMPLES: Record<string, unknown> = {
     "name": "Hetzner DE",
     "serverId": 1
   },
+  "ListenerConfig": {
+    "certFile": "/etc/x-ui/certs/sub.example.com/fullchain.pem",
+    "enable": true,
+    "keyFile": "/etc/x-ui/certs/sub.example.com/privkey.pem",
+    "port": 443
+  },
   "LogEntry": {
     "DateTime": "2025-01-01T12:00:00Z",
     "Email": "alice@example.com",
@@ -1698,6 +1731,24 @@ export const EXAMPLES: Record<string, unknown> = {
     "sortOrder": 1,
     "strategy": "random",
     "updatedAt": 1710000000000
+  },
+  "SubEdge": {
+    "certId": 1,
+    "createdAt": 0,
+    "enable": true,
+    "id": 1,
+    "lastError": "",
+    "lastSeen": 1762736400,
+    "nodeId": 2,
+    "port": 443,
+    "status": "online",
+    "updatedAt": 0
+  },
+  "SubEdgeRequest": {
+    "certId": 1,
+    "enable": true,
+    "nodeId": 2,
+    "port": 443
   },
   "TgBotCapabilities": {
     "groupPrivacy": false,

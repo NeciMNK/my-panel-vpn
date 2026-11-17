@@ -68,3 +68,19 @@ func TestKeepAliveOverrideEmitsNumberOrString(t *testing.T) {
 		t.Fatalf("generated JSON schema keepAlive = %s, err = %v", schema.String(), err)
 	}
 }
+
+func TestByteSliceIsTheBase64StringEncodingJSONWrites(t *testing.T) {
+	dir := t.TempDir()
+	source := "package subedge\ntype CachedResponse struct { Body []byte `json:\"body\"` }\n"
+	if err := os.WriteFile(filepath.Join(dir, "cache.go"), []byte(source), 0o644); err != nil {
+		t.Fatalf("write fixture: %v", err)
+	}
+	schemas, _, err := walkPackages([]packageRequest{{Path: dir, StructAllow: setOf("CachedResponse")}})
+	if err != nil {
+		t.Fatalf("walk fixture: %v", err)
+	}
+	var types bytes.Buffer
+	if err := emitTypes(&types, schemas, nil); err != nil || !strings.Contains(types.String(), "body: string;") {
+		t.Fatalf("generated TypeScript body = %s, err = %v", types.String(), err)
+	}
+}

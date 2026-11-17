@@ -52,6 +52,8 @@ file locations when it can answer in one hop.
   relay into a loopback per-peer-auth SOCKS5 Xray inbound, port-forward
   listeners, per-peer IPv6 egress aliases.
 - `internal/pia/` — PIA WireGuard protocol client (auth, signed server list, `/addKey`).
+- `internal/subedge/` — subscription edge: a node's public listener that forwards
+  subscription requests over HTTP/2 tunnels each master opens to it.
 - `internal/sub/` — subscription server (raw / JSON / Clash).
 - `internal/eventbus/` — in-process pub/sub (outbound/node health, xray.crash,
   cpu.high, memory.high, login.attempt).

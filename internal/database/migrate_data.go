@@ -84,6 +84,7 @@ func migrationModels() []any {
 		&model.TlsCertificate{},
 		&model.TelegramTag{},
 		&model.PaymentReminder{},
+		&model.SubEdge{},
 		&model.TrafficUsageHour{},
 		&model.TrafficUsageDay{},
 	}

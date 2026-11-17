@@ -1605,6 +1605,28 @@
         "addDbHostHint": "Fill in when this master reaches PostgreSQL over 127.0.0.1: the new master gets this address instead. PostgreSQL must accept connections from the new server (listen_addresses and pg_hba.conf).",
         "setupDbLocal": "XUI_DB_DSN still points to this server's own database (127.0.0.1 or a socket), which the new master cannot reach. Put the database address into the DSN, or add the master again with the database address filled in."
       },
+      "subEdge": {
+        "title": "Subscriptions through nodes",
+        "add": "Add node",
+        "edit": "Edit node",
+        "desc": "The node serves this panel's subscriptions on its own port. Every master keeps a tunnel to it, so the master's subscription server needs no public address.",
+        "node": "Node",
+        "port": "Port",
+        "cert": "Certificate",
+        "certNone": "None (plain HTTP)",
+        "certNotOnNode": "The panel has not copied this certificate to the node yet; the edge starts once it has.",
+        "tunnel": "Tunnel",
+        "online": "Connected",
+        "offline": "Not connected",
+        "enable": "Enabled",
+        "deleteConfirm": "Stop serving subscriptions on this node?",
+        "dnsHint": "Point the subscription domain's DNS at this node and set the subscription URI to that domain.",
+        "toasts": {
+          "saved": "Subscription node saved",
+          "deleted": "Subscription node removed",
+          "tunnel": "Subscription tunnel refused"
+        }
+      },
       "groupSpeed": {
         "title": "Speed by group",
         "desc": "Every member of a group gets its speed unless the user has their own in the speed limits above. Min is guaranteed. With \"Floating from\" set, the max floats between that and Max: what the guarantees of the users on the server leave free, shared among the floating users, in 10 Mbit/s steps. A cascade user gets the smaller share of the entry and the exit.",
