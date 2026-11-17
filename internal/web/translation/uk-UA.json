@@ -139,7 +139,8 @@
     "unpinSidebar": "Відкріпити бічну панель",
     "subFormats": "Формати підписки",
     "ledger": "Finance",
-    "aiDomains": "AI domains"
+    "aiDomains": "AI domains",
+    "trafficUsage": "Traffic by period"
   },
   "pages": {
     "login": {
@@ -1214,7 +1215,8 @@
         "offline": "Не в мережі",
         "unknown": "Невідомо",
         "xrayError": "Помилка Xray",
-        "xrayStopped": "Зупинено"
+        "xrayStopped": "Зупинено",
+        "isolated": "Майстер не бачить, вузол працює"
       },
       "toasts": {
         "list": "Не вдалося завантажити вузли",
@@ -1389,11 +1391,11 @@
       },
       "speed": {
         "title": "Speed limits",
-        "desc": "Max caps a user's speed on every server they use. Min is the speed a server must still have free for the user: when a server drops below it, new connections go to another server of the cascade, and if no server has room the admin gets a Telegram alert. Set each server's link speed so free speed can be measured.",
+        "desc": "Max caps a user's speed. Min is guaranteed: on the server the user connects to, their downloads keep at least that much of the link (uploads can only be capped). Guarantees are counted on the cascade's entry and exit; when an exit cannot cover a new user's guarantee they go to another exit, and if no server can the admin gets a Telegram alert. A user's own speed replaces their group's. Set each server's link speed so guarantees and free speed can be measured.",
         "server": "Server",
         "capacity": "Link speed, Mbit/s",
         "load": "Load",
-        "loadValue": "{used} Mbit/s used, {online} online, {free} Mbit/s free per user",
+        "loadValue": "{used} Mbit/s used, {online} online, {free} Mbit/s free per user, {reserved} Mbit/s guaranteed",
         "user": "User",
         "min": "Min, Mbit/s",
         "max": "Max, Mbit/s",
@@ -1497,6 +1499,16 @@
           "deleted": "Subscription node removed",
           "tunnel": "Subscription tunnel refused"
         }
+      },
+      "groupSpeed": {
+        "title": "Speed by group",
+        "desc": "Every member of a group gets its speed unless the user has their own in the speed limits above. Min is guaranteed. With \"Floating from\" set, the max floats between that and Max: what the guarantees of the users on the server leave free, shared among the floating users, in 10 Mbit/s steps. A cascade user gets the smaller share of the entry and the exit.",
+        "group": "Group",
+        "floor": "Floating from, Mbit/s"
+      },
+      "tabs": {
+        "nodes": "Nodes",
+        "speed": "Speed"
       }
     },
     "settings": {
@@ -2217,7 +2229,7 @@
       },
       "eventSpeedLow": "Speed below user minimum",
       "eventMasterLeader": "Another master took over",
-      "tgPaymentMoved": "The price, discounts and where to pay are set on the Finance page.",
+      "tgPaymentMoved": "Prices, discounts, payment details, the free plan and online payment (YooKassa, which confirms payments by itself) are set on the Finance page, Prices and payment tab.",
       "tgFreePlanPrice": "Ціна безкоштовного тарифу (онлайн)",
       "tgFreePlanPriceDesc": "Разова оплата проти спам-ботів. Якщо більше 0 і підключено платіжку, новий користувач сплачує її карткою в боті й отримує безкоштовний тариф автоматично, без схвалення адміна; ця сума віднімається з його першої платної підписки. 0 або без платіжки — лишається безкоштовний запит, який схвалює адмін.",
       "tgFreePlanInbounds": "Підключення для оплаченого безкоштовного тарифу",
@@ -2236,7 +2248,14 @@
       "tgPayTest": "Перевірити підключення",
       "tgPayTestFailed": "Перевірка платіжки не пройшла (спершу збережіть налаштування)",
       "tgPayTestLive": "Підключено до магазину ЮKassa {{ .Account }}: реальні платежі.",
-      "tgPayTestSandbox": "Підключено до тестового магазину ЮKassa {{ .Account }}: реальні гроші не списуються. Коли будете готові, поставте ключі бойового магазину."
+      "tgPayTestSandbox": "Підключено до тестового магазину ЮKassa {{ .Account }}: реальні гроші не списуються. Коли будете готові, поставте ключі бойового магазину.",
+      "trafficAccounting": "Traffic accounting",
+      "trafficResetAllMonthly": "Monthly traffic reset for everyone",
+      "trafficResetAllMonthlyDesc": "Resets the traffic of every client that has no reset or renewal cycle of its own, and is not in an inbound with a reset cycle. A client's own cycle always wins.",
+      "trafficResetAllDay": "Reset day of the month",
+      "trafficResetAllDayDesc": "In months shorter than this, the reset runs on the last day.",
+      "trafficUsagePeriods": "Traffic periods to show",
+      "trafficUsagePeriodsDesc": "Which periods the Traffic by period page counts. History is always collected, so a period switched on later shows past data at once."
     },
     "xray": {
       "save": "Зберегти",
@@ -2962,7 +2981,18 @@
       "nodeHint": "Оберіть ноду на цьому сервері: її адреса показуватиметься тут і змінюватиметься разом із налаштуваннями ноди. Для сервера без ноди (наприклад, самої панелі) впишіть IP нижче.",
       "noNode": "— не нода —",
       "aiExitPrice": "AI button price",
-      "aiExitPriceDesc": "One-off price of the bot's \"🤖 I will use AI\" button (a permanent exit IP). Friends always get it free. 0 hides it from everyone else. It is paid by card when a provider is connected, or by hand to the payment details with an admin's confirm in the bot. Clients who already paid keep it."
+      "aiExitPriceDesc": "One-off price of the bot's \"🤖 I will use AI\" button (a permanent exit IP). Friends always get it free. 0 hides it from everyone else. It is paid by card when a provider is connected, or by hand to the payment details with an admin's confirm in the bot. Clients who already paid keep it.",
+      "tabs": {
+        "summary": "Servers and totals",
+        "payment": "Prices and payment",
+        "nonPaying": "Not paying"
+      },
+      "speedTiers": {
+        "title": "Speed tiers",
+        "desc": "A speed upgrade clients can buy in the bot when they pay: its price is added to every month of the term, and its minimum is guaranteed until the term ends. It beats the group's speed; a speed set on the client itself still wins. Deleting a tier returns its buyers to their group's speed.",
+        "name": "Name",
+        "price": "Price per month"
+      }
     },
     "aiDomains": {
       "list": "Sites for the AI pin",
@@ -2983,6 +3013,26 @@
       "alreadyAnswered": "This suggestion has already been answered",
       "notSaved": "The list was not saved",
       "notAnswered": "The answer was not sent"
+    },
+    "trafficUsage": {
+      "desc": "Traffic each server and client used. Resets of the traffic counters do not affect this history. Calendar periods start over at midnight in the panel timezone; weeks start on Monday.",
+      "servers": "Servers",
+      "clients": "Clients",
+      "name": "Name",
+      "thisPanel": "This panel",
+      "search": "Search by email",
+      "periods": {
+        "24h": "24 hours",
+        "7d": "7 days",
+        "30d": "30 days",
+        "180d": "180 days",
+        "365d": "365 days",
+        "day": "Today",
+        "week": "This week",
+        "month": "This month",
+        "halfyear": "This half-year",
+        "year": "This year"
+      }
     }
   },
   "tgbot": {
@@ -3094,6 +3144,7 @@
       "eventXrayCrashError": "Помилка: {{ .Error }}",
       "eventNodeDown": "Вузол {{ .Name }} НЕДОСТУПНИЙ",
       "eventNodeUp": "Вузол {{ .Name }} ДОСТУПНИЙ",
+      "eventNodeIsolated": "Майстер не бачить вузол {{ .Name }}, але він працює: його бачать {{ .SeenBy }}",
       "eventLoginFallback": "Невдала спроба входу з {{ .Source }}",
       "memoryThreshold": "Використання пам'яті {{ .Percent }}% перевищує порогове значення {{ .Threshold }}%",
       "inboundsCount": "🔌 Підключень: {{ .Count }}\r\n",
@@ -3156,7 +3207,23 @@
       "aiSuggestAdded": "✅ Your suggestion was accepted: {{ .Domains }} now go through your AI IP.",
       "aiSuggestPartial": "➗ An admin added some of the sites you suggested ({{ .Domains }}), but not all of them.",
       "aiSuggestDeclined": "❌ An admin decided not to add {{ .Domains }}.",
-      "aiSuggestPresent": "📋 {{ .Domains }} already go through your AI IP, so nothing needed adding."
+      "aiSuggestPresent": "📋 {{ .Domains }} already go through your AI IP, so nothing needed adding.",
+      "aiOutageNotice": "🔴 The server {{ .Server }} with your pinned IP is down.\r\n\r\n",
+      "aiOutageBack": "🟢 The server {{ .Server }} is back: your pinned IP works again.",
+      "aiOutageDownLine": "🔴 {{ .Server }} is down. ",
+      "aiOutageNowSwapped": "Until it is back, its traffic goes via {{ .Server }}.\r\n",
+      "aiOutageNowOff": "Your VPN is off until it is back.\r\n",
+      "aiOutageNowBlocked": "Blocked until it is back: {{ .Services }}.\r\n",
+      "aiOutageChoiceBlockAll": "\r\nIf a server with your pinned IP goes down: AI services are blocked so they never see another IP, and the rest of your traffic goes through other servers.\r\n",
+      "aiOutageChoiceBlock": "\r\nIf a server with your pinned IP goes down: {{ .Services }} are blocked, everything else goes through other servers.\r\n",
+      "aiOutageChoiceOther": "\r\nIf a server with your pinned IP goes down: you get another IP of the same country until it is back.\r\n",
+      "aiOutageChoiceOtherIn": "\r\nIf a server with your pinned IP goes down: you get another IP of the same country, or of {{ .Country }} when it has none left.\r\n",
+      "aiOutageChoiceOff": "\r\nIf a server with your pinned IP goes down: your VPN is off until it is back.\r\n",
+      "aiOutageNoUse": "How should the server not be used while it is down?\r\n\r\n🚫 Not at all: your VPN is off until it is back.\r\n🤖 For AI only: the AI services you tick are cut off, the rest goes through other servers.",
+      "aiOutagePickCountry": "There is no live server left in that country. Which country should the temporary IP come from?",
+      "aiOutageNoCountry": "No other country has a live server either, so AI services stay blocked for now.",
+      "aiOutageServices": "Tick the AI services to cut off while the server is down:",
+      "paymentReportedTier": "{{ .Total }}, speed {{ .Name }} from {{ .Mbps }} Mbit/s"
     },
     "buttons": {
       "closeKeyboard": "❌ Закрити клавіатуру",
@@ -3258,7 +3325,15 @@
       "aiSuggestAdded": "✅ Added all",
       "aiSuggestPartial": "➗ Added some",
       "aiSuggestDeclined": "❌ Added none",
-      "aiSuggestPresent": "📋 All already listed"
+      "aiSuggestPresent": "📋 All already listed",
+      "aiOutage": "⚠️ If my server goes down",
+      "aiOutageOther": "🔁 Use another IP for now",
+      "aiOutageNoUse": "🚫 Don't use it",
+      "aiOutageOff": "🚫 Not at all",
+      "aiOutageBlock": "🤖 For AI only",
+      "aiOutageAll": "✅ All AI services",
+      "tierNone": "Standard speed",
+      "tierOption": "{{ .Name }}: from {{ .Mbps }} Mbit/s, +{{ .Total }}/mo"
     },
     "answers": {
       "broadcastStarted": "🚀 Розсилку запущено.",
@@ -3302,7 +3377,8 @@
       "paymentCanceled": "Цей рахунок закрито. Якщо хочете сплатити, відкрийте новий.",
       "aiExitLocked": "The AI button is not available on your subscription.",
       "aiSuggestAnswered": "Done, the client has been told.",
-      "aiSuggestAlreadyAnswered": "This suggestion has already been answered."
+      "aiSuggestAlreadyAnswered": "This suggestion has already been answered.",
+      "aiOutageKeepOne": "Keep at least one service ticked."
     },
     "screens": {
       "panel": "Панель",
@@ -3356,7 +3432,11 @@
       "orderDescription": "VPN {{ .Email }}, {{ .Months }} міс",
       "aiExitDescription": "VPN: permanent exit IP for AI services",
       "aiExitInvoice": "🧾 <b>🤖 I will use AI</b>: a permanent exit IP, so AI services do not block your account — {{ .Total }} once, yours for good.\r\nThe button unlocks automatically after payment.",
-      "aiExitManual": "🧾 <b>🤖 I will use AI</b>: a permanent exit IP, so AI services do not block your account — {{ .Total }} once, yours for good.\r\n🏦 Where to pay:\r\n{{ .Details }}\r\n\r\nThen tap \"I paid\": the button opens once an admin confirms the payment."
+      "aiExitManual": "🧾 <b>🤖 I will use AI</b>: a permanent exit IP, so AI services do not block your account — {{ .Total }} once, yours for good.\r\n🏦 Where to pay:\r\n{{ .Details }}\r\n\r\nThen tap \"I paid\": the button opens once an admin confirms the payment.",
+      "tiersTitle": "⚡ Faster speed, added to every month:\r\n",
+      "tier": "• {{ .Name }}: at least {{ .Mbps }} Mbit/s, +{{ .Total }} a month\r\n",
+      "tierCurrent": "Your speed now: {{ .Name }}.\r\n",
+      "chooseTier": "⚡ Which speed do you pay for? A faster tier adds its price to every month of the term."
     },
     "ledger": {
       "summary": "💰 <b>Finance for {{ .Month }}</b>\r\n\r\n➕ Income: {{ .Income }}\r\n➖ Expenses: {{ .Expenses }} (servers {{ .Servers }})\r\n{{ .Sign }} <b>Result: {{ .Balance }}</b>\r\n👥 Paying clients: {{ .Paying }}, expected {{ .Expected }}\r\n",
@@ -3404,7 +3484,8 @@
       "threshold": "Поріг",
       "reason": "Причина",
       "time": "Час",
-      "source": "Джерело"
+      "source": "Джерело",
+      "seenBy": "Бачать"
     },
     "values": {
       "uptime": "{{ .Days }} д {{ .Hours }} год",
@@ -3417,6 +3498,7 @@
       "outboundUp": "Вихідне відновлено",
       "nodeDown": "Вузол недоступний",
       "nodeUp": "Вузол знову в мережі",
+      "nodeIsolated": "Майстер не бачить вузол",
       "xrayCrash": "Збій ядра Xray",
       "cpuHigh": "Перевищено поріг CPU",
       "memoryHigh": "Перевищено поріг пам'яті",
@@ -3474,6 +3556,7 @@
     "statusSuccess": "УСПІШНО",
     "statusFailed": "НЕВДАЛО",
     "statusDown": "НЕДОСТУПНО",
+    "statusIsolated": "МАЙСТЕР НЕ БАЧИТЬ",
     "statusUp": "ДОСТУПНО"
   },
   "commandPalette": {

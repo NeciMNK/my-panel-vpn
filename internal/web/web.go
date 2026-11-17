@@ -424,6 +424,9 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	// Check monthly reset days at midnight
 	_, _ = s.cron.AddJob("@daily", job.LeaderOnly(job.NewPeriodicTrafficResetJob("monthly", loc)))
 
+	_, _ = s.cron.AddJob("@every 1m", job.NewTrafficUsageFlushJob())
+	_, _ = s.cron.AddJob("@daily", job.LeaderOnly(job.NewTrafficUsageRollupJob(loc)))
+
 	// LDAP sync scheduling
 	if ldapEnabled, _ := s.settingService.GetLdapEnable(); ldapEnabled {
 		runtime, _ := s.settingService.GetLdapSyncCron()

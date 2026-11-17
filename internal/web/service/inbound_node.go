@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"maps"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -63,7 +64,7 @@ func (s *InboundService) nodePushPlan(ib *model.Inbound) (runtime.Runtime, bool,
 	if err != nil {
 		return nil, false, false, err
 	}
-	if !enabled || status == "offline" {
+	if !enabled || status == model.NodeStatusOffline || status == model.NodeStatusIsolated {
 		return nil, false, true, nil
 	}
 	rt, err := s.runtimeFor(ib)
@@ -500,7 +501,10 @@ func (s *InboundService) setRemoteTrafficLocked(nodeID int, snap *runtime.Traffi
 		return false, nil
 	}
 	db := database.GetDB()
-	now := time.Now().UnixMilli()
+	usageAt := time.Now()
+	now := usageAt.UnixMilli()
+	usage := newTrafficUsageBatch()
+	usageServer := strconv.Itoa(nodeID)
 
 	// originGuidFor attributes a synced inbound to the panel that physically
 	// hosts it. A node's OWN inbounds report either an empty origin or — on
@@ -1226,6 +1230,11 @@ func (s *InboundService) setRemoteTrafficLocked(nodeID int, snap *runtime.Traffi
 			if seen && base == canon {
 				continue
 			}
+			// The baseline advances only here, so a delta booked here is counted
+			// once, also across sibling inbounds and ticks that skipped the merge.
+			if seen {
+				usage.addClient(cs.Email, usageServer, usageAt, deltaUp, deltaDown)
+			}
 			if err := s.upsertNodeBaseline(tx, nodeID, cs.Email, canon.Up, canon.Down); err != nil {
 				return false, err
 			}
@@ -1444,6 +1453,7 @@ func (s *InboundService) setRemoteTrafficLocked(nodeID int, snap *runtime.Traffi
 		return false, err
 	}
 	committed = true
+	usageRecorder.merge(usage)
 
 	if len(degradedInbounds) > 0 {
 		if mgr := runtime.GetManager(); mgr != nil {

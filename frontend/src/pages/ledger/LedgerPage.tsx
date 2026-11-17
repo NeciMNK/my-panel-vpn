@@ -20,6 +20,7 @@ import {
   Spin,
   Statistic,
   Table,
+  Tabs,
   Tag,
   Tooltip,
   message,
@@ -38,6 +39,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
 import dayjs from 'dayjs';
+import { useLocation, useNavigate } from 'react-router';
 
 import { useTheme } from '@/hooks/useTheme';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
@@ -66,12 +68,15 @@ import {
 } from '@/schemas/ledger';
 import { z } from 'zod';
 
+import OnlinePaymentCard from './OnlinePaymentCard';
+import SpeedTiersCard from './SpeedTiersCard';
 import './LedgerPage.css';
 
 const JSON_HEADERS = {
   headers: { 'Content-Type': 'application/json' },
 } as const;
 const MONTH_FORMAT = 'YYYY-MM';
+const LEDGER_TABS = ['summary', 'payment', 'nonPaying'] as const;
 const EXTEND_MONTHS = [1, 2, 3, 6, 12] as const;
 const ClientEmailsSchema = z
   .array(ClientRecordSchema.pick({ email: true }))
@@ -105,6 +110,9 @@ export default function LedgerPage() {
   }, [messageApi]);
   const queryClient = useQueryClient();
   const [month, setMonth] = useState(() => dayjs().format(MONTH_FORMAT));
+  const navigate = useNavigate();
+  const hash = useLocation().hash.replace(/^#/, '');
+  const activeTab = LEDGER_TABS.find((tab) => tab === hash) ?? LEDGER_TABS[0];
 
   const reportQuery = useQuery({
     queryKey: keys.ledger.report(month),
@@ -417,245 +425,291 @@ export default function LedgerPage() {
                   }
                 />
               ) : (
-                <Row gutter={[isMobile ? 8 : 16, isMobile ? 8 : 12]}>
-                  <Col span={24}>
-                    <Space wrap>
-                      <Button
-                        icon={<LeftOutlined aria-hidden />}
-                        aria-label={t('pages.ledger.prevMonth')}
-                        onClick={() =>
-                          setMonth(dayjs(month).subtract(1, 'month').format(MONTH_FORMAT))
-                        }
-                      />
-                      <DatePicker
-                        picker="month"
-                        aria-label={t('pages.ledger.month')}
-                        allowClear={false}
-                        value={dayjs(month)}
-                        onChange={(value) => value && setMonth(value.format(MONTH_FORMAT))}
-                      />
-                      <Button
-                        icon={<RightOutlined aria-hidden />}
-                        aria-label={t('pages.ledger.nextMonth')}
-                        onClick={() => setMonth(dayjs(month).add(1, 'month').format(MONTH_FORMAT))}
-                      />
-                    </Space>
-                  </Col>
-                  <Col span={24}>
-                    <Card size="small" className="summary-card">
-                      <Row gutter={[16, 12]}>
-                        <Col xs={12} md={6}>
-                          <Statistic
-                            title={t('pages.ledger.income')}
-                            value={money(report?.income ?? 0)}
-                          />
-                        </Col>
-                        <Col xs={12} md={6}>
-                          <Statistic
-                            title={t('pages.ledger.expenses')}
-                            value={money(report?.expenses ?? 0)}
-                          />
-                        </Col>
-                        <Col xs={12} md={6}>
-                          <Statistic
-                            title={t('pages.ledger.balance')}
-                            value={money(report?.balance ?? 0)}
-                            styles={{
-                              content: {
-                                color: (report?.balance ?? 0) >= 0 ? '#3f8600' : '#cf1322',
-                              },
-                            }}
-                          />
-                        </Col>
-                        <Col xs={12} md={6}>
-                          <Statistic
-                            title={t('pages.ledger.expected', {
-                              count: report?.payingClients ?? 0,
-                            })}
-                            value={money(report?.expectedIncome ?? 0)}
-                          />
-                        </Col>
-                      </Row>
-                    </Card>
-                  </Col>
-                  <Col xs={24} xl={12}>
-                    <Card
-                      size="small"
-                      title={t('pages.ledger.servers')}
-                      extra={
-                        <Button
-                          size="small"
-                          icon={<PlusOutlined aria-hidden />}
-                          onClick={() => openServer()}
-                        >
-                          {t('add')}
-                        </Button>
-                      }
-                    >
-                      <Table
-                        size="small"
-                        rowKey="id"
-                        pagination={false}
-                        scroll={{ x: true }}
-                        columns={serverColumns}
-                        dataSource={report?.servers ?? []}
-                      />
-                    </Card>
-                  </Col>
-                  <Col xs={24} xl={12}>
-                    <Card
-                      size="small"
-                      title={t('pages.ledger.entries')}
-                      extra={
-                        <Space>
-                          <Button size="small" onClick={() => openEntry('income')}>
-                            {t('pages.ledger.addIncome')}
-                          </Button>
-                          <Button size="small" onClick={() => openEntry('expense')}>
-                            {t('pages.ledger.addExpense')}
-                          </Button>
-                        </Space>
-                      }
-                    >
-                      <Table
-                        size="small"
-                        rowKey="id"
-                        pagination={false}
-                        scroll={{ x: true }}
-                        columns={entryColumns}
-                        dataSource={report?.entries ?? []}
-                      />
-                    </Card>
-                  </Col>
-                  <Col span={24}>
-                    <Card
-                      size="small"
-                      title={t('pages.ledger.payment')}
-                      extra={
-                        <Button
-                          size="small"
-                          type="primary"
-                          loading={post.isPending}
-                          onClick={paymentForm.handleSubmit(submitPayment)}
-                        >
-                          {t('save')}
-                        </Button>
-                      }
-                    >
-                      <FormProvider {...paymentForm}>
-                        <Form layout="vertical" component="div">
-                          <Row gutter={16}>
-                            <Col xs={14} md={6}>
-                              <FormField
-                                name="price"
-                                label={t('pages.ledger.price')}
-                                tooltip={t('pages.ledger.priceDesc')}
-                                rules={{
-                                  validate: rhfZodValidate(LedgerPaymentSchema.shape.price),
-                                }}
-                              >
-                                <InputNumber min={0} precision={0} style={{ width: '100%' }} />
-                              </FormField>
-                            </Col>
-                            <Col xs={10} md={4}>
-                              <FormField name="currency" label={t('pages.ledger.currency')}>
-                                <Input placeholder="RUB" />
-                              </FormField>
-                            </Col>
-                            <Col xs={24} md={14}>
-                              <FormField
-                                name="discounts"
-                                label={t('pages.ledger.discounts')}
-                                tooltip={t('pages.ledger.discountsDesc')}
-                              >
-                                <Input placeholder="3:10, 6:15, 12:20" />
-                              </FormField>
-                            </Col>
-                            <Col xs={24} md={6}>
-                              <FormField
-                                name="friendDiscount"
-                                label={t('pages.ledger.friendDiscount')}
-                                tooltip={t('pages.ledger.friendDiscountDesc')}
-                                rules={{
-                                  validate: rhfZodValidate(
-                                    LedgerPaymentSchema.shape.friendDiscount,
-                                  ),
-                                }}
-                              >
-                                <InputNumber
-                                  min={0}
-                                  max={99}
-                                  precision={0}
-                                  addonAfter="%"
+                <Tabs
+                  activeKey={activeTab}
+                  onChange={(key) => navigate({ hash: key === LEDGER_TABS[0] ? '' : key })}
+                  items={[
+                    {
+                      key: 'summary',
+                      label: t('pages.ledger.tabs.summary'),
+                      children: (
+                        <Row gutter={[isMobile ? 8 : 16, isMobile ? 8 : 12]}>
+                          <Col span={24}>
+                            <Space wrap>
+                              <Button
+                                icon={<LeftOutlined aria-hidden />}
+                                aria-label={t('pages.ledger.prevMonth')}
+                                onClick={() =>
+                                  setMonth(dayjs(month).subtract(1, 'month').format(MONTH_FORMAT))
+                                }
+                              />
+                              <DatePicker
+                                picker="month"
+                                aria-label={t('pages.ledger.month')}
+                                allowClear={false}
+                                value={dayjs(month)}
+                                onChange={(value) => value && setMonth(value.format(MONTH_FORMAT))}
+                              />
+                              <Button
+                                icon={<RightOutlined aria-hidden />}
+                                aria-label={t('pages.ledger.nextMonth')}
+                                onClick={() =>
+                                  setMonth(dayjs(month).add(1, 'month').format(MONTH_FORMAT))
+                                }
+                              />
+                            </Space>
+                          </Col>
+                          <Col span={24}>
+                            <Card size="small" className="summary-card">
+                              <Row gutter={[16, 12]}>
+                                <Col xs={12} md={6}>
+                                  <Statistic
+                                    title={t('pages.ledger.income')}
+                                    value={money(report?.income ?? 0)}
+                                  />
+                                </Col>
+                                <Col xs={12} md={6}>
+                                  <Statistic
+                                    title={t('pages.ledger.expenses')}
+                                    value={money(report?.expenses ?? 0)}
+                                  />
+                                </Col>
+                                <Col xs={12} md={6}>
+                                  <Statistic
+                                    title={t('pages.ledger.balance')}
+                                    value={money(report?.balance ?? 0)}
+                                    styles={{
+                                      content: {
+                                        color: (report?.balance ?? 0) >= 0 ? '#3f8600' : '#cf1322',
+                                      },
+                                    }}
+                                  />
+                                </Col>
+                                <Col xs={12} md={6}>
+                                  <Statistic
+                                    title={t('pages.ledger.expected', {
+                                      count: report?.payingClients ?? 0,
+                                    })}
+                                    value={money(report?.expectedIncome ?? 0)}
+                                  />
+                                </Col>
+                              </Row>
+                            </Card>
+                          </Col>
+                          <Col xs={24} xl={12}>
+                            <Card
+                              size="small"
+                              title={t('pages.ledger.servers')}
+                              extra={
+                                <Button
+                                  size="small"
+                                  icon={<PlusOutlined aria-hidden />}
+                                  onClick={() => openServer()}
+                                >
+                                  {t('add')}
+                                </Button>
+                              }
+                            >
+                              <Table
+                                size="small"
+                                rowKey="id"
+                                pagination={false}
+                                scroll={{ x: true }}
+                                columns={serverColumns}
+                                dataSource={report?.servers ?? []}
+                              />
+                            </Card>
+                          </Col>
+                          <Col xs={24} xl={12}>
+                            <Card
+                              size="small"
+                              title={t('pages.ledger.entries')}
+                              extra={
+                                <Space>
+                                  <Button size="small" onClick={() => openEntry('income')}>
+                                    {t('pages.ledger.addIncome')}
+                                  </Button>
+                                  <Button size="small" onClick={() => openEntry('expense')}>
+                                    {t('pages.ledger.addExpense')}
+                                  </Button>
+                                </Space>
+                              }
+                            >
+                              <Table
+                                size="small"
+                                rowKey="id"
+                                pagination={false}
+                                scroll={{ x: true }}
+                                columns={entryColumns}
+                                dataSource={report?.entries ?? []}
+                              />
+                            </Card>
+                          </Col>
+                        </Row>
+                      ),
+                    },
+                    {
+                      key: 'payment',
+                      label: t('pages.ledger.tabs.payment'),
+                      children: (
+                        <Row gutter={[isMobile ? 8 : 16, isMobile ? 8 : 12]}>
+                          <Col span={24}>
+                            <Card
+                              size="small"
+                              title={t('pages.ledger.payment')}
+                              extra={
+                                <Button
+                                  size="small"
+                                  type="primary"
+                                  loading={post.isPending}
+                                  onClick={paymentForm.handleSubmit(submitPayment)}
+                                >
+                                  {t('save')}
+                                </Button>
+                              }
+                            >
+                              <FormProvider {...paymentForm}>
+                                <Form layout="vertical" component="div">
+                                  <Row gutter={16}>
+                                    <Col xs={14} md={6}>
+                                      <FormField
+                                        name="price"
+                                        label={t('pages.ledger.price')}
+                                        tooltip={t('pages.ledger.priceDesc')}
+                                        rules={{
+                                          validate: rhfZodValidate(LedgerPaymentSchema.shape.price),
+                                        }}
+                                      >
+                                        <InputNumber
+                                          min={0}
+                                          precision={0}
+                                          style={{ width: '100%' }}
+                                        />
+                                      </FormField>
+                                    </Col>
+                                    <Col xs={10} md={4}>
+                                      <FormField name="currency" label={t('pages.ledger.currency')}>
+                                        <Input placeholder="RUB" />
+                                      </FormField>
+                                    </Col>
+                                    <Col xs={24} md={14}>
+                                      <FormField
+                                        name="discounts"
+                                        label={t('pages.ledger.discounts')}
+                                        tooltip={t('pages.ledger.discountsDesc')}
+                                      >
+                                        <Input placeholder="3:10, 6:15, 12:20" />
+                                      </FormField>
+                                    </Col>
+                                    <Col xs={24} md={6}>
+                                      <FormField
+                                        name="friendDiscount"
+                                        label={t('pages.ledger.friendDiscount')}
+                                        tooltip={t('pages.ledger.friendDiscountDesc')}
+                                        rules={{
+                                          validate: rhfZodValidate(
+                                            LedgerPaymentSchema.shape.friendDiscount,
+                                          ),
+                                        }}
+                                      >
+                                        <InputNumber
+                                          min={0}
+                                          max={99}
+                                          precision={0}
+                                          addonAfter="%"
+                                          style={{ width: '100%' }}
+                                        />
+                                      </FormField>
+                                    </Col>
+                                    <Col xs={24} md={6}>
+                                      <FormField
+                                        name="aiExitPrice"
+                                        label={t('pages.ledger.aiExitPrice')}
+                                        tooltip={t('pages.ledger.aiExitPriceDesc')}
+                                        rules={{
+                                          validate: rhfZodValidate(
+                                            LedgerPaymentSchema.shape.aiExitPrice,
+                                          ),
+                                        }}
+                                      >
+                                        <InputNumber
+                                          min={0}
+                                          precision={0}
+                                          style={{ width: '100%' }}
+                                        />
+                                      </FormField>
+                                    </Col>
+                                    <Col xs={24} md={18}>
+                                      <FormField
+                                        name="details"
+                                        label={t('pages.ledger.details')}
+                                        tooltip={t('pages.ledger.detailsDesc')}
+                                      >
+                                        <Input.TextArea autoSize={{ minRows: 2, maxRows: 6 }} />
+                                      </FormField>
+                                    </Col>
+                                  </Row>
+                                </Form>
+                              </FormProvider>
+                            </Card>
+                          </Col>
+                          <Col span={24}>
+                            <OnlinePaymentCard />
+                          </Col>
+                          <Col span={24}>
+                            <SpeedTiersCard />
+                          </Col>
+                        </Row>
+                      ),
+                    },
+                    {
+                      key: 'nonPaying',
+                      label: t('pages.ledger.tabs.nonPaying'),
+                      children: (
+                        <Row gutter={[isMobile ? 8 : 16, isMobile ? 8 : 12]}>
+                          <Col span={24}>
+                            <Card size="small" title={t('pages.ledger.nonPaying')}>
+                              <Space direction="vertical" style={{ width: '100%' }}>
+                                <Select
+                                  mode="multiple"
+                                  tagRender={selectTagRender}
                                   style={{ width: '100%' }}
+                                  placeholder={t('pages.ledger.freeGroups')}
+                                  aria-label={t('pages.ledger.freeGroups')}
+                                  value={report?.freeGroups ?? []}
+                                  options={(groupsQuery.data ?? []).map((g) => ({
+                                    value: g.name,
+                                    label: g.name,
+                                  }))}
+                                  onChange={setFreeGroups}
                                 />
-                              </FormField>
-                            </Col>
-                            <Col xs={24} md={6}>
-                              <FormField
-                                name="aiExitPrice"
-                                label={t('pages.ledger.aiExitPrice')}
-                                tooltip={t('pages.ledger.aiExitPriceDesc')}
-                                rules={{
-                                  validate: rhfZodValidate(LedgerPaymentSchema.shape.aiExitPrice),
-                                }}
-                              >
-                                <InputNumber min={0} precision={0} style={{ width: '100%' }} />
-                              </FormField>
-                            </Col>
-                            <Col xs={24} md={18}>
-                              <FormField
-                                name="details"
-                                label={t('pages.ledger.details')}
-                                tooltip={t('pages.ledger.detailsDesc')}
-                              >
-                                <Input.TextArea autoSize={{ minRows: 2, maxRows: 6 }} />
-                              </FormField>
-                            </Col>
-                          </Row>
-                        </Form>
-                      </FormProvider>
-                    </Card>
-                  </Col>
-                  <Col span={24}>
-                    <Card size="small" title={t('pages.ledger.nonPaying')}>
-                      <Space direction="vertical" style={{ width: '100%' }}>
-                        <Select
-                          mode="multiple"
-                          tagRender={selectTagRender}
-                          style={{ width: '100%' }}
-                          placeholder={t('pages.ledger.freeGroups')}
-                          aria-label={t('pages.ledger.freeGroups')}
-                          value={report?.freeGroups ?? []}
-                          options={(groupsQuery.data ?? []).map((g) => ({
-                            value: g.name,
-                            label: g.name,
-                          }))}
-                          onChange={setFreeGroups}
-                        />
-                        <Select
-                          showSearch
-                          style={{ width: '100%' }}
-                          placeholder={t('pages.ledger.markClient')}
-                          aria-label={t('pages.ledger.markClient')}
-                          value={markEmail}
-                          options={markable.map((email) => ({
-                            value: email,
-                            label: email,
-                          }))}
-                          onChange={(email: string) => markClient(email, true)}
-                        />
-                        <Table
-                          size="small"
-                          rowKey="email"
-                          pagination={false}
-                          columns={nonPayingColumns}
-                          dataSource={report?.nonPaying ?? []}
-                        />
-                      </Space>
-                    </Card>
-                  </Col>
-                </Row>
+                                <Select
+                                  showSearch
+                                  style={{ width: '100%' }}
+                                  placeholder={t('pages.ledger.markClient')}
+                                  aria-label={t('pages.ledger.markClient')}
+                                  value={markEmail}
+                                  options={markable.map((email) => ({
+                                    value: email,
+                                    label: email,
+                                  }))}
+                                  onChange={(email: string) => markClient(email, true)}
+                                />
+                                <Table
+                                  size="small"
+                                  rowKey="email"
+                                  pagination={false}
+                                  columns={nonPayingColumns}
+                                  dataSource={report?.nonPaying ?? []}
+                                />
+                              </Space>
+                            </Card>
+                          </Col>
+                        </Row>
+                      ),
+                    },
+                  ]}
+                />
               )}
             </Spin>
           </Layout.Content>

@@ -75,10 +75,11 @@ func TestUserExitGroupsOffersOnlyTheUsersCascadesAndMarksFullServers(t *testing.
 	}
 }
 
-func TestUserExitGroupsHonoursTheUsersMinimumSpeed(t *testing.T) {
+func TestUserExitGroupsHonoursTheUsersGuarantee(t *testing.T) {
 	initJoinDB(t)
 	seedUserExitWorld(t)
-	setNodeLoad(t, 2, 100, 70)
+	setNodeLoad(t, 2, 40, 0)
+	setNodeLoad(t, 3, 100, 90)
 	if err := (&SpeedService{}).SetClient(&ClientSpeedRequest{Email: "anna", MinMbps: 50}); err != nil {
 		t.Fatal(err)
 	}
@@ -87,7 +88,7 @@ func TestUserExitGroupsHonoursTheUsersMinimumSpeed(t *testing.T) {
 		t.Fatal(err)
 	}
 	if got := groupSummary(groups)["DE"]; !reflect.DeepEqual(got, map[int]bool{2: true, 3: false}) {
-		t.Fatalf("DE = %v, want node 2 saturated (30 Mbit/s free < 50 minimum)", got)
+		t.Fatalf("DE = %v, want node 2 saturated (a 40 Mbit/s link cannot guarantee 50), node 3 open (busy, but its link covers 50)", got)
 	}
 }
 
@@ -150,5 +151,27 @@ func TestBestExitPrefersMostFreeSpeedThenUnknownCapacityWithFewestUsers(t *testi
 	}
 	if _, ok := (UserExitGroup{Exits: []UserExit{{NodeId: 1, Saturated: true}}}).Best(); ok {
 		t.Fatal("a group of saturated servers must offer no auto pick")
+	}
+}
+
+// A server only the master lost still carries users, so it stays on offer; a dead
+// one leaves, and its country with it once no server there is left.
+func TestUserExitGroupsDropDeadServersAndEmptyCountries(t *testing.T) {
+	initJoinDB(t)
+	seedUserExitWorld(t)
+	db := database.GetDB()
+	for id, status := range map[int]string{2: model.NodeStatusIsolated, 3: model.NodeStatusOffline, 4: model.NodeStatusOffline} {
+		if err := db.Model(&model.Node{}).Where("id = ?", id).Update("status", status).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	groups, err := (&CascadeService{}).UserExitGroups([]string{"anna"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]map[int]bool{"DE": {2: false}}
+	if got := groupSummary(groups); !reflect.DeepEqual(got, want) {
+		t.Fatalf("groups (node -> saturated) = %v, want %v", got, want)
 	}
 }

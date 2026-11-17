@@ -13,8 +13,8 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/shaper"
 )
 
-func TestSpeedShortagesOnlyWhenNoServerHasRoom(t *testing.T) {
-	online := map[int][]string{0: {"anna", "bob", "carl"}, 3: {"dina"}}
+func TestSpeedShortagesOnlyWhenGuaranteesOverbookEveryServer(t *testing.T) {
+	users := map[int][]string{0: {"anna", "bob", "carl"}, 3: {"dina"}}
 	mins := map[string]int{"anna": 50, "bob": 10, "dina": 80}
 	cases := []struct {
 		name  string
@@ -22,25 +22,25 @@ func TestSpeedShortagesOnlyWhenNoServerHasRoom(t *testing.T) {
 		want  []SpeedShortage
 	}{
 		{
-			name:  "a server with room for its users raises nothing",
-			loads: map[int]serverLoad{0: {Capacity: 1000, Used: 400, Online: 3}, 3: {Capacity: 1000, Used: 0, Online: 1}},
+			name:  "servers whose link covers their users' guarantees raise nothing, however busy",
+			loads: map[int]serverLoad{0: {Capacity: 100, Used: 99, Online: 3, Reserved: 60}, 3: {Capacity: 100, Used: 99, Online: 1, Reserved: 80}},
 		},
 		{
-			name:  "a starved server is not reported while another one has room",
-			loads: map[int]serverLoad{0: {Capacity: 100, Used: 70, Online: 3}, 3: {Capacity: 1000, Used: 100, Online: 1}},
+			name:  "an overbooked server is not reported while another one can still guarantee",
+			loads: map[int]serverLoad{0: {Capacity: 50, Online: 3, Reserved: 60}, 3: {Capacity: 1000, Online: 1, Reserved: 80}},
 		},
 		{
-			name:  "every server short lists the users below their minimum",
-			loads: map[int]serverLoad{0: {Capacity: 100, Used: 70, Online: 3}, 3: {Capacity: 100, Used: 50, Online: 1}},
+			name:  "every server overbooked lists its guaranteed users",
+			loads: map[int]serverLoad{0: {Capacity: 50, Online: 3, Reserved: 60}, 3: {Capacity: 70, Online: 1, Reserved: 80}},
 			want: []SpeedShortage{
-				{NodeId: 0, FreePerUserMbps: 10, MinMbps: 50, Users: []string{"anna"}},
-				{NodeId: 3, FreePerUserMbps: 50, MinMbps: 80, Users: []string{"dina"}},
+				{NodeId: 0, FreePerUserMbps: 16.7, MinMbps: 50, Users: []string{"anna", "bob"}},
+				{NodeId: 3, FreePerUserMbps: 70, MinMbps: 80, Users: []string{"dina"}},
 			},
 		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			if got := speedShortages(tc.loads, online, mins); !reflect.DeepEqual(got, tc.want) {
+			if got := speedShortages(tc.loads, users, mins); !reflect.DeepEqual(got, tc.want) {
 				t.Fatalf("shortages = %+v, want %+v", got, tc.want)
 			}
 		})
@@ -56,10 +56,10 @@ func TestShapingPlansCapRecentIPsOnTheServerTheyWereSeenOn(t *testing.T) {
 		{NodeGuid: "de", Email: "bob", Ips: `[{"ip":"10.0.0.7","timestamp":9999}]`},
 		{NodeGuid: "gone", Email: "anna", Ips: `[{"ip":"10.0.0.8","timestamp":9999}]`},
 	}
-	got := shapingPlans(map[string]int{"anna": 20}, ips, map[string]int{"self": 0, "de": 3}, now)
+	got := shapingPlans(map[string]speedLimit{"anna": {Max: 20}, "bob": {Min: 100}}, ips, map[string]int{"self": 0, "de": 3}, now)
 	want := map[int]shaper.Plan{
 		0: {Limits: []shaper.Limit{{IP: "10.0.0.2", Mbps: 20}}},
-		3: {Limits: []shaper.Limit{{IP: "10.0.0.9", Mbps: 20}}},
+		3: {Limits: []shaper.Limit{{IP: "10.0.0.9", Mbps: 20}, {IP: "10.0.0.7", MinMbps: 100}}},
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("plans = %+v, want %+v", got, want)

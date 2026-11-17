@@ -26,9 +26,9 @@ type stickyView struct {
 	Healthy         map[int]bool
 	OnlineHere      map[string]bool
 	OnlineElsewhere map[string]bool
-	// FreeMbps is what a new user would get per exit (missing = capacity not
-	// set); MinMbps is each user's minimum speed.
-	FreeMbps map[int]float64
+	// RoomMbps is each exit's link minus its users' guarantees (missing =
+	// capacity not set); MinMbps is each user's guaranteed speed.
+	RoomMbps map[int]float64
 	MinMbps  map[string]int
 	// Fixed is each user's admin-chosen exit in this cascade.
 	Fixed map[string]int
@@ -36,8 +36,8 @@ type stickyView struct {
 
 // hasRoom reports whether exit id still leaves need Mbit/s for one more user.
 func (v stickyView) hasRoom(id, need int) bool {
-	free, known := v.FreeMbps[id]
-	return need == 0 || !known || free >= float64(need)
+	room, known := v.RoomMbps[id]
+	return need == 0 || !known || room >= float64(need)
 }
 
 // nextCascadePins returns the pins after one pass and whether any user moved,
@@ -236,30 +236,30 @@ func (s *CascadeService) StickCascadeUsers(ctx context.Context) {
 	ambiguous := ambiguousNodeGuids(nodes, selfGuid)
 	guidOf := map[int]string{0: selfGuid}
 	healthy := map[int]bool{0: true}
-	countryOf := map[int]string{}
 	for _, n := range nodes {
 		guidOf[n.Id] = effectiveNodeGuid(n, ambiguous)
-		healthy[n.Id] = n.Enable && n.Status == "online"
-		countryOf[n.Id] = n.Country
+		healthy[n.Id] = n.Serving()
 	}
 	byGuid := (&InboundService{}).GetOnlineClientsByGuid()
 	now := time.Now().Unix()
-	free, mins := map[int]float64{}, map[string]int{}
+	room := map[int]float64{}
 	world := &speedWorld{nodes: nodes, guidOf: guidOf, byGuid: byGuid}
+	if err := world.loadRoutes(); err != nil {
+		logger.Warning("cascade sticky: speed rules:", err)
+		return
+	}
 	if loads, err := world.loads(); err == nil {
 		for id, l := range loads {
-			free[id] = l.freeForNewUser()
+			room[id] = l.Capacity - l.Reserved
 		}
 	}
-	if m, err := minSpeeds(); err == nil {
-		mins = m
-	}
+	mins := guarantees(world.rules)
 	var fixed []model.CascadeFixedExit
 	if err := database.GetDB().Order("id asc").Find(&fixed).Error; err != nil {
 		logger.Warning("cascade sticky: list fixed exits:", err)
 		return
 	}
-	ai, err := aiCountryExits(fixed, countryOf)
+	ai, err := aiCountryExits(fixed, newExitWorld(nodes, rows))
 	if err != nil {
 		logger.Warning("cascade sticky: list AI countries:", err)
 		return
@@ -278,16 +278,16 @@ func (s *CascadeService) StickCascadeUsers(ctx context.Context) {
 			}
 			continue
 		}
-		view := stickyView{Now: now, Healthy: healthy, FreeMbps: free, MinMbps: mins}
+		view := stickyView{Now: now, Healthy: healthy, RoomMbps: room, MinMbps: mins}
 		if len(c.Links) >= 2 {
 			for _, l := range c.Links {
 				view.Exits = append(view.Exits, l.NodeId)
 			}
 			view.OnlineHere, view.OnlineElsewhere = cascadeOnline(c.EntryNodeId, byGuid, guidOf)
-			view.Fixed = fixedExitsIn(fixed, view.Exits, ai)
+			view.Fixed = fixedExitsIn(ai.Fixed, view.Exits, ai)
 		}
 		next, changed := nextCascadePins(old, view)
-		if key := aiRulesKey(c, ai.Domains, ai.Sites); appliedAIRules[c.Id] != key {
+		if key := aiRulesKey(c, ai); appliedAIRules[c.Id] != key {
 			appliedAIRules[c.Id], changed = key, true
 		}
 		if err := saveCascadePins(c.Id, old, next); err != nil {
