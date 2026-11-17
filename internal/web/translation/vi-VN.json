@@ -1391,11 +1391,11 @@
       },
       "speed": {
         "title": "Speed limits",
-        "desc": "Max caps a user's speed on every server they use. Min is the speed a server must still have free for the user: when a server drops below it, new connections go to another server of the cascade, and if no server has room the admin gets a Telegram alert. Set each server's link speed so free speed can be measured.",
+        "desc": "Max caps a user's speed. Min is guaranteed: on the server the user connects to, their downloads keep at least that much of the link (uploads can only be capped). Guarantees are counted on the cascade's entry and exit; when an exit cannot cover a new user's guarantee they go to another exit, and if no server can the admin gets a Telegram alert. A user's own speed replaces their group's. Set each server's link speed so guarantees and free speed can be measured.",
         "server": "Server",
         "capacity": "Link speed, Mbit/s",
         "load": "Load",
-        "loadValue": "{used} Mbit/s used, {online} online, {free} Mbit/s free per user",
+        "loadValue": "{used} Mbit/s used, {online} online, {free} Mbit/s free per user, {reserved} Mbit/s guaranteed",
         "user": "User",
         "min": "Min, Mbit/s",
         "max": "Max, Mbit/s",
@@ -1477,6 +1477,16 @@
         "addDbHost": "Database address for the new master",
         "addDbHostHint": "Fill in when this master reaches PostgreSQL over 127.0.0.1: the new master gets this address instead. PostgreSQL must accept connections from the new server (listen_addresses and pg_hba.conf).",
         "setupDbLocal": "XUI_DB_DSN still points to this server's own database (127.0.0.1 or a socket), which the new master cannot reach. Put the database address into the DSN, or add the master again with the database address filled in."
+      },
+      "groupSpeed": {
+        "title": "Speed by group",
+        "desc": "Every member of a group gets its speed unless the user has their own in the speed limits above. Min is guaranteed. With \"Floating from\" set, the max floats between that and Max: what the guarantees of the users on the server leave free, shared among the floating users, in 10 Mbit/s steps. A cascade user gets the smaller share of the entry and the exit.",
+        "group": "Group",
+        "floor": "Floating from, Mbit/s"
+      },
+      "tabs": {
+        "nodes": "Nodes",
+        "speed": "Speed"
       }
     },
     "settings": {
@@ -2197,7 +2207,7 @@
       },
       "eventSpeedLow": "Speed below user minimum",
       "eventMasterLeader": "Another master took over",
-      "tgPaymentMoved": "The price, discounts and where to pay are set on the Finance page.",
+      "tgPaymentMoved": "Prices, discounts, payment details, the free plan and online payment (YooKassa, which confirms payments by itself) are set on the Finance page, Prices and payment tab.",
       "tgFreePlanPrice": "Free plan price (online)",
       "tgFreePlanPriceDesc": "A one-off payment that keeps spam bots out. Above 0 and with a payment provider connected, a new user pays it by card in the bot and gets the free plan automatically, with no admin approval; the amount comes off their first paid plan. 0, or no provider, keeps the free request that an admin approves.",
       "tgFreePlanInbounds": "Inbounds for paid free plans",
@@ -2949,7 +2959,18 @@
       "nodeHint": "Pick the node this server runs; its address is shown and follows the node's settings. For a server that is not a node (e.g. this panel) type the IP below.",
       "noNode": "— not a node —",
       "aiExitPrice": "AI button price",
-      "aiExitPriceDesc": "One-off price of the bot's \"🤖 I will use AI\" button (a permanent exit IP). Friends always get it free. 0 hides it from everyone else. It is paid by card when a provider is connected, or by hand to the payment details with an admin's confirm in the bot. Clients who already paid keep it."
+      "aiExitPriceDesc": "One-off price of the bot's \"🤖 I will use AI\" button (a permanent exit IP). Friends always get it free. 0 hides it from everyone else. It is paid by card when a provider is connected, or by hand to the payment details with an admin's confirm in the bot. Clients who already paid keep it.",
+      "tabs": {
+        "summary": "Servers and totals",
+        "payment": "Prices and payment",
+        "nonPaying": "Not paying"
+      },
+      "speedTiers": {
+        "title": "Speed tiers",
+        "desc": "A speed upgrade clients can buy in the bot when they pay: its price is added to every month of the term, and its minimum is guaranteed until the term ends. It beats the group's speed; a speed set on the client itself still wins. Deleting a tier returns its buyers to their group's speed.",
+        "name": "Name",
+        "price": "Price per month"
+      }
     },
     "aiDomains": {
       "list": "Sites for the AI pin",
@@ -3179,7 +3200,8 @@
       "aiOutageNoUse": "How should the server not be used while it is down?\r\n\r\n🚫 Not at all: your VPN is off until it is back.\r\n🤖 For AI only: the AI services you tick are cut off, the rest goes through other servers.",
       "aiOutagePickCountry": "There is no live server left in that country. Which country should the temporary IP come from?",
       "aiOutageNoCountry": "No other country has a live server either, so AI services stay blocked for now.",
-      "aiOutageServices": "Tick the AI services to cut off while the server is down:"
+      "aiOutageServices": "Tick the AI services to cut off while the server is down:",
+      "paymentReportedTier": "{{ .Total }}, speed {{ .Name }} from {{ .Mbps }} Mbit/s"
     },
     "buttons": {
       "closeKeyboard": "❌ Đóng Bàn Phím",
@@ -3287,7 +3309,9 @@
       "aiOutageNoUse": "🚫 Don't use it",
       "aiOutageOff": "🚫 Not at all",
       "aiOutageBlock": "🤖 For AI only",
-      "aiOutageAll": "✅ All AI services"
+      "aiOutageAll": "✅ All AI services",
+      "tierNone": "Standard speed",
+      "tierOption": "{{ .Name }}: from {{ .Mbps }} Mbit/s, +{{ .Total }}/mo"
     },
     "answers": {
       "broadcastStarted": "🚀 Đã bắt đầu phát tin.",
@@ -3386,7 +3410,11 @@
       "orderDescription": "VPN {{ .Email }}, {{ .Months }} mo",
       "aiExitDescription": "VPN: permanent exit IP for AI services",
       "aiExitInvoice": "🧾 <b>🤖 I will use AI</b>: a permanent exit IP, so AI services do not block your account — {{ .Total }} once, yours for good.\r\nThe button unlocks automatically after payment.",
-      "aiExitManual": "🧾 <b>🤖 I will use AI</b>: a permanent exit IP, so AI services do not block your account — {{ .Total }} once, yours for good.\r\n🏦 Where to pay:\r\n{{ .Details }}\r\n\r\nThen tap \"I paid\": the button opens once an admin confirms the payment."
+      "aiExitManual": "🧾 <b>🤖 I will use AI</b>: a permanent exit IP, so AI services do not block your account — {{ .Total }} once, yours for good.\r\n🏦 Where to pay:\r\n{{ .Details }}\r\n\r\nThen tap \"I paid\": the button opens once an admin confirms the payment.",
+      "tiersTitle": "⚡ Faster speed, added to every month:\r\n",
+      "tier": "• {{ .Name }}: at least {{ .Mbps }} Mbit/s, +{{ .Total }} a month\r\n",
+      "tierCurrent": "Your speed now: {{ .Name }}.\r\n",
+      "chooseTier": "⚡ Which speed do you pay for? A faster tier adds its price to every month of the term."
     },
     "ledger": {
       "summary": "💰 <b>Finance for {{ .Month }}</b>\r\n\r\n➕ Income: {{ .Income }}\r\n➖ Expenses: {{ .Expenses }} (servers {{ .Servers }})\r\n{{ .Sign }} <b>Result: {{ .Balance }}</b>\r\n👥 Paying clients: {{ .Paying }}, expected {{ .Expected }}\r\n",

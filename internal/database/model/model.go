@@ -1194,6 +1194,10 @@ type ClientBilling struct {
 	Credit int `json:"credit" gorm:"column:credit;default:0"`
 	// AIPaid is the one-off purchase of the bot's AI button (a permanent exit IP).
 	AIPaid bool `json:"aiPaid" gorm:"column:ai_paid;default:false"`
+	// SpeedTierId is the speed tier paid with the current term; 0 = the group's speed.
+	SpeedTierId int `json:"speedTierId" gorm:"column:speed_tier_id;default:0"`
+	// PendingSpeedTier is the tier of the term in PendingMonths, claimed together with it.
+	PendingSpeedTier int `json:"pendingSpeedTier" gorm:"column:pending_speed_tier;default:0"`
 }
 
 // PaymentOrder is one online payment through the acquiring provider: a plan term
@@ -1208,6 +1212,7 @@ type PaymentOrder struct {
 	TgID      int64  `json:"tgId" gorm:"column:tg_id;index"`
 	Email     string `json:"email" gorm:"default:''"`
 	Months    int    `json:"months" gorm:"default:0"`
+	SpeedTier int    `json:"speedTier" gorm:"column:speed_tier;default:0"`
 	Amount    int    `json:"amount" gorm:"not null"`
 	Currency  string `json:"currency" gorm:"not null"`
 	// Status moves pending -> paid -> done (or canceled/failed); each step is a guarded UPDATE.

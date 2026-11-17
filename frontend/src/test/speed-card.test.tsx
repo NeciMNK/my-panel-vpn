@@ -12,7 +12,16 @@ describe('speedServerRows', () => {
       {
         clients: null,
         servers: [{ nodeId: 3, capacityMbps: 1000 }],
-        load: [{ nodeId: 3, capacityMbps: 1000, usedMbps: 400, online: 5, freePerUserMbps: 120 }],
+        load: [
+          {
+            nodeId: 3,
+            capacityMbps: 1000,
+            usedMbps: 400,
+            online: 5,
+            freePerUserMbps: 120,
+            reservedMbps: 0,
+          },
+        ],
       },
     );
     expect(rows.map((r) => [r.name, r.capacityMbps, r.load?.freePerUserMbps])).toEqual([

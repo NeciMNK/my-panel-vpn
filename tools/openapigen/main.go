@@ -30,6 +30,8 @@ func run(root, outDir string) error {
 				"HomeAccessRule",
 				"WarpSwitch",
 				"ClientSpeed",
+				"GroupSpeed",
+				"SpeedTier",
 				"ServerCapacity",
 				"SpeedTestResult",
 				"User",

@@ -49,6 +49,8 @@ type paymentInfo struct {
 	friendDiscount int
 	// online is true when an acquiring provider takes payments and confirms them itself.
 	online bool
+	// tiers are the speed upgrades a term can be paid with, a surcharge per month.
+	tiers []model.SpeedTier
 }
 
 // billed is false while the admin set neither a price nor details: the panel then bills nobody.
@@ -68,12 +70,26 @@ func (p paymentInfo) plan(months int) (entity.PaymentPlan, bool) {
 	return p.plans[i], true
 }
 
-// planTotal is the plan's price for this client as text, or "" when no price is set.
-func (p paymentInfo) planTotal(plan entity.PaymentPlan, billing *model.ClientBilling) string {
+// tier is the listed speed tier with id; 0 (no tier) and unknown ids are not.
+func (p paymentInfo) tier(id int) (model.SpeedTier, bool) {
+	i := slices.IndexFunc(p.tiers, func(t model.SpeedTier) bool { return t.Id == id })
+	if i < 0 {
+		return model.SpeedTier{}, false
+	}
+	return p.tiers[i], true
+}
+
+// planTotal is the plan's price with speed tier tierID for this client as text,
+// or "" when no price is set.
+func (p paymentInfo) planTotal(plan entity.PaymentPlan, billing *model.ClientBilling, tierID int) string {
 	if p.price <= 0 {
 		return ""
 	}
-	return p.money(service.ClientPrice(plan.Total(p.price), billing, p.friendDiscount))
+	total := plan.Total(p.price)
+	if tier, ok := p.tier(tierID); ok {
+		total += tier.MonthlyPrice * plan.Months
+	}
+	return p.money(service.ClientPrice(total, billing, p.friendDiscount))
 }
 
 func (t *Tgbot) loadPaymentInfo() paymentInfo {
@@ -83,6 +99,11 @@ func (t *Tgbot) loadPaymentInfo() paymentInfo {
 	info.details = strings.TrimSpace(details)
 	info.friendDiscount = t.billingService.FriendDiscount()
 	info.online = t.paymentOrderService.Online()
+	tiers, err := t.billingService.SpeedTiers()
+	if err != nil {
+		logger.Warning("Unable to read speed tiers:", err)
+	}
+	info.tiers = tiers
 	return info
 }
 
@@ -151,6 +172,16 @@ func (t *Tgbot) paymentBlock(info paymentInfo, traffics []*xray.ClientTraffic) s
 		for _, plan := range info.plans {
 			b.WriteString(t.planLine(info, plan, owner))
 		}
+		if len(info.tiers) > 0 {
+			b.WriteString(t.I18nBot("tgbot.payment.tiersTitle"))
+			for _, tier := range info.tiers {
+				b.WriteString(t.I18nBot("tgbot.payment.tier", "Name=="+html.EscapeString(tier.Name),
+					"Mbps=="+strconv.Itoa(tier.MinMbps), "Total=="+info.money(tier.MonthlyPrice)))
+			}
+			if tier, ok := info.tier(owner.SpeedTierId); ok {
+				b.WriteString(t.I18nBot("tgbot.payment.tierCurrent", "Name=="+html.EscapeString(tier.Name)))
+			}
+		}
 	}
 	if info.details != "" {
 		b.WriteString(t.I18nBot("tgbot.payment.details", "Details=="+info.details))
@@ -159,7 +190,7 @@ func (t *Tgbot) paymentBlock(info paymentInfo, traffics []*xray.ClientTraffic) s
 }
 
 func (t *Tgbot) planLine(info paymentInfo, plan entity.PaymentPlan, billing *model.ClientBilling) string {
-	params := []string{"Months==" + strconv.Itoa(plan.Months), "Total==" + info.planTotal(plan, billing)}
+	params := []string{"Months==" + strconv.Itoa(plan.Months), "Total==" + info.planTotal(plan, billing, 0)}
 	if plan.DiscountPercent > 0 {
 		return t.I18nBot("tgbot.payment.planDiscounted", append(params, "Percent=="+strconv.Itoa(plan.DiscountPercent))...)
 	}
@@ -272,32 +303,71 @@ func userLabel(user telego.User) string {
 	return id
 }
 
-// screenPlanPicker asks which term the client paid for, so the admin confirms
-// exactly that term instead of guessing it from the amount received.
-func (t *Tgbot) screenPlanPicker(chatID, userID int64) {
+// tierRows offer every speed tier, and the group's own speed first, as one
+// button each; data is the callback prefix the chosen tier id is appended to.
+func (t *Tgbot) tierRows(info paymentInfo, data string) [][]telego.InlineKeyboardButton {
+	rows := [][]telego.InlineKeyboardButton{tu.InlineKeyboardRow(t.btn("tgbot.buttons.tierNone", data+"0"))}
+	for _, tier := range info.tiers {
+		label := t.I18nBot("tgbot.buttons.tierOption", "Name=="+tier.Name,
+			"Mbps=="+strconv.Itoa(tier.MinMbps), "Total=="+info.money(tier.MonthlyPrice))
+		rows = append(rows, tu.InlineKeyboardRow(t.btn2(label, data+strconv.Itoa(tier.Id))))
+	}
+	return rows
+}
+
+// screenPlanPicker asks which term (and, when tiers exist, which speed first) the
+// client paid for, so the admin confirms exactly that instead of guessing from the amount.
+func (t *Tgbot) screenPlanPicker(chatID, userID int64, tierID int, tierChosen bool) {
 	info := t.loadPaymentInfo()
+	if len(info.tiers) > 0 && !tierChosen {
+		t.renderScreen(chatID, t.newScreen("pay", t.I18nBot("tgbot.payment.chooseTier"), t.tierRows(info, cbClientPaid+" s")...))
+		return
+	}
 	owner := t.ownerBilling(userID)
 	rows := make([][]telego.InlineKeyboardButton, 0, len(info.plans))
 	for _, plan := range info.plans {
 		label := t.I18nBot("tgbot.buttons.planOption", "Months=="+strconv.Itoa(plan.Months))
-		if total := info.planTotal(plan, owner); total != "" {
+		if total := info.planTotal(plan, owner, tierID); total != "" {
 			label += " · " + total
 		}
-		rows = append(rows, tu.InlineKeyboardRow(t.btn2(label, cbClientPaid+" "+strconv.Itoa(plan.Months))))
+		rows = append(rows, tu.InlineKeyboardRow(t.btn2(label,
+			cbClientPaid+" "+strconv.Itoa(plan.Months)+" "+strconv.Itoa(tierID))))
 	}
 	rows = append(rows, t.backTo(cbClientPay))
 	t.renderScreen(chatID, t.newScreen("pay", t.I18nBot("tgbot.payment.choosePlan"), rows...))
 }
 
+// answerClientPaid walks "client_paid s<tier>" (speed chosen, now the term) and
+// "client_paid <months> [tier]" (the report itself).
+func (t *Tgbot) answerClientPaid(callbackQuery *telego.CallbackQuery, args string) {
+	if tierText, ok := strings.CutPrefix(args, "s"); ok {
+		tierID, err := strconv.Atoi(tierText)
+		if _, listed := t.loadPaymentInfo().tier(tierID); err != nil || tierID != 0 && !listed {
+			t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
+			return
+		}
+		t.answerSilent(callbackQuery.ID)
+		t.screenPlanPicker(callbackQuery.Message.GetChat().ID, callbackQuery.From.ID, tierID, true)
+		return
+	}
+	months, tierText, _ := strings.Cut(args, " ")
+	if tierText == "" {
+		tierText = "0"
+	}
+	t.reportClientPayment(callbackQuery, months, tierText)
+}
+
 // reportClientPayment pages every admin with a one-tap confirmation per
 // subscription the client owns, for the term the client says it paid.
-func (t *Tgbot) reportClientPayment(callbackQuery *telego.CallbackQuery, monthsText string) {
+func (t *Tgbot) reportClientPayment(callbackQuery *telego.CallbackQuery, monthsText, tierText string) {
 	from := callbackQuery.From
 	info := t.loadPaymentInfo()
 	months, _ := strconv.Atoi(monthsText)
 	plan, known := info.plan(months)
+	tierID, tierErr := strconv.Atoi(tierText)
+	tier, tierListed := info.tier(tierID)
 	traffics, err := t.inboundService.GetClientTrafficTgBot(from.ID)
-	if !known || err != nil || len(traffics) == 0 {
+	if !known || tierErr != nil || tierID != 0 && !tierListed || err != nil || len(traffics) == 0 {
 		t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
 		return
 	}
@@ -305,13 +375,13 @@ func (t *Tgbot) reportClientPayment(callbackQuery *telego.CallbackQuery, monthsT
 		t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.paymentAlreadyReported"))
 		return
 	}
-	total := info.planTotal(plan, t.billingFor(traffics[0].Email))
+	total := info.planTotal(plan, t.billingFor(traffics[0].Email), tierID)
 	if total == "" {
 		total = "—"
 	}
-	report := &paymentReport{months: monthsText}
+	report := &paymentReport{months: monthsText, tier: strconv.Itoa(tierID)}
 	for _, traffic := range traffics {
-		if err := t.clientService.SetPendingPayment(t.billingFor(traffic.Email).ClientId, months); err != nil {
+		if err := t.clientService.SetPendingPayment(t.billingFor(traffic.Email).ClientId, months, tierID); err != nil {
 			logger.Warning("reportClientPayment: saving the pending report failed:", err)
 			continue
 		}
@@ -321,10 +391,14 @@ func (t *Tgbot) reportClientPayment(callbackQuery *telego.CallbackQuery, monthsT
 	for _, email := range report.emails {
 		escaped = append(escaped, html.EscapeString(email))
 	}
+	if tierListed {
+		total = t.I18nBot("tgbot.messages.paymentReportedTier", "Total=="+total,
+			"Name=="+html.EscapeString(tier.Name), "Mbps=="+strconv.Itoa(tier.MinMbps))
+	}
 	msg := t.I18nBot("tgbot.messages.paymentReported",
 		"User=="+userLabel(from), "Months=="+monthsText, "Total=="+total) + strings.Join(escaped, ", ")
 	report.text = msg
-	rows := t.paymentReportRows(report.emails, monthsText)
+	rows := t.paymentReportRows(report.emails, report.months, report.tier)
 	for _, admin := range adminSnapshot() {
 		if id := t.SendMsgToTgbot(admin, msg, tu.InlineKeyboard(rows...)); id != 0 {
 			report.notices = append(report.notices, paymentNotice{chatID: admin, msgID: id})
@@ -338,25 +412,26 @@ func (t *Tgbot) reportClientPayment(callbackQuery *telego.CallbackQuery, monthsT
 
 // confirmPayment is the admin's tap on a payment report: it claims the report
 // once, applies the payment like the API does, then tells the client.
-func (t *Tgbot) confirmPayment(callbackQuery *telego.CallbackQuery, email, monthsText string) {
+func (t *Tgbot) confirmPayment(callbackQuery *telego.CallbackQuery, email, monthsText, tierText string) {
 	chatID := callbackQuery.Message.GetChat().ID
 	months, err := strconv.Atoi(monthsText)
+	tierID, tierErr := strconv.Atoi(tierText)
 	billing, billingErr := t.clientService.GetBillingByEmail(email)
-	if err != nil || months <= 0 || billingErr != nil {
+	if err != nil || tierErr != nil || months <= 0 || billingErr != nil {
 		t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
 		return
 	}
-	claimed, err := t.clientService.ClaimPendingPayment(billing.ClientId, months)
+	claimed, err := t.clientService.ClaimPendingPayment(billing.ClientId, months, tierID)
 	if err != nil || !claimed {
 		t.retireStaleConfirm(callbackQuery)
 		t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.paymentAlreadyConfirmed", "Email=="+email))
 		return
 	}
 	note := t.I18nBot("tgbot.ledger.paymentNote", "Months=="+strconv.Itoa(months))
-	result, err := t.billingService.ApplyPayment(email, months, note, time.Now())
+	result, err := t.billingService.ApplyPayment(email, months, tierID, note, time.Now())
 	if err != nil {
 		logger.Warning("confirmPayment:", err)
-		t.restorePendingPayment(billing.ClientId, months)
+		t.restorePendingPayment(billing.ClientId, months, tierID)
 		t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
 		return
 	}
@@ -386,6 +461,7 @@ type paymentNotice struct {
 type paymentReport struct {
 	text    string
 	months  string
+	tier    string
 	emails  []string
 	notices []paymentNotice
 }
@@ -468,7 +544,7 @@ func (t *Tgbot) closePaymentNotices(email, line string) {
 	if !ok {
 		return
 	}
-	rows := t.paymentReportRows(report.emails, report.months)
+	rows := t.paymentReportRows(report.emails, report.months, report.tier)
 	for _, notice := range report.notices {
 		t.editMessageTgBot(notice.chatID, notice.msgID, report.text, tu.InlineKeyboard(rows...))
 	}
@@ -476,25 +552,26 @@ func (t *Tgbot) closePaymentNotices(email, line string) {
 
 // paymentReportRows are an admin's answers to a report: a confirm per subscription
 // still pending, one refusal for the whole transfer, and Hide.
-func (t *Tgbot) paymentReportRows(pending []string, months string) [][]telego.InlineKeyboardButton {
+func (t *Tgbot) paymentReportRows(pending []string, months, tier string) [][]telego.InlineKeyboardButton {
 	rows := make([][]telego.InlineKeyboardButton, 0, len(pending)+2)
 	for _, email := range pending {
 		rows = append(rows, tu.InlineKeyboardRow(t.btn2(
 			t.I18nBot("tgbot.buttons.confirmPayment", "Email=="+email, "Months=="+months),
-			t.encodeQuery("pay_ok "+email+" "+months))))
+			t.encodeQuery("pay_ok "+email+" "+months+" "+tier))))
 	}
 	if len(pending) > 0 {
 		rows = append(rows, tu.InlineKeyboardRow(t.btn("tgbot.buttons.paymentNotReceived",
-			t.encodeQuery("pay_no "+pending[0]+" "+months))))
+			t.encodeQuery("pay_no "+pending[0]+" "+months+" "+tier))))
 	}
 	return append(rows, t.hideButton().InlineKeyboard...)
 }
 
 // refusePayment is the admin's "not received": it withdraws every subscription
 // still pending in the report, so no later confirm applies it, and tells the client.
-func (t *Tgbot) refusePayment(callbackQuery *telego.CallbackQuery, email, monthsText string) {
+func (t *Tgbot) refusePayment(callbackQuery *telego.CallbackQuery, email, monthsText, tierText string) {
 	months, err := strconv.Atoi(monthsText)
-	if err != nil || months <= 0 {
+	tierID, tierErr := strconv.Atoi(tierText)
+	if err != nil || tierErr != nil || months <= 0 {
 		t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
 		return
 	}
@@ -512,7 +589,7 @@ func (t *Tgbot) refusePayment(callbackQuery *telego.CallbackQuery, email, months
 		if err != nil {
 			continue
 		}
-		claimed, err := t.clientService.ClaimPendingPayment(billing.ClientId, months)
+		claimed, err := t.clientService.ClaimPendingPayment(billing.ClientId, months, tierID)
 		if err != nil {
 			logger.Warning("refusePayment:", err)
 		}
@@ -550,8 +627,8 @@ func (t *Tgbot) reportEmails(email string) []string {
 }
 
 // restorePendingPayment re-arms a claimed report whose term was not applied, so an admin can retry it.
-func (t *Tgbot) restorePendingPayment(clientID, months int) {
-	if err := t.clientService.SetPendingPayment(clientID, months); err != nil {
+func (t *Tgbot) restorePendingPayment(clientID, months, tierID int) {
+	if err := t.clientService.SetPendingPayment(clientID, months, tierID); err != nil {
 		logger.Warning("confirmPayment: restoring the pending report failed:", err)
 	}
 }

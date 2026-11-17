@@ -2453,6 +2453,16 @@ export const SCHEMAS: Record<string, unknown> = {
         },
         "type": "array"
       },
+      "speedTierId": {
+        "example": 0,
+        "type": "integer"
+      },
+      "speedTiers": {
+        "items": {
+          "$ref": "#/components/schemas/SpeedTier"
+        },
+        "type": "array"
+      },
       "trusted": {
         "example": false,
         "type": "boolean"
@@ -2469,6 +2479,8 @@ export const SCHEMAS: Record<string, unknown> = {
       "nonPaying",
       "pendingMonths",
       "plans",
+      "speedTierId",
+      "speedTiers",
       "trusted"
     ],
     "type": "object"
@@ -3281,6 +3293,39 @@ export const SCHEMAS: Record<string, unknown> = {
     "required": [
       "reason",
       "token"
+    ],
+    "type": "object"
+  },
+  "GroupSpeed": {
+    "description": "GroupSpeed is the speed every member of a client group gets unless the client\nhas its own ClientSpeed. FloorMbps \u003e 0 makes MaxMbps float between it and MaxMbps.",
+    "properties": {
+      "floorMbps": {
+        "example": 50,
+        "type": "integer"
+      },
+      "group": {
+        "example": "users",
+        "type": "string"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "maxMbps": {
+        "example": 100,
+        "type": "integer"
+      },
+      "minMbps": {
+        "example": 0,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "floorMbps",
+      "group",
+      "id",
+      "maxMbps",
+      "minMbps"
     ],
     "type": "object"
   },
@@ -5857,7 +5902,7 @@ export const SCHEMAS: Record<string, unknown> = {
     "type": "object"
   },
   "ServerFreeSpeed": {
-    "description": "ServerFreeSpeed is the live load of a server with a known capacity.",
+    "description": "ServerFreeSpeed is the live load of a server with a known capacity;\nReservedMbps is what the guarantees of the users it carries add up to.",
     "properties": {
       "capacityMbps": {
         "example": 1000,
@@ -5875,6 +5920,10 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": 12,
         "type": "integer"
       },
+      "reservedMbps": {
+        "example": 300,
+        "type": "integer"
+      },
       "usedMbps": {
         "example": 420.5,
         "type": "number"
@@ -5885,6 +5934,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "freePerUserMbps",
       "nodeId",
       "online",
+      "reservedMbps",
       "usedMbps"
     ],
     "type": "object"
@@ -6066,6 +6116,12 @@ export const SCHEMAS: Record<string, unknown> = {
         },
         "type": "array"
       },
+      "groups": {
+        "items": {
+          "$ref": "#/components/schemas/GroupSpeed"
+        },
+        "type": "array"
+      },
       "load": {
         "items": {
           "$ref": "#/components/schemas/ServerFreeSpeed"
@@ -6095,15 +6151,23 @@ export const SCHEMAS: Record<string, unknown> = {
           "type": "integer"
         },
         "type": "array"
+      },
+      "tiers": {
+        "items": {
+          "$ref": "#/components/schemas/SpeedTier"
+        },
+        "type": "array"
       }
     },
     "required": [
       "clients",
+      "groups",
       "load",
       "servers",
       "testSettings",
       "testStats",
-      "testing"
+      "testing",
+      "tiers"
     ],
     "type": "object"
   },
@@ -6252,6 +6316,34 @@ export const SCHEMAS: Record<string, unknown> = {
       "maxDownloadMbps",
       "minDownloadMbps",
       "nodeId"
+    ],
+    "type": "object"
+  },
+  "SpeedTier": {
+    "description": "SpeedTier is a paid speed upgrade: a guaranteed MinMbps for MonthlyPrice on\ntop of every month of the client's term.",
+    "properties": {
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "minMbps": {
+        "example": 200,
+        "type": "integer"
+      },
+      "monthlyPrice": {
+        "example": 100,
+        "type": "integer"
+      },
+      "name": {
+        "example": "Plus",
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "minMbps",
+      "monthlyPrice",
+      "name"
     ],
     "type": "object"
   },

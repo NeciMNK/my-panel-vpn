@@ -46,7 +46,8 @@ func (t *Tgbot) answerOnlinePayment(query *telego.CallbackQuery, data string) bo
 	return true
 }
 
-// onlinePayStep walks subscription -> term -> invoice: "pay_card", "pay_card <email>", "pay_card <email> <months>".
+// onlinePayStep walks subscription -> speed tier -> term -> invoice: "pay_card",
+// "pay_card <email>", "pay_card <email> s<tier>", "pay_card <email> <months> [tier]".
 func (t *Tgbot) onlinePayStep(query *telego.CallbackQuery, args []string) {
 	chatID, userID := query.Message.GetChat().ID, query.From.ID
 	traffics, err := t.inboundService.GetClientTrafficTgBot(userID)
@@ -69,13 +70,29 @@ func (t *Tgbot) onlinePayStep(query *telego.CallbackQuery, args []string) {
 		return
 	}
 	info := t.loadPaymentInfo()
-	if len(args) == 1 {
+	if len(args) == 1 && len(info.tiers) > 0 {
+		rows := t.tierRows(info, cbPayOnline+" "+email+" s")
+		for i := range rows {
+			rows[i][0].CallbackData = t.encodeQuery(rows[i][0].CallbackData)
+		}
+		t.renderScreen(chatID, t.newScreen("pay", t.I18nBot("tgbot.payment.chooseTier"), rows...))
+		return
+	}
+	tierID := 0
+	if len(args) == 1 || strings.HasPrefix(args[1], "s") {
+		if len(args) > 1 {
+			id, err := strconv.Atoi(strings.TrimPrefix(args[1], "s"))
+			if _, listed := info.tier(id); err != nil || id != 0 && !listed {
+				return
+			}
+			tierID = id
+		}
 		billing := t.billingFor(email)
 		rows := make([][]telego.InlineKeyboardButton, 0, len(info.plans))
 		for _, plan := range info.plans {
-			label := t.I18nBot("tgbot.buttons.planOption", "Months=="+strconv.Itoa(plan.Months)) + " · " + info.planTotal(plan, billing)
+			label := t.I18nBot("tgbot.buttons.planOption", "Months=="+strconv.Itoa(plan.Months)) + " · " + info.planTotal(plan, billing, tierID)
 			rows = append(rows, tu.InlineKeyboardRow(t.btn2(label,
-				t.encodeQuery(cbPayOnline+" "+email+" "+strconv.Itoa(plan.Months)))))
+				t.encodeQuery(cbPayOnline+" "+email+" "+strconv.Itoa(plan.Months)+" "+strconv.Itoa(tierID)))))
 		}
 		t.renderScreen(chatID, t.newScreen("pay", t.I18nBot("tgbot.payment.chooseOnlinePlan", "Email=="+html.EscapeString(email)), rows...))
 		return
@@ -84,13 +101,20 @@ func (t *Tgbot) onlinePayStep(query *telego.CallbackQuery, args []string) {
 	if _, listed := info.plan(months); err != nil || !listed {
 		return
 	}
+	if len(args) > 2 {
+		id, err := strconv.Atoi(args[2])
+		if _, listed := info.tier(id); err != nil || id != 0 && !listed {
+			return
+		}
+		tierID = id
+	}
 	if !invoiceOpens.allow(userID, time.Now()) {
 		return
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), invoiceWindow)
 	defer cancel()
 	desc := t.I18nBot("tgbot.payment.orderDescription", "Email=="+email, "Months=="+strconv.Itoa(months))
-	order, err := t.paymentOrderService.CreatePlanOrder(ctx, userID, email, months, desc, t.paymentReturnURL())
+	order, err := t.paymentOrderService.CreatePlanOrder(ctx, userID, email, months, tierID, desc, t.paymentReturnURL())
 	if err != nil {
 		logger.Warning("online payment: opening an invoice for", email, "failed:", err)
 		t.sendNotice(chatID, t.I18nBot("tgbot.answers.paymentUnavailable"))

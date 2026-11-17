@@ -20,7 +20,7 @@ type UserExit struct {
 	Name    string
 	Address string
 	// Saturated is true when the server's known capacity leaves no speed for
-	// one more user (below their minimum, or nothing at all).
+	// one more user, or cannot also cover their guarantee.
 	Saturated bool
 	FreeMbps  float64
 	Capacity  bool
@@ -99,10 +99,7 @@ func (s *CascadeService) UserExitGroups(emails []string) ([]UserExitGroup, error
 	if err != nil {
 		return nil, err
 	}
-	mins, err := minSpeeds()
-	if err != nil {
-		return nil, err
-	}
+	mins := guarantees(world.rules)
 	need := 0
 	for _, e := range emails {
 		need = max(need, mins[e])
@@ -127,8 +124,11 @@ func (s *CascadeService) UserExitGroups(emails []string) ([]UserExitGroup, error
 			exit.Name, exit.Address, country = n.Name, n.Address, n.Country
 		}
 		if l, known := loads[id]; known {
+			if slices.ContainsFunc(world.users(id), func(e string) bool { return slices.Contains(emails, e) }) {
+				l.Reserved -= float64(need)
+			}
 			exit.Capacity, exit.FreeMbps = true, l.freeForNewUser()
-			exit.Saturated = exit.FreeMbps <= 0 || exit.FreeMbps < float64(need)
+			exit.Saturated = exit.FreeMbps <= 0 || !l.roomFor(need)
 		}
 		exit.Pinned = slices.ContainsFunc(pins, func(p model.CascadeFixedExit) bool { return p.NodeId == id })
 		byCountry[country] = append(byCountry[country], exit)

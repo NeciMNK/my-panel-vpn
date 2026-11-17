@@ -1939,7 +1939,7 @@ export const sections: readonly Section[] = [
         method: 'GET',
         path: '/panel/api/speed/overview',
         summary:
-          'User limits, server link speeds, and the live load of every server with a link speed.',
+          'User and group limits, server link speeds, and the live load of every server with a link speed.',
         responseSchema: 'SpeedOverview',
       },
       {
@@ -1947,6 +1947,26 @@ export const sections: readonly Section[] = [
         path: '/panel/api/speed/client',
         summary: "Set one user's minimum and maximum speed in Mbit/s; both 0 removes them.",
         body: '{\n  "email": "anna",\n  "minMbps": 20,\n  "maxMbps": 100\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/speed/group',
+        summary:
+          "Set a client group's speed in Mbit/s; all 0 removes it. A client's own speed replaces their group's. minMbps is guaranteed on the server the client connects to; floorMbps > 0 makes the cap float between floorMbps and maxMbps by what the guarantees leave free.",
+        body: '{\n  "group": "users",\n  "minMbps": 0,\n  "maxMbps": 100,\n  "floorMbps": 50\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/speed/tier',
+        summary:
+          "Add (id 0) or edit a speed tier clients can buy in the bot: a guaranteed minMbps for monthlyPrice added to every month of the term they pay. It beats the group speed and lapses with the term; a client's own speed still wins.",
+        body: '{\n  "id": 0,\n  "name": "Plus",\n  "minMbps": 200,\n  "monthlyPrice": 100\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/speed/tier/delete',
+        summary: 'Stop selling a speed tier; clients who bought it fall back to their group speed.',
+        body: '{\n  "id": 1\n}',
       },
       {
         method: 'POST',
@@ -2312,8 +2332,8 @@ export const sections: readonly Section[] = [
         method: 'POST',
         path: '/panel/api/billing/pay',
         summary:
-          'Apply a payment for 1-36 months. A running term is extended from its end, a lapsed one restarts from now. Any payment the client reported in the bot is settled, so a later confirm there cannot apply it twice. note defaults to "<months> mo" in the ledger.',
-        body: '{\n  "email": "alice",\n  "months": 3,\n  "note": "YooKassa 2c4f"\n}',
+          'Apply a payment for 1-36 months. A running term is extended from its end, a lapsed one restarts from now. speedTierId (0 = none) buys that speed tier for the term: its monthly price is added per month and its guaranteed speed applies until the term ends; a term without one drops the tier. Any payment the client reported in the bot is settled, so a later confirm there cannot apply it twice. note defaults to "<months> mo" in the ledger.',
+        body: '{\n  "email": "alice",\n  "months": 3,\n  "speedTierId": 0,\n  "note": "YooKassa 2c4f"\n}',
         responseSchema: 'PaymentResult',
       },
     ],

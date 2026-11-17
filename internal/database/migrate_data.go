@@ -76,6 +76,8 @@ func migrationModels() []any {
 		&model.HomeNetwork{},
 		&model.WarpSwitch{},
 		&model.ClientSpeed{},
+		&model.GroupSpeed{},
+		&model.SpeedTier{},
 		&model.ServerCapacity{},
 		&model.SpeedTestResult{},
 		&model.MasterMember{},

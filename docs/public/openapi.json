@@ -2479,6 +2479,16 @@
             },
             "type": "array"
           },
+          "speedTierId": {
+            "example": 0,
+            "type": "integer"
+          },
+          "speedTiers": {
+            "items": {
+              "$ref": "#/components/schemas/SpeedTier"
+            },
+            "type": "array"
+          },
           "trusted": {
             "example": false,
             "type": "boolean"
@@ -2495,6 +2505,8 @@
           "nonPaying",
           "pendingMonths",
           "plans",
+          "speedTierId",
+          "speedTiers",
           "trusted"
         ],
         "type": "object"
@@ -3307,6 +3319,39 @@
         "required": [
           "reason",
           "token"
+        ],
+        "type": "object"
+      },
+      "GroupSpeed": {
+        "description": "GroupSpeed is the speed every member of a client group gets unless the client\nhas its own ClientSpeed. FloorMbps > 0 makes MaxMbps float between it and MaxMbps.",
+        "properties": {
+          "floorMbps": {
+            "example": 50,
+            "type": "integer"
+          },
+          "group": {
+            "example": "users",
+            "type": "string"
+          },
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "maxMbps": {
+            "example": 100,
+            "type": "integer"
+          },
+          "minMbps": {
+            "example": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "floorMbps",
+          "group",
+          "id",
+          "maxMbps",
+          "minMbps"
         ],
         "type": "object"
       },
@@ -5883,7 +5928,7 @@
         "type": "object"
       },
       "ServerFreeSpeed": {
-        "description": "ServerFreeSpeed is the live load of a server with a known capacity.",
+        "description": "ServerFreeSpeed is the live load of a server with a known capacity;\nReservedMbps is what the guarantees of the users it carries add up to.",
         "properties": {
           "capacityMbps": {
             "example": 1000,
@@ -5901,6 +5946,10 @@
             "example": 12,
             "type": "integer"
           },
+          "reservedMbps": {
+            "example": 300,
+            "type": "integer"
+          },
           "usedMbps": {
             "example": 420.5,
             "type": "number"
@@ -5911,6 +5960,7 @@
           "freePerUserMbps",
           "nodeId",
           "online",
+          "reservedMbps",
           "usedMbps"
         ],
         "type": "object"
@@ -6092,6 +6142,12 @@
             },
             "type": "array"
           },
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/GroupSpeed"
+            },
+            "type": "array"
+          },
           "load": {
             "items": {
               "$ref": "#/components/schemas/ServerFreeSpeed"
@@ -6121,15 +6177,23 @@
               "type": "integer"
             },
             "type": "array"
+          },
+          "tiers": {
+            "items": {
+              "$ref": "#/components/schemas/SpeedTier"
+            },
+            "type": "array"
           }
         },
         "required": [
           "clients",
+          "groups",
           "load",
           "servers",
           "testSettings",
           "testStats",
-          "testing"
+          "testing",
+          "tiers"
         ],
         "type": "object"
       },
@@ -6278,6 +6342,34 @@
           "maxDownloadMbps",
           "minDownloadMbps",
           "nodeId"
+        ],
+        "type": "object"
+      },
+      "SpeedTier": {
+        "description": "SpeedTier is a paid speed upgrade: a guaranteed MinMbps for MonthlyPrice on\ntop of every month of the client's term.",
+        "properties": {
+          "id": {
+            "example": 1,
+            "type": "integer"
+          },
+          "minMbps": {
+            "example": 200,
+            "type": "integer"
+          },
+          "monthlyPrice": {
+            "example": 100,
+            "type": "integer"
+          },
+          "name": {
+            "example": "Plus",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "minMbps",
+          "monthlyPrice",
+          "name"
         ],
         "type": "object"
       },
@@ -14428,7 +14520,7 @@
         "tags": [
           "Speed limits"
         ],
-        "summary": "User limits, server link speeds, and the live load of every server with a link speed.",
+        "summary": "User and group limits, server link speeds, and the live load of every server with a link speed.",
         "operationId": "get_panel_api_speed_overview",
         "responses": {
           "200": {
@@ -14460,12 +14552,22 @@
                         "minMbps": 20
                       }
                     ],
+                    "groups": [
+                      {
+                        "floorMbps": 50,
+                        "group": "users",
+                        "id": 1,
+                        "maxMbps": 100,
+                        "minMbps": 0
+                      }
+                    ],
                     "load": [
                       {
                         "capacityMbps": 1000,
                         "freePerUserMbps": 44.5,
                         "nodeId": 0,
                         "online": 12,
+                        "reservedMbps": 300,
                         "usedMbps": 420.5
                       }
                     ],
@@ -14498,6 +14600,14 @@
                     ],
                     "testing": [
                       0
+                    ],
+                    "tiers": [
+                      {
+                        "id": 1,
+                        "minMbps": 200,
+                        "monthlyPrice": 100,
+                        "name": "Plus"
+                      }
                     ]
                   }
                 }
@@ -14525,6 +14635,141 @@
                 "email": "anna",
                 "minMbps": 20,
                 "maxMbps": 100
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/speed/group": {
+      "post": {
+        "tags": [
+          "Speed limits"
+        ],
+        "summary": "Set a client group's speed in Mbit/s; all 0 removes it. A client's own speed replaces their group's. minMbps is guaranteed on the server the client connects to; floorMbps > 0 makes the cap float between floorMbps and maxMbps by what the guarantees leave free.",
+        "operationId": "post_panel_api_speed_group",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "group": "users",
+                "minMbps": 0,
+                "maxMbps": 100,
+                "floorMbps": 50
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/speed/tier": {
+      "post": {
+        "tags": [
+          "Speed limits"
+        ],
+        "summary": "Add (id 0) or edit a speed tier clients can buy in the bot: a guaranteed minMbps for monthlyPrice added to every month of the term they pay. It beats the group speed and lapses with the term; a client's own speed still wins.",
+        "operationId": "post_panel_api_speed_tier",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "id": 0,
+                "name": "Plus",
+                "minMbps": 200,
+                "monthlyPrice": 100
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/speed/tier/delete": {
+      "post": {
+        "tags": [
+          "Speed limits"
+        ],
+        "summary": "Stop selling a speed tier; clients who bought it fall back to their group speed.",
+        "operationId": "post_panel_api_speed_tier_delete",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "example": {
+                "id": 1
               }
             }
           }
@@ -16645,6 +16890,15 @@
                         "total": 810
                       }
                     ],
+                    "speedTierId": 0,
+                    "speedTiers": [
+                      {
+                        "id": 1,
+                        "minMbps": 200,
+                        "monthlyPrice": 100,
+                        "name": "Plus"
+                      }
+                    ],
                     "trusted": false
                   }
                 }
@@ -16659,7 +16913,7 @@
         "tags": [
           "Billing"
         ],
-        "summary": "Apply a payment for 1-36 months. A running term is extended from its end, a lapsed one restarts from now. Any payment the client reported in the bot is settled, so a later confirm there cannot apply it twice. note defaults to \"<months> mo\" in the ledger.",
+        "summary": "Apply a payment for 1-36 months. A running term is extended from its end, a lapsed one restarts from now. speedTierId (0 = none) buys that speed tier for the term: its monthly price is added per month and its guaranteed speed applies until the term ends; a term without one drops the tier. Any payment the client reported in the bot is settled, so a later confirm there cannot apply it twice. note defaults to \"<months> mo\" in the ledger.",
         "operationId": "post_panel_api_billing_pay",
         "requestBody": {
           "required": true,
@@ -16671,6 +16925,7 @@
               "example": {
                 "email": "alice",
                 "months": 3,
+                "speedTierId": 0,
                 "note": "YooKassa 2c4f"
               }
             }
