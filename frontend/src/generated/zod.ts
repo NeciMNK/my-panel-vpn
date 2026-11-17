@@ -139,6 +139,7 @@ export const AllSettingSchema = z.object({
   subHappPerAppMode: z.string(),
   subHappPingType: z.string(),
   subHappProviderId: z.string(),
+  subHappRoutingUpdate: z.boolean(),
   subHappSubExpire: z.boolean(),
   subHappSubExpireButtonLink: z.string(),
   subHappSubInfoButtonLink: z.string(),
@@ -195,6 +196,7 @@ export const AllSettingSchema = z.object({
   subKeyFile: z.string(),
   subListen: z.string(),
   subPath: z.string(),
+  subPathAliases: z.string(),
   subPort: z.number().int().min(1).max(65535),
   subProfileMode: z.string(),
   subProfileUrl: z.string(),
@@ -342,6 +344,7 @@ export const AllSettingViewSchema = z.object({
   subHappPerAppMode: z.string(),
   subHappPingType: z.string(),
   subHappProviderId: z.string(),
+  subHappRoutingUpdate: z.boolean(),
   subHappSubExpire: z.boolean(),
   subHappSubExpireButtonLink: z.string(),
   subHappSubInfoButtonLink: z.string(),
@@ -398,6 +401,7 @@ export const AllSettingViewSchema = z.object({
   subKeyFile: z.string(),
   subListen: z.string(),
   subPath: z.string(),
+  subPathAliases: z.string(),
   subPort: z.number().int().min(1).max(65535),
   subProfileMode: z.string(),
   subProfileUrl: z.string(),
@@ -499,19 +503,21 @@ export const CascadeSchema = z.object({
 });
 export type Cascade = z.infer<typeof CascadeSchema>;
 
-export const CascadeFixedExitSchema = z.object({
+export const CascadeFixedExitRequestSchema = z.object({
+  email: z.string(),
+  nodeId: z.number().int(),
+  trafficMode: z.enum(['all', 'ai']),
+});
+export type CascadeFixedExitRequest = z.infer<typeof CascadeFixedExitRequestSchema>;
+
+export const CascadeFixedExitRowSchema = z.object({
   createdAt: z.number().int(),
   email: z.string(),
   id: z.number().int(),
   nodeId: z.number().int(),
+  trafficMode: z.enum(['all', 'ai']),
 });
-export type CascadeFixedExit = z.infer<typeof CascadeFixedExitSchema>;
-
-export const CascadeFixedExitRequestSchema = z.object({
-  email: z.string(),
-  nodeId: z.number().int(),
-});
-export type CascadeFixedExitRequest = z.infer<typeof CascadeFixedExitRequestSchema>;
+export type CascadeFixedExitRow = z.infer<typeof CascadeFixedExitRowSchema>;
 
 export const CascadeLinkSchema = z.object({
   address: z.string(),
@@ -1538,6 +1544,7 @@ export type TlsCertSettings = z.infer<typeof TlsCertSettingsSchema>;
 
 export const TlsCertificateSchema = z.object({
   applyToPanel: z.boolean(),
+  applyToSub: z.boolean(),
   autoRenew: z.boolean(),
   certFile: z.string(),
   createdAt: z.number().int(),

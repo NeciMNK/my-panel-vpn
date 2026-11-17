@@ -17,7 +17,7 @@ export class AllSetting {
   pageSize = 25;
   expireDiff = 0;
   trafficDiff = 0;
-  remarkTemplate = '{{INBOUND}}-{{EMAIL}}|📊{{TRAFFIC_LEFT}}|⏳{{DAYS_LEFT}}D';
+  remarkTemplate = '{{AUTO_NAME}}';
   subShowIdentityOnAllLinks = false;
   subInfoNodeEnable = false;
   subHostSortMode: SubHostSortMode = 'inbound-first';
@@ -66,6 +66,7 @@ export class AllSetting {
   subListen = '';
   subPort = 2096;
   subPath = '/sub/';
+  subPathAliases = '';
   subJsonPath = '/json/';
   subClashEnable = false;
   subClashPath = '/clash/';
@@ -93,6 +94,7 @@ export class AllSetting {
   subThemeDir = '';
   subHideSettings = false;
   subHappAutoDetect = false;
+  subHappRoutingUpdate = false;
   subHappProviderId = '';
   subHappNewUrl = '';
   subHappFallbackUrl = '';

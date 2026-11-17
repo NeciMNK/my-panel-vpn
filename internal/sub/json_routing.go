@@ -11,6 +11,7 @@ import (
 
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 )
 
 // jsonRoutingSpec is the canonical form of the generic Happ/INCY routing
@@ -29,13 +30,18 @@ type jsonRoutingSpec struct {
 	ProxyIp           []string
 	BlockSites        []string
 	BlockIp           []string
+	// GeoSiteURL and GeoIPURL name the profile's own geo files (Happ's Geositeurl/
+	// Geoipurl); clients without them resolve geosite:/geoip: against standard files.
+	GeoSiteURL string
+	GeoIPURL   string
 }
 
 func (s jsonRoutingSpec) empty() bool {
 	return s.DomainStrategy == "" && s.RemoteDNSDomain == "" && s.RemoteDNSIP == "" &&
 		s.DomesticDNSDomain == "" && s.DomesticDNSIP == "" && len(s.DnsHosts) == 0 &&
 		len(s.RouteOrder) == 0 && len(s.DirectSites) == 0 && len(s.DirectIp) == 0 &&
-		len(s.ProxySites) == 0 && len(s.ProxyIp) == 0 && len(s.BlockSites) == 0 && len(s.BlockIp) == 0
+		len(s.ProxySites) == 0 && len(s.ProxyIp) == 0 && len(s.BlockSites) == 0 && len(s.BlockIp) == 0 &&
+		s.GeoSiteURL == "" && s.GeoIPURL == ""
 }
 
 // equal reports whether two specs carry the same routing payload, so a
@@ -47,7 +53,41 @@ func (s jsonRoutingSpec) equal(other jsonRoutingSpec) bool {
 		maps.Equal(s.DnsHosts, other.DnsHosts) && slices.Equal(s.RouteOrder, other.RouteOrder) &&
 		slices.Equal(s.DirectSites, other.DirectSites) && slices.Equal(s.DirectIp, other.DirectIp) &&
 		slices.Equal(s.ProxySites, other.ProxySites) && slices.Equal(s.ProxyIp, other.ProxyIp) &&
-		slices.Equal(s.BlockSites, other.BlockSites) && slices.Equal(s.BlockIp, other.BlockIp)
+		slices.Equal(s.BlockSites, other.BlockSites) && slices.Equal(s.BlockIp, other.BlockIp) &&
+		s.GeoSiteURL == other.GeoSiteURL && s.GeoIPURL == other.GeoIPURL
+}
+
+// forStandardGeoFiles drops tokens written for the profile's own geo files that the
+// standard ones lack: a client core refuses an unknown category outright (#16).
+func (s jsonRoutingSpec) forStandardGeoFiles() jsonRoutingSpec {
+	if s.GeoSiteURL == "" && s.GeoIPURL == "" {
+		return s
+	}
+	var dropped []string
+	keep := func(list []string, isIP bool) []string {
+		missing := map[string]bool{}
+		for _, issue := range (&service.GeodataService{}).Validate(isIP, list) {
+			if issue.Reason == service.GeodataReasonCategoryMissing {
+				missing[issue.Token] = true
+			}
+		}
+		out := make([]string, 0, len(list))
+		for _, token := range list {
+			if missing[strings.TrimSpace(token)] {
+				dropped = append(dropped, token)
+				continue
+			}
+			out = append(out, token)
+		}
+		return out
+	}
+	s.DirectSites, s.ProxySites, s.BlockSites = keep(s.DirectSites, false), keep(s.ProxySites, false), keep(s.BlockSites, false)
+	s.DirectIp, s.ProxyIp, s.BlockIp = keep(s.DirectIp, true), keep(s.ProxyIp, true), keep(s.BlockIp, true)
+	if len(dropped) > 0 {
+		logger.Warning("subJsonRoutingRules: the standard geo files lack", strings.Join(dropped, ", "),
+			"; they stay in the Happ routing but are left out of JSON configs")
+	}
+	return s
 }
 
 // Both happ forms appear in the wild; normalizeHappRouting accepts each.
@@ -201,6 +241,12 @@ func buildJsonRoutingSpec(object map[string]any) (jsonRoutingSpec, error) {
 		return spec, err
 	}
 	if spec.DnsHosts, err = routingHosts(object, "DnsHosts"); err != nil {
+		return spec, err
+	}
+	if spec.GeoSiteURL, err = routingString(object, "Geositeurl"); err != nil {
+		return spec, err
+	}
+	if spec.GeoIPURL, err = routingString(object, "Geoipurl"); err != nil {
 		return spec, err
 	}
 	order, err := routingString(object, "RouteOrder")

@@ -543,6 +543,29 @@ func seedMtprotoCustomShareAddrToHosts() error {
 	})
 }
 
+// legacyDefaultRemarkTemplate is the remark template before {{AUTO_NAME}}; a
+// panel still on it never chose a template, so it moves to the new default.
+const legacyDefaultRemarkTemplate = "{{INBOUND}}-{{EMAIL}}|📊{{TRAFFIC_LEFT}}|⏳{{DAYS_LEFT}}D"
+
+func seedAutoNameRemarkTemplate() error {
+	const seederName = "AutoNameRemarkTemplate"
+	var count int64
+	if err := db.Model(&model.HistoryOfSeeders{}).Where("seeder_name = ?", seederName).Count(&count).Error; err != nil {
+		return err
+	}
+	if count > 0 {
+		return nil
+	}
+	return db.Transaction(func(tx *gorm.DB) error {
+		err := tx.Model(&model.Setting{}).Where("key = ? AND value = ?", "remarkTemplate", legacyDefaultRemarkTemplate).
+			Update("value", "{{AUTO_NAME}}").Error
+		if err != nil {
+			return err
+		}
+		return tx.Create(&model.HistoryOfSeeders{SeederName: seederName}).Error
+	})
+}
+
 func CreateHostFromMtprotoCustomShareAddr(tx *gorm.DB, inboundId int, rawAddress string) error {
 	address := strings.TrimPrefix(strings.TrimSuffix(strings.TrimSpace(rawAddress), "]"), "[")
 	if address == "" {
@@ -1551,7 +1574,7 @@ func runSeeders(isUsersEmpty bool) error {
 	}
 
 	if empty && isUsersEmpty {
-		seeders := []string{"UserPasswordHash", "ClientsTable", "InboundClientsArrayFix", "InboundClientTgIdFix2", "InboundClientSubIdFix", "FreedomFinalRulesReverseFix", "FreedomFinalRulesPrivateEgressBlock", "UppercaseFreedomFinalRulesFix", "InboundRealityFinalmaskTcpStrip", "ApiTokensHash", "LegacyProxySettingsCleanup", "SessionSecretRotation", "OutboundRemovedKeysFix", "FreedomDomainStrategyFix", "DNSOutboundLegacyKeysFix", "DNSOutboundQTypeZeroFix", "WireguardDomainStrategyFix", "XdnsFinalmaskNamesAddrsFix", "UDPHopClientMaskFix", "HostVerifyPeerCertByNameBoolFix", "HostMihomoX25519Reset", "WireguardPeersToClients", "MtprotoSecretsToClients", "NodeInboundsAdopted", "NodeDownNotified", "ResetIpLimitNoFail2ban", "ClientGroupNameTrim", "OwnerlessClientHwidPurge", "ClientForwardedPortsBackfill", "ClientAutoGroups", "TgNodeLoadSpeedDropEvents"}
+		seeders := []string{"UserPasswordHash", "ClientsTable", "InboundClientsArrayFix", "InboundClientTgIdFix2", "InboundClientSubIdFix", "FreedomFinalRulesReverseFix", "FreedomFinalRulesPrivateEgressBlock", "UppercaseFreedomFinalRulesFix", "InboundRealityFinalmaskTcpStrip", "ApiTokensHash", "LegacyProxySettingsCleanup", "SessionSecretRotation", "OutboundRemovedKeysFix", "FreedomDomainStrategyFix", "DNSOutboundLegacyKeysFix", "DNSOutboundQTypeZeroFix", "WireguardDomainStrategyFix", "XdnsFinalmaskNamesAddrsFix", "UDPHopClientMaskFix", "HostVerifyPeerCertByNameBoolFix", "HostMihomoX25519Reset", "WireguardPeersToClients", "MtprotoSecretsToClients", "NodeInboundsAdopted", "NodeDownNotified", "ResetIpLimitNoFail2ban", "ClientGroupNameTrim", "OwnerlessClientHwidPurge", "ClientForwardedPortsBackfill", "ClientAutoGroups", "AutoNameRemarkTemplate", "TgNodeLoadSpeedDropEvents"}
 		for _, name := range seeders {
 			if err := db.Create(&model.HistoryOfSeeders{SeederName: name}).Error; err != nil {
 				return err
@@ -1769,6 +1792,10 @@ func runSeeders(isUsersEmpty bool) error {
 	}
 
 	if err := seedMtprotoCustomShareAddrToHosts(); err != nil {
+		return err
+	}
+
+	if err := seedAutoNameRemarkTemplate(); err != nil {
 		return err
 	}
 

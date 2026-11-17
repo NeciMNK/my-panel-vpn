@@ -19,6 +19,7 @@ export const REMARK_VARIABLES: RemarkVar[] = [
   // Client identity
   { token: 'EMAIL', group: 'client', sample: 'john' },
   { token: 'INBOUND', group: 'client', sample: 'Germany' },
+  { token: 'AUTO_NAME', group: 'client', sample: '🇷🇺 / 🇳🇱 Split RU / NL' },
   { token: 'HOST', group: 'client', sample: 'CDN' },
   { token: 'ID', group: 'client', sample: '3f2a9c1b-aaaa-bbbb-cccc-1234567890ab' },
   { token: 'SHORT_ID', group: 'client', sample: '3f2a9c1b' },

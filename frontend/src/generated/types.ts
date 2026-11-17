@@ -117,6 +117,7 @@ export interface AllSetting {
   subHappPerAppMode: string;
   subHappPingType: string;
   subHappProviderId: string;
+  subHappRoutingUpdate: boolean;
   subHappSubExpire: boolean;
   subHappSubExpireButtonLink: string;
   subHappSubInfoButtonLink: string;
@@ -173,6 +174,7 @@ export interface AllSetting {
   subKeyFile: string;
   subListen: string;
   subPath: string;
+  subPathAliases: string;
   subPort: number;
   subProfileMode: string;
   subProfileUrl: string;
@@ -319,6 +321,7 @@ export interface AllSettingView {
   subHappPerAppMode: string;
   subHappPingType: string;
   subHappProviderId: string;
+  subHappRoutingUpdate: boolean;
   subHappSubExpire: boolean;
   subHappSubExpireButtonLink: string;
   subHappSubInfoButtonLink: string;
@@ -375,6 +378,7 @@ export interface AllSettingView {
   subKeyFile: string;
   subListen: string;
   subPath: string;
+  subPathAliases: string;
   subPort: number;
   subProfileMode: string;
   subProfileUrl: string;
@@ -470,16 +474,18 @@ export interface Cascade {
   updatedAt: number;
 }
 
-export interface CascadeFixedExit {
+export interface CascadeFixedExitRequest {
+  email: string;
+  nodeId: number;
+  trafficMode: string;
+}
+
+export interface CascadeFixedExitRow {
   createdAt: number;
   email: string;
   id: number;
   nodeId: number;
-}
-
-export interface CascadeFixedExitRequest {
-  email: string;
-  nodeId: number;
+  trafficMode: string;
 }
 
 export interface CascadeLink {
@@ -1432,6 +1438,7 @@ export interface TlsCertSettings {
 
 export interface TlsCertificate {
   applyToPanel: boolean;
+  applyToSub: boolean;
   autoRenew: boolean;
   certFile: string;
   createdAt: number;

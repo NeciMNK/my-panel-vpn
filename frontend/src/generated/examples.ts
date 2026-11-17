@@ -115,6 +115,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "subHappPerAppMode": "",
     "subHappPingType": "",
     "subHappProviderId": "",
+    "subHappRoutingUpdate": false,
     "subHappSubExpire": false,
     "subHappSubExpireButtonLink": "",
     "subHappSubInfoButtonLink": "",
@@ -171,6 +172,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "subKeyFile": "",
     "subListen": "",
     "subPath": "",
+    "subPathAliases": "",
     "subPort": 1,
     "subProfileMode": "",
     "subProfileUrl": "",
@@ -316,6 +318,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "subHappPerAppMode": "",
     "subHappPingType": "",
     "subHappProviderId": "",
+    "subHappRoutingUpdate": false,
     "subHappSubExpire": false,
     "subHappSubExpireButtonLink": "",
     "subHappSubInfoButtonLink": "",
@@ -372,6 +375,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "subKeyFile": "",
     "subListen": "",
     "subPath": "",
+    "subPathAliases": "",
     "subPort": 1,
     "subProfileMode": "",
     "subProfileUrl": "",
@@ -498,15 +502,17 @@ export const EXAMPLES: Record<string, unknown> = {
     "strategy": "leastPing",
     "updatedAt": 0
   },
-  "CascadeFixedExit": {
+  "CascadeFixedExitRequest": {
+    "email": "anna",
+    "nodeId": 2,
+    "trafficMode": "all"
+  },
+  "CascadeFixedExitRow": {
     "createdAt": 1762862400,
     "email": "anna",
     "id": 1,
-    "nodeId": 2
-  },
-  "CascadeFixedExitRequest": {
-    "email": "anna",
-    "nodeId": 2
+    "nodeId": 2,
+    "trafficMode": "all"
   },
   "CascadeLink": {
     "address": "",
@@ -1664,6 +1670,7 @@ export const EXAMPLES: Record<string, unknown> = {
   },
   "TlsCertificate": {
     "applyToPanel": false,
+    "applyToSub": false,
     "autoRenew": true,
     "certFile": "/etc/x-ui/certs/example.com/fullchain.pem",
     "createdAt": 1710000000000,
