@@ -222,6 +222,7 @@ func (s *SubEdgeService) sendNodePlans(ctx context.Context, plan subedge.DNSPlan
 
 // ConfigureSubEdgeDNSNode is the node side of ConfigureSubEdgeDNS.
 func (s *SettingService) ConfigureSubEdgeDNSNode(plan subedge.DNSPlan) error {
+	subEdgeNode.HeardFromMaster(time.Now())
 	if !plan.Enabled() {
 		return s.setString("subEdgeDnsPlan", "")
 	}

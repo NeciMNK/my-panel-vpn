@@ -23,7 +23,20 @@ const (
 	// PromoteAfter is how long a better tier must stay up before DNS returns to it.
 	PromoteAfter = 2 * time.Minute
 	probeTimeout = 5 * time.Second
+	// MasterSilence is how long after a master's last plan an edge node may
+	// switch DNS itself; masters send the plan every 30 seconds.
+	MasterSilence = 90 * time.Second
 )
+
+var cloudflareTimeout = 20 * time.Second
+
+// cloudflareTransport opens a connection per call: a pooled one the network
+// dropped without a reset hung every later call until the client timeout.
+var cloudflareTransport = func() http.RoundTripper {
+	t := http.DefaultTransport.(*http.Transport).Clone()
+	t.DisableKeepAlives = true
+	return t
+}()
 
 // Tier names, best first: masters, then edge nodes in Russia, then the rest.
 const (
@@ -91,7 +104,7 @@ func (c *Cloudflare) call(ctx context.Context, method, path string, body, out an
 	req.Header.Set("Content-Type", "application/json")
 	client := c.Client
 	if client == nil {
-		client = &http.Client{Timeout: 20 * time.Second}
+		client = &http.Client{Timeout: cloudflareTimeout, Transport: cloudflareTransport}
 	}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -316,9 +329,23 @@ func (s *Switcher) Step(ctx context.Context, cf *Cloudflare, plan DNSPlan, live 
 	return status
 }
 
+// HeardFromMaster records that a master, which switches DNS itself, sent this
+// node its plan at now.
+func (n *Node) HeardFromMaster(now time.Time) {
+	n.dnsMu.Lock()
+	defer n.dnsMu.Unlock()
+	n.masterHeard = now
+}
+
 // StepDNS switches DNS from this edge node, but only while no master reaches
-// it, no master address answers and no edge ordered before it is up.
+// it or sent a plan lately, no master address answers and no earlier edge is up.
 func (n *Node) StepDNS(ctx context.Context, cf *Cloudflare, plan DNSPlan, live func(context.Context, []string) []string, now time.Time) (DNSStatus, bool) {
+	n.dnsMu.Lock()
+	heard := n.masterHeard
+	n.dnsMu.Unlock()
+	if !heard.IsZero() && now.Sub(heard) < MasterSilence {
+		return DNSStatus{}, false
+	}
 	if len(n.Tunnels()) > 0 {
 		return DNSStatus{}, false
 	}
