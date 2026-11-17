@@ -17,7 +17,7 @@ export class AllSetting {
   pageSize = 25;
   expireDiff = 0;
   trafficDiff = 0;
-  remarkTemplate = '{{INBOUND}}-{{EMAIL}}|📊{{TRAFFIC_LEFT}}|⏳{{DAYS_LEFT}}D';
+  remarkTemplate = '{{AUTO_NAME}}';
   subShowIdentityOnAllLinks = false;
   subInfoNodeEnable = false;
   subHostSortMode: SubHostSortMode = 'inbound-first';

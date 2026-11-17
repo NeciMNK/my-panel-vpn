@@ -37,10 +37,13 @@ import (
 var xrayTemplateConfig string
 
 const (
-	DefaultSubClashUserAgentRegex     = `(?i)(clash|mihomo)`
-	DefaultExternalSubUserAgent       = "v2rayNG/1.8.5"
-	DefaultSubJsonUserAgentRegex      = ``
-	DefaultRemarkTemplate             = "{{INBOUND}}-{{EMAIL}}|📊{{TRAFFIC_LEFT}}|⏳{{DAYS_LEFT}}D"
+	DefaultSubClashUserAgentRegex = `(?i)(clash|mihomo)`
+	DefaultExternalSubUserAgent   = "v2rayNG/1.8.5"
+	DefaultSubJsonUserAgentRegex  = ``
+	DefaultRemarkTemplate         = "{{AUTO_NAME}}"
+	// DefaultSubActiveInfoTemplate fills the usage info entry when the remark
+	// template names only servers ({{AUTO_NAME}} is empty there: no inbound).
+	DefaultSubActiveInfoTemplate      = "{{EMAIL}}|📊{{TRAFFIC_LEFT}}|⏳{{DAYS_LEFT}}D"
 	DefaultSubExpiredTemplate         = "⛔ {{EMAIL}} | Expired: {{EXPIRE_DATE}}"
 	DefaultSubTrafficDepletedTemplate = "🚫 {{EMAIL}} | Traffic Depleted | {{TRAFFIC_USED}}/{{TRAFFIC_TOTAL}}"
 	DefaultTrustedProxyCIDRs          = "127.0.0.1/32,::1/128"
