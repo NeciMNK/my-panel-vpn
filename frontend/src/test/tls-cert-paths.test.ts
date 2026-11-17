@@ -13,6 +13,7 @@ const cert: TlsCertificate = TlsCertificateSchema.parse({
   notAfter: 1717000000000,
   autoRenew: true,
   applyToPanel: false,
+  applyToSub: false,
   lastError: '',
   nodeInstalls: {
     '2': {

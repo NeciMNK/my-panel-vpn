@@ -41,6 +41,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
+      - name: Stamp the release version from the tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        # A tag build must report its own tag: v0.0.2 shipped "0.0.1" from the file.
+        run: printf '%s\n' "${GITHUB_REF_NAME#v}" > internal/config/version
+
       - name: Setup Go
         uses: actions/setup-go@v7
         with:
@@ -212,6 +218,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+
+      - name: Stamp the release version from the tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        # A tag build must report its own tag: v0.0.2 shipped "0.0.1" from the file.
+        run: printf '%s\n' "${GITHUB_REF_NAME#v}" > internal/config/version
 
       - name: Setup Go
         uses: actions/setup-go@v7

@@ -363,6 +363,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "subHappProviderId": {
         "type": "string"
       },
+      "subHappRoutingUpdate": {
+        "type": "boolean"
+      },
       "subHappSubExpire": {
         "type": "boolean"
       },
@@ -531,6 +534,9 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "string"
       },
       "subPath": {
+        "type": "string"
+      },
+      "subPathAliases": {
         "type": "string"
       },
       "subPort": {
@@ -777,6 +783,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "subHappPerAppMode",
       "subHappPingType",
       "subHappProviderId",
+      "subHappRoutingUpdate",
       "subHappSubExpire",
       "subHappSubExpireButtonLink",
       "subHappSubInfoButtonLink",
@@ -833,6 +840,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "subKeyFile",
       "subListen",
       "subPath",
+      "subPathAliases",
       "subPort",
       "subProfileMode",
       "subProfileUrl",
@@ -1202,6 +1210,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "subHappProviderId": {
         "type": "string"
       },
+      "subHappRoutingUpdate": {
+        "type": "boolean"
+      },
       "subHappSubExpire": {
         "type": "boolean"
       },
@@ -1370,6 +1381,9 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "string"
       },
       "subPath": {
+        "type": "string"
+      },
+      "subPathAliases": {
         "type": "string"
       },
       "subPort": {
@@ -1625,6 +1639,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "subHappPerAppMode",
       "subHappPingType",
       "subHappProviderId",
+      "subHappRoutingUpdate",
       "subHappSubExpire",
       "subHappSubExpireButtonLink",
       "subHappSubInfoButtonLink",
@@ -1681,6 +1696,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "subKeyFile",
       "subListen",
       "subPath",
+      "subPathAliases",
       "subPort",
       "subProfileMode",
       "subProfileUrl",
@@ -1963,8 +1979,38 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
-  "CascadeFixedExit": {
-    "description": "CascadeFixedExit is an admin's permanent choice of exit for one user: every\ncascade with that exit sends the user there while it is up.",
+  "CascadeFixedExitRequest": {
+    "description": "CascadeFixedExitRequest pins (or unpins) one user to one exit server.",
+    "properties": {
+      "email": {
+        "description": "Email is the client's email, as in the client list.",
+        "example": "anna",
+        "type": "string"
+      },
+      "nodeId": {
+        "description": "NodeId is the exit server; 0 is this panel.",
+        "example": 2,
+        "type": "integer"
+      },
+      "trafficMode": {
+        "description": "TrafficMode is what the pin carries: \"all\" traffic or \"ai\" sites only; empty keeps the current mode.",
+        "enum": [
+          "all",
+          "ai"
+        ],
+        "example": "all",
+        "type": "string"
+      }
+    },
+    "required": [
+      "email",
+      "nodeId",
+      "trafficMode"
+    ],
+    "type": "object"
+  },
+  "CascadeFixedExitRow": {
+    "description": "CascadeFixedExitRow is one pin as the panel lists it, with what it carries.",
     "properties": {
       "createdAt": {
         "example": 1762862400,
@@ -1982,33 +2028,22 @@ export const SCHEMAS: Record<string, unknown> = {
       "nodeId": {
         "example": 2,
         "type": "integer"
+      },
+      "trafficMode": {
+        "enum": [
+          "all",
+          "ai"
+        ],
+        "example": "all",
+        "type": "string"
       }
     },
     "required": [
       "createdAt",
       "email",
       "id",
-      "nodeId"
-    ],
-    "type": "object"
-  },
-  "CascadeFixedExitRequest": {
-    "description": "CascadeFixedExitRequest pins (or unpins) one user to one exit server.",
-    "properties": {
-      "email": {
-        "description": "Email is the client's email, as in the client list.",
-        "example": "anna",
-        "type": "string"
-      },
-      "nodeId": {
-        "description": "NodeId is the exit server; 0 is this panel.",
-        "example": 2,
-        "type": "integer"
-      }
-    },
-    "required": [
-      "email",
-      "nodeId"
+      "nodeId",
+      "trafficMode"
     ],
     "type": "object"
   },
@@ -6382,6 +6417,10 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": false,
         "type": "boolean"
       },
+      "applyToSub": {
+        "example": false,
+        "type": "boolean"
+      },
       "autoRenew": {
         "example": true,
         "type": "boolean"
@@ -6439,6 +6478,7 @@ export const SCHEMAS: Record<string, unknown> = {
     },
     "required": [
       "applyToPanel",
+      "applyToSub",
       "autoRenew",
       "certFile",
       "createdAt",

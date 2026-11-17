@@ -176,15 +176,29 @@ func userCascadeExits(emails []string) ([]int, error) {
 
 // cascadeEnters reports whether traffic of inbound ib leaves through cascade c.
 func cascadeEnters(c *model.Cascade, ib *model.Inbound) bool {
+	return CascadeRoute(c, ib) != ""
+}
+
+// CascadeRoute is how cascade c carries inbound ib's traffic: CascadeModeSplit,
+// CascadeModeRelay, or "" when ib does not enter c.
+func CascadeRoute(c *model.Cascade, ib *model.Inbound) string {
 	entry := 0
 	if ib.NodeID != nil {
 		entry = *ib.NodeID
 	}
 	if entry != c.EntryNodeId {
-		return false
+		return ""
 	}
-	return len(c.EntryInboundTags) == 0 || slices.Contains(c.EntryInboundTags, ib.Tag) ||
-		slices.Contains(c.RelayInboundTags, ib.Tag)
+	mode := cascadeMode(c)
+	switch {
+	case mode == CascadeModeBoth && slices.Contains(c.RelayInboundTags, ib.Tag):
+		return CascadeModeRelay
+	case len(c.EntryInboundTags) > 0 && !slices.Contains(c.EntryInboundTags, ib.Tag):
+		return ""
+	case mode == CascadeModeRelay:
+		return CascadeModeRelay
+	}
+	return CascadeModeSplit
 }
 
 // PinUserExit pins every one of the emails to nodeID in place of their pin in

@@ -26,7 +26,6 @@ func run(root, outDir string) error {
 			StructAllow: setOf(
 				"Cascade",
 				"CascadeLink",
-				"CascadeFixedExit",
 				"HomeNetwork",
 				"HomeAccessRule",
 				"WarpSwitch",
@@ -110,6 +109,7 @@ func run(root, outDir string) error {
 			Path: resolveRel(root, "internal/web/service"),
 			StructAllow: setOf(
 				"InboundOption",
+				"CascadeFixedExitRow",
 				"SpeedOverview",
 				"MasterStatus",
 				"MasterSetup",
