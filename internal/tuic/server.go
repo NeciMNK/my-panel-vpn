@@ -1041,11 +1041,7 @@ func (s *Server) sendUDPPacketFragments(
 			if err != nil {
 				return err
 			}
-			if _, err := stream.Write(frame.Bytes()); err != nil {
-				stream.CancelWrite(0)
-				return err
-			}
-			if err := stream.Close(); err != nil {
+			if err := writeResponseStream(stream, frame.Bytes()); err != nil {
 				return err
 			}
 			continue
@@ -1054,6 +1050,21 @@ func (s *Server) sendUDPPacketFragments(
 			return err
 		}
 	}
+	return nil
+}
+
+// writeResponseStream sends one response frame on its own uni stream. A peer that
+// stopped reading that stream loses this packet only, never the association.
+func writeResponseStream(stream *quic.SendStream, frame []byte) error {
+	if _, err := stream.Write(frame); err != nil {
+		stream.CancelWrite(0)
+		if _, streamLocal := errors.AsType[*quic.StreamError](err); streamLocal {
+			return nil
+		}
+		return err
+	}
+	// Close fails only for a stream that was already reset: the connection is fine.
+	_ = stream.Close()
 	return nil
 }
 
