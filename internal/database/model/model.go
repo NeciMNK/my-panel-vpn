@@ -29,6 +29,7 @@ const (
 	VMESS       Protocol = "vmess"
 	VLESS       Protocol = "vless"
 	Tunnel      Protocol = "tunnel"
+	TUN         Protocol = "tun"
 	HTTP        Protocol = "http"
 	Trojan      Protocol = "trojan"
 	Shadowsocks Protocol = "shadowsocks"

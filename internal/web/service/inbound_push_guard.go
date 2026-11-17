@@ -100,7 +100,7 @@ type pushReach struct {
 // validatePushedInbound refuses, on a master's push, the fields that reach this host's own
 // files, sockets and services; a value the stored row already carries was set here and stays.
 func validatePushedInbound(inbound, stored *model.Inbound) error {
-	if (stored == nil || stored.Protocol != inbound.Protocol) && !nodeEligibleProtocols[inbound.Protocol] {
+	if (stored == nil || stored.Protocol != inbound.Protocol) && !nodeEligibleProtocol(inbound.Protocol) {
 		return common.NewErrorf("%s inbounds cannot be pushed to a node", inbound.Protocol)
 	}
 	reaches, err := hostReaches(inbound)

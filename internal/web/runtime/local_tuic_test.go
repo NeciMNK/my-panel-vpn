@@ -14,8 +14,8 @@ func TestUpdateTuicInboundResyncsBridgeOnTagRename(t *testing.T) {
 	newInbound := *oldInbound
 	newInbound.Tag = "new-tuic-tag"
 
-	if err := local.updateTuicInbound(context.Background(), oldInbound, &newInbound); err != nil {
-		t.Fatalf("updateTuicInbound: %v", err)
+	if err := local.UpdateInbound(context.Background(), oldInbound, &newInbound); err != nil {
+		t.Fatalf("UpdateInbound: %v", err)
 	}
 	if resyncs != 1 {
 		t.Fatalf("Xray bridge resync count = %d, want 1", resyncs)
