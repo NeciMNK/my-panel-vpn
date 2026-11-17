@@ -121,7 +121,7 @@ func (s *CascadeService) UserExitGroups(emails []string) ([]UserExitGroup, error
 		country := ""
 		if id != 0 {
 			n := nodes[id]
-			if n == nil || !n.Enable || n.Status != "online" {
+			if n == nil || !n.Serving() {
 				continue
 			}
 			exit.Name, exit.Address, country = n.Name, n.Address, n.Country

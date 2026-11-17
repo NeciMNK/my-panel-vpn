@@ -47,6 +47,8 @@ type NodeHealthData struct {
 	MemPct    float64
 	XrayState string // "running", "stopped", etc.
 	XrayError string
+	// SeenBy names the nodes that still reach a node the master lost; empty means dead.
+	SeenBy []string
 }
 
 // LoginEventData carries login attempt details.

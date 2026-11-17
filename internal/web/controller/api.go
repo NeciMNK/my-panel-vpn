@@ -125,6 +125,7 @@ var nodeSyncScopeAllow = map[string]map[string]struct{}{
 	"/clients/clientIpsByGuid":     {http.MethodPost: {}},
 	"/hosts/list":                  {http.MethodGet: {}},
 	"/certs/install":               {http.MethodPost: {}},
+	"/server/probePeer":            {http.MethodPost: {}},
 }
 
 // nodeXrayScopeAllow lets a master manage a node's Xray template (outbounds,

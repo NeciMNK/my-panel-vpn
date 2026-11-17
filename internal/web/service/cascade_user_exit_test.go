@@ -152,3 +152,25 @@ func TestBestExitPrefersMostFreeSpeedThenUnknownCapacityWithFewestUsers(t *testi
 		t.Fatal("a group of saturated servers must offer no auto pick")
 	}
 }
+
+// A server only the master lost still carries users, so it stays on offer; a dead
+// one leaves, and its country with it once no server there is left.
+func TestUserExitGroupsDropDeadServersAndEmptyCountries(t *testing.T) {
+	initJoinDB(t)
+	seedUserExitWorld(t)
+	db := database.GetDB()
+	for id, status := range map[int]string{2: model.NodeStatusIsolated, 3: model.NodeStatusOffline, 4: model.NodeStatusOffline} {
+		if err := db.Model(&model.Node{}).Where("id = ?", id).Update("status", status).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	groups, err := (&CascadeService{}).UserExitGroups([]string{"anna"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]map[int]bool{"DE": {2: false}}
+	if got := groupSummary(groups); !reflect.DeepEqual(got, want) {
+		t.Fatalf("groups (node -> saturated) = %v, want %v", got, want)
+	}
+}

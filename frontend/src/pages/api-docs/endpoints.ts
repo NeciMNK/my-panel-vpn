@@ -986,6 +986,26 @@ export const sections: readonly Section[] = [
           },
         },
       },
+      {
+        method: 'POST',
+        path: '/panel/api/server/probePeer',
+        summary:
+          'Check from this node whether another node accepts TCP on any of 1-4 ports. The master calls it on its other nodes when it cannot reach a node itself, to tell a dead node from a master-side network problem. It only connects and hangs up.',
+        requestSchema: {
+          type: 'object',
+          properties: {
+            address: { type: 'string' },
+            ports: {
+              type: 'array',
+              items: { type: 'integer', minimum: 1, maximum: 65535 },
+              minItems: 1,
+              maxItems: 4,
+            },
+          },
+          required: ['address', 'ports'],
+        },
+        responseSchema: 'PeerProbeResult',
+      },
     ],
   },
 

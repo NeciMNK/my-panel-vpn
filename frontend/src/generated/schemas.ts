@@ -4874,8 +4874,12 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": "https",
         "type": "string"
       },
+      "seenBy": {
+        "description": "SeenBy names the nodes that still reached this node while the master could not.",
+        "type": "string"
+      },
       "status": {
-        "description": "Heartbeat-updated fields. UpdatedAt advances on every probe even when\nthe row is otherwise unchanged so the UI's \"last seen\" tooltip is\ntruthful without us having to read LastHeartbeat separately.\nonline|offline|unknown",
+        "description": "Heartbeat-updated fields. UpdatedAt advances on every probe even when\nthe row is otherwise unchanged so the UI's \"last seen\" tooltip is\ntruthful without us having to read LastHeartbeat separately.\nonline|offline|isolated|unknown",
         "example": "online",
         "type": "string"
       },
@@ -4953,6 +4957,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "port",
       "remark",
       "scheme",
+      "seenBy",
       "status",
       "tlsVerifyMode",
       "updatedAt",
@@ -5227,6 +5232,9 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": "https",
         "type": "string"
       },
+      "seenBy": {
+        "type": "string"
+      },
       "status": {
         "example": "online",
         "type": "string"
@@ -5301,6 +5309,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "port",
       "remark",
       "scheme",
+      "seenBy",
       "status",
       "tlsVerifyMode",
       "updatedAt",
@@ -5557,6 +5566,33 @@ export const SCHEMAS: Record<string, unknown> = {
       "online",
       "tag",
       "up"
+    ],
+    "type": "object"
+  },
+  "PeerProbeResult": {
+    "description": "PeerProbeResult is what the asked node saw; Port is the first one that answered.",
+    "properties": {
+      "error": {
+        "type": "string"
+      },
+      "latencyMs": {
+        "example": 38,
+        "type": "integer"
+      },
+      "port": {
+        "example": 443,
+        "type": "integer"
+      },
+      "reachable": {
+        "example": true,
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "error",
+      "latencyMs",
+      "port",
+      "reachable"
     ],
     "type": "object"
   },

@@ -1214,7 +1214,8 @@
         "offline": "Çevrimdışı",
         "unknown": "Bilinmiyor",
         "xrayError": "Xray Hatası",
-        "xrayStopped": "Durduruldu"
+        "xrayStopped": "Durduruldu",
+        "isolated": "Ana panel ulaşamıyor, düğüm çalışıyor"
       },
       "toasts": {
         "list": "Düğümler yüklenemedi",
@@ -3072,6 +3073,7 @@
       "eventXrayCrashError": "Hata: {{ .Error }}",
       "eventNodeDown": "{{ .Name }} düğümü ÇEVRİMDIŞI",
       "eventNodeUp": "{{ .Name }} düğümü ÇEVRİMİÇİ",
+      "eventNodeIsolated": "Ana panel {{ .Name }} düğümüne ulaşamıyor, ancak düğüm çalışıyor: {{ .SeenBy }} ulaşabiliyor",
       "eventLoginFallback": "{{ .Source }} adresinden oturum açma başarısız",
       "memoryThreshold": "Bellek kullanımı {{ .Percent }}% eşiği {{ .Threshold }}% aşıyor",
       "inboundsCount": "🔌 Inbounds: {{ .Count }}\r\n",
@@ -3404,7 +3406,8 @@
       "threshold": "Eşik",
       "reason": "Neden",
       "time": "Zaman",
-      "source": "Kaynak"
+      "source": "Kaynak",
+      "seenBy": "Ulaşanlar"
     },
     "values": {
       "uptime": "{{ .Days }}g {{ .Hours }}s",
@@ -3417,6 +3420,7 @@
       "outboundUp": "Giden Bağlantı Aktif",
       "nodeDown": "Düğüm Çevrimdışı",
       "nodeUp": "Düğüm Çevrimiçi",
+      "nodeIsolated": "Düğüme ana panelden ulaşılamıyor",
       "xrayCrash": "Xray Çekirdeği Çöktü",
       "cpuHigh": "CPU Eşiği Aşıldı",
       "memoryHigh": "Bellek Eşiği Aşıldı",
@@ -3474,6 +3478,7 @@
     "statusSuccess": "BAŞARILI",
     "statusFailed": "BAŞARISIZ",
     "statusDown": "ÇEVRİMDIŞI",
+    "statusIsolated": "ANA PANEL ULAŞAMIYOR",
     "statusUp": "ÇEVRİMİÇİ"
   },
   "commandPalette": {

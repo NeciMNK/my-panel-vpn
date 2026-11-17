@@ -794,6 +794,20 @@ func (r *Remote) GetDescendants(ctx context.Context) ([]model.NodeSummary, error
 	return out, nil
 }
 
+// ProbePeer asks this node whether it reaches another node at any of the ports.
+// An old-build node without the endpoint returns an error the caller skips.
+func (r *Remote) ProbePeer(ctx context.Context, req entity.PeerProbeRequest) (entity.PeerProbeResult, error) {
+	env, err := r.do(ctx, http.MethodPost, "panel/api/server/probePeer", req)
+	if err != nil {
+		return entity.PeerProbeResult{}, err
+	}
+	var res entity.PeerProbeResult
+	if err := json.Unmarshal(env.Obj, &res); err != nil {
+		return entity.PeerProbeResult{}, fmt.Errorf("decode peer probe: %w", err)
+	}
+	return res, nil
+}
+
 func (r *Remote) ResetClientTraffic(ctx context.Context, _ *model.Inbound, email string) error {
 	_, err := r.do(ctx, http.MethodPost,
 		"panel/api/clients/resetTraffic/"+url.PathEscape(email), nil)

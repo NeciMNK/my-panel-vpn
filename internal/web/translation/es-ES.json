@@ -1214,7 +1214,8 @@
         "offline": "Sin conexión",
         "unknown": "Desconocido",
         "xrayError": "Error de Xray",
-        "xrayStopped": "Detenido"
+        "xrayStopped": "Detenido",
+        "isolated": "El maestro lo perdió, el nodo funciona"
       },
       "toasts": {
         "list": "Error al cargar los nodos",
@@ -3072,6 +3073,7 @@
       "eventXrayCrashError": "Error: {{ .Error }}",
       "eventNodeDown": "El nodo {{ .Name }} está CAÍDO",
       "eventNodeUp": "El nodo {{ .Name }} está ACTIVO",
+      "eventNodeIsolated": "El maestro perdió el nodo {{ .Name }}, pero sigue funcionando: {{ .SeenBy }} lo alcanzan",
       "eventLoginFallback": "Inicio de sesión fallido desde {{ .Source }}",
       "memoryThreshold": "Uso de memoria {{ .Percent }}% supera el umbral de {{ .Threshold }}%",
       "inboundsCount": "🔌 Inbounds: {{ .Count }}\r\n",
@@ -3404,7 +3406,8 @@
       "threshold": "Umbral",
       "reason": "Motivo",
       "time": "Hora",
-      "source": "Origen"
+      "source": "Origen",
+      "seenBy": "Alcanzado por"
     },
     "values": {
       "uptime": "{{ .Days }} d {{ .Hours }} h",
@@ -3417,6 +3420,7 @@
       "outboundUp": "Salida restablecida",
       "nodeDown": "Nodo caído",
       "nodeUp": "Nodo restablecido",
+      "nodeIsolated": "Nodo inalcanzable desde el maestro",
       "xrayCrash": "El núcleo Xray se bloqueó",
       "cpuHigh": "Umbral de CPU superado",
       "memoryHigh": "Umbral de memoria superado",
@@ -3474,6 +3478,7 @@
     "statusSuccess": "CORRECTO",
     "statusFailed": "FALLIDO",
     "statusDown": "CAÍDO",
+    "statusIsolated": "EL MAESTRO LO PERDIÓ",
     "statusUp": "ACTIVO"
   },
   "commandPalette": {

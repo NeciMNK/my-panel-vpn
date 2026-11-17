@@ -1175,6 +1175,7 @@ export const NodeSchema = z.object({
   port: z.number().int().min(1).max(65535),
   remark: z.string(),
   scheme: z.enum(['http', 'https']),
+  seenBy: z.string(),
   status: z.string(),
   tlsVerifyMode: z.enum(['verify', 'skip', 'pin', 'mtls']),
   transitive: z.boolean().optional(),
@@ -1250,6 +1251,7 @@ export const NodeViewSchema = z.object({
   port: z.number().int(),
   remark: z.string(),
   scheme: z.string(),
+  seenBy: z.string(),
   status: z.string(),
   tlsVerifyMode: z.string(),
   transitive: z.boolean().optional(),
@@ -1326,6 +1328,14 @@ export const PeerActivitySchema = z.object({
   up: z.number().int(),
 });
 export type PeerActivity = z.infer<typeof PeerActivitySchema>;
+
+export const PeerProbeResultSchema = z.object({
+  error: z.string(),
+  latencyMs: z.number().int(),
+  port: z.number().int(),
+  reachable: z.boolean(),
+});
+export type PeerProbeResult = z.infer<typeof PeerProbeResultSchema>;
 
 export const ProbeResultUISchema = z.object({
   cpuPct: z.number(),

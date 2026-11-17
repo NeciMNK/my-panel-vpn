@@ -212,7 +212,7 @@ var defaultValueMap = map[string]string{
 	"subCertFile":                 "",
 	"subKeyFile":                  "",
 	"externalSubUserAgent":        DefaultExternalSubUserAgent,
-	"subUpdates":                  "12",
+	"subUpdates":                  "1",
 	"subEncrypt":                  "true",
 	"subURI":                      "",
 	"subJsonPath":                 "/json/",

@@ -1097,6 +1097,7 @@ export interface Node {
   port: number;
   remark: string;
   scheme: string;
+  seenBy: string;
   status: string;
   tlsVerifyMode: string;
   transitive?: boolean;
@@ -1169,6 +1170,7 @@ export interface NodeView {
   port: number;
   remark: string;
   scheme: string;
+  seenBy: string;
   status: string;
   tlsVerifyMode: string;
   transitive?: boolean;
@@ -1236,6 +1238,13 @@ export interface PeerActivity {
   online: boolean;
   tag: string;
   up: number;
+}
+
+export interface PeerProbeResult {
+  error: string;
+  latencyMs: number;
+  port: number;
+  reachable: boolean;
 }
 
 export interface ProbeResultUI {

@@ -1214,7 +1214,8 @@
         "offline": "Не в сети",
         "unknown": "Неизвестно",
         "xrayError": "Ошибка Xray",
-        "xrayStopped": "Остановлен"
+        "xrayStopped": "Остановлен",
+        "isolated": "Мастер не видит, узел работает"
       },
       "toasts": {
         "list": "Не удалось загрузить узлы",
@@ -3072,6 +3073,7 @@
       "eventXrayCrashError": "Ошибка: {{ .Error }}",
       "eventNodeDown": "Узел {{ .Name }} НЕДОСТУПЕН",
       "eventNodeUp": "Узел {{ .Name }} В СЕТИ",
+      "eventNodeIsolated": "Мастер не видит узел {{ .Name }}, но он работает: его видят {{ .SeenBy }}",
       "eventLoginFallback": "Неудачный вход с {{ .Source }}",
       "memoryThreshold": "🔴 Использование памяти {{ .Percent }}% превышает пороговое значение {{ .Threshold }}%",
       "inboundsCount": "🔌 Подключений: {{ .Count }}\r\n",
@@ -3404,7 +3406,8 @@
       "threshold": "Порог",
       "reason": "Причина",
       "time": "Время",
-      "source": "Источник"
+      "source": "Источник",
+      "seenBy": "Видят"
     },
     "values": {
       "uptime": "{{ .Days }} д {{ .Hours }} ч",
@@ -3417,6 +3420,7 @@
       "outboundUp": "Исходящее восстановлено",
       "nodeDown": "Узел недоступен",
       "nodeUp": "Узел снова в сети",
+      "nodeIsolated": "Мастер не видит узел",
       "xrayCrash": "Сбой ядра Xray",
       "cpuHigh": "Превышен порог CPU",
       "memoryHigh": "Превышен порог памяти",
@@ -3474,6 +3478,7 @@
     "statusSuccess": "УСПЕШНО",
     "statusFailed": "НЕУДАЧНО",
     "statusDown": "НЕДОСТУПЕН",
+    "statusIsolated": "МАСТЕР НЕ ВИДИТ",
     "statusUp": "РАБОТАЕТ"
   },
   "commandPalette": {

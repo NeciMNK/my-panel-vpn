@@ -1214,7 +1214,8 @@
         "offline": "Ngoại tuyến",
         "unknown": "Không xác định",
         "xrayError": "Lỗi Xray",
-        "xrayStopped": "Đã dừng"
+        "xrayStopped": "Đã dừng",
+        "isolated": "Máy chủ chính mất kết nối, nút vẫn hoạt động"
       },
       "toasts": {
         "list": "Không tải được danh sách nút",
@@ -3072,6 +3073,7 @@
       "eventXrayCrashError": "Lỗi: {{ .Error }}",
       "eventNodeDown": "Node {{ .Name }} đã NGỪNG HOẠT ĐỘNG",
       "eventNodeUp": "Node {{ .Name }} đã HOẠT ĐỘNG",
+      "eventNodeIsolated": "Máy chủ chính mất kết nối với nút {{ .Name }}, nhưng nút vẫn hoạt động: {{ .SeenBy }} vẫn kết nối được",
       "eventLoginFallback": "Đăng nhập thất bại từ {{ .Source }}",
       "memoryThreshold": "Sử dụng bộ nhớ {{ .Percent }}% vượt quá ngưỡng {{ .Threshold }}%",
       "inboundsCount": "🔌 Inbounds: {{ .Count }}\r\n",
@@ -3404,7 +3406,8 @@
       "threshold": "Ngưỡng",
       "reason": "Lý do",
       "time": "Thời gian",
-      "source": "Nguồn"
+      "source": "Nguồn",
+      "seenBy": "Kết nối được từ"
     },
     "values": {
       "uptime": "{{ .Days }} ngày {{ .Hours }} giờ",
@@ -3417,6 +3420,7 @@
       "outboundUp": "Outbound hoạt động trở lại",
       "nodeDown": "Nút ngừng hoạt động",
       "nodeUp": "Nút hoạt động trở lại",
+      "nodeIsolated": "Máy chủ chính không kết nối được nút",
       "xrayCrash": "Lõi Xray bị sập",
       "cpuHigh": "Vượt ngưỡng CPU",
       "memoryHigh": "Vượt ngưỡng bộ nhớ",
@@ -3474,6 +3478,7 @@
     "statusSuccess": "THÀNH CÔNG",
     "statusFailed": "THẤT BẠI",
     "statusDown": "NGỪNG HOẠT ĐỘNG",
+    "statusIsolated": "MÁY CHỦ CHÍNH MẤT KẾT NỐI",
     "statusUp": "HOẠT ĐỘNG"
   },
   "commandPalette": {

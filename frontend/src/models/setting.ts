@@ -77,7 +77,7 @@ export class AllSetting {
   subCertFile = '';
   subKeyFile = '';
   externalSubUserAgent = 'v2rayNG/1.8.5';
-  subUpdates = 12;
+  subUpdates = 1;
   subEncrypt = true;
   subURI = '';
   subJsonURI = '';

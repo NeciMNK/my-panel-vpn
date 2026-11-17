@@ -1336,7 +1336,8 @@
         "offline": "Offline",
         "unknown": "Neznámy",
         "xrayError": "Chyba Xray",
-        "xrayStopped": "Zastavený"
+        "xrayStopped": "Zastavený",
+        "isolated": "Master ho stratil, uzol funguje"
       },
       "toasts": {
         "list": "Nepodarilo sa načítať servery",
@@ -3072,6 +3073,7 @@
       "eventXrayCrashError": "Chyba: {{ .Error }}",
       "eventNodeDown": "Server {{ .Name }} je NEDOSTUPNÝ",
       "eventNodeUp": "Server {{ .Name }} je DOSTUPNÝ",
+      "eventNodeIsolated": "Master stratil uzol {{ .Name }}, ale stále funguje: dosahujú ho {{ .SeenBy }}",
       "eventLoginFallback": "Neúspešné prihlásenie z {{ .Source }}",
       "memoryThreshold": "Využitie pamäte {{ .Percent }}% prekročilo prah {{ .Threshold }}%",
       "inboundsCount": "🔌 Inboundy: {{ .Count }}\r\n",
@@ -3404,7 +3406,8 @@
       "threshold": "Prah",
       "reason": "Dôvod",
       "time": "Čas",
-      "source": "Zdroj"
+      "source": "Zdroj",
+      "seenBy": "Dosahujú ho"
     },
     "values": {
       "uptime": "{{ .Days }}d {{ .Hours }}h",
@@ -3417,6 +3420,7 @@
       "outboundUp": "Výstup je dostupný",
       "nodeDown": "Server je nedostupný",
       "nodeUp": "Server je dostupný",
+      "nodeIsolated": "Uzol nedostupný z mastra",
       "xrayCrash": "Jadro Xray spadlo",
       "cpuHigh": "Prekročený prah využitia CPU",
       "memoryHigh": "Prekročený prah využitia pamäte",
@@ -3474,6 +3478,7 @@
     "statusSuccess": "ÚSPEŠNÉ",
     "statusFailed": "NEÚSPEŠNÉ",
     "statusDown": "NEDOSTUPNÝ",
+    "statusIsolated": "MASTER HO STRATIL",
     "statusUp": "DOSTUPNÝ"
   },
   "commandPalette": {

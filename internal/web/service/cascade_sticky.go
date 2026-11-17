@@ -238,7 +238,7 @@ func (s *CascadeService) StickCascadeUsers(ctx context.Context) {
 	healthy := map[int]bool{0: true}
 	for _, n := range nodes {
 		guidOf[n.Id] = effectiveNodeGuid(n, ambiguous)
-		healthy[n.Id] = n.Enable && n.Status == "online"
+		healthy[n.Id] = n.Serving()
 	}
 	byGuid := (&InboundService{}).GetOnlineClientsByGuid()
 	now := time.Now().Unix()
