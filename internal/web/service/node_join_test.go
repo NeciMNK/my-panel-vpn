@@ -18,6 +18,11 @@ func initJoinDB(t *testing.T) {
 	dbDir := t.TempDir()
 	t.Setenv("XUI_DB_FOLDER", dbDir)
 	dbtest.InitDB(t, filepath.Join(dbDir, "x-ui.db"))
+	// The applied-rules cache outlives the DB it was keyed on; a stale entry
+	// skips the entry rewrite a fresh cascade with the same id needs.
+	cascadeMu.Lock()
+	appliedAIRules = map[int]string{}
+	cascadeMu.Unlock()
 }
 
 func joinRequest(token string) *NodeJoinRequest {

@@ -11,27 +11,26 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/amneziawgnet"
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/protocol"
 	"github.com/mhsanaei/3x-ui/v3/internal/tuic"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 
 	"gorm.io/gorm"
 )
 
+// transportBits shares protocol.Transport's bit layout, so a Spec's ListenTransport converts as-is.
 type transportBits uint8
 
 const (
-	transportTCP transportBits = 1 << iota
-	transportUDP
+	transportTCP = transportBits(protocol.TCP)
+	transportUDP = transportBits(protocol.UDP)
 )
 
-func inboundTransports(protocol model.Protocol, streamSettings, settings string) transportBits {
-	// protocols that ignore streamSettings entirely.
-	switch protocol {
-	case model.Hysteria, model.WireGuard, model.AmneziaWG, model.TUIC:
-		return transportUDP
-	case model.MTProto:
-		return transportTCP
-	case model.MASQUE:
+func inboundTransports(p model.Protocol, streamSettings, settings string) transportBits {
+	if spec, ok := protocol.Lookup(p); ok && spec.ListenTransport != 0 {
+		return transportBits(spec.ListenTransport)
+	}
+	if p == model.MASQUE {
 		return masqueTransports(streamSettings)
 	}
 
@@ -62,10 +61,10 @@ func inboundTransports(protocol model.Protocol, streamSettings, settings string)
 	if settings != "" {
 		var st map[string]any
 		if json.Unmarshal([]byte(settings), &st) == nil {
-			switch protocol {
+			switch p {
 			case model.Shadowsocks, model.Tunnel:
 				key := "network"
-				if protocol == model.Tunnel {
+				if p == model.Tunnel {
 					key = "allowedNetwork"
 				}
 				if n, ok := st[key].(string); ok && n != "" {
