@@ -61,6 +61,12 @@ func (s *xrayLifecycle) holdBack(reason string) {
 	s.mu.Unlock()
 }
 
+// caughtUp drops a stale refusal once the running core serves the desired
+// config again, e.g. after a database outage that only failed one rebuild.
+func (s *xrayLifecycle) caughtUp() {
+	s.holdBack("")
+}
+
 func (s *xrayLifecycle) heldBackReason() string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -1524,6 +1530,7 @@ func (s *XrayService) RestartXray(isForce bool) error {
 		configUnchanged := process.GetConfig().Equals(xrayConfig)
 		if !isForce && configUnchanged && !isNeedXrayRestart.Load() {
 			logger.Debug("It does not need to restart Xray")
+			xrayState.caughtUp()
 			return repairUnavailableTuicRelays(xrayConfig, process.GetAPIPort())
 		}
 		// A config the core cannot bind never replaces one that works: its failed
@@ -1544,6 +1551,7 @@ func (s *XrayService) RestartXray(isForce bool) error {
 				return err
 			}
 			if applied {
+				xrayState.caughtUp()
 				logger.Info("Xray config changes applied through the core API, no restart needed")
 				return nil
 			}
