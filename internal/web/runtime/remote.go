@@ -800,6 +800,13 @@ func (r *Remote) UpdateSubEdgeCache(ctx context.Context, update subedge.CacheUpd
 	return err
 }
 
+// ConfigureSubEdgeDNS gives the node the DNS plan it follows while no master
+// can switch the subscription domain; an empty plan turns that off.
+func (r *Remote) ConfigureSubEdgeDNS(ctx context.Context, plan subedge.DNSPlan) error {
+	_, err := r.do(ctx, http.MethodPost, "panel/api/subEdges/node/dns", plan)
+	return err
+}
+
 // OpenSubEdgeTunnel opens the long-lived tunnel the node forwards subscription
 // requests through; it bypasses the client timeout that would cut it.
 func (r *Remote) OpenSubEdgeTunnel(ctx context.Context, master subedge.Master) (net.Conn, error) {

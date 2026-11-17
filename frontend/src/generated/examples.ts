@@ -830,6 +830,31 @@ export const EXAMPLES: Record<string, unknown> = {
     "onlineCount": 1,
     "total": 2000
   },
+  "DNSPlan": {
+    "domain": "sub.example.com",
+    "edgesBefore": [
+      "203.0.113.7"
+    ],
+    "tiers": [
+      [
+        "198.51.100.1"
+      ],
+      [
+        "203.0.113.7"
+      ],
+      []
+    ],
+    "token": "cf-dns-token"
+  },
+  "DNSStatus": {
+    "at": 1762736400,
+    "error": "",
+    "published": [
+      "198.51.100.1"
+    ],
+    "tier": 0,
+    "unmanaged": []
+  },
   "FallbackParentInfo": {
     "masterId": 0,
     "path": ""
@@ -1743,6 +1768,29 @@ export const EXAMPLES: Record<string, unknown> = {
     "port": 443,
     "status": "online",
     "updatedAt": 0
+  },
+  "SubEdgeDNSRequest": {
+    "domain": "sub.example.com",
+    "masterIps": [
+      "198.51.100.1"
+    ],
+    "token": ""
+  },
+  "SubEdgeDNSView": {
+    "domain": "sub.example.com",
+    "masterIps": [
+      "198.51.100.1"
+    ],
+    "status": {
+      "at": 1762736400,
+      "error": "",
+      "published": [
+        "198.51.100.1"
+      ],
+      "tier": 0,
+      "unmanaged": []
+    },
+    "tokenSet": true
   },
   "SubEdgeRequest": {
     "certId": 1,

@@ -128,6 +128,7 @@ var nodeSyncScopeAllow = map[string]map[string]struct{}{
 	"/subEdges/node/configure":     {http.MethodPost: {}},
 	"/subEdges/node/tunnel":        {http.MethodPost: {}},
 	"/subEdges/node/cache":         {http.MethodPost: {}},
+	"/subEdges/node/dns":           {http.MethodPost: {}},
 	"/server/probePeer":            {http.MethodPost: {}},
 }
 

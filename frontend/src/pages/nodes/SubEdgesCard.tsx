@@ -25,6 +25,8 @@ import { useTlsCertsQuery } from '@/api/queries/useTlsCerts';
 import type { TlsCertificate } from '@/schemas/tlsCert';
 import type { SubEdge, SubEdgeRequest } from '@/generated/types';
 
+import SubEdgeDnsSection from './SubEdgeDnsSection';
+
 const SUB_EDGES_KEY = ['subEdges', 'list'] as const;
 const JSON_HEADERS = { headers: { 'Content-Type': 'application/json' } };
 
@@ -197,6 +199,8 @@ export default function SubEdgesCard({ nodes }: SubEdgesCardProps) {
         pagination={false}
         scroll={{ x: 'max-content' }}
       />
+
+      <SubEdgeDnsSection />
 
       <Modal
         open={form !== null}

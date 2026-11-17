@@ -26,6 +26,9 @@ func NewSubEdgeController(g *gin.RouterGroup) *SubEdgeController {
 	g.POST("/node/configure", a.configure)
 	g.POST("/node/tunnel", a.tunnel)
 	g.POST("/node/cache", a.cache)
+	g.POST("/node/dns", a.nodeDNS)
+	g.GET("/dns", a.dns)
+	g.POST("/dns", a.saveDNS)
 	return a
 }
 
@@ -85,4 +88,29 @@ func (a *SubEdgeController) cache(c *gin.Context) {
 		return
 	}
 	jsonMsg(c, I18nWeb(c, "pages.nodes.subEdge.toasts.saved"), service.SubEdgeNode().UpdateCache(*update))
+}
+
+func (a *SubEdgeController) nodeDNS(c *gin.Context) {
+	plan, ok := middleware.BindAndValidate[subedge.DNSPlan](c)
+	if !ok {
+		return
+	}
+	jsonMsg(c, I18nWeb(c, "pages.nodes.subEdge.toasts.saved"), a.settingService.ConfigureSubEdgeDNSNode(*plan))
+}
+
+func (a *SubEdgeController) dns(c *gin.Context) {
+	view, err := a.subEdgeService.DNSView()
+	if err != nil {
+		jsonMsg(c, I18nWeb(c, "pages.nodes.subEdge.dns.title"), err)
+		return
+	}
+	jsonObj(c, view, nil)
+}
+
+func (a *SubEdgeController) saveDNS(c *gin.Context) {
+	req, ok := middleware.BindAndValidate[service.SubEdgeDNSRequest](c)
+	if !ok {
+		return
+	}
+	jsonMsg(c, I18nWeb(c, "pages.nodes.subEdge.dns.toasts.saved"), a.subEdgeService.SaveDNS(*req))
 }

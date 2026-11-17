@@ -3258,6 +3258,94 @@
         ],
         "type": "object"
       },
+      "DNSPlan": {
+        "description": "DNSPlan is what decides the subscription domain's A records: the addresses\nof each tier, best first. EdgesBefore is set only for an edge node.",
+        "properties": {
+          "domain": {
+            "example": "sub.example.com",
+            "type": "string"
+          },
+          "edgesBefore": {
+            "example": [
+              "203.0.113.7"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "tiers": {
+            "example": [
+              [
+                "198.51.100.1"
+              ],
+              [
+                "203.0.113.7"
+              ],
+              []
+            ],
+            "items": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "type": "array"
+          },
+          "token": {
+            "example": "cf-dns-token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "domain",
+          "edgesBefore",
+          "tiers",
+          "token"
+        ],
+        "type": "object"
+      },
+      "DNSStatus": {
+        "description": "DNSStatus is the outcome of the last switching step.",
+        "properties": {
+          "at": {
+            "example": 1762736400,
+            "format": "int64",
+            "type": "integer"
+          },
+          "error": {
+            "type": "string"
+          },
+          "published": {
+            "example": [
+              "198.51.100.1"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "tier": {
+            "example": 0,
+            "type": "integer"
+          },
+          "unmanaged": {
+            "example": [],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "at",
+          "error",
+          "published",
+          "tier",
+          "unmanaged"
+        ],
+        "type": "object"
+      },
       "FallbackParentInfo": {
         "description": "FallbackParentInfo carries everything the frontend needs to rewrite a\nchild inbound's client link: where to connect (the master's address\nand port) and which path matched on the master's fallbacks array.\nThe frontend already has the master inbound in its dbInbounds list,\nso we only ship identifiers + the match path here.",
         "properties": {
@@ -6667,6 +6755,65 @@
           "port",
           "status",
           "updatedAt"
+        ],
+        "type": "object"
+      },
+      "SubEdgeDNSRequest": {
+        "description": "SubEdgeDNSRequest is the admin's DNS switching setup; an empty token keeps\nthe saved one.",
+        "properties": {
+          "domain": {
+            "example": "sub.example.com",
+            "type": "string"
+          },
+          "masterIps": {
+            "example": [
+              "198.51.100.1"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "token": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "domain",
+          "masterIps",
+          "token"
+        ],
+        "type": "object"
+      },
+      "SubEdgeDNSView": {
+        "description": "SubEdgeDNSView is the DNS switching setup without its token, and what the\nlast switching step did.",
+        "properties": {
+          "domain": {
+            "example": "sub.example.com",
+            "type": "string"
+          },
+          "masterIps": {
+            "example": [
+              "198.51.100.1"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "status": {
+            "$ref": "#/components/schemas/DNSStatus"
+          },
+          "tokenSet": {
+            "example": true,
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "domain",
+          "masterIps",
+          "status",
+          "tokenSet"
         ],
         "type": "object"
       },
@@ -14506,6 +14653,156 @@
                     "body": "dmxlc3M6Ly8uLi4=",
                     "stored": 1762736400
                   }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/subEdges/node/dns": {
+      "post": {
+        "tags": [
+          "Subscription edges"
+        ],
+        "summary": "Node side: the DNS plan this edge node follows while no master reaches it and no edge in edgesBefore answers. An empty plan turns node-side switching off. Allowed for node-sync tokens.",
+        "operationId": "post_panel_api_subEdges_node_dns",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DNSPlan"
+              },
+              "example": {
+                "domain": "sub.example.com",
+                "token": "cf-dns-token",
+                "tiers": [
+                  [
+                    "198.51.100.1"
+                  ],
+                  [
+                    "203.0.113.7"
+                  ],
+                  []
+                ],
+                "edgesBefore": []
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/subEdges/dns": {
+      "get": {
+        "tags": [
+          "Subscription edges"
+        ],
+        "summary": "DNS switching for the subscription domain: the domain, whether the Cloudflare token is set, the masters’ IPv4 addresses (tier 1), and what the last step published.",
+        "operationId": "get_panel_api_subEdges_dns",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/SubEdgeDNSView"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "domain": "sub.example.com",
+                    "masterIps": [
+                      "198.51.100.1"
+                    ],
+                    "status": {
+                      "at": 1762736400,
+                      "error": "",
+                      "published": [
+                        "198.51.100.1"
+                      ],
+                      "tier": 0,
+                      "unmanaged": []
+                    },
+                    "tokenSet": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Subscription edges"
+        ],
+        "summary": "Save DNS switching. The leading master points the domain’s A records at the masters, else the edge nodes in Russia, else the others, and returns to a better tier after it stays up for 2 minutes. Only records it created (comment managed-by: my-panel-vpn) are touched. An empty token keeps the saved one; an empty domain turns switching off.",
+        "operationId": "post_panel_api_subEdges_dns",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubEdgeDNSRequest"
+              },
+              "example": {
+                "domain": "sub.example.com",
+                "token": "cf-dns-token",
+                "masterIps": [
+                  "198.51.100.1"
                 ]
               }
             }

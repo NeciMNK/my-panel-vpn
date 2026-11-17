@@ -1621,6 +1621,26 @@
         "enable": "Enabled",
         "deleteConfirm": "Stop serving subscriptions on this node?",
         "dnsHint": "Point the subscription domain's DNS at this node and set the subscription URI to that domain.",
+        "dns": {
+          "title": "DNS switching",
+          "desc": "The panel points the subscription domain at the masters, else at the edge nodes in Russia, else at the other edge nodes, and goes back to a better tier once it stays up for 2 minutes. It changes only the A records it created itself; edge nodes get the token and switch DNS while no master is up. The token needs DNS:Edit on the domain's zone only.",
+          "domain": "Subscription domain",
+          "token": "Cloudflare API token (DNS:Edit)",
+          "tokenKeep": "A token is saved; leave empty to keep it.",
+          "masterIps": "Masters' IPv4 addresses",
+          "masterIpsHint": "The public addresses where the masters serve subscriptions on port 443. Leave empty to publish only edge nodes.",
+          "tier": "Published tier",
+          "tiers": {
+            "none": "None",
+            "masters": "Masters",
+            "ru": "Edge nodes in Russia",
+            "foreign": "Other edge nodes"
+          },
+          "unmanaged": "The domain also has A records the panel did not create ({{ips}}); remove them in Cloudflare, or clients may still go there.",
+          "toasts": {
+            "saved": "DNS switching saved"
+          }
+        },
         "toasts": {
           "saved": "Subscription node saved",
           "deleted": "Subscription node removed",

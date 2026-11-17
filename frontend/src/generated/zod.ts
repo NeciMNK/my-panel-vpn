@@ -774,6 +774,23 @@ export const ClientsSummarySchema = z.object({
 });
 export type ClientsSummary = z.infer<typeof ClientsSummarySchema>;
 
+export const DNSPlanSchema = z.object({
+  domain: z.string(),
+  edgesBefore: z.array(z.string()),
+  tiers: z.array(z.array(z.string())),
+  token: z.string(),
+});
+export type DNSPlan = z.infer<typeof DNSPlanSchema>;
+
+export const DNSStatusSchema = z.object({
+  at: z.number().int(),
+  error: z.string(),
+  published: z.array(z.string()),
+  tier: z.number().int(),
+  unmanaged: z.array(z.string()),
+});
+export type DNSStatus = z.infer<typeof DNSStatusSchema>;
+
 export const FallbackParentInfoSchema = z.object({
   masterId: z.number().int(),
   path: z.string().optional(),
@@ -1585,6 +1602,21 @@ export const SubEdgeSchema = z.object({
   updatedAt: z.number().int(),
 });
 export type SubEdge = z.infer<typeof SubEdgeSchema>;
+
+export const SubEdgeDNSRequestSchema = z.object({
+  domain: z.string(),
+  masterIps: z.array(z.string()),
+  token: z.string(),
+});
+export type SubEdgeDNSRequest = z.infer<typeof SubEdgeDNSRequestSchema>;
+
+export const SubEdgeDNSViewSchema = z.object({
+  domain: z.string(),
+  masterIps: z.array(z.string()),
+  status: z.lazy(() => DNSStatusSchema),
+  tokenSet: z.boolean(),
+});
+export type SubEdgeDNSView = z.infer<typeof SubEdgeDNSViewSchema>;
 
 export const SubEdgeRequestSchema = z.object({
   certId: z.number().int().min(0),

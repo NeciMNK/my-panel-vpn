@@ -156,6 +156,8 @@ func run(root, outDir string) error {
 				"CascadeRequest",
 				"CascadeFixedExitRequest",
 				"SubEdgeRequest",
+				"SubEdgeDNSRequest",
+				"SubEdgeDNSView",
 			),
 		},
 		{
@@ -172,7 +174,7 @@ func run(root, outDir string) error {
 		},
 		{
 			Path:        resolveRel(root, "internal/subedge"),
-			StructAllow: setOf("ListenerConfig", "CacheUpdate", "CachedResponse"),
+			StructAllow: setOf("ListenerConfig", "CacheUpdate", "CachedResponse", "DNSPlan", "DNSStatus"),
 		},
 		{
 			Path:        resolveRel(root, "internal/amneziawg"),

@@ -430,6 +430,22 @@ func TestMasterNodeContract(t *testing.T) {
 					}
 					return nil
 				}, nil},
+				{"the node keeps the DNS plan it follows while no master can", []string{"ConfigureSubEdgeDNS"}, func() error {
+					plan := subedge.DNSPlan{Domain: "sub.example.com", Token: "tok", Tiers: [][]string{{"198.51.100.1"}, {"203.0.113.7"}, {}}, EdgesBefore: []string{}}
+					if err := master.ConfigureSubEdgeDNS(ctx, plan); err != nil {
+						return err
+					}
+					if got, ok := service.SubEdgeNodeDNSPlan(); !ok || got.Domain != plan.Domain || got.Tiers[1][0] != "203.0.113.7" {
+						return fmt.Errorf("node keeps plan %+v (%v), want the pushed one", got, ok)
+					}
+					if err := master.ConfigureSubEdgeDNS(ctx, subedge.DNSPlan{}); err != nil {
+						return err
+					}
+					if got, ok := service.SubEdgeNodeDNSPlan(); ok {
+						return fmt.Errorf("node still follows %+v after an empty plan", got)
+					}
+					return nil
+				}, nil},
 				{"RestartXray is accepted by the node", []string{"RestartXray"}, func() error {
 					// No core binary here: only the node's own restart failure may come back.
 					if err := master.RestartXray(ctx); err != nil && !strings.Contains(err.Error(), "rebooting the Xray") {
