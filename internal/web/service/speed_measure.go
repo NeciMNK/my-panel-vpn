@@ -44,6 +44,8 @@ type SpeedTestSettings struct {
 	EveryHours   int      `json:"everyHours" example:"6"`
 	Times        []string `json:"times" example:"[\"03:00\",\"13:30\"]"`
 	Timezone     string   `json:"timezone" example:"Europe/Moscow"`
+	// DropPercent below the 30-day average triggers rechecks and an alert; 0 turns it off.
+	DropPercent int `json:"dropPercent" example:"30"`
 }
 
 // SpeedTestStats sums up one server's successful tests over the last 30 days.
@@ -155,7 +157,11 @@ func (s *SpeedService) TestSettings() (SpeedTestSettings, error) {
 	if err != nil {
 		return SpeedTestSettings{}, err
 	}
-	out := SpeedTestSettings{AutoCapacity: auto, EveryHours: every, Times: []string{}, Timezone: zone}
+	drop, err := settings.GetSpeedTestDropPercent()
+	if err != nil {
+		return SpeedTestSettings{}, err
+	}
+	out := SpeedTestSettings{AutoCapacity: auto, EveryHours: every, Times: []string{}, Timezone: zone, DropPercent: drop}
 	if times != "" {
 		out.Times = strings.Split(times, ",")
 	}
@@ -173,7 +179,13 @@ func (s *SpeedService) SetTestSettings(req *SpeedTestSettings) error {
 	if _, err := time.LoadLocation(req.Timezone); err != nil || req.Timezone == "" {
 		return common.NewErrorf("unknown time zone %q", req.Timezone)
 	}
+	if req.DropPercent < 0 || req.DropPercent > speedDropMaxPercent {
+		return common.NewErrorf("the speed drop must be 0 to %d%%", speedDropMaxPercent)
+	}
 	settings := &SettingService{}
+	if err := settings.SetSpeedTestDropPercent(req.DropPercent); err != nil {
+		return err
+	}
 	if err := settings.SetSpeedTestAutoCapacity(req.AutoCapacity); err != nil {
 		return err
 	}
@@ -273,7 +285,7 @@ func (s *SpeedService) RunScheduled(now time.Time) []SpeedDrop {
 		}
 		row := s.runTest(id, SpeedTestSchedule)
 		releaseSpeedTest(id)
-		watchSpeedDrop(row, now)
+		watchSpeedDrop(row, settings.DropPercent, now)
 	}
 	return drops
 }

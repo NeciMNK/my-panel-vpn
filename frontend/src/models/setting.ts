@@ -185,6 +185,7 @@ export class AllSetting {
   smtpMemory = 80;
   outboundDownThreshold = 3;
   nodeDownThreshold = 1;
+  nodeLoadMinutes = 2;
   hasTgBotToken = false;
   hasTwoFactorToken = false;
   hasLdapPassword = false;
@@ -233,6 +234,10 @@ export class AllSetting {
     this.nodeDownThreshold = Number.isFinite(nodeThreshold)
       ? Math.min(100, Math.max(1, nodeThreshold))
       : 1;
+    const loadMinutes = Math.round(Number(this.nodeLoadMinutes));
+    this.nodeLoadMinutes = Number.isFinite(loadMinutes)
+      ? Math.min(60, Math.max(1, loadMinutes))
+      : 2;
   }
 
   equals(other: AllSetting): boolean {

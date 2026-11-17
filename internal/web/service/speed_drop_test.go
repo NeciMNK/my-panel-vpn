@@ -59,7 +59,7 @@ func TestSpeedDropIsConfirmedByTwoRechecks(t *testing.T) {
 			t.Cleanup(func() { speedTests, speedTestPoll = prevTarget, prevPoll })
 
 			s := &SpeedService{}
-			if err := s.SetTestSettings(&SpeedTestSettings{EveryHours: 6, Timezone: "UTC"}); err != nil {
+			if err := s.SetTestSettings(&SpeedTestSettings{EveryHours: 6, Timezone: "UTC", DropPercent: 30}); err != nil {
 				t.Fatal(err)
 			}
 			now := time.Now()
@@ -100,5 +100,41 @@ func TestSpeedDropIsConfirmedByTwoRechecks(t *testing.T) {
 				t.Fatalf("stats = %+v, %v: rechecks must not count toward the average", stats, err)
 			}
 		})
+	}
+}
+
+// The admin's drop percent decides what counts as slow: a 44% drop is one at
+// 30% but not at 50%, and 0 turns the check off.
+func TestSpeedDropPercentIsTheAdminsChoice(t *testing.T) {
+	for _, tc := range []struct {
+		percent   int
+		wantTests int64
+	}{{50, 1}, {0, 1}, {40, 2}} {
+		dbtest.InitDB(t, filepath.Join(t.TempDir(), "x-ui.db"))
+		resetSpeedRechecks()
+		target := &switchableSpeedTests{}
+		prevTarget, prevPoll := speedTests, speedTestPoll
+		speedTests, speedTestPoll = target, time.Millisecond
+		s := &SpeedService{}
+		if err := s.SetTestSettings(&SpeedTestSettings{EveryHours: 6, Timezone: "UTC", DropPercent: tc.percent}); err != nil {
+			t.Fatal(err)
+		}
+		now := time.Now()
+		for i := range 3 {
+			row := model.SpeedTestResult{NodeId: 0, Trigger: SpeedTestSchedule, DownloadMbps: 900, UploadMbps: 900, CreatedAt: now.Add(-time.Duration(7+6*i) * time.Hour).UnixMilli()}
+			if err := database.GetDB().Create(&row).Error; err != nil {
+				t.Fatal(err)
+			}
+		}
+		target.set(500, 900)
+		s.RunScheduled(now)
+		s.RunScheduled(now.Add(speedRecheckEvery))
+		var tests int64
+		database.GetDB().Model(&model.SpeedTestResult{}).Where("created_at > ?", now.Add(-time.Minute).UnixMilli()).Count(&tests)
+		if tests != tc.wantTests {
+			t.Errorf("drop percent %d: tests run = %d, want %d", tc.percent, tests, tc.wantTests)
+		}
+		speedTests, speedTestPoll = prevTarget, prevPoll
+		resetSpeedRechecks()
 	}
 }

@@ -569,3 +569,23 @@ func TestFormatEmbed_NodeLoadNamesTheNode(t *testing.T) {
 		t.Fatalf("footer = %+v, want %q", embed.Footer, want)
 	}
 }
+
+// A node's own threshold wins over the Discord one, both ways.
+func TestFormatEmbed_NodeOwnThreshold(t *testing.T) {
+	settingService := setupTestDB(t)
+	_ = settingService.SetDiscordCpu(80)
+	sub := NewSubscriber(settingService, NewDiscordService(settingService))
+	for _, tc := range []struct {
+		percent float64
+		want    bool
+	}{{95, false}, {99.5, true}} {
+		_, ok := sub.FormatEmbed(eventbus.Event{
+			Type:   eventbus.EventCPUHigh,
+			Source: "hot-1",
+			Data:   &eventbus.SystemMetricData{Percent: tc.percent, Peak: tc.percent, Threshold: 99},
+		})
+		if ok != tc.want {
+			t.Errorf("%v%% against the node's 99%%: embed = %v, want %v", tc.percent, ok, tc.want)
+		}
+	}
+}

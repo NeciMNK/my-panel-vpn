@@ -233,6 +233,9 @@ func (t *Tgbot) loadNotice(e eventbus.Event, data *eventbus.SystemMetricData) (k
 	default:
 		return "", ""
 	}
+	if data.Threshold > 0 {
+		threshold, err = data.Threshold, nil
+	}
 	key := string(e.Type) + ":" + e.Source
 	server := getHostname()
 	if e.Source != "" {

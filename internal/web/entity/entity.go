@@ -95,6 +95,8 @@ type AllSetting struct {
 
 	OutboundDownThreshold int `json:"outboundDownThreshold" form:"outboundDownThreshold" validate:"gte=1,lte=100"`
 	NodeDownThreshold     int `json:"nodeDownThreshold" form:"nodeDownThreshold" validate:"gte=1,lte=100"`
+	// NodeLoadMinutes is how long a node's CPU or RAM must stay over the threshold before it alerts.
+	NodeLoadMinutes int `json:"nodeLoadMinutes" form:"nodeLoadMinutes" validate:"gte=1,lte=60"`
 
 	TimeLocation    string `json:"timeLocation" form:"timeLocation"`
 	TwoFactorEnable bool   `json:"twoFactorEnable" form:"twoFactorEnable"`

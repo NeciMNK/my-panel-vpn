@@ -47,3 +47,31 @@ func TestNodeLoadAlertAndRecovery(t *testing.T) {
 		t.Fatalf("calls:\n%s\nwant:\n%s", strings.Join(texts, "\n"), strings.Join(want, "\n"))
 	}
 }
+
+// A node's own threshold replaces the bot's: a node expected to run hot at 90%
+// must not page at the panel-wide 80%.
+func TestNodeOwnThresholdReplacesTheBotThreshold(t *testing.T) {
+	srv, calls := noticeServer(t)
+	swapTestBot(t, srv.URL)
+	defer srv.Close()
+	setTestAdmins(t, 1)
+	notices.reset()
+	resetLoadAlerts()
+	tb := initReportDB(t)
+	if err := tb.settingService.SetTgEnabledEvents("cpu.high"); err != nil {
+		t.Fatal(err)
+	}
+	draftLocalizer(t, &i18n.Message{ID: "tgbot.messages.cpuThreshold", Other: "high {{ .Percent }}>{{ .Threshold }}"})
+	send := func(low float64) {
+		tb.HandleEvent(eventbus.Event{Type: eventbus.EventCPUHigh, Source: "hot-1", Data: &eventbus.SystemMetricData{Percent: low, Peak: low, Threshold: 95}})
+	}
+
+	send(90)
+	if n := len(calls()); n != 0 {
+		t.Fatalf("90%% on a node with its own 95%% threshold sent %d messages", n)
+	}
+	send(97)
+	if got := calls(); len(got) != 1 || !strings.HasSuffix(got[0].Payload["text"].(string), "high 97.00>95") {
+		t.Fatalf("calls = %+v, want one alert against the node's 95%%", got)
+	}
+}

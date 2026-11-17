@@ -452,6 +452,9 @@ func (s *NodeService) normalize(n *model.Node) error {
 	if n.Country != "" && !isCountryCode(n.Country) {
 		return common.NewError("country must be a two-letter code such as DE")
 	}
+	if n.AlertCpu < 0 || n.AlertCpu > 100 || n.AlertMemory < 0 || n.AlertMemory > 100 {
+		return common.NewError("a node's CPU and RAM alert thresholds must be 0 to 100")
+	}
 	return nil
 }
 
@@ -556,6 +559,8 @@ func (s *NodeService) Update(id int, in *model.Node) error {
 		"inbound_tags":          string(inboundTagsJSON),
 		"outbound_tag":          in.OutboundTag,
 		"country":               in.Country,
+		"alert_cpu":             in.AlertCpu,
+		"alert_memory":          in.AlertMemory,
 	}
 	if nodeSelectionGrew(existing, in) {
 		updates["inbounds_adopted_at"] = 0
@@ -620,6 +625,8 @@ func (s *NodeService) UpdateFromRequest(id int, req *NodeMutationRequest) error 
 		"inbound_tags":          string(inboundTagsJSON),
 		"outbound_tag":          in.OutboundTag,
 		"country":               in.Country,
+		"alert_cpu":             in.AlertCpu,
+		"alert_memory":          in.AlertMemory,
 	}
 	if nodeSelectionGrew(existing, in) {
 		updates["inbounds_adopted_at"] = 0

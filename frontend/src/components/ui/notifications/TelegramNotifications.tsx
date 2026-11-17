@@ -85,6 +85,22 @@ const GROUPS: NotificationGroupConfig[] = [
             style={{ width: 80 }}
           />
         ),
+        also: {
+          settingKey: 'nodeLoadMinutes',
+          label: 'nodeLoadMinutes',
+          hint: 'nodeLoadMinutesHint',
+          extra: ({ value, onChange, ariaLabel }) => (
+            <InputNumber
+              size="small"
+              min={1}
+              max={60}
+              value={value}
+              onChange={onChange}
+              aria-label={ariaLabel}
+              style={{ width: 80 }}
+            />
+          ),
+        },
       },
       { key: 'speed.low', label: 'eventSpeedLow', settingKey: '' },
       { key: 'speed.drop', label: 'eventSpeedDrop', settingKey: '' },

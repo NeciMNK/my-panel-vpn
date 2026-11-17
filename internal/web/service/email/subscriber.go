@@ -144,6 +144,9 @@ func (s *Subscriber) formatMessage(e eventbus.Event) (subject, body string) {
 	case eventbus.EventCPUHigh:
 		if data, ok := e.Data.(*eventbus.SystemMetricData); ok {
 			smtpCpu, err := s.settingService.GetSmtpCpu()
+			if data.Threshold > 0 {
+				smtpCpu, err = data.Threshold, nil // the node's own threshold
+			}
 			if err != nil || smtpCpu <= 0 || data.Percent <= float64(smtpCpu) {
 				return
 			}
@@ -157,6 +160,9 @@ func (s *Subscriber) formatMessage(e eventbus.Event) (subject, body string) {
 	case eventbus.EventMemoryHigh:
 		if data, ok := e.Data.(*eventbus.SystemMetricData); ok {
 			smtpMemory, err := s.settingService.GetSmtpMemory()
+			if data.Threshold > 0 {
+				smtpMemory, err = data.Threshold, nil // the node's own threshold
+			}
 			if err != nil || smtpMemory <= 0 || data.Percent <= float64(smtpMemory) {
 				return
 			}

@@ -18,7 +18,7 @@ import (
 func TestNodeLoadAlarmPublishesEachNodesLoadOverTheWindow(t *testing.T) {
 	dbtest.InitDB(t, filepath.Join(t.TempDir(), "x-ui.db"))
 	now := time.Unix(time.Now().Unix()/2*2, 0)
-	busy := &model.Node{Id: 7101, Name: "de-1", Address: "10.0.0.1", Port: 2053, Enable: true}
+	busy := &model.Node{Id: 7101, Name: "de-1", Address: "10.0.0.1", Port: 2053, Enable: true, AlertCpu: 95}
 	fresh := &model.Node{Id: 7102, Name: "nl-1", Address: "10.0.0.2", Port: 2053, Enable: true}
 	off := &model.Node{Id: 7103, Name: "fi-1", Address: "10.0.0.3", Port: 2053, Enable: true}
 	for _, n := range []*model.Node{busy, fresh, off} {
@@ -79,15 +79,32 @@ func TestNodeLoadAlarmPublishesEachNodesLoadOverTheWindow(t *testing.T) {
 	want := []struct {
 		typ       eventbus.EventType
 		low, peak float64
+		threshold int
 	}{
-		{eventbus.EventCPUHigh, 97, 97},
-		{eventbus.EventMemoryHigh, 60, 62},
+		{eventbus.EventCPUHigh, 97, 97, 95},
+		{eventbus.EventMemoryHigh, 60, 62, 0},
 	}
 	for i, w := range want {
 		e := events[i]
 		d, _ := e.Data.(*eventbus.SystemMetricData)
-		if e.Type != w.typ || e.Source != "de-1" || d == nil || d.Percent != w.low || d.Peak != w.peak {
-			t.Errorf("event %d = %s %q %+v, want %s \"de-1\" low %v peak %v", i, e.Type, e.Source, d, w.typ, w.low, w.peak)
+		if e.Type != w.typ || e.Source != "de-1" || d == nil || d.Percent != w.low || d.Peak != w.peak || d.Threshold != w.threshold {
+			t.Errorf("event %d = %s %q %+v, want %s \"de-1\" low %v peak %v threshold %d", i, e.Type, e.Source, d, w.typ, w.low, w.peak, w.threshold)
+		}
+	}
+
+	// A longer window set by the admin reaches back to the dip at 2m30s.
+	if err := (&service.SettingService{}).SetNodeLoadMinutes(3); err != nil {
+		t.Fatal(err)
+	}
+	(&NodeLoadAlarmJob{now: func() time.Time { return now }}).Run()
+	for range 2 {
+		select {
+		case e := <-got:
+			if d := e.Data.(*eventbus.SystemMetricData); e.Type == eventbus.EventCPUHigh && d.Percent != 10 {
+				t.Fatalf("cpu held over 3 minutes = %v, want 10 (the dip)", d.Percent)
+			}
+		case <-time.After(2 * time.Second):
+			t.Fatal("no events with a 3-minute window")
 		}
 	}
 }

@@ -65,6 +65,7 @@ export interface AllSetting {
   ldapUserFilter: string;
   ldapVlessField: string;
   nodeDownThreshold: number;
+  nodeLoadMinutes: number;
   outboundDownThreshold: number;
   pageSize: number;
   panelOutbound: string;
@@ -266,6 +267,7 @@ export interface AllSettingView {
   ldapUserFilter: string;
   ldapVlessField: string;
   nodeDownThreshold: number;
+  nodeLoadMinutes: number;
   outboundDownThreshold: number;
   pageSize: number;
   panelOutbound: string;
@@ -1062,6 +1064,8 @@ export interface NewUUIDResponse {
 export interface Node {
   activeCount: number;
   address: string;
+  alertCpu: number;
+  alertMemory: number;
   allowPrivateAddress: boolean;
   basePath: string;
   clientCount: number;
@@ -1112,6 +1116,8 @@ export interface NodeJoinTokenView {
 
 export interface NodeMutationRequest {
   address: string;
+  alertCpu: number;
+  alertMemory: number;
   allowPrivateAddress: boolean;
   apiToken?: string | null;
   basePath: string;
@@ -1133,6 +1139,8 @@ export interface NodeMutationRequest {
 export interface NodeView {
   activeCount: number;
   address: string;
+  alertCpu: number;
+  alertMemory: number;
   allowPrivateAddress: boolean;
   basePath: string;
   clientCount: number;
@@ -1365,6 +1373,7 @@ export interface SpeedTestResult {
 
 export interface SpeedTestSettings {
   autoCapacity: boolean;
+  dropPercent: number;
   everyHours: number;
   times: string[];
   timezone: string;

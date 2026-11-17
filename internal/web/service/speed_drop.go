@@ -10,9 +10,8 @@ import (
 )
 
 const (
-	// speedDropPercent is how far below the month's average a result must be to count as a drop.
-	speedDropPercent = 30
-	speedRecheckRuns = 2
+	speedDropMaxPercent = 90
+	speedRecheckRuns    = 2
 	// speedRecheckEvery spaces the rechecks so both finish within ten minutes of the first result.
 	speedRecheckEvery = 4 * time.Minute
 	// speedDropMinHistory results make an average worth comparing against.
@@ -23,6 +22,7 @@ const (
 // scheduled test and on every recheck after it.
 type SpeedDrop struct {
 	NodeId          int
+	Percent         int
 	AvgDownloadMbps float64
 	AvgUploadMbps   float64
 	Results         []model.SpeedTestResult
@@ -66,20 +66,20 @@ func belowAverage(row *model.SpeedTestResult, d SpeedDrop) bool {
 	if row == nil || row.Error != "" {
 		return false
 	}
-	factor := 1 - speedDropPercent/100.0
+	factor := 1 - float64(d.Percent)/100
 	return row.DownloadMbps < d.AvgDownloadMbps*factor || row.UploadMbps < d.AvgUploadMbps*factor
 }
 
 // watchSpeedDrop queues rechecks for a result far below the server's average.
-func watchSpeedDrop(row *model.SpeedTestResult, now time.Time) {
-	if row == nil || row.Error != "" {
+func watchSpeedDrop(row *model.SpeedTestResult, percent int, now time.Time) {
+	if row == nil || row.Error != "" || percent <= 0 {
 		return
 	}
 	down, up, ok := speedBaseline(row)
 	if !ok {
 		return
 	}
-	drop := SpeedDrop{NodeId: row.NodeId, AvgDownloadMbps: down, AvgUploadMbps: up}
+	drop := SpeedDrop{NodeId: row.NodeId, Percent: percent, AvgDownloadMbps: down, AvgUploadMbps: up}
 	if !belowAverage(row, drop) {
 		return
 	}

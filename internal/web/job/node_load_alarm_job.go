@@ -8,15 +8,12 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 )
 
-// nodeLoadWindow is how long a node's CPU or RAM must stay above the threshold
-// before it alerts, so a short spike does not page the admin.
-const nodeLoadWindow = 2 * time.Minute
-
 // NodeLoadAlarmJob publishes every online node's CPU and RAM held over the last
-// window as cpu.high / memory.high; each notifier applies its own threshold.
+// window as cpu.high / memory.high, carrying the node's own threshold if it has one.
 type NodeLoadAlarmJob struct {
-	nodeService service.NodeService
-	now         func() time.Time
+	nodeService    service.NodeService
+	settingService service.SettingService
+	now            func() time.Time
 }
 
 func NewNodeLoadAlarmJob() *NodeLoadAlarmJob {
@@ -33,19 +30,28 @@ func (j *NodeLoadAlarmJob) Run() {
 		return
 	}
 	now := j.now()
+	// nodeLoadMinutes is how long the load must hold, so a short spike does not page.
+	window := 2 * time.Minute
+	if minutes, err := j.settingService.GetNodeLoadMinutes(); err == nil && minutes > 0 {
+		window = time.Duration(minutes) * time.Minute
+	}
 	for _, n := range nodes {
 		if !n.Enable || n.Status != "online" {
 			continue
 		}
-		for metric, eventType := range map[string]eventbus.EventType{"cpu": eventbus.EventCPUHigh, "mem": eventbus.EventMemoryHigh} {
-			low, high, ok := j.nodeService.NodeLoadSpan(n.Id, metric, nodeLoadWindow, now)
+		for _, m := range []struct {
+			metric    string
+			eventType eventbus.EventType
+			threshold int
+		}{{"cpu", eventbus.EventCPUHigh, n.AlertCpu}, {"mem", eventbus.EventMemoryHigh, n.AlertMemory}} {
+			low, high, ok := j.nodeService.NodeLoadSpan(n.Id, m.metric, window, now)
 			if !ok {
 				continue
 			}
 			EventBus.Publish(eventbus.Event{
-				Type:      eventType,
+				Type:      m.eventType,
 				Source:    nodeEventSource(n),
-				Data:      &eventbus.SystemMetricData{Percent: low, Peak: high},
+				Data:      &eventbus.SystemMetricData{Percent: low, Peak: high, Threshold: m.threshold},
 				Timestamp: now,
 			})
 		}

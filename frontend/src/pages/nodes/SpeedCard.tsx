@@ -134,6 +134,7 @@ export default function SpeedCard({ nodes }: { nodes: NodeRecord[] }) {
     everyHours: 0,
     times: [],
     timezone: 'Europe/Moscow',
+    dropPercent: 30,
   };
   const schedule = scheduleDraft ?? testSettings;
   const editSchedule = (patch: Partial<SpeedTestSettings>) =>
@@ -335,6 +336,21 @@ export default function SpeedCard({ nodes }: { nodes: NodeRecord[] }) {
             value={schedule.timezone}
             options={TIME_ZONES.map((z) => ({ value: z, label: z }))}
             onChange={(timezone: string) => editSchedule({ timezone })}
+          />
+        </Form.Item>
+        <Form.Item
+          label={t('pages.nodes.speed.dropPercent')}
+          tooltip={t('pages.nodes.speed.dropPercentHint')}
+          htmlFor="speed-drop-percent"
+        >
+          <InputNumber
+            id="speed-drop-percent"
+            style={{ width: SPEED_INPUT_WIDTH }}
+            min={0}
+            max={90}
+            suffix="%"
+            value={schedule.dropPercent}
+            onChange={(v) => editSchedule({ dropPercent: v ?? 0 })}
           />
         </Form.Item>
         {scheduleDraft !== null && (

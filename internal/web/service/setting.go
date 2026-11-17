@@ -71,6 +71,7 @@ var defaultValueMap = map[string]string{
 	// Edited from the speed card, not the settings page, so kept out of entity.AllSetting.
 	"speedTestAutoCapacity": "true",
 	"speedTestEveryHours":   "0",
+	"speedTestDropPercent":  "30",
 	"speedTestTimes":        "",
 	"speedTestTimezone":     "Europe/Moscow",
 	// Node mTLS material (opt-in). All default empty: the CA + master client
@@ -270,6 +271,7 @@ var defaultValueMap = map[string]string{
 	"outboundDownThreshold": "3",
 
 	"nodeDownThreshold": "1",
+	"nodeLoadMinutes":   "2",
 
 	// Email (SMTP) notifications
 	"smtpEnable":         "false",
@@ -704,6 +706,14 @@ func (s *SettingService) GetSpeedTestAutoCapacity() (bool, error) {
 
 func (s *SettingService) SetSpeedTestAutoCapacity(v bool) error {
 	return s.setBool("speedTestAutoCapacity", v)
+}
+
+func (s *SettingService) GetSpeedTestDropPercent() (int, error) {
+	return s.getInt("speedTestDropPercent")
+}
+
+func (s *SettingService) SetSpeedTestDropPercent(v int) error {
+	return s.setInt("speedTestDropPercent", v)
 }
 
 func (s *SettingService) GetSpeedTestEveryHours() (int, error) {
@@ -1861,6 +1871,14 @@ func (s *SettingService) GetOutboundDownThreshold() (int, error) {
 
 func (s *SettingService) SetOutboundDownThreshold(value int) error {
 	return s.setInt("outboundDownThreshold", value)
+}
+
+func (s *SettingService) GetNodeLoadMinutes() (int, error) {
+	return s.getInt("nodeLoadMinutes")
+}
+
+func (s *SettingService) SetNodeLoadMinutes(value int) error {
+	return s.setInt("nodeLoadMinutes", value)
 }
 
 func (s *SettingService) GetNodeDownThreshold() (int, error) {

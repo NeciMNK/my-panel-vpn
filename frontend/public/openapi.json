@@ -223,6 +223,12 @@
             "minimum": 1,
             "type": "integer"
           },
+          "nodeLoadMinutes": {
+            "description": "NodeLoadMinutes is how long a node's CPU or RAM must stay over the threshold before it alerts.",
+            "maximum": 60,
+            "minimum": 1,
+            "type": "integer"
+          },
           "outboundDownThreshold": {
             "maximum": 100,
             "minimum": 1,
@@ -756,6 +762,7 @@
           "ldapUserFilter",
           "ldapVlessField",
           "nodeDownThreshold",
+          "nodeLoadMinutes",
           "outboundDownThreshold",
           "pageSize",
           "panelOutbound",
@@ -1064,6 +1071,12 @@
           },
           "nodeDownThreshold": {
             "maximum": 100,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "nodeLoadMinutes": {
+            "description": "NodeLoadMinutes is how long a node's CPU or RAM must stay over the threshold before it alerts.",
+            "maximum": 60,
             "minimum": 1,
             "type": "integer"
           },
@@ -1609,6 +1622,7 @@
           "ldapUserFilter",
           "ldapVlessField",
           "nodeDownThreshold",
+          "nodeLoadMinutes",
           "outboundDownThreshold",
           "pageSize",
           "panelOutbound",
@@ -4740,6 +4754,15 @@
             "example": "node1.example.com",
             "type": "string"
           },
+          "alertCpu": {
+            "description": "AlertCpu and AlertMemory (percent) replace the notifiers' CPU/RAM threshold for this node; 0 keeps them.",
+            "example": 90,
+            "type": "integer"
+          },
+          "alertMemory": {
+            "example": 0,
+            "type": "integer"
+          },
           "allowPrivateAddress": {
             "type": "boolean"
           },
@@ -4924,6 +4947,8 @@
         "required": [
           "activeCount",
           "address",
+          "alertCpu",
+          "alertMemory",
           "allowPrivateAddress",
           "basePath",
           "clientCount",
@@ -4993,6 +5018,12 @@
         "properties": {
           "address": {
             "type": "string"
+          },
+          "alertCpu": {
+            "type": "integer"
+          },
+          "alertMemory": {
+            "type": "integer"
           },
           "allowPrivateAddress": {
             "type": "boolean"
@@ -5065,6 +5096,8 @@
         },
         "required": [
           "address",
+          "alertCpu",
+          "alertMemory",
           "allowPrivateAddress",
           "basePath",
           "country",
@@ -5092,6 +5125,14 @@
           "address": {
             "example": "node.example.com",
             "type": "string"
+          },
+          "alertCpu": {
+            "example": 90,
+            "type": "integer"
+          },
+          "alertMemory": {
+            "example": 0,
+            "type": "integer"
           },
           "allowPrivateAddress": {
             "example": false,
@@ -5271,6 +5312,8 @@
         "required": [
           "activeCount",
           "address",
+          "alertCpu",
+          "alertMemory",
           "allowPrivateAddress",
           "basePath",
           "clientCount",
@@ -6119,6 +6162,11 @@
             "example": true,
             "type": "boolean"
           },
+          "dropPercent": {
+            "description": "DropPercent below the 30-day average triggers rechecks and an alert; 0 turns it off.",
+            "example": 30,
+            "type": "integer"
+          },
           "everyHours": {
             "example": 6,
             "type": "integer"
@@ -6140,6 +6188,7 @@
         },
         "required": [
           "autoCapacity",
+          "dropPercent",
           "everyHours",
           "times",
           "timezone"
@@ -14163,6 +14212,7 @@
                     ],
                     "testSettings": {
                       "autoCapacity": true,
+                      "dropPercent": 30,
                       "everyHours": 6,
                       "times": [
                         "03:00",
@@ -14596,6 +14646,8 @@
                     {
                       "activeCount": 20,
                       "address": "node.example.com",
+                      "alertCpu": 90,
+                      "alertMemory": 0,
                       "allowPrivateAddress": false,
                       "basePath": "/",
                       "clientCount": 25,
@@ -14801,6 +14853,8 @@
                   "obj": {
                     "activeCount": 20,
                     "address": "node.example.com",
+                    "alertCpu": 90,
+                    "alertMemory": 0,
                     "allowPrivateAddress": false,
                     "basePath": "/",
                     "clientCount": 25,
@@ -15093,6 +15147,8 @@
                   "obj": {
                     "activeCount": 20,
                     "address": "node.example.com",
+                    "alertCpu": 90,
+                    "alertMemory": 0,
                     "allowPrivateAddress": false,
                     "basePath": "/",
                     "clientCount": 25,
@@ -22138,6 +22194,8 @@
                 {
                   "activeCount": 20,
                   "address": "node.example.com",
+                  "alertCpu": 90,
+                  "alertMemory": 0,
                   "allowPrivateAddress": false,
                   "basePath": "/",
                   "clientCount": 25,

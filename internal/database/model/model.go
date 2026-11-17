@@ -860,6 +860,9 @@ type Node struct {
 	OutboundTag         string   `json:"outboundTag" form:"outboundTag" gorm:"column:outbound_tag"`
 	// Country is the ISO 3166-1 alpha-2 code country cascades group exits by.
 	Country string `json:"country" form:"country" gorm:"column:country" example:"DE"`
+	// AlertCpu and AlertMemory (percent) replace the notifiers' CPU/RAM threshold for this node; 0 keeps them.
+	AlertCpu    int `json:"alertCpu" form:"alertCpu" gorm:"column:alert_cpu;default:0" example:"90"`
+	AlertMemory int `json:"alertMemory" form:"alertMemory" gorm:"column:alert_memory;default:0" example:"0"`
 
 	// Guid is the remote panel's stable self-identifier (its panelGuid),
 	// learned from each heartbeat. It is the globally stable node identity used
