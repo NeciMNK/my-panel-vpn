@@ -12,9 +12,10 @@ import {
   TagsOutlined,
   UsergroupAddOutlined,
   UsergroupDeleteOutlined,
+  SwapOutlined,
 } from '@ant-design/icons';
 
-import { isInboundMultiUser } from './helpers';
+import { isInboundMultiUser, readStreamHints } from './helpers';
 import type { DBInboundRecord, RowAction } from './types';
 
 interface RowActionsMenuProps {
@@ -77,6 +78,13 @@ export function buildRowActionsMenu({
     icon: <BlockOutlined aria-hidden />,
     label: t('pages.inbounds.clone'),
   });
+  if (readStreamHints(record.streamSettings).network === 'grpc') {
+    items.push({
+      key: 'copyAsXhttp',
+      icon: <SwapOutlined aria-hidden />,
+      label: t('pages.inbounds.copyAsXhttp'),
+    });
+  }
   if (isInboundMultiUser(record)) {
     items.push({
       key: 'attachExisting',

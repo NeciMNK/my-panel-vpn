@@ -116,6 +116,7 @@ export interface AllSetting {
   subHappPerAppMode: string;
   subHappPingType: string;
   subHappProviderId: string;
+  subHappRoutingUpdate: boolean;
   subHappSubExpire: boolean;
   subHappSubExpireButtonLink: string;
   subHappSubInfoButtonLink: string;
@@ -172,6 +173,7 @@ export interface AllSetting {
   subKeyFile: string;
   subListen: string;
   subPath: string;
+  subPathAliases: string;
   subPort: number;
   subProfileMode: string;
   subProfileUrl: string;
@@ -316,6 +318,7 @@ export interface AllSettingView {
   subHappPerAppMode: string;
   subHappPingType: string;
   subHappProviderId: string;
+  subHappRoutingUpdate: boolean;
   subHappSubExpire: boolean;
   subHappSubExpireButtonLink: string;
   subHappSubInfoButtonLink: string;
@@ -372,6 +375,7 @@ export interface AllSettingView {
   subKeyFile: string;
   subListen: string;
   subPath: string;
+  subPathAliases: string;
   subPort: number;
   subProfileMode: string;
   subProfileUrl: string;
@@ -466,11 +470,18 @@ export interface Cascade {
   updatedAt: number;
 }
 
-export interface CascadeFixedExit {
+export interface CascadeFixedExitRequest {
+  email: string;
+  nodeId: number;
+  trafficMode: string;
+}
+
+export interface CascadeFixedExitRow {
   createdAt: number;
   email: string;
   id: number;
   nodeId: number;
+  trafficMode: string;
 }
 
 export interface CascadeLink {
@@ -483,6 +494,20 @@ export interface CascadeLink {
   publicKey: string;
   serverName: string;
   shortId: string;
+}
+
+export interface CascadeRequest {
+  directDomains: string[];
+  directIps: string[];
+  enable: boolean;
+  entryInboundTags: string[];
+  entryNodeId: number;
+  exitCountry: string;
+  exitNodeIds: number[];
+  mode: string;
+  name: string;
+  relayInboundTags: string[];
+  strategy: string;
 }
 
 export interface Client {
@@ -1422,6 +1447,7 @@ export interface TlsCertSettings {
 
 export interface TlsCertificate {
   applyToPanel: boolean;
+  applyToSub: boolean;
   autoRenew: boolean;
   certFile: string;
   createdAt: number;

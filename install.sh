@@ -1599,6 +1599,25 @@ _xui_warn_unsupported_hardening() {
     return 0
 }
 
+# lxcfs (LXC, LXD, Incus) bind-mounts its own meminfo, cpuinfo, stat, uptime
+# and swaps over the container's /proc. ProtectKernelTunables= implies
+# MountAPIVFS=, so systemd gives the panel a fresh procfs without those files
+# and the dashboard reports the host's CPU, memory, swap and uptime.
+# $1 is the mountinfo to inspect; callers pass nothing and get their own.
+_xui_proc_has_lxcfs() {
+    local mountinfo="${1:-/proc/self/mountinfo}"
+    [[ -r "$mountinfo" ]] || return 1
+    awk '$5 ~ /^\/proc\// {
+        for (i = 7; i < NF; i++) {
+            if ($i == "-") {
+                if ($(i + 1) == "fuse.lxcfs") found = 1
+                break
+            }
+        }
+    }
+    END { exit !found }' "$mountinfo"
+}
+
 # ProtectSystem=full makes /usr, /boot, /efi and /etc read-only. ProtectSystem=
 # strict would make the whole hierarchy read-only (only the kernel API
 # filesystems stay as they are), and that would break the panel's own use of
@@ -1703,6 +1722,13 @@ EOF
 # would leave the panel with a filter it cannot start under (x-ui.service.*).
 SystemCallFilter=@system-service
 SystemCallErrorNumber=EPERM
+EOF
+    fi
+    if _xui_proc_has_lxcfs; then
+        cat >> "$temp_file" << 'EOF'
+# lxcfs serves this container's /proc view; the fresh procfs that
+# ProtectKernelTunables=yes mounts would show the host's resources instead.
+ProtectKernelTunables=no
 EOF
     fi
     if [[ ! -s "$temp_file" ]]; then
@@ -1823,6 +1849,8 @@ remove_foreign_xui() {
     if [[ $release == "alpine" ]]; then
         rc-service x-ui stop > /dev/null 2>&1
     else
+        # Reload first: a unit replaced on disk makes systemctl stop warn about it.
+        systemctl daemon-reload > /dev/null 2>&1
         systemctl stop x-ui > /dev/null 2>&1
     fi
     pkill -f 'mtg-linux-[^ ]* run ' > /dev/null 2>&1 || true
@@ -1861,7 +1889,7 @@ remove_foreign_xui() {
 
     echo -e "${green}Old panel removed. Backup: ${backup}${plain}"
     if [[ -f "${backup}/x-ui/x-ui.db" ]]; then
-        echo -e "${green}To bring its inbounds and clients over, upload ${backup}/x-ui/x-ui.db in the new panel: Move from another panel → 3x-ui.${plain}"
+        echo -e "${green}To bring its inbounds and clients over, upload ${backup}/x-ui/x-ui.db in the master panel: Move from another panel → 3x-ui.${plain}"
     fi
     if grep -q '^XUI_DB_TYPE=postgres' "${backup}/x-ui.env" 2> /dev/null; then
         echo -e "${yellow}The old panel used PostgreSQL; its database was left as is (connection settings are in ${backup}/x-ui.env).${plain}"
@@ -1869,19 +1897,18 @@ remove_foreign_xui() {
     return 0
 }
 
-# resolve_latest_tag prints the latest stable release tag. It prefers the web
-# releases/latest redirect, which is not subject to the unauthenticated API's
-# 60 req/h-per-IP limit that trips shared CI/CGNAT addresses (the install then
-# fails with "Failed to fetch x-ui version"), and falls back to the API.
+# resolve_latest_tag prints the newest vX.Y.Z release tag, pre-releases included:
+# every fork tag before 1.0 is a pre-release, so releases/latest is always empty.
+# The releases.atom feed is not subject to the unauthenticated API's 60 req/h
+# per-IP limit that trips shared CI/CGNAT addresses; the API is the fallback.
 resolve_latest_tag() {
-    local url tag
-    url=$(curl -sSLI -o /dev/null -w '%{url_effective}' --retry 5 --retry-delay 3 --connect-timeout 15 --max-time 60 "https://github.com/${xui_repo}/releases/latest" 2>/dev/null)
-    tag=${url##*/tag/}
-    if [[ "$tag" != "$url" && -n "$tag" && "$tag" != "latest" ]]; then
-        echo "$tag"
-        return 0
+    local tags
+    tags=$(curl -fsSL --retry 5 --retry-delay 3 --connect-timeout 15 --max-time 60 "https://github.com/${xui_repo}/releases.atom" 2>/dev/null | grep -oE '/releases/tag/v[0-9]+\.[0-9]+\.[0-9]+"' | sed -E 's#.*/tag/(v[^"]+)"#\1#')
+    if [[ -z "$tags" ]]; then
+        tags=$(curl -Ls --retry 5 --retry-delay 3 --connect-timeout 15 --max-time 60 "https://api.github.com/repos/${xui_repo}/releases?per_page=100" 2>/dev/null | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$')
     fi
-    curl -Ls --retry 5 --retry-delay 3 --connect-timeout 15 --max-time 60 "https://api.github.com/repos/${xui_repo}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'
+    [[ -n "$tags" ]] && printf '%s\n' "$tags" | sort -V | tail -n1
+    return 0
 }
 
 # Releases publish <asset>.sha256 next to each archive. A mismatch or a failed
@@ -1935,9 +1962,9 @@ install_x-ui() {
     # Download resources
     if [ $# == 0 ]; then
         tag_version=$(resolve_latest_tag)
-        # The fork ships main as the rolling dev-latest build and may have no stable tag.
+        # Without any vX.Y.Z release, fall back to the rolling build of main.
         if [[ ! -n "$tag_version" ]]; then
-            echo -e "${yellow}No stable release found, installing the rolling build of main (dev-latest)${plain}"
+            echo -e "${yellow}No release found, installing the rolling build of main (dev-latest)${plain}"
             install_x-ui dev-latest
             return
         fi

@@ -35,6 +35,9 @@ type HappConfig struct {
 	PerAppMode          string
 	PerAppList          string
 	LocalProxyAuth      string
+	// RoutingUpdate sends routing as happ://routing/add so rule edits reach
+	// subscriptions already added; onadd applies only on the first add.
+	RoutingUpdate bool
 }
 
 // IsHappClient checks if the client user-agent identifies as Happ.

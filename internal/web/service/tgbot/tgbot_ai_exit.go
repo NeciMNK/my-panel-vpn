@@ -4,6 +4,7 @@ import (
 	"context"
 	"html"
 	"net"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -286,18 +287,28 @@ func findExitGroup(groups []service.UserExitGroup, country string) (service.User
 	return service.UserExitGroup{}, false
 }
 
-// startAIExit keeps the user's AI country pinned, or asks for one when their
-// exits span several countries.
+// startAIExit keeps the user's AI country pinned, shows pins they already have
+// (an admin's too), or asks for a country when their exits span several.
 func (t *Tgbot) startAIExit(chatID int64, emails []string) {
 	if country := (&service.CascadeService{}).AICountry(emails); country != "" {
 		t.useAIIn(chatID, emails, country, false)
 		return
 	}
-	if groups := t.allAIExitGroups(emails); len(groups) > 1 {
+	groups := t.allAIExitGroups(emails)
+	if slices.ContainsFunc(groups, isPinnedGroup) {
+		t.screenAIExitOverview(chatID, emails, "")
+		return
+	}
+	if len(groups) > 1 {
 		t.screenAIExitWhere(chatID, groups)
 		return
 	}
 	t.startAIExitAnywhere(chatID, emails)
+}
+
+func isPinnedGroup(g service.UserExitGroup) bool {
+	_, pinned := g.Pinned()
+	return pinned
 }
 
 func (t *Tgbot) answerAIExitWhere(chatID int64, emails []string, arg string) {
@@ -317,6 +328,9 @@ func (t *Tgbot) answerAIExitWhere(chatID int64, emails []string, arg string) {
 // useAIIn makes country the user's only AI country, which pins its best server
 // at once; a fresh choice among several servers still goes through the quiz.
 func (t *Tgbot) useAIIn(chatID int64, emails []string, country string, chosen bool) {
+	if g, ok := findExitGroup(t.allAIExitGroups(emails), country); ok && isPinnedGroup(g) {
+		chosen = false
+	}
 	_, pinned, err := (&service.CascadeService{}).SetAICountry(context.Background(), emails, country)
 	if err != nil {
 		logger.Warning("AI exit: use AI in", country, ":", err)
@@ -399,6 +413,8 @@ func (t *Tgbot) screenAIExitOverview(chatID int64, emails []string, note string)
 		}
 		body += t.I18nBot(modeLine)
 		rows = append(rows, tu.InlineKeyboardRow(t.btn(toggle, cbAIExitMode+" "+next)))
+	} else if slices.ContainsFunc(groups, isPinnedGroup) {
+		body += t.I18nBot("tgbot.messages.aiExitModeAll")
 	}
 	if aiCountry != "" || len(groups) > 1 {
 		rows = append(rows, tu.InlineKeyboardRow(t.btn("tgbot.buttons.aiExitCountry", cbAIExitWhere)))

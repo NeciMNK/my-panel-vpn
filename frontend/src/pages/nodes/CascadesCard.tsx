@@ -469,6 +469,12 @@ export default function CascadesCard({ nodes }: CascadesCardProps) {
             <Form.Item
               label={t('pages.nodes.cascade.inbounds')}
               extra={t('pages.nodes.cascade.inboundsHint')}
+              validateStatus={form.entryInboundTags.length === 0 ? 'warning' : undefined}
+              help={
+                form.entryInboundTags.length === 0
+                  ? t('pages.nodes.cascade.inboundsAllWarning')
+                  : undefined
+              }
             >
               <Select
                 aria-label={t('pages.nodes.cascade.inbounds')}
