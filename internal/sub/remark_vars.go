@@ -25,6 +25,7 @@ type remarkContext struct {
 	hostRemark string
 	transport  string
 	security   string
+	autoName   string
 }
 
 // configName is the display name for a link: always the inbound's own remark.
@@ -89,6 +90,7 @@ var uiTokenMap = map[string]string{
 	"TIME_LEFT":          "TIME_LEFT",
 	"STATUS_EMOJI":       "STATUS_EMOJI",
 	"USAGE_PERCENTAGE":   "USAGE_PERCENTAGE",
+	"AUTO_NAME":          "AUTO_NAME",
 	"PROTOCOL":           "PROTOCOL",
 	"TRANSPORT":          "TRANSPORT",
 	"SECURITY":           "SECURITY",
@@ -199,6 +201,8 @@ func remarkVarValue(token string, ctx remarkContext) string {
 		return c.Email
 	case "INBOUND":
 		return ctx.configName()
+	case "AUTO_NAME":
+		return ctx.autoName
 	case "HOST":
 		return ctx.hostRemark
 	case "ID":
@@ -663,6 +667,7 @@ func (s *SubService) genTemplatedRemark(inbound *model.Inbound, client model.Cli
 		hostRemark: hostRemark,
 		transport:  transport,
 		security:   inboundSecurity(inbound),
+		autoName:   s.clientAutoName(inbound, client, transport),
 	}
 	var tmpl string
 	if s.subscriptionBody {

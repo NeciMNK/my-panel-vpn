@@ -1,6 +1,7 @@
 package tgbot
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -299,5 +300,46 @@ func TestClientSuggestsAIDomainsAndAnAdminAddsThem(t *testing.T) {
 	}
 	if told := adminMessages(calls()[before:], 6060); len(told) != 1 {
 		t.Fatalf("client notices = %d, want one answer despite two taps", len(told))
+	}
+}
+
+// A pin the admin set in the panel is the user's answer already: the AI button
+// shows it instead of asking for a country or which IP they used.
+func TestAIButtonKeepsAPinTheAdminSet(t *testing.T) {
+	for _, mode := range []string{service.FixedExitAllTraffic, service.FixedExitAIOnly} {
+		t.Run(mode, func(t *testing.T) {
+			tb, _ := newScreenTgbot(t, false)
+			initReportDB(t)
+			localizeWithRealBundle(t)
+			setTestAdmins(t, 9001)
+			seedBilledClient(t, 6060, "ai@x")
+			seedAIExitWorld(t)
+			tap(tb, 9001, "friend ai@x", true)
+			req := &service.CascadeFixedExitRequest{Email: "ai@x", NodeId: 2, TrafficMode: mode}
+			if err := (&service.CascadeService{}).SetFixedExit(context.Background(), req); err != nil {
+				t.Fatal(err)
+			}
+
+			tap(tb, 6060, cbAIExit, false)
+			body, markup := screenMarkup(t, tb, 6060)
+			if strings.Contains(markup, `"ai_k DE"`) || strings.Contains(markup, `"ai_y DE"`) {
+				t.Fatalf("the bot asks again about a pin the admin set: %s %s", body, markup)
+			}
+			if !strings.Contains(body, "de-1") {
+				t.Fatalf("the screen does not show the admin's pin on de-1: %s", body)
+			}
+			wantMode := map[string]string{service.FixedExitAllTraffic: "all your traffic", service.FixedExitAIOnly: "only AI sites"}[mode]
+			if !strings.Contains(body, wantMode) {
+				t.Fatalf("the screen does not say the pin carries %q: %s", wantMode, body)
+			}
+
+			tap(tb, 6060, "ai_k DE", false)
+			if _, markup := screenMarkup(t, tb, 6060); strings.Contains(markup, `"ai_y DE"`) {
+				t.Fatalf("choosing DE for AI asks which IP was used though de-1 is pinned: %s", markup)
+			}
+			if got := pinnedExits(t, "ai@x"); !reflect.DeepEqual(got, []int{2}) {
+				t.Fatalf("pins = %v, want the admin's de-1 kept", got)
+			}
+		})
 	}
 }

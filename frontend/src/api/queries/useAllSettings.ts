@@ -108,6 +108,7 @@ export function useAllSettings() {
 
   return {
     allSetting,
+    savedSetting: server,
     updateSetting,
     fetched: query.data !== undefined,
     spinning: extraSpinning || saveMut.isPending,

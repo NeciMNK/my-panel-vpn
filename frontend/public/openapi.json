@@ -389,6 +389,9 @@
           "subHappProviderId": {
             "type": "string"
           },
+          "subHappRoutingUpdate": {
+            "type": "boolean"
+          },
           "subHappSubExpire": {
             "type": "boolean"
           },
@@ -557,6 +560,9 @@
             "type": "string"
           },
           "subPath": {
+            "type": "string"
+          },
+          "subPathAliases": {
             "type": "string"
           },
           "subPort": {
@@ -814,6 +820,7 @@
           "subHappPerAppMode",
           "subHappPingType",
           "subHappProviderId",
+          "subHappRoutingUpdate",
           "subHappSubExpire",
           "subHappSubExpireButtonLink",
           "subHappSubInfoButtonLink",
@@ -870,6 +877,7 @@
           "subKeyFile",
           "subListen",
           "subPath",
+          "subPathAliases",
           "subPort",
           "subProfileMode",
           "subProfileUrl",
@@ -1242,6 +1250,9 @@
           "subHappProviderId": {
             "type": "string"
           },
+          "subHappRoutingUpdate": {
+            "type": "boolean"
+          },
           "subHappSubExpire": {
             "type": "boolean"
           },
@@ -1410,6 +1421,9 @@
             "type": "string"
           },
           "subPath": {
+            "type": "string"
+          },
+          "subPathAliases": {
             "type": "string"
           },
           "subPort": {
@@ -1676,6 +1690,7 @@
           "subHappPerAppMode",
           "subHappPingType",
           "subHappProviderId",
+          "subHappRoutingUpdate",
           "subHappSubExpire",
           "subHappSubExpireButtonLink",
           "subHappSubInfoButtonLink",
@@ -1732,6 +1747,7 @@
           "subKeyFile",
           "subListen",
           "subPath",
+          "subPathAliases",
           "subPort",
           "subProfileMode",
           "subProfileUrl",
@@ -2017,8 +2033,38 @@
         ],
         "type": "object"
       },
-      "CascadeFixedExit": {
-        "description": "CascadeFixedExit is an admin's permanent choice of exit for one user: every\ncascade with that exit sends the user there while it is up.",
+      "CascadeFixedExitRequest": {
+        "description": "CascadeFixedExitRequest pins (or unpins) one user to one exit server.",
+        "properties": {
+          "email": {
+            "description": "Email is the client's email, as in the client list.",
+            "example": "anna",
+            "type": "string"
+          },
+          "nodeId": {
+            "description": "NodeId is the exit server; 0 is this panel.",
+            "example": 2,
+            "type": "integer"
+          },
+          "trafficMode": {
+            "description": "TrafficMode is what the pin carries: \"all\" traffic or \"ai\" sites only; empty keeps the current mode.",
+            "enum": [
+              "all",
+              "ai"
+            ],
+            "example": "all",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "nodeId",
+          "trafficMode"
+        ],
+        "type": "object"
+      },
+      "CascadeFixedExitRow": {
+        "description": "CascadeFixedExitRow is one pin as the panel lists it, with what it carries.",
         "properties": {
           "createdAt": {
             "example": 1762862400,
@@ -2036,33 +2082,22 @@
           "nodeId": {
             "example": 2,
             "type": "integer"
+          },
+          "trafficMode": {
+            "enum": [
+              "all",
+              "ai"
+            ],
+            "example": "all",
+            "type": "string"
           }
         },
         "required": [
           "createdAt",
           "email",
           "id",
-          "nodeId"
-        ],
-        "type": "object"
-      },
-      "CascadeFixedExitRequest": {
-        "description": "CascadeFixedExitRequest pins (or unpins) one user to one exit server.",
-        "properties": {
-          "email": {
-            "description": "Email is the client's email, as in the client list.",
-            "example": "anna",
-            "type": "string"
-          },
-          "nodeId": {
-            "description": "NodeId is the exit server; 0 is this panel.",
-            "example": 2,
-            "type": "integer"
-          }
-        },
-        "required": [
-          "email",
-          "nodeId"
+          "nodeId",
+          "trafficMode"
         ],
         "type": "object"
       },
@@ -6400,6 +6435,10 @@
             "example": false,
             "type": "boolean"
           },
+          "applyToSub": {
+            "example": false,
+            "type": "boolean"
+          },
           "autoRenew": {
             "example": true,
             "type": "boolean"
@@ -6457,6 +6496,7 @@
         },
         "required": [
           "applyToPanel",
+          "applyToSub",
           "autoRenew",
           "certFile",
           "createdAt",
@@ -13556,7 +13596,7 @@
                     "obj": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/CascadeFixedExit"
+                        "$ref": "#/components/schemas/CascadeFixedExitRow"
                       }
                     }
                   }
@@ -13568,7 +13608,8 @@
                       "createdAt": 1762862400,
                       "email": "anna",
                       "id": 1,
-                      "nodeId": 2
+                      "nodeId": 2,
+                      "trafficMode": "all"
                     }
                   ]
                 }
@@ -13583,7 +13624,7 @@
         "tags": [
           "Cascades"
         ],
-        "summary": "Pin a user to an exit server (node id 0 = this panel). A user keeps one pin per country: pinning another exit of the same country replaces it. Routing is rewritten at once.",
+        "summary": "Pin a user to an exit server (node id 0 = this panel). A user keeps one pin per country: pinning another exit of the same country replaces it. trafficMode \"all\" sends all their traffic through it, \"ai\" only AI sites (one country per user, as the AI button in the bot sets it; needs a server with a country); omitted keeps the current mode. Routing is rewritten at once.",
         "operationId": "post_panel_api_cascades_fixedExits_set",
         "requestBody": {
           "required": true,
@@ -13594,7 +13635,8 @@
               },
               "example": {
                 "email": "anna",
-                "nodeId": 2
+                "nodeId": 2,
+                "trafficMode": "ai"
               }
             }
           }
@@ -20780,6 +20822,7 @@
                   "obj": [
                     {
                       "applyToPanel": false,
+                      "applyToSub": false,
                       "autoRenew": true,
                       "certFile": "/etc/x-ui/certs/example.com/fullchain.pem",
                       "createdAt": 1710000000000,
@@ -20924,6 +20967,10 @@
                   "applyToPanel": {
                     "type": "boolean",
                     "description": "Serve the panel over this certificate once issued (restarts the panel when the paths change)."
+                  },
+                  "applyToSub": {
+                    "type": "boolean",
+                    "description": "Serve the subscription server over this certificate once issued, when its cert field is empty or the certificate covers the subscription host (restarts the panel). Off by default: a reverse proxy in front of the subscription port usually talks plain HTTP to it."
                   }
                 },
                 "required": [
@@ -20962,6 +21009,7 @@
                   "success": true,
                   "obj": {
                     "applyToPanel": false,
+                    "applyToSub": false,
                     "autoRenew": true,
                     "certFile": "/etc/x-ui/certs/example.com/fullchain.pem",
                     "createdAt": 1710000000000,
@@ -21025,6 +21073,7 @@
                   "success": true,
                   "obj": {
                     "applyToPanel": false,
+                    "applyToSub": false,
                     "autoRenew": true,
                     "certFile": "/etc/x-ui/certs/example.com/fullchain.pem",
                     "createdAt": 1710000000000,
@@ -21107,6 +21156,7 @@
                   "success": true,
                   "obj": {
                     "applyToPanel": false,
+                    "applyToSub": false,
                     "autoRenew": true,
                     "certFile": "/etc/x-ui/certs/example.com/fullchain.pem",
                     "createdAt": 1710000000000,

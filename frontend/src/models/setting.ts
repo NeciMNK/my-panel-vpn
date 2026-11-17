@@ -20,7 +20,7 @@ export class AllSetting {
   trafficResetAllMonthly = true;
   trafficResetAllDay = 1;
   trafficUsagePeriods = '24h,7d,30d,month';
-  remarkTemplate = '{{INBOUND}}-{{EMAIL}}|📊{{TRAFFIC_LEFT}}|⏳{{DAYS_LEFT}}D';
+  remarkTemplate = '{{AUTO_NAME}}';
   subShowIdentityOnAllLinks = false;
   subInfoNodeEnable = false;
   subHostSortMode: SubHostSortMode = 'inbound-first';
@@ -69,6 +69,7 @@ export class AllSetting {
   subListen = '';
   subPort = 2096;
   subPath = '/sub/';
+  subPathAliases = '';
   subJsonPath = '/json/';
   subClashEnable = false;
   subClashPath = '/clash/';
@@ -96,6 +97,7 @@ export class AllSetting {
   subThemeDir = '';
   subHideSettings = false;
   subHappAutoDetect = false;
+  subHappRoutingUpdate = false;
   subHappProviderId = '';
   subHappNewUrl = '';
   subHappFallbackUrl = '';

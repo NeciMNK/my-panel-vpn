@@ -103,7 +103,7 @@ func (s *SubJsonService) bakedTemplate() map[string]any {
 	template := make(map[string]any, len(s.configJson)+2)
 	maps.Copy(template, s.configJson)
 	if !spec.empty() {
-		applyJsonRouting(template, spec)
+		applyJsonRouting(template, spec.forStandardGeoFiles())
 	}
 	// The panel-level DNS block is an explicit choice, so it also replaces the
 	// dns subtree a routing profile would otherwise bake in.
