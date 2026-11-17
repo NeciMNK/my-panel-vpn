@@ -1790,6 +1790,7 @@ export const EXAMPLES: Record<string, unknown> = {
       "tier": 0,
       "unmanaged": []
     },
+    "tokenFromTls": false,
     "tokenSet": true
   },
   "SubEdgeRequest": {

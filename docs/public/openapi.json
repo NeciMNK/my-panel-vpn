@@ -6804,6 +6804,10 @@
           "status": {
             "$ref": "#/components/schemas/DNSStatus"
           },
+          "tokenFromTls": {
+            "example": false,
+            "type": "boolean"
+          },
           "tokenSet": {
             "example": true,
             "type": "boolean"
@@ -6813,6 +6817,7 @@
           "domain",
           "masterIps",
           "status",
+          "tokenFromTls",
           "tokenSet"
         ],
         "type": "object"
@@ -14777,6 +14782,7 @@
                       "tier": 0,
                       "unmanaged": []
                     },
+                    "tokenFromTls": false,
                     "tokenSet": true
                   }
                 }

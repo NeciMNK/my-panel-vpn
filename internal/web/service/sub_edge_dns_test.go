@@ -90,3 +90,27 @@ func TestSaveDNSRefusesNonIPv4MasterAddresses(t *testing.T) {
 		t.Fatalf("SaveDNS = %v, want an IPv4 refusal", err)
 	}
 }
+
+func TestDNSPlanUsesTheTLSCloudflareTokenWhenNoOwnIsSaved(t *testing.T) {
+	dbtest.InitDB(t, filepath.Join(t.TempDir(), "x-ui.db"))
+	svc := &SubEdgeService{}
+	if err := (&SettingService{}).SetTlsCloudflareToken("tls-token"); err != nil {
+		t.Fatal(err)
+	}
+	if err := svc.SaveDNS(SubEdgeDNSRequest{Domain: "sub.example.com"}); err != nil {
+		t.Fatal(err)
+	}
+	plan, _, err := svc.dnsPlan(context.Background())
+	if err != nil || plan.Token != "tls-token" || !plan.Enabled() {
+		t.Fatalf("plan = %+v, %v; want the TLS token and switching on", plan, err)
+	}
+	if view, _ := svc.DNSView(); !view.TokenFromTLS || view.TokenSet {
+		t.Fatalf("view = %+v, want the TLS token shown as the one in use", view)
+	}
+	if err := svc.SaveDNS(SubEdgeDNSRequest{Domain: "sub.example.com", Token: "dns-token"}); err != nil {
+		t.Fatal(err)
+	}
+	if plan, _, _ := svc.dnsPlan(context.Background()); plan.Token != "dns-token" {
+		t.Fatalf("plan token = %q, want the separate DNS token first", plan.Token)
+	}
+}

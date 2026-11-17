@@ -1627,6 +1627,7 @@
           "domain": "Subscription domain",
           "token": "Cloudflare API token (DNS:Edit)",
           "tokenKeep": "A token is saved; leave empty to keep it.",
+          "tokenFromTls": "Empty: the Cloudflare token from SSL certificates is used. Enter one here only to use a separate token.",
           "masterIps": "Masters' IPv4 addresses",
           "masterIpsHint": "The public addresses where the masters serve subscriptions on port 443. Leave empty to publish only edge nodes.",
           "tier": "Published tier",

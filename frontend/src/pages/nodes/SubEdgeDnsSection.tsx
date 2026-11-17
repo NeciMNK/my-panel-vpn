@@ -59,7 +59,13 @@ export default function SubEdgeDnsSection() {
         </Form.Item>
         <Form.Item
           label={t('pages.nodes.subEdge.dns.token')}
-          help={view?.tokenSet ? t('pages.nodes.subEdge.dns.tokenKeep') : undefined}
+          help={
+            view?.tokenSet
+              ? t('pages.nodes.subEdge.dns.tokenKeep')
+              : view?.tokenFromTls
+                ? t('pages.nodes.subEdge.dns.tokenFromTls')
+                : undefined
+          }
         >
           <Input.Password
             aria-label={t('pages.nodes.subEdge.dns.token')}

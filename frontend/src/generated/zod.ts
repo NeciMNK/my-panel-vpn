@@ -1614,6 +1614,7 @@ export const SubEdgeDNSViewSchema = z.object({
   domain: z.string(),
   masterIps: z.array(z.string()),
   status: z.lazy(() => DNSStatusSchema),
+  tokenFromTls: z.boolean(),
   tokenSet: z.boolean(),
 });
 export type SubEdgeDNSView = z.infer<typeof SubEdgeDNSViewSchema>;
