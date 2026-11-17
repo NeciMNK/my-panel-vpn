@@ -3244,6 +3244,7 @@
       "closeKeyboard": "❌ Tutup Papan Ketik",
       "cancel": "❌ Batal",
       "broadcastSend": "📤 Kirim",
+      "broadcastAllGroups": "👥 Semua klien",
       "cancelReset": "❌ Batal Reset",
       "cancelIpLimit": "❌ Batal Batas IP",
       "confirmResetTraffic": "✅ Konfirmasi Reset Lalu Lintas?",
