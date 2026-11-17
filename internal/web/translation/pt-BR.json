@@ -3134,7 +3134,22 @@
       "aiSuggestAdded": "✅ Your suggestion was accepted: {{ .Domains }} now go through your AI IP.",
       "aiSuggestPartial": "➗ An admin added some of the sites you suggested ({{ .Domains }}), but not all of them.",
       "aiSuggestDeclined": "❌ An admin decided not to add {{ .Domains }}.",
-      "aiSuggestPresent": "📋 {{ .Domains }} already go through your AI IP, so nothing needed adding."
+      "aiSuggestPresent": "📋 {{ .Domains }} already go through your AI IP, so nothing needed adding.",
+      "aiOutageNotice": "🔴 The server {{ .Server }} with your pinned IP is down.\r\n\r\n",
+      "aiOutageBack": "🟢 The server {{ .Server }} is back: your pinned IP works again.",
+      "aiOutageDownLine": "🔴 {{ .Server }} is down. ",
+      "aiOutageNowSwapped": "Until it is back, its traffic goes via {{ .Server }}.\r\n",
+      "aiOutageNowOff": "Your VPN is off until it is back.\r\n",
+      "aiOutageNowBlocked": "Blocked until it is back: {{ .Services }}.\r\n",
+      "aiOutageChoiceBlockAll": "\r\nIf a server with your pinned IP goes down: AI services are blocked so they never see another IP, and the rest of your traffic goes through other servers.\r\n",
+      "aiOutageChoiceBlock": "\r\nIf a server with your pinned IP goes down: {{ .Services }} are blocked, everything else goes through other servers.\r\n",
+      "aiOutageChoiceOther": "\r\nIf a server with your pinned IP goes down: you get another IP of the same country until it is back.\r\n",
+      "aiOutageChoiceOtherIn": "\r\nIf a server with your pinned IP goes down: you get another IP of the same country, or of {{ .Country }} when it has none left.\r\n",
+      "aiOutageChoiceOff": "\r\nIf a server with your pinned IP goes down: your VPN is off until it is back.\r\n",
+      "aiOutageNoUse": "How should the server not be used while it is down?\r\n\r\n🚫 Not at all: your VPN is off until it is back.\r\n🤖 For AI only: the AI services you tick are cut off, the rest goes through other servers.",
+      "aiOutagePickCountry": "There is no live server left in that country. Which country should the temporary IP come from?",
+      "aiOutageNoCountry": "No other country has a live server either, so AI services stay blocked for now.",
+      "aiOutageServices": "Tick the AI services to cut off while the server is down:"
     },
     "buttons": {
       "closeKeyboard": "❌ Fechar teclado",
@@ -3236,7 +3251,13 @@
       "aiSuggestAdded": "✅ Added all",
       "aiSuggestPartial": "➗ Added some",
       "aiSuggestDeclined": "❌ Added none",
-      "aiSuggestPresent": "📋 All already listed"
+      "aiSuggestPresent": "📋 All already listed",
+      "aiOutage": "⚠️ If my server goes down",
+      "aiOutageOther": "🔁 Use another IP for now",
+      "aiOutageNoUse": "🚫 Don't use it",
+      "aiOutageOff": "🚫 Not at all",
+      "aiOutageBlock": "🤖 For AI only",
+      "aiOutageAll": "✅ All AI services"
     },
     "answers": {
       "broadcastStarted": "🚀 Transmissão iniciada.",
@@ -3280,7 +3301,8 @@
       "paymentCanceled": "This invoice is closed. Open a new one if you still want to pay.",
       "aiExitLocked": "The AI button is not available on your subscription.",
       "aiSuggestAnswered": "Done, the client has been told.",
-      "aiSuggestAlreadyAnswered": "This suggestion has already been answered."
+      "aiSuggestAlreadyAnswered": "This suggestion has already been answered.",
+      "aiOutageKeepOne": "Keep at least one service ticked."
     },
     "screens": {
       "panel": "Panel",
