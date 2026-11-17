@@ -3244,6 +3244,7 @@
       "closeKeyboard": "❌ Fechar teclado",
       "cancel": "❌ Cancelar",
       "broadcastSend": "📤 Enviar",
+      "broadcastAllGroups": "👥 Todos os clientes",
       "cancelReset": "❌ Cancelar redefinição",
       "cancelIpLimit": "❌ Cancelar limite de IP",
       "confirmResetTraffic": "✅ Confirmar redefinição de tráfego?",

@@ -3244,6 +3244,7 @@
       "closeKeyboard": "❌ 关闭键盘",
       "cancel": "❌ 取消",
       "broadcastSend": "📤 立即发送",
+      "broadcastAllGroups": "👥 所有客户端",
       "cancelReset": "❌ 取消重置",
       "cancelIpLimit": "❌ 取消 IP 限制",
       "confirmResetTraffic": "✅ 确认重置流量？",
