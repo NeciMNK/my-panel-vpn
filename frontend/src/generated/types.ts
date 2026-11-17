@@ -457,6 +457,22 @@ export interface Blocker {
   detail?: string;
 }
 
+export interface CacheUpdate {
+  responses: CachedResponse[];
+  subIds: string[];
+}
+
+export interface CachedResponse {
+  agent: string;
+  body: string;
+  device: string;
+  header: Record<string, string[]>;
+  host: string;
+  stored: number;
+  subId: string;
+  uri: string;
+}
+
 export interface Cascade {
   createdAt: number;
   directDomains: string[];
@@ -1030,6 +1046,13 @@ export interface LedgerServerDue {
   serverId: number;
 }
 
+export interface ListenerConfig {
+  certFile: string;
+  enable: boolean;
+  keyFile: string;
+  port: number;
+}
+
 export interface LogEntry {
   DateTime: string;
   Email: string;
@@ -1429,6 +1452,26 @@ export interface SubBalancer {
   sortOrder: number;
   strategy: string;
   updatedAt: number;
+}
+
+export interface SubEdge {
+  certId: number;
+  createdAt: number;
+  enable: boolean;
+  id: number;
+  lastError: string;
+  lastSeen: number;
+  nodeId: number;
+  port: number;
+  status: string;
+  updatedAt: number;
+}
+
+export interface SubEdgeRequest {
+  certId: number;
+  enable: boolean;
+  nodeId: number;
+  port: number;
 }
 
 export interface TgBotCapabilities {

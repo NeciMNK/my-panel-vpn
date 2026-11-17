@@ -1898,6 +1898,84 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "CacheUpdate": {
+    "description": "CacheUpdate is what a master sends an edge node: new responses, and every\nsubscription that may still be served, so the rest is dropped.",
+    "properties": {
+      "responses": {
+        "items": {
+          "$ref": "#/components/schemas/CachedResponse"
+        },
+        "type": "array"
+      },
+      "subIds": {
+        "example": [
+          "abc123"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "responses",
+      "subIds"
+    ],
+    "type": "object"
+  },
+  "CachedResponse": {
+    "description": "CachedResponse is one subscription answer a master gave a client app, kept\nso an edge can still answer that app while no master does.",
+    "properties": {
+      "agent": {
+        "example": "happ",
+        "type": "string"
+      },
+      "body": {
+        "example": "dmxlc3M6Ly8uLi4=",
+        "type": "string"
+      },
+      "device": {
+        "type": "string"
+      },
+      "header": {
+        "additionalProperties": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "type": "object"
+      },
+      "host": {
+        "example": "sub.example.com",
+        "type": "string"
+      },
+      "stored": {
+        "example": 1762736400,
+        "format": "int64",
+        "type": "integer"
+      },
+      "subId": {
+        "example": "abc123",
+        "type": "string"
+      },
+      "uri": {
+        "example": "/sub/abc123",
+        "type": "string"
+      }
+    },
+    "required": [
+      "agent",
+      "body",
+      "device",
+      "header",
+      "host",
+      "stored",
+      "subId",
+      "uri"
+    ],
+    "type": "object"
+  },
   "Cascade": {
     "description": "Cascade chains an entry server to one or more exit servers: users connect to\nthe entry, their traffic leaves the internet from an exit. Node id 0 means\nthis panel itself.",
     "properties": {
@@ -4611,6 +4689,34 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "ListenerConfig": {
+    "description": "ListenerConfig is what a master tells a node about its edge listener. Empty cert\nfiles serve plain HTTP, for an edge behind the admin's own TLS proxy.",
+    "properties": {
+      "certFile": {
+        "example": "/etc/x-ui/certs/sub.example.com/fullchain.pem",
+        "type": "string"
+      },
+      "enable": {
+        "example": true,
+        "type": "boolean"
+      },
+      "keyFile": {
+        "example": "/etc/x-ui/certs/sub.example.com/privkey.pem",
+        "type": "string"
+      },
+      "port": {
+        "example": 443,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "certFile",
+      "enable",
+      "keyFile",
+      "port"
+    ],
+    "type": "object"
+  },
   "LogEntry": {
     "properties": {
       "DateTime": {
@@ -6416,6 +6522,98 @@ export const SCHEMAS: Record<string, unknown> = {
       "sortOrder",
       "strategy",
       "updatedAt"
+    ],
+    "type": "object"
+  },
+  "SubEdge": {
+    "description": "SubEdge makes a node serve this panel's subscriptions on its own port: every\nmaster keeps a tunnel to the node and the node forwards requests through it.",
+    "properties": {
+      "certId": {
+        "description": "CertId is the panel-managed certificate the edge serves; 0 serves plain HTTP.",
+        "example": 1,
+        "type": "integer"
+      },
+      "createdAt": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "enable": {
+        "example": true,
+        "type": "boolean"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "lastError": {
+        "type": "string"
+      },
+      "lastSeen": {
+        "example": 1762736400,
+        "format": "int64",
+        "type": "integer"
+      },
+      "nodeId": {
+        "example": 2,
+        "type": "integer"
+      },
+      "port": {
+        "example": 443,
+        "type": "integer"
+      },
+      "status": {
+        "description": "Status is online while this master's tunnel to the node is up.",
+        "example": "online",
+        "type": "string"
+      },
+      "updatedAt": {
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "certId",
+      "createdAt",
+      "enable",
+      "id",
+      "lastError",
+      "lastSeen",
+      "nodeId",
+      "port",
+      "status",
+      "updatedAt"
+    ],
+    "type": "object"
+  },
+  "SubEdgeRequest": {
+    "description": "SubEdgeRequest is the admin's add/update body for an edge node.",
+    "properties": {
+      "certId": {
+        "example": 1,
+        "minimum": 0,
+        "type": "integer"
+      },
+      "enable": {
+        "example": true,
+        "type": "boolean"
+      },
+      "nodeId": {
+        "example": 2,
+        "minimum": 1,
+        "type": "integer"
+      },
+      "port": {
+        "example": 443,
+        "maximum": 65535,
+        "minimum": 1,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "certId",
+      "enable",
+      "nodeId",
+      "port"
     ],
     "type": "object"
   },

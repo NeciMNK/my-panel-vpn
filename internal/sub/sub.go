@@ -470,6 +470,15 @@ func (s *Server) Start() (err error) {
 	return nil
 }
 
+// Handler is the running subscription router, or nil while the server is off;
+// subscription edges on nodes forward their requests to it.
+func (s *Server) Handler() http.Handler {
+	if s.httpServer == nil {
+		return nil
+	}
+	return s.httpServer.Handler
+}
+
 // Stop gracefully shuts down the subscription server and closes the listener.
 func (s *Server) Stop() error {
 	s.cancel()
