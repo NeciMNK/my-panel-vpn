@@ -97,6 +97,9 @@ var defaultValueMap = map[string]string{
 	"pageSize":                    "25",
 	"expireDiff":                  "0",
 	"trafficDiff":                 "0",
+	"trafficResetAllMonthly":      "true",
+	"trafficResetAllDay":          "1",
+	"trafficUsagePeriods":         defaultTrafficUsagePeriods,
 	"remarkTemplate":              DefaultRemarkTemplate,
 	"subShowIdentityOnAllLinks":   "false",
 	"subInfoNodeEnable":           "false",
@@ -971,6 +974,27 @@ func (s *SettingService) GetExpireDiff() (int, error) {
 
 func (s *SettingService) GetTrafficDiff() (int, error) {
 	return s.getInt("trafficDiff")
+}
+
+// GetTrafficResetAllMonthly returns the panel-wide monthly reset that clients
+// without a reset or renewal cycle of their own follow, and its day of month.
+func (s *SettingService) GetTrafficResetAllMonthly() (bool, int, error) {
+	enable, err := s.getBool("trafficResetAllMonthly")
+	if err != nil {
+		return false, 0, err
+	}
+	day, err := s.getInt("trafficResetAllDay")
+	if err != nil {
+		return false, 0, err
+	}
+	return enable, normalizeTrafficResetDay(day), nil
+}
+
+func (s *SettingService) SetTrafficResetAllMonthly(enable bool, day int) error {
+	if err := s.setBool("trafficResetAllMonthly", enable); err != nil {
+		return err
+	}
+	return s.setInt("trafficResetAllDay", normalizeTrafficResetDay(day))
 }
 
 func (s *SettingService) GetSessionMaxAge() (int, error) {

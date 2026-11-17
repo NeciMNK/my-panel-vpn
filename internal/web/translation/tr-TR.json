@@ -139,7 +139,8 @@
     "unpinSidebar": "Kenar çubuğu sabitlemesini kaldır",
     "subFormats": "Abonelik Formatları",
     "ledger": "Finance",
-    "aiDomains": "AI domains"
+    "aiDomains": "AI domains",
+    "trafficUsage": "Traffic by period"
   },
   "pages": {
     "login": {
@@ -2215,7 +2216,14 @@
       "tgPayTest": "Check connection",
       "tgPayTestFailed": "Payment provider check failed (save the settings first)",
       "tgPayTestLive": "Connected to YooKassa shop {{ .Account }}: real payments.",
-      "tgPayTestSandbox": "Connected to YooKassa test shop {{ .Account }}: no real money moves. Switch to the live shop's keys when ready."
+      "tgPayTestSandbox": "Connected to YooKassa test shop {{ .Account }}: no real money moves. Switch to the live shop's keys when ready.",
+      "trafficAccounting": "Traffic accounting",
+      "trafficResetAllMonthly": "Monthly traffic reset for everyone",
+      "trafficResetAllMonthlyDesc": "Resets the traffic of every client that has no reset or renewal cycle of its own, and is not in an inbound with a reset cycle. A client's own cycle always wins.",
+      "trafficResetAllDay": "Reset day of the month",
+      "trafficResetAllDayDesc": "In months shorter than this, the reset runs on the last day.",
+      "trafficUsagePeriods": "Traffic periods to show",
+      "trafficUsagePeriodsDesc": "Which periods the Traffic by period page counts. History is always collected, so a period switched on later shows past data at once."
     },
     "xray": {
       "save": "Kaydet",
@@ -2962,6 +2970,26 @@
       "alreadyAnswered": "This suggestion has already been answered",
       "notSaved": "The list was not saved",
       "notAnswered": "The answer was not sent"
+    },
+    "trafficUsage": {
+      "desc": "Traffic each server and client used. Resets of the traffic counters do not affect this history. Calendar periods start over at midnight in the panel timezone; weeks start on Monday.",
+      "servers": "Servers",
+      "clients": "Clients",
+      "name": "Name",
+      "thisPanel": "This panel",
+      "search": "Search by email",
+      "periods": {
+        "24h": "24 hours",
+        "7d": "7 days",
+        "30d": "30 days",
+        "180d": "180 days",
+        "365d": "365 days",
+        "day": "Today",
+        "week": "This week",
+        "month": "This month",
+        "halfyear": "This half-year",
+        "year": "This year"
+      }
     }
   },
   "tgbot": {

@@ -53,16 +53,19 @@ func (s *InboundService) addTrafficLocked(inboundTraffics []*xray.Traffic, clien
 	// failures cannot discard usage already reported by Xray.
 	// Xray already zeroed these counters, so a conflict with another master's
 	// poll on the shared Postgres must rerun the tick, not drop it.
+	var usage *trafficUsageBatch
 	if err := database.RetryTxConflict(func() error {
+		usage = newTrafficUsageBatch()
 		return db.Transaction(func(tx *gorm.DB) error {
 			if err := s.addInboundTraffic(tx, inboundTraffics); err != nil {
 				return err
 			}
-			return s.addClientTraffic(tx, clientTraffics)
+			return s.addClientTraffic(tx, clientTraffics, usage)
 		})
 	}); err != nil {
 		return false, false, nil, nil, nil, err
 	}
+	usageRecorder.merge(usage)
 
 	var (
 		needRestart          bool
@@ -153,7 +156,7 @@ func (s *InboundService) addInboundTraffic(tx *gorm.DB, traffics []*xray.Traffic
 	return nil
 }
 
-func (s *InboundService) addClientTraffic(tx *gorm.DB, traffics []*xray.ClientTraffic) (err error) {
+func (s *InboundService) addClientTraffic(tx *gorm.DB, traffics []*xray.ClientTraffic, usage *trafficUsageBatch) (err error) {
 	if len(traffics) == 0 {
 		return nil
 	}
@@ -201,7 +204,8 @@ func (s *InboundService) addClientTraffic(tx *gorm.DB, traffics []*xray.ClientTr
 			trafficByEmail[traffics[i].Email] = traffics[i]
 		}
 	}
-	now := time.Now().UnixMilli()
+	at := time.Now()
+	now := at.UnixMilli()
 	// One pass in id order for every statement: a row locked out of that order
 	// (the old email-sorted expiry pass) deadlocks against another master's poll.
 	for _, ct := range dbClientTraffics {
@@ -217,6 +221,7 @@ func (s *InboundService) addClientTraffic(tx *gorm.DB, traffics []*xray.ClientTr
 			).Error; err != nil {
 				return fmt.Errorf("update traffic for %s: %w", ct.Email, err)
 			}
+			usage.addClient(ct.Email, localUsageSubject, at, t.Up, t.Down)
 		}
 		// adjustTraffics converted a delayed-start expiry only in memory.
 		if expiry, ok := convertedExpiryByEmail[ct.Email]; ok {

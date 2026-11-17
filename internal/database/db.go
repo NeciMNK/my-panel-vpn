@@ -108,6 +108,8 @@ func allModels() []any {
 		&model.MasterMember{},
 		&model.TlsCertificate{},
 		&model.TelegramTag{},
+		&model.TrafficUsageHour{},
+		&model.TrafficUsageDay{},
 	}
 }
 

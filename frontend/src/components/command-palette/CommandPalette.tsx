@@ -79,6 +79,7 @@ export const PALETTE_KEYWORDS: Record<string, string[]> = {
   '/groups': ['groups', 'tags', 'batch'],
   '/ledger': ['ledger', 'finance', 'profit', 'expenses', 'income', 'payments'],
   '/ai-domains': ['ai', 'ai domains', 'chatgpt', 'openai', 'suggestions'],
+  '/traffic-usage': ['traffic', 'usage', 'statistics', 'periods', 'month'],
   '/nodes': ['nodes', 'servers', 'cluster', 'remote nodes'],
   '/hosts': ['hosts', 'sni', 'domains'],
   '/outbound': ['outbounds', 'freedom', 'blackhole', 'socks', 'http', 'warp', 'nord', 'pia'],

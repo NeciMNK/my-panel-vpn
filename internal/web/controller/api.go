@@ -259,6 +259,7 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	NewHomeNetworkController(api.Group("/homeNetworks"))
 	NewWarpSwitchController(api.Group("/warpSwitch"))
 	NewSpeedController(api.Group("/speed"))
+	NewTrafficUsageController(api.Group("/trafficUsage"))
 	NewMasterClusterController(api.Group("/masters"))
 
 	// Hosts API — per-inbound override endpoints for subscription links
