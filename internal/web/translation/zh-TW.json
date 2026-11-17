@@ -3265,6 +3265,7 @@
       "closeKeyboard": "❌ 關閉鍵盤",
       "cancel": "❌ 取消",
       "broadcastSend": "📤 立即傳送",
+      "broadcastAllGroups": "👥 所有客戶端",
       "cancelReset": "❌ 取消重置",
       "cancelIpLimit": "❌ 取消 IP 限制",
       "confirmResetTraffic": "✅ 確認重置流量？",

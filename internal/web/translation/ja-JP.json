@@ -3265,6 +3265,7 @@
       "closeKeyboard": "❌ キーボードを閉じる",
       "cancel": "❌ キャンセル",
       "broadcastSend": "📤 送信",
+      "broadcastAllGroups": "👥 すべてのクライアント",
       "cancelReset": "❌ リセットをキャンセル",
       "cancelIpLimit": "❌ IP制限をキャンセル",
       "confirmResetTraffic": "✅ トラフィックをリセットしますか？",

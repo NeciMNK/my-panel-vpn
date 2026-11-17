@@ -3265,6 +3265,7 @@
       "closeKeyboard": "❌ Cerrar Teclado",
       "cancel": "❌ Cancelar",
       "broadcastSend": "📤 Enviar",
+      "broadcastAllGroups": "👥 Todos los clientes",
       "cancelReset": "❌ Cancelar Reinicio",
       "cancelIpLimit": "❌ Cancelar Límite de IP",
       "confirmResetTraffic": "✅ ¿Confirmar Reinicio de Tráfico?",

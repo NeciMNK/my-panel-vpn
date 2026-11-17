@@ -3265,6 +3265,7 @@
       "closeKeyboard": "❌ Закрыть клавиатуру",
       "cancel": "❌ Отмена",
       "broadcastSend": "📤 Отправить",
+      "broadcastAllGroups": "👥 Все клиенты",
       "cancelReset": "❌ Отменить сброс",
       "cancelIpLimit": "❌ Отменить лимит IP",
       "confirmResetTraffic": "✅ Подтвердить сброс трафика?",

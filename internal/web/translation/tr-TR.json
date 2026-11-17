@@ -3265,6 +3265,7 @@
       "closeKeyboard": "❌ Klavyeyi Kapat",
       "cancel": "❌ İptal",
       "broadcastSend": "📤 Gönder",
+      "broadcastAllGroups": "👥 Tüm müşteriler",
       "cancelReset": "❌ Sıfırlamayı İptal Et",
       "cancelIpLimit": "❌ IP Limitini İptal Et",
       "confirmResetTraffic": "✅ Trafiği Sıfırlamayı Onayla?",
