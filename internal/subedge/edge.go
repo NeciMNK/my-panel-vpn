@@ -74,8 +74,9 @@ type Node struct {
 	cacheOnce sync.Once
 	cache     *responseCache
 
-	dnsMu sync.Mutex
-	dns   Switcher
+	dnsMu       sync.Mutex
+	dns         Switcher
+	masterHeard time.Time
 
 	srvMu  sync.Mutex
 	srv    *http.Server

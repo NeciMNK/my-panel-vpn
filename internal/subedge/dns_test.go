@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -137,6 +138,90 @@ func TestDNSFollowsTheBestLiveTier(t *testing.T) {
 	}
 }
 
+func TestCloudflareCallsSurviveAConnectionTheNetworkDropped(t *testing.T) {
+	old := cloudflareTimeout
+	cloudflareTimeout = 2 * time.Second
+	t.Cleanup(func() { cloudflareTimeout = old })
+	_, client := newFakeCloudflare(t, "example.com", managedRecord("198.51.100.1"))
+	backend := strings.TrimPrefix(client.BaseURL, "http://")
+	proxy := newSilencingProxy(t, backend)
+	client.BaseURL = "http://" + proxy.addr()
+
+	if _, _, err := client.Published(context.Background(), "sub.example.com"); err != nil {
+		t.Fatal(err)
+	}
+	proxy.silenceOpenConnections()
+	if got, _, err := client.Published(context.Background(), "sub.example.com"); err != nil || !slices.Equal(got, []string{"198.51.100.1"}) {
+		t.Fatalf("after the network dropped the old connection: %v, %v; want the record over a new one", got, err)
+	}
+}
+
+// silencingProxy forwards TCP to a backend and can turn the connections open so
+// far into black holes, the way a NAT that forgot them does.
+type silencingProxy struct {
+	l       net.Listener
+	mu      sync.Mutex
+	silent  []*atomic.Bool
+	backend string
+}
+
+func newSilencingProxy(t *testing.T, backend string) *silencingProxy {
+	t.Helper()
+	l, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := &silencingProxy{l: l, backend: backend}
+	t.Cleanup(func() { l.Close() })
+	go p.serve()
+	return p
+}
+
+func (p *silencingProxy) addr() string { return p.l.Addr().String() }
+
+func (p *silencingProxy) serve() {
+	for {
+		in, err := p.l.Accept()
+		if err != nil {
+			return
+		}
+		out, err := net.Dial("tcp", p.backend)
+		if err != nil {
+			in.Close()
+			continue
+		}
+		silent := &atomic.Bool{}
+		p.mu.Lock()
+		p.silent = append(p.silent, silent)
+		p.mu.Unlock()
+		go forwardUnlessSilent(out, in, silent)
+		go forwardUnlessSilent(in, out, silent)
+	}
+}
+
+func (p *silencingProxy) silenceOpenConnections() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	for _, s := range p.silent {
+		s.Store(true)
+	}
+}
+
+func forwardUnlessSilent(dst, src net.Conn, silent *atomic.Bool) {
+	buf := make([]byte, 32<<10)
+	for {
+		n, err := src.Read(buf)
+		if n > 0 && !silent.Load() {
+			if _, werr := dst.Write(buf[:n]); werr != nil {
+				return
+			}
+		}
+		if err != nil {
+			return
+		}
+	}
+}
+
 func TestPublishWritesUnproxiedShortLivedRecords(t *testing.T) {
 	cf, client := newFakeCloudflare(t, "example.com")
 	if err := client.Publish(context.Background(), "sub.example.com", []string{"203.0.113.7"}); err != nil {
@@ -205,18 +290,25 @@ func TestEdgeNodeSwitchesDNSOnlyWhenNoMasterOrEarlierEdgeCan(t *testing.T) {
 	cases := []struct {
 		name   string
 		tunnel bool
+		heard  time.Duration
 		up     []string
 		acts   bool
 	}{
-		{"a master's tunnel is up", true, []string{ru2}, false},
-		{"a master answers on its address", false, []string{master, ru2}, false},
-		{"an edge ordered before this one is up", false, []string{ru1, ru2}, false},
-		{"no master and no earlier edge", false, []string{ru2}, true},
+		{"a master's tunnel is up", true, 0, []string{ru2}, false},
+		{"a master answers on its address", false, 0, []string{master, ru2}, false},
+		{"an edge ordered before this one is up", false, 0, []string{ru1, ru2}, false},
+		{"a master sent the plan moments ago though this node cannot reach it", false, 30 * time.Second, []string{ru2}, false},
+		{"the last plan from a master is older than MasterSilence", false, MasterSilence + time.Second, []string{ru2}, true},
+		{"no master and no earlier edge", false, 0, []string{ru2}, true},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			cf, client := newFakeCloudflare(t, "example.com", managedRecord(master))
 			node := &Node{}
+			now := time.Now()
+			if tc.heard > 0 {
+				node.HeardFromMaster(now.Add(-tc.heard))
+			}
 			if tc.tunnel {
 				connectMaster(t, node, "m1", 1, http.NotFoundHandler())
 			}
@@ -229,7 +321,7 @@ func TestEdgeNodeSwitchesDNSOnlyWhenNoMasterOrEarlierEdgeCan(t *testing.T) {
 				}
 				return out
 			}
-			_, acted := node.StepDNS(context.Background(), client, plan, live, time.Now())
+			_, acted := node.StepDNS(context.Background(), client, plan, live, now)
 			want := []string{master}
 			if tc.acts {
 				want = []string{ru2}
