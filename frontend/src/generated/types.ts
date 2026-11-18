@@ -1503,6 +1503,7 @@ export interface SubEdgeDNSView {
   domain: string;
   masterIps: string[];
   status: DNSStatus;
+  tokenFromTls: boolean;
   tokenSet: boolean;
 }
 
