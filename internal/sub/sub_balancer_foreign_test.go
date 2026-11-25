@@ -73,3 +73,69 @@ func TestSubJson_ForeignBalancerTakesOnlyForeignNodeInbounds(t *testing.T) {
 		})
 	}
 }
+
+// A pinned client's own auto-select prefers the pinned server and sends AI only
+// there; once it is down, the default outage choice cuts AI and nothing else.
+func TestSubJson_ForeignBalancerHonoursExitPin(t *testing.T) {
+	seedSubDB(t)
+	db := database.GetDB()
+	de := &model.Node{Name: "de", Address: "10.0.0.2", Port: 1, Enable: true, Country: "DE", Status: "online"}
+	nl := &model.Node{Name: "nl", Address: "10.0.0.3", Port: 1, Enable: true, Country: "NL", Status: "online"}
+	for _, n := range []*model.Node{de, nl} {
+		if err := db.Create(n).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	stream := `{"network":"tcp","security":"none"}`
+	deIn := seedSubInbound(t, "s1", "de-in", 4902, 1, stream)
+	nlIn := seedSubInbound(t, "s1", "nl-in", 4903, 2, stream)
+	db.Model(deIn).Update("node_id", de.Id)
+	db.Model(nlIn).Update("node_id", nl.Id)
+	if err := db.Create(&model.CascadeFixedExit{Email: "de-in@e", NodeId: nl.Id}).Error; err != nil {
+		t.Fatal(err)
+	}
+	seedSubBalancer(t, &model.SubBalancer{Remark: "abroad", Strategy: "leastPing", SortOrder: 1, Enabled: true, ExitForeign: true})
+
+	balancerDoc := func() (map[string]any, string) {
+		t.Helper()
+		out, _, err := NewSubJsonService("", "", "", "", NewSubService("")).GetJson("s1", "req.example.com", true)
+		if err != nil {
+			t.Fatalf("GetJson: %v", err)
+		}
+		doc := findDocByRemarks(parseSubJsonDocs(t, out), "abroad")
+		if doc == nil {
+			t.Fatalf("balancer doc missing:\n%s", out)
+		}
+		raw, _ := json.Marshal(doc["routing"])
+		return doc, string(raw)
+	}
+	memberOn := func(doc map[string]any, port string) string {
+		for _, ob := range doc["outbounds"].([]any) {
+			m := ob.(map[string]any)
+			raw, _ := json.Marshal(m)
+			if strings.Contains(string(raw), `"port":`+port) {
+				return m["tag"].(string)
+			}
+		}
+		t.Fatalf("no member on port %s", port)
+		return ""
+	}
+
+	doc, routing := balancerDoc()
+	nlTag := memberOn(doc, "4903")
+	if !strings.Contains(routing, `"outboundTag":"`+nlTag+`"`) || !strings.Contains(routing, `"domain:openai.com"`) {
+		t.Fatalf("AI is not sent to the pinned NL member %s: %s", nlTag, routing)
+	}
+	if !strings.Contains(routing, `"type":"leastLoad"`) || !strings.Contains(routing, `"value":100`) {
+		t.Fatalf("pinned server does not lead the balancer: %s", routing)
+	}
+
+	db.Model(nl).Update("status", "offline")
+	_, routing = balancerDoc()
+	if strings.Contains(routing, `"outboundTag":"`+nlTag+`"`) {
+		t.Fatalf("AI still routed to the dead pin: %s", routing)
+	}
+	if !strings.Contains(routing, `"outboundTag":"block"`) || !strings.Contains(routing, `"domain:openai.com"`) {
+		t.Fatalf("AI not blocked while the pin is down: %s", routing)
+	}
+}
