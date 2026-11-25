@@ -126,6 +126,9 @@ export function nodeCountries(nodes: { country?: string; transitive?: boolean }[
 }
 
 // "🇩🇪" from "DE": regional indicator symbols, so no flag images are shipped.
+// Matches CascadeExitForeign in Go: every node outside the entry's country is an exit.
+export const EXIT_FOREIGN = 'FOREIGN';
+
 export function countryFlag(code: string): string {
   if (!/^[A-Za-z]{2}$/.test(code)) return '';
   return String.fromCodePoint(...[...code.toUpperCase()].map((c) => 0x1f1a5 + c.charCodeAt(0)));
@@ -209,7 +212,10 @@ export default function CascadesCard({ nodes }: CascadesCardProps) {
           <Tag color="blue">{serverName(c.entryNodeId)}</Tag>→
           {c.exitCountry && (
             <Tag color="gold">
-              {countryFlag(c.exitCountry)} {c.exitCountry} ({(c.exitNodeIds ?? []).length})
+              {c.exitCountry === EXIT_FOREIGN
+                ? `🌍 ${t('pages.nodes.cascade.exitModeForeign')}`
+                : `${countryFlag(c.exitCountry)} ${c.exitCountry}`}{' '}
+              ({(c.exitNodeIds ?? []).length})
             </Tag>
           )}
           {(c.exitNodeIds ?? []).map((id) => (
@@ -268,7 +274,8 @@ export default function CascadesCard({ nodes }: CascadesCardProps) {
 
   const exits = form ? exitOptions(servers, form.entryNodeId) : [];
   const countries = nodeCountries(nodes);
-  const byCountry = form !== null && form.exitCountry !== '';
+  const foreign = form !== null && form.exitCountry === EXIT_FOREIGN;
+  const byCountry = form !== null && form.exitCountry !== '' && !foreign;
 
   return (
     <Card
@@ -326,7 +333,7 @@ export default function CascadesCard({ nodes }: CascadesCardProps) {
             </Form.Item>
             <Form.Item label={t('pages.nodes.cascade.exitMode')}>
               <Segmented
-                value={byCountry ? 'country' : 'servers'}
+                value={foreign ? 'foreign' : byCountry ? 'country' : 'servers'}
                 options={[
                   {
                     value: 'servers',
@@ -337,16 +344,26 @@ export default function CascadesCard({ nodes }: CascadesCardProps) {
                     label: t('pages.nodes.cascade.exitModeCountry'),
                     disabled: countries.length === 0,
                   },
+                  {
+                    value: 'foreign',
+                    label: t('pages.nodes.cascade.exitModeForeign'),
+                    disabled: countries.length === 0,
+                  },
                 ]}
                 onChange={(v) =>
                   setForm({
                     ...form,
-                    exitCountry: v === 'country' ? (countries[0] ?? '') : '',
+                    exitCountry:
+                      v === 'country' ? (countries[0] ?? '') : v === 'foreign' ? EXIT_FOREIGN : '',
                   })
                 }
               />
             </Form.Item>
-            {byCountry ? (
+            {foreign ? (
+              <Typography.Paragraph type="secondary">
+                {t('pages.nodes.cascade.exitModeForeignHint')}
+              </Typography.Paragraph>
+            ) : byCountry ? (
               <Form.Item
                 label={t('pages.nodes.cascade.country')}
                 extra={t('pages.nodes.cascade.countryHint')}
@@ -374,7 +391,7 @@ export default function CascadesCard({ nodes }: CascadesCardProps) {
                 />
               </Form.Item>
             )}
-            {(byCountry || form.exitNodeIds.length > 1) && (
+            {(byCountry || foreign || form.exitNodeIds.length > 1) && (
               <Form.Item label={t('pages.nodes.cascade.strategy')}>
                 <Select
                   aria-label={t('pages.nodes.cascade.strategy')}

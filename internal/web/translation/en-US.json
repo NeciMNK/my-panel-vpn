@@ -1414,6 +1414,8 @@
         "exitMode": "Exits",
         "exitModeServers": "Picked servers",
         "exitModeCountry": "All servers of a country",
+        "exitModeForeign": "All foreign servers",
+        "exitModeForeignHint": "Auto-select: traffic leaves through the fastest server outside the entry's country (Russia for this panel). Cascade rules (local sites direct, AI and exit pins) still apply; new foreign nodes join automatically.",
         "country": "Exit country",
         "countryHint": "Traffic leaves through the fastest server of this country. New nodes of the country join automatically.",
         "split": "Split traffic",

@@ -2037,7 +2037,7 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "integer"
       },
       "exitCountry": {
-        "description": "ExitCountry, when set, makes every enabled node of that country an exit.",
+        "description": "ExitCountry, when set, makes every enabled node of that country an exit;\nFOREIGN makes every node outside the entry's country one.",
         "example": "DE",
         "type": "string"
       },
@@ -2255,7 +2255,7 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "integer"
       },
       "exitCountry": {
-        "description": "ExitCountry (ISO code) makes every enabled node of that country except the\nentry an exit, re-resolved whenever nodes are added, moved or disabled.",
+        "description": "ExitCountry (ISO code) makes every enabled node of that country except the\nentry an exit; FOREIGN makes every node outside the entry's country one.",
         "example": "DE",
         "type": "string"
       },

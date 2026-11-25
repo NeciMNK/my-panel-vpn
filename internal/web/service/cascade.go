@@ -38,7 +38,7 @@ type CascadeRequest struct {
 	// is set. Several exits share a balancer and keep each user on one exit.
 	ExitNodeIds []int `json:"exitNodeIds" example:"[2,3]"`
 	// ExitCountry (ISO code) makes every enabled node of that country except the
-	// entry an exit, re-resolved whenever nodes are added, moved or disabled.
+	// entry an exit; FOREIGN makes every node outside the entry's country one.
 	ExitCountry string `json:"exitCountry" example:"DE"`
 	// EntryInboundTags are the entry inbounds whose users are chained; empty
 	// chains every inbound of the entry.
@@ -90,10 +90,10 @@ func (s *CascadeService) validate(req *CascadeRequest) error {
 	}
 	req.ExitCountry = strings.ToUpper(strings.TrimSpace(req.ExitCountry))
 	if req.ExitCountry != "" {
-		if !isCountryCode(req.ExitCountry) {
-			return common.NewError("country must be a two-letter code such as DE")
+		if req.ExitCountry != CascadeExitForeign && !isCountryCode(req.ExitCountry) {
+			return common.NewError("country must be a two-letter code such as DE, or FOREIGN")
 		}
-		exits, err := countryExits(req.ExitCountry, req.EntryNodeId)
+		exits, err := cascadeExits(req.ExitCountry, req.EntryNodeId)
 		if err != nil {
 			return err
 		}
@@ -536,12 +536,24 @@ func (s *CascadeService) removeLink(l model.CascadeLink) {
 	}
 }
 
-// countryExits lists the enabled nodes of a country, entry excluded, in id order.
-func countryExits(country string, entryNodeID int) ([]int, error) {
+// CascadeExitForeign as an exit country picks every enabled node whose country
+// differs from the entry's; the panel itself counts as Russia, as in splitZone.
+const CascadeExitForeign = "FOREIGN"
+
+// cascadeExits lists the enabled exits of a country cascade, entry excluded, in id order.
+func cascadeExits(country string, entryNodeID int) ([]int, error) {
+	q := database.GetDB().Model(model.Node{}).Where("enable = ? AND id <> ?", true, entryNodeID)
+	if country == CascadeExitForeign {
+		home := strings.ToUpper(strings.TrimSpace(nodeCountry(entryNodeID)))
+		if home == "" {
+			home = "RU"
+		}
+		q = q.Where("country <> '' AND country <> ?", home)
+	} else {
+		q = q.Where("country = ?", country)
+	}
 	var ids []int
-	err := database.GetDB().Model(model.Node{}).
-		Where("country = ? AND enable = ? AND id <> ?", country, true, entryNodeID).
-		Order("id asc").Pluck("id", &ids).Error
+	err := q.Order("id asc").Pluck("id", &ids).Error
 	return ids, err
 }
 
@@ -557,7 +569,7 @@ func (s *CascadeService) ReconcileCountryCascades(ctx context.Context) {
 		return
 	}
 	for _, c := range rows {
-		exits, err := countryExits(c.ExitCountry, c.EntryNodeId)
+		exits, err := cascadeExits(c.ExitCountry, c.EntryNodeId)
 		if err != nil {
 			logger.Warning("cascade", c.Id, ": resolve country exits:", err)
 			continue

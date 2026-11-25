@@ -10,7 +10,8 @@ type Cascade struct {
 	EntryNodeId int    `json:"entryNodeId" gorm:"column:entry_node_id" example:"1"`
 	// ExitNodeIds are the exits in use; for a country cascade, the resolved list.
 	ExitNodeIds []int `json:"exitNodeIds" gorm:"serializer:json;column:exit_node_ids"`
-	// ExitCountry, when set, makes every enabled node of that country an exit.
+	// ExitCountry, when set, makes every enabled node of that country an exit;
+	// FOREIGN makes every node outside the entry's country one.
 	ExitCountry string `json:"exitCountry" gorm:"column:exit_country" example:"DE"`
 	// EntryInboundTags are the chained entry inbounds; empty means all of them.
 	EntryInboundTags []string `json:"entryInboundTags" gorm:"serializer:json;column:entry_inbound_tags"`
