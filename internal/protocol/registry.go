@@ -36,34 +36,47 @@ type Spec struct {
 	NodeEligible bool
 	// NodeMinPanelVersion is the oldest node panel that serves this protocol; "" = any.
 	NodeMinPanelVersion string
+	// Clients: the inbound carries panel clients, so subscriptions list it.
+	Clients bool
+	// ShareLink: a client gets a raw share link (URI) in subscriptions and QR codes.
+	ShareLink bool
 }
 
 // ServedByXray reports whether the protocol's inbounds live inside xray-core.
 func (s Spec) ServedByXray() bool { return s.Runtime == RuntimeXray }
 
 var specs = []Spec{
-	{ID: model.VMESS, UsesStreamSettings: true, NodeEligible: true},
-	{ID: model.VLESS, UsesStreamSettings: true, NodeEligible: true},
-	{ID: model.Trojan, UsesStreamSettings: true, NodeEligible: true},
-	{ID: model.Shadowsocks, UsesStreamSettings: true, NodeEligible: true},
-	{ID: model.Hysteria, UsesStreamSettings: true, ListenTransport: UDP, NodeEligible: true},
-	{ID: model.WireGuard, UsesStreamSettings: true, ListenTransport: UDP, NodeEligible: true},
-	{ID: model.MASQUE, UsesStreamSettings: true, NodeEligible: true, NodeMinPanelVersion: "v3.9.1"},
+	{ID: model.VMESS, UsesStreamSettings: true, NodeEligible: true, Clients: true, ShareLink: true},
+	{ID: model.VLESS, UsesStreamSettings: true, NodeEligible: true, Clients: true, ShareLink: true},
+	{ID: model.Trojan, UsesStreamSettings: true, NodeEligible: true, Clients: true, ShareLink: true},
+	{ID: model.Shadowsocks, UsesStreamSettings: true, NodeEligible: true, Clients: true, ShareLink: true},
+	{
+		ID: model.Hysteria, UsesStreamSettings: true, ListenTransport: UDP,
+		NodeEligible: true, Clients: true, ShareLink: true,
+	},
+	{
+		ID: model.WireGuard, UsesStreamSettings: true, ListenTransport: UDP,
+		NodeEligible: true, Clients: true, ShareLink: true,
+	},
+	{
+		ID: model.MASQUE, UsesStreamSettings: true,
+		NodeEligible: true, NodeMinPanelVersion: "v3.9.1", Clients: true,
+	},
 	{ID: model.Tunnel, UsesStreamSettings: true},
 	{ID: model.HTTP},
 	{ID: model.Mixed},
 	{ID: model.TUN},
 	{
 		ID: model.MTProto, Runtime: RuntimeSidecar, ListenTransport: TCP,
-		NodeEligible: true, NodeMinPanelVersion: "v3.5.0",
+		NodeEligible: true, NodeMinPanelVersion: "v3.5.0", Clients: true, ShareLink: true,
 	},
 	{
 		ID: model.TUIC, Runtime: RuntimeSidecar, ListenTransport: UDP,
-		NodeEligible: true, NodeMinPanelVersion: "v3.8.0",
+		NodeEligible: true, NodeMinPanelVersion: "v3.8.0", Clients: true, ShareLink: true,
 	},
 	{
 		ID: model.AmneziaWG, Runtime: RuntimeEmbedded, ListenTransport: UDP,
-		NodeEligible: true, NodeMinPanelVersion: "v3.7.0",
+		NodeEligible: true, NodeMinPanelVersion: "v3.7.0", Clients: true, ShareLink: true,
 	},
 }
 
@@ -86,6 +99,17 @@ func All() []Spec {
 func Lookup(id model.Protocol) (Spec, bool) {
 	s, ok := byID[id]
 	return s, ok
+}
+
+// WithClients returns the ids of every protocol whose inbounds carry panel clients.
+func WithClients() []string {
+	var ids []string
+	for _, s := range specs {
+		if s.Clients {
+			ids = append(ids, string(s.ID))
+		}
+	}
+	return ids
 }
 
 // ServedByXray reports whether id's inbounds belong in the xray-core config; an
