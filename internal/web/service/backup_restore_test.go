@@ -64,6 +64,10 @@ func TestRestoreNodeMovesNodeToNewServer(t *testing.T) {
 	if err := (&NodeService{}).Create(node); err != nil {
 		t.Fatal(err)
 	}
+	// Disabled first: that is how a dead node gets repointed before its restore.
+	if err := database.GetDB().Model(node).Update("enable", false).Error; err != nil {
+		t.Fatal(err)
+	}
 	src := filepath.Join(t.TempDir(), "db")
 	_ = os.WriteFile(src, []byte("node db"), 0o600)
 	var archive bytes.Buffer
@@ -112,6 +116,9 @@ func TestRestoreNodeMovesNodeToNewServer(t *testing.T) {
 	}
 	if !got.AllowPrivateAddress {
 		t.Fatal("a loopback address must be allowed explicitly")
+	}
+	if !got.Enable {
+		t.Fatal("the restored node stayed disabled")
 	}
 }
 

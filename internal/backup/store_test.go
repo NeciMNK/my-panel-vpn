@@ -87,3 +87,26 @@ func TestDialRefusesChangedHostKey(t *testing.T) {
 		t.Fatalf("Run = %q, %v", out, err)
 	}
 }
+
+// A backup holds the whole database and node keys, so the server's umask
+// (0664 on the stand) must not leave it readable to other accounts.
+func TestStorePutWritesOwnerOnlyFile(t *testing.T) {
+	srv := sshtest.Start(t, "pw")
+	login := backup.SSHLogin{Host: srv.Host, Port: srv.Port, User: "root", Password: srv.Password}
+	dir := filepath.Join(t.TempDir(), "backups")
+	st, err := backup.OpenStore(context.Background(), login, dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	if err := st.Put("db", "x-ui_1.db", strings.NewReader("secret")); err != nil {
+		t.Fatal(err)
+	}
+	fi, err := os.Stat(filepath.Join(dir, "db", "x-ui_1.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if perm := fi.Mode().Perm(); perm != 0o600 {
+		t.Fatalf("backup mode = %v, want -rw-------", perm)
+	}
+}

@@ -104,6 +104,11 @@ func (s *Store) Put(sub, name string, r io.Reader) error {
 	if err != nil {
 		return err
 	}
+	if err := f.Chmod(0o600); err != nil {
+		_ = f.Close()
+		_ = s.sftp.Remove(tmp)
+		return err
+	}
 	if _, err := f.ReadFrom(r); err != nil {
 		_ = f.Close()
 		_ = s.sftp.Remove(tmp)

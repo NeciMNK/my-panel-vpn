@@ -204,9 +204,7 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 		return nil, err
 	}
 	assetsBasePath := basePath + "assets/"
-	// The bundles are served below from a gzip copy made once per file: compressing them
-	// per request lets every stalled download pin its own compressor until WriteTimeout.
-	engine.Use(gzip.Gzip(gzip.DefaultCompression, gzip.WithExcludedPaths([]string{assetsBasePath})))
+	engine.Use(panelGzip(basePath))
 
 	store := cookie.NewStore(secret)
 	// Configure default session cookie options, including expiration (MaxAge)
@@ -938,4 +936,13 @@ func scheduleSettingJob(c *cron.Cron, name, spec, fallback string, j cron.Job) c
 	}
 	logger.Infof("%s scheduled, run at %s", name, spec)
 	return c.Schedule(schedule, j)
+}
+
+// panelGzip skips the bundles, served from a gzip copy made once per file (a per-request
+// compressor stays pinned by every stalled download), and the already-gzipped node backup.
+func panelGzip(basePath string) gin.HandlerFunc {
+	return gzip.Gzip(gzip.DefaultCompression, gzip.WithExcludedPaths([]string{
+		basePath + "assets/",
+		basePath + "panel/api/server/nodeBackup",
+	}))
 }

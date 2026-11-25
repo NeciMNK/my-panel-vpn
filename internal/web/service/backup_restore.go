@@ -399,6 +399,7 @@ func (s *NodeService) PointAtRestoredServer(id int, address string, ident Restor
 		"tls_verify_mode":    "pin",
 		"pinned_cert_sha256": ident.CertSha256,
 		"status":             "unknown",
+		"enable":             true,
 		"last_error":         "",
 	}
 	if ip := net.ParseIP(address); ip != nil && (ip.IsPrivate() || ip.IsLoopback()) {
