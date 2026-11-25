@@ -27,10 +27,11 @@ type SubEdgeDNSRequest struct {
 // SubEdgeDNSView is the DNS switching setup without its token, and what the
 // last switching step did.
 type SubEdgeDNSView struct {
-	Domain    string            `json:"domain" example:"sub.example.com"`
-	TokenSet  bool              `json:"tokenSet" example:"true"`
-	MasterIPs []string          `json:"masterIps" example:"[\"198.51.100.1\"]"`
-	Status    subedge.DNSStatus `json:"status"`
+	Domain       string            `json:"domain" example:"sub.example.com"`
+	TokenSet     bool              `json:"tokenSet" example:"true"`
+	TokenFromTLS bool              `json:"tokenFromTls" example:"false"`
+	MasterIPs    []string          `json:"masterIps" example:"[\"198.51.100.1\"]"`
+	Status       subedge.DNSStatus `json:"status"`
 }
 
 var (
@@ -45,11 +46,15 @@ func (s *SubEdgeService) DNSView() (*SubEdgeDNSView, error) {
 	if err != nil {
 		return nil, err
 	}
-	token, err := set.getString("subEdgeDnsToken")
+	own, err := set.getString("subEdgeDnsToken")
 	if err != nil {
 		return nil, err
 	}
-	view := &SubEdgeDNSView{Domain: domain, TokenSet: token != "", MasterIPs: savedMasterIPs(), Status: subedge.DNSStatus{Tier: -1}}
+	token, err := dnsToken()
+	if err != nil {
+		return nil, err
+	}
+	view := &SubEdgeDNSView{Domain: domain, TokenSet: own != "", TokenFromTLS: own == "" && token != "", MasterIPs: savedMasterIPs(), Status: subedge.DNSStatus{Tier: -1}}
 	if raw, _ := set.getString("subEdgeDnsStatus"); raw != "" {
 		_ = json.Unmarshal([]byte(raw), &view.Status)
 	}
@@ -86,6 +91,17 @@ func (s *SubEdgeService) SaveDNS(req SubEdgeDNSRequest) error {
 	return nil
 }
 
+// dnsToken is the DNS switching token, or the TLS certificates' Cloudflare
+// token when no separate one is saved.
+func dnsToken() (string, error) {
+	var set SettingService
+	token, err := set.getString("subEdgeDnsToken")
+	if err != nil || token != "" {
+		return token, err
+	}
+	return set.GetTlsCloudflareToken()
+}
+
 func savedMasterIPs() []string {
 	raw, _ := (&SettingService{}).getString("subEdgeDnsMasterIps")
 	ips := []string{}
@@ -109,7 +125,7 @@ func (s *SubEdgeService) dnsPlan(ctx context.Context) (subedge.DNSPlan, []planEd
 	if err != nil {
 		return subedge.DNSPlan{}, nil, err
 	}
-	token, err := set.getString("subEdgeDnsToken")
+	token, err := dnsToken()
 	if err != nil {
 		return subedge.DNSPlan{}, nil, err
 	}

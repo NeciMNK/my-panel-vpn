@@ -6778,6 +6778,10 @@ export const SCHEMAS: Record<string, unknown> = {
       "status": {
         "$ref": "#/components/schemas/DNSStatus"
       },
+      "tokenFromTls": {
+        "example": false,
+        "type": "boolean"
+      },
       "tokenSet": {
         "example": true,
         "type": "boolean"
@@ -6787,6 +6791,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "domain",
       "masterIps",
       "status",
+      "tokenFromTls",
       "tokenSet"
     ],
     "type": "object"

@@ -422,6 +422,8 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 			switch dataArray[0] {
 			case "broadcast_confirm":
 				t.confirmBroadcast(actor, dataArray[1], callbackQuery.Message.GetMessageID(), callbackQuery.ID)
+			case "broadcast_next":
+				t.broadcastNextGroups(actor, dataArray[1], callbackQuery.Message.GetMessageID(), callbackQuery.ID)
 			case "broadcast_group":
 				if len(dataArray) < 3 {
 					t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.wentWrong"))
