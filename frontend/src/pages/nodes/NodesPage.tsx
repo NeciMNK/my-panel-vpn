@@ -409,6 +409,10 @@ export default function NodesPage() {
                           </Col>
 
                           <Col span={24}>
+                            <CascadesCard nodes={nodes} autoSelect />
+                          </Col>
+
+                          <Col span={24}>
                             <SubEdgesCard nodes={nodes} />
                           </Col>
 

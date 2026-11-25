@@ -508,6 +508,7 @@ export const CachedResponseSchema = z.object({
 export type CachedResponse = z.infer<typeof CachedResponseSchema>;
 
 export const CascadeSchema = z.object({
+  autoSelect: z.boolean(),
   createdAt: z.number().int(),
   directDomains: z.array(z.string()),
   directIps: z.array(z.string()),
@@ -557,6 +558,7 @@ export const CascadeLinkSchema = z.object({
 export type CascadeLink = z.infer<typeof CascadeLinkSchema>;
 
 export const CascadeRequestSchema = z.object({
+  autoSelect: z.boolean(),
   directDomains: z.array(z.string()),
   directIps: z.array(z.string()),
   enable: z.boolean(),

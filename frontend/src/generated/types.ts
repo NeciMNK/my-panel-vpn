@@ -478,6 +478,7 @@ export interface CachedResponse {
 }
 
 export interface Cascade {
+  autoSelect: boolean;
   createdAt: number;
   directDomains: string[];
   directIps: string[];
@@ -523,6 +524,7 @@ export interface CascadeLink {
 }
 
 export interface CascadeRequest {
+  autoSelect: boolean;
   directDomains: string[];
   directIps: string[];
   enable: boolean;

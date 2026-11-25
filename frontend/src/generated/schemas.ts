@@ -2003,6 +2003,11 @@ export const SCHEMAS: Record<string, unknown> = {
   "Cascade": {
     "description": "Cascade chains an entry server to one or more exit servers: users connect to\nthe entry, their traffic leaves the internet from an exit. Node id 0 means\nthis panel itself.",
     "properties": {
+      "autoSelect": {
+        "description": "AutoSelect marks an auto-select over foreign servers, listed apart from cascades.",
+        "example": false,
+        "type": "boolean"
+      },
       "createdAt": {
         "format": "int64",
         "type": "integer"
@@ -2090,6 +2095,7 @@ export const SCHEMAS: Record<string, unknown> = {
       }
     },
     "required": [
+      "autoSelect",
       "createdAt",
       "directDomains",
       "directIps",
@@ -2224,6 +2230,11 @@ export const SCHEMAS: Record<string, unknown> = {
   "CascadeRequest": {
     "description": "CascadeRequest is the body of /cascades/add and /cascades/update. Update\nreplaces the whole cascade: an omitted field is cleared, not kept.",
     "properties": {
+      "autoSelect": {
+        "description": "AutoSelect makes it an auto-select over foreign servers: exits are picked\nforeign nodes or exitCountry FOREIGN, every one outside the entry's country.",
+        "example": false,
+        "type": "boolean"
+      },
       "directDomains": {
         "description": "DirectDomains extend the split's direct list: a plain domain or domain:,\nfull:, keyword:, regexp:, geosite: rules. Ignored in relay mode.",
         "items": {
@@ -2304,6 +2315,7 @@ export const SCHEMAS: Record<string, unknown> = {
       }
     },
     "required": [
+      "autoSelect",
       "directDomains",
       "directIps",
       "enable",

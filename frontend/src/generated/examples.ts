@@ -496,6 +496,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "uri": "/sub/abc123"
   },
   "Cascade": {
+    "autoSelect": false,
     "createdAt": 0,
     "directDomains": [
       ""
@@ -559,6 +560,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "shortId": ""
   },
   "CascadeRequest": {
+    "autoSelect": false,
     "directDomains": [
       ""
     ],

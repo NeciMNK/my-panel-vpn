@@ -25,6 +25,8 @@ type Cascade struct {
 	DirectIPs []string `json:"directIps" gorm:"serializer:json;column:direct_ips"`
 	// RelayInboundTags are the entry inbounds that relay everything in both mode.
 	RelayInboundTags []string `json:"relayInboundTags" gorm:"serializer:json;column:relay_inbound_tags"`
+	// AutoSelect marks an auto-select over foreign servers, listed apart from cascades.
+	AutoSelect bool `json:"autoSelect" gorm:"column:auto_select;default:false" example:"false"`
 	// Links are the provisioned hops, one per exit; read-only, set by the panel.
 	Links []CascadeLink `json:"links" gorm:"serializer:json"`
 	// LastError is why the last apply failed; empty when the cascade is live.
