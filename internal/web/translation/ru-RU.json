@@ -1870,6 +1870,7 @@
       "eventOutboundDown": "Недоступен",
       "eventOutboundUp": "Работает",
       "eventDownThresholdHint": "неудачных проверок подряд",
+      "eventNodeDownSecondsHint": "секунд без связи",
       "eventXrayCrash": "Сбой",
       "eventNodeDown": "Недоступен",
       "eventNodeUp": "В сети",

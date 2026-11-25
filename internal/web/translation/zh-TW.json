@@ -1870,6 +1870,7 @@
       "eventOutboundDown": "中斷",
       "eventOutboundUp": "恢復",
       "eventDownThresholdHint": "次連續檢查失敗",
+      "eventNodeDownSecondsHint": "秒無回應",
       "eventXrayCrash": "當機",
       "eventNodeDown": "離線",
       "eventNodeUp": "上線",

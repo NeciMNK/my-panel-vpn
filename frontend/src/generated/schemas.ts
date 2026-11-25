@@ -193,8 +193,8 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "string"
       },
       "nodeDownThreshold": {
-        "maximum": 100,
-        "minimum": 1,
+        "maximum": 3600,
+        "minimum": 0,
         "type": "integer"
       },
       "nodeLoadMinutes": {
@@ -1066,8 +1066,8 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "string"
       },
       "nodeDownThreshold": {
-        "maximum": 100,
-        "minimum": 1,
+        "maximum": 3600,
+        "minimum": 0,
         "type": "integer"
       },
       "nodeLoadMinutes": {

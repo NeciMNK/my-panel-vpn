@@ -1870,6 +1870,7 @@
       "eventOutboundDown": "غير متصل",
       "eventOutboundUp": "متصل",
       "eventDownThresholdHint": "فحوصات فاشلة متتالية",
+      "eventNodeDownSecondsHint": "ثانية بلا اتصال",
       "eventXrayCrash": "تعطّل",
       "eventNodeDown": "غير متصلة",
       "eventNodeUp": "متصلة",

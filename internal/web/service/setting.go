@@ -287,7 +287,7 @@ var defaultValueMap = map[string]string{
 	// Consecutive failed observatory probes before an outbound.down event fires
 	"outboundDownThreshold": "3",
 
-	"nodeDownThreshold": "1",
+	"nodeDownThreshold": "60",
 	"nodeLoadMinutes":   "2",
 
 	// Email (SMTP) notifications
@@ -1953,6 +1953,10 @@ func (s *SettingService) SetNodeLoadMinutes(value int) error {
 	return s.setInt("nodeLoadMinutes", value)
 }
 
+// DefaultNodeDownThreshold is how long a node stays unreachable before node.down goes out.
+const DefaultNodeDownThreshold = 60 * time.Second
+
+// GetNodeDownThreshold returns that hold time in seconds.
 func (s *SettingService) GetNodeDownThreshold() (int, error) {
 	return s.getInt("nodeDownThreshold")
 }

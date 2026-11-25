@@ -1870,6 +1870,7 @@
       "eventOutboundDown": "Caído",
       "eventOutboundUp": "Activo",
       "eventDownThresholdHint": "comprobaciones fallidas seguidas",
+      "eventNodeDownSecondsHint": "segundos sin conexión",
       "eventXrayCrash": "Caída",
       "eventNodeDown": "Caído",
       "eventNodeUp": "Activo",

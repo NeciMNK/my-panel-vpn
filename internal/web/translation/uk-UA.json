@@ -1870,6 +1870,7 @@
       "eventOutboundDown": "Недоступне",
       "eventOutboundUp": "Доступне",
       "eventDownThresholdHint": "невдалих перевірок поспіль",
+      "eventNodeDownSecondsHint": "секунд без зв'язку",
       "eventXrayCrash": "Збій",
       "eventNodeDown": "Недоступний",
       "eventNodeUp": "Доступний",

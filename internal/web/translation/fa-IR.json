@@ -1874,6 +1874,7 @@
       "eventOutboundDown": "قطع",
       "eventOutboundUp": "وصل",
       "eventDownThresholdHint": "بررسی ناموفق پیاپی",
+      "eventNodeDownSecondsHint": "ثانیه بدون ارتباط",
       "eventXrayCrash": "کرش",
       "eventNodeDown": "قطع",
       "eventNodeUp": "وصل",

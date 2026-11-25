@@ -49,12 +49,12 @@ const GROUPS: NotificationGroupConfig[] = [
         key: 'node.down',
         label: 'eventNodeDown',
         settingKey: 'nodeDownThreshold',
-        hint: 'eventDownThresholdHint',
+        hint: 'eventNodeDownSecondsHint',
         extra: ({ value, onChange, ariaLabel }) => (
           <InputNumber
             size="small"
-            min={1}
-            max={100}
+            min={0}
+            max={3600}
             value={value}
             onChange={onChange}
             aria-label={ariaLabel}

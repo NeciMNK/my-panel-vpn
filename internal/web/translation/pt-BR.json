@@ -1870,6 +1870,7 @@
       "eventOutboundDown": "Inativo",
       "eventOutboundUp": "Ativo",
       "eventDownThresholdHint": "verificações com falha seguidas",
+      "eventNodeDownSecondsHint": "segundos sem conexão",
       "eventXrayCrash": "Falha",
       "eventNodeDown": "Inativo",
       "eventNodeUp": "Ativo",

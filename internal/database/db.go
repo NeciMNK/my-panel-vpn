@@ -1580,7 +1580,7 @@ func runSeeders(isUsersEmpty bool) error {
 	}
 
 	if empty && isUsersEmpty {
-		seeders := []string{"UserPasswordHash", "ClientsTable", "InboundClientsArrayFix", "InboundClientTgIdFix2", "InboundClientSubIdFix", "FreedomFinalRulesReverseFix", "FreedomFinalRulesPrivateEgressBlock", "UppercaseFreedomFinalRulesFix", "InboundRealityFinalmaskTcpStrip", "ApiTokensHash", "LegacyProxySettingsCleanup", "SessionSecretRotation", "OutboundRemovedKeysFix", "FreedomDomainStrategyFix", "DNSOutboundLegacyKeysFix", "DNSOutboundQTypeZeroFix", "WireguardDomainStrategyFix", "XdnsFinalmaskNamesAddrsFix", "UDPHopClientMaskFix", "HostVerifyPeerCertByNameBoolFix", "HostMihomoX25519Reset", "WireguardPeersToClients", "MtprotoSecretsToClients", "NodeInboundsAdopted", "NodeDownNotified", "ResetIpLimitNoFail2ban", "ClientGroupNameTrim", "OwnerlessClientHwidPurge", "ClientForwardedPortsBackfill", "ClientAutoGroups", "AutoNameRemarkTemplate", "SubUpdatesHourly", "TgNodeLoadSpeedDropEvents"}
+		seeders := []string{"UserPasswordHash", "ClientsTable", "InboundClientsArrayFix", "InboundClientTgIdFix2", "InboundClientSubIdFix", "FreedomFinalRulesReverseFix", "FreedomFinalRulesPrivateEgressBlock", "UppercaseFreedomFinalRulesFix", "InboundRealityFinalmaskTcpStrip", "ApiTokensHash", "LegacyProxySettingsCleanup", "SessionSecretRotation", "OutboundRemovedKeysFix", "FreedomDomainStrategyFix", "DNSOutboundLegacyKeysFix", "DNSOutboundQTypeZeroFix", "WireguardDomainStrategyFix", "XdnsFinalmaskNamesAddrsFix", "UDPHopClientMaskFix", "HostVerifyPeerCertByNameBoolFix", "HostMihomoX25519Reset", "WireguardPeersToClients", "MtprotoSecretsToClients", "NodeInboundsAdopted", "NodeDownNotified", "ResetIpLimitNoFail2ban", "ClientGroupNameTrim", "OwnerlessClientHwidPurge", "ClientForwardedPortsBackfill", "ClientAutoGroups", "AutoNameRemarkTemplate", "SubUpdatesHourly", "TgNodeLoadSpeedDropEvents", "NodeDownThresholdSeconds"}
 		for _, name := range seeders {
 			if err := db.Create(&model.HistoryOfSeeders{SeederName: name}).Error; err != nil {
 				return err
@@ -1802,6 +1802,12 @@ func runSeeders(isUsersEmpty bool) error {
 		}
 	}
 
+	if !slices.Contains(seedersHistory, "NodeDownThresholdSeconds") {
+		if err := seedNodeDownThresholdSeconds(); err != nil {
+			return err
+		}
+	}
+
 	if !slices.Contains(seedersHistory, "GroupSpeedDefaults") {
 		if err := seedGroupSpeedDefaults(); err != nil {
 			return err
@@ -1894,6 +1900,27 @@ func seedSubUpdatesHourly() error {
 		return err
 	}
 	return db.Create(&model.HistoryOfSeeders{SeederName: "SubUpdatesHourly"}).Error
+}
+
+// seedNodeDownThresholdSeconds turns the stored count of 5-second heartbeats into
+// seconds, held to a minute so a one-probe blip no longer pages the admin.
+func seedNodeDownThresholdSeconds() error {
+	var row model.Setting
+	err := db.Where("key = ?", "nodeDownThreshold").First(&row).Error
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
+	}
+	if err == nil {
+		checks, convErr := strconv.Atoi(strings.TrimSpace(row.Value))
+		if convErr != nil {
+			checks = 0
+		}
+		seconds := max(checks*5, 60)
+		if err := db.Model(&row).Update("value", strconv.Itoa(seconds)).Error; err != nil {
+			return err
+		}
+	}
+	return db.Create(&model.HistoryOfSeeders{SeederName: "NodeDownThresholdSeconds"}).Error
 }
 
 // seedNodeDownNotified treats nodes already offline at upgrade as announced,

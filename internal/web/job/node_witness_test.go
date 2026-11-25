@@ -22,6 +22,7 @@ import (
 	xuilogger "github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/entity"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/runtime"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 )
 
 const (
@@ -91,6 +92,9 @@ func witnessWorld(t *testing.T) (target, witness *fakeNode) {
 	dbtest.InitDB(t, filepath.Join(t.TempDir(), "x-ui.db"))
 	runtime.SetManager(runtime.NewManager(runtime.LocalDeps{APIPort: func() int { return 0 }, SetNeedRestart: func() {}}))
 	t.Cleanup(func() { runtime.SetManager(nil) })
+	if err := (&service.SettingService{}).SetNodeDownThreshold(0); err != nil {
+		t.Fatalf("SetNodeDownThreshold: %v", err)
+	}
 	return startFakeNode(t, "target"), startFakeNode(t, "witness")
 }
 
