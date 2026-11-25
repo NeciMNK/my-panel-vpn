@@ -188,7 +188,8 @@ func (a *NodeController) update(c *gin.Context) {
 		jsonMsg(c, I18nWeb(c, "pages.nodes.toasts.obtain"), err)
 		return
 	}
-	if n.OutboundTag == "" && old.OutboundTag == "" && (!n.ClearApiToken || n.Enable) {
+	// A disabled node is never contacted, so a dead one can still be repointed; enabling it probes.
+	if n.Enable && n.OutboundTag == "" && old.OutboundTag == "" {
 		if err := a.ensureReachable(c, n, id); err != nil {
 			jsonMsg(c, I18nWeb(c, "pages.nodes.toasts.update"), err)
 			return
@@ -202,9 +203,11 @@ func (a *NodeController) update(c *gin.Context) {
 		if err := a.xrayService.RestartXray(false); err != nil {
 			logger.Warning("apply node outbound bridge change failed:", err)
 		}
-		if err := a.ensureReachable(c, n, id); err != nil {
-			jsonMsg(c, I18nWeb(c, "pages.nodes.toasts.update"), err)
-			return
+		if n.Enable {
+			if err := a.ensureReachable(c, n, id); err != nil {
+				jsonMsg(c, I18nWeb(c, "pages.nodes.toasts.update"), err)
+				return
+			}
 		}
 	}
 	reconcileCountryCascades()

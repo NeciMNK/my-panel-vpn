@@ -30,6 +30,7 @@ function renderList(isMobile: boolean) {
       onMtls={noop}
       onEdit={noop}
       onDelete={noop}
+      onRestore={noop}
       onProbe={noop}
       onToggleEnable={noop}
       onUpdateNode={noop}

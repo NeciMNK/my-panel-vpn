@@ -35,6 +35,7 @@ import AppSidebar from '@/layouts/AppSidebar';
 import NodeList from './NodeList';
 import NodeFormModal from './NodeFormModal';
 import NodeJoinModal from './NodeJoinModal';
+import NodeRestoreModal from './NodeRestoreModal';
 import CascadesCard from './CascadesCard';
 import SubEdgesCard from './SubEdgesCard';
 import HomeNetworksCard from './HomeNetworksCard';
@@ -115,6 +116,7 @@ export default function NodesPage() {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [mtlsOpen, setMtlsOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
+  const [restoreNode, setRestoreNode] = useState<NodeRecord | null>(null);
   const [trustCa, setTrustCa] = useState('');
   const [copyingCa, setCopyingCa] = useState(false);
   const [savingTrustCa, setSavingTrustCa] = useState(false);
@@ -393,6 +395,7 @@ export default function NodesPage() {
                               onMtls={() => setMtlsOpen(true)}
                               onEdit={onEdit}
                               onDelete={onDelete}
+                              onRestore={setRestoreNode}
                               onProbe={onProbe}
                               onToggleEnable={onToggleEnable}
                               onUpdateNode={onUpdateNode}
@@ -458,6 +461,17 @@ export default function NodesPage() {
             void refetch();
           }}
         />
+
+        {restoreNode && (
+          <NodeRestoreModal
+            key={restoreNode.id}
+            node={restoreNode}
+            onClose={() => {
+              setRestoreNode(null);
+              void refetch();
+            }}
+          />
+        )}
 
         <NodeFormModal
           open={formOpen}

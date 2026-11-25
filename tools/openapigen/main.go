@@ -158,7 +158,18 @@ func run(root, outDir string) error {
 				"SubEdgeRequest",
 				"SubEdgeDNSRequest",
 				"SubEdgeDNSView",
+				"BackupSettings",
+				"BackupSettingsRequest",
+				"BackupStatus",
+				"BackupRun",
+				"BackupNodeRun",
+				"NodeRestoreRequest",
+				"NodeRestoreStatus",
 			),
+		},
+		{
+			Path:        resolveRel(root, "internal/backup"),
+			StructAllow: setOf("StoredFile"),
 		},
 		{
 			Path:        resolveRel(root, "internal/web/service/panel"),

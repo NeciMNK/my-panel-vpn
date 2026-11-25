@@ -130,6 +130,7 @@ var nodeSyncScopeAllow = map[string]map[string]struct{}{
 	"/subEdges/node/cache":         {http.MethodPost: {}},
 	"/subEdges/node/dns":           {http.MethodPost: {}},
 	"/server/probePeer":            {http.MethodPost: {}},
+	"/server/nodeBackup":           {http.MethodGet: {}},
 }
 
 // nodeXrayScopeAllow lets a master manage a node's Xray template (outbounds,
@@ -286,6 +287,8 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 
 	// Panel-issued TLS certificates (ACME DNS-01 over Cloudflare)
 	NewTlsCertController(api)
+	// Remote backups over SFTP and one-click restore of a lost node
+	NewBackupController(api)
 	// Import of another panel (Remnawave, 3x-ui) keeping users' configs
 	NewMigrationController(api.Group("/migration"))
 

@@ -27,6 +27,7 @@ import GeneralTab from './GeneralTab';
 import SecurityTab from './SecurityTab';
 import TelegramTab from './TelegramTab';
 import TlsCertsTab from './TlsCertsTab';
+import BackupTab from './BackupTab';
 import EmailTab from './EmailTab';
 import DiscordTab from './DiscordTab';
 import SubscriptionGeneralTab from './SubscriptionGeneralTab';
@@ -43,6 +44,7 @@ const tabSlugs = [
   'general',
   'security',
   'ssl',
+  'backup',
   'telegram',
   'email',
   'discord',
@@ -258,6 +260,8 @@ export default function SettingsPage() {
         );
       case 'ssl':
         return <TlsCertsTab />;
+      case 'backup':
+        return <BackupTab />;
       case 'telegram':
         return <TelegramTab allSetting={allSetting} updateSetting={updateSetting} />;
       case 'email':

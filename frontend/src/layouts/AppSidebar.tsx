@@ -22,6 +22,7 @@ import {
   PushpinOutlined,
   ReadOutlined,
   SafetyCertificateOutlined,
+  CloudUploadOutlined,
   SafetyOutlined,
   SearchOutlined,
   SettingOutlined,
@@ -204,6 +205,11 @@ export default function AppSidebar() {
         key: '/settings#ssl',
         icon: <SafetyCertificateOutlined aria-hidden />,
         label: t('pages.settings.tlsCerts.menu'),
+      },
+      {
+        key: '/settings#backup',
+        icon: <CloudUploadOutlined aria-hidden />,
+        label: t('pages.settings.backup.menu'),
       },
       {
         key: '/settings#telegram',

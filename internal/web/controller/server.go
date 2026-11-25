@@ -56,6 +56,7 @@ func (a *ServerController) initRouter(g *gin.RouterGroup) {
 	g.GET("/getUpdateStatus", a.getUpdateStatus)
 	g.GET("/getConfigJson", a.getConfigJson)
 	g.GET("/getDb", a.getDb)
+	g.GET("/nodeBackup", a.nodeBackup)
 	g.GET("/getMigration", a.getMigration)
 	g.GET("/getNewUUID", a.getNewUUID)
 	g.GET("/getWebCertFiles", a.getWebCertFiles)
@@ -339,6 +340,16 @@ func (a *ServerController) getConfigJson(c *gin.Context) {
 		return
 	}
 	jsonObj(c, configJson, nil)
+}
+
+// nodeBackup streams this panel's own state for its master's node backups.
+func (a *ServerController) nodeBackup(c *gin.Context) {
+	c.Header("Content-Type", "application/gzip")
+	c.Header("Content-Disposition", "attachment; filename=node-backup.tar.gz")
+	if err := a.serverService.WriteNodeBackup(c.Writer); err != nil {
+		logger.Warning("node backup failed:", err)
+		_ = c.AbortWithError(http.StatusInternalServerError, err)
+	}
 }
 
 // getDb downloads the database file.

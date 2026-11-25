@@ -1542,6 +1542,22 @@
       "tabs": {
         "nodes": "Nodes",
         "speed": "Speed"
+      },
+      "restore": {
+        "action": "Restore to a new server",
+        "title": "Restore {name} to a new server",
+        "desc": "The panel logs in to the new server over SSH, installs the node, brings back the chosen backup and points the node at the new address. A node kept by domain gets its Cloudflare A record moved when a Cloudflare token is saved.",
+        "server": "New server address and SSH port",
+        "keyPlaceholder": "…or an SSH private key",
+        "backup": "Backup",
+        "latest": "Newest backup",
+        "noBackup": "Without a backup (fresh node)",
+        "start": "Restore",
+        "done": "The node is restored; the master is pushing its inbounds and clients.",
+        "toasts": {
+          "list": "List node backups",
+          "start": "Start the restore"
+        }
       }
     },
     "settings": {
@@ -2296,7 +2312,47 @@
       "trafficResetAllDay": "Reset day of the month",
       "trafficResetAllDayDesc": "In months shorter than this, the reset runs on the last day.",
       "trafficUsagePeriods": "Traffic periods to show",
-      "trafficUsagePeriodsDesc": "Which periods the Traffic by period page counts. History is always collected, so a period switched on later shows past data at once."
+      "trafficUsagePeriodsDesc": "Which periods the Traffic by period page counts. History is always collected, so a period switched on later shows past data at once.",
+      "backup": {
+        "menu": "Backups",
+        "desc": "Copies the panel database and each node's state (its database, TLS key and certificates) to a folder on another server over SSH/SFTP. A lost node can then be moved to a fresh server from the Nodes page in one step.",
+        "server": "Backup server",
+        "host": "Address and SSH port",
+        "hostDesc": "Any server you can reach over SSH; SFTP must be allowed.",
+        "port": "Port",
+        "user": "User",
+        "password": "Password",
+        "privateKey": "SSH private key",
+        "privateKeyDesc": "Unencrypted OpenSSH or PEM key. Use either a password or a key.",
+        "secretSet": "Saved, leave empty to keep",
+        "dir": "Backup folder",
+        "hostKey": "Pinned host key",
+        "hostKeyDesc": "Learned on the first login; a server answering with another key is refused. Changing the address forgets it.",
+        "schedule": "Schedule",
+        "dbEnable": "Back up the database on a timer",
+        "everyHours": "Every N hours",
+        "dbOnChange": "Back up the database after changes",
+        "dbOnChangeDesc": "Two minutes after inbounds, clients, nodes or settings change; at most every 10 minutes.",
+        "nodesEnable": "Back up nodes on a timer",
+        "nodesEnableDesc": "Every enabled node, every N hours.",
+        "keep": "Backups to keep of each",
+        "test": "Test connection",
+        "runDb": "Back up database now",
+        "runNodes": "Back up nodes now",
+        "running": "A backup is running…",
+        "lastDb": "Last database backup",
+        "lastBackup": "Last backup",
+        "node": "Node",
+        "noNodeBackups": "No node backups yet",
+        "never": "Never",
+        "ok": "Done",
+        "failed": "Failed",
+        "toasts": {
+          "save": "Save backup settings",
+          "test": "Connect to the backup server",
+          "run": "Start the backup"
+        }
+      }
     },
     "xray": {
       "save": "Зберегти",

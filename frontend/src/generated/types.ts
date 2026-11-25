@@ -456,6 +456,58 @@ export interface ApiTokenView {
   token?: string;
 }
 
+export interface BackupNodeRun {
+  at: number;
+  error: string;
+  file: string;
+  name: string;
+  nodeId: number;
+}
+
+export interface BackupRun {
+  at: number;
+  error: string;
+  file: string;
+}
+
+export interface BackupSettings {
+  dbEnable: boolean;
+  dbEveryHours: number;
+  dbOnChange: boolean;
+  dir: string;
+  hasPassword: boolean;
+  hasPrivateKey: boolean;
+  host: string;
+  hostKey: string;
+  keep: number;
+  nodesEnable: boolean;
+  nodesEveryHours: number;
+  port: number;
+  user: string;
+}
+
+export interface BackupSettingsRequest {
+  dbEnable: boolean;
+  dbEveryHours: number;
+  dbOnChange: boolean;
+  dir: string;
+  host: string;
+  keep: number;
+  nodesEnable: boolean;
+  nodesEveryHours: number;
+  password?: string | null;
+  port: number;
+  privateKey?: string | null;
+  user: string;
+}
+
+export interface BackupStatus {
+  db: BackupRun;
+  nodes: BackupNodeRun[];
+  nodesAt: number;
+  running: string;
+}
+
 export interface Blocker {
   code: BlockerCode;
   detail?: string;
@@ -1199,6 +1251,24 @@ export interface NodeMutationRequest {
   tlsVerifyMode: string;
 }
 
+export interface NodeRestoreRequest {
+  backup: string;
+  host: string;
+  password: string;
+  port: number;
+  privateKey: string;
+  user: string;
+}
+
+export interface NodeRestoreStatus {
+  error: string;
+  finishedAt: number;
+  log: string[];
+  nodeId: number;
+  running: boolean;
+  startedAt: number;
+}
+
 export interface NodeView {
   activeCount: number;
   address: string;
@@ -1468,6 +1538,12 @@ export interface SpeedTier {
   minMbps: number;
   monthlyPrice: number;
   name: string;
+}
+
+export interface StoredFile {
+  modTime: number;
+  name: string;
+  size: number;
 }
 
 export interface SubBalancer {

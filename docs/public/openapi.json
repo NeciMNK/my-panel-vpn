@@ -1931,6 +1931,220 @@
         ],
         "type": "object"
       },
+      "BackupNodeRun": {
+        "description": "BackupNodeRun is the last backup of one node.",
+        "properties": {
+          "at": {
+            "example": 1764039600,
+            "format": "int64",
+            "type": "integer"
+          },
+          "error": {
+            "type": "string"
+          },
+          "file": {
+            "example": "ru-msk-1_2026-11-25_030000.tar.gz",
+            "type": "string"
+          },
+          "name": {
+            "example": "ru-msk-1",
+            "type": "string"
+          },
+          "nodeId": {
+            "example": 3,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "at",
+          "error",
+          "file",
+          "name",
+          "nodeId"
+        ],
+        "type": "object"
+      },
+      "BackupRun": {
+        "description": "BackupRun is the outcome of the last backup of one thing.",
+        "properties": {
+          "at": {
+            "example": 1764039600,
+            "format": "int64",
+            "type": "integer"
+          },
+          "error": {
+            "type": "string"
+          },
+          "file": {
+            "example": "panel.example.com_2026-11-25_030000.dump",
+            "type": "string"
+          }
+        },
+        "required": [
+          "at",
+          "error",
+          "file"
+        ],
+        "type": "object"
+      },
+      "BackupSettings": {
+        "description": "BackupSettings is the backup server and schedule; the password and key are\nnever sent back, only whether they are set.",
+        "properties": {
+          "dbEnable": {
+            "example": true,
+            "type": "boolean"
+          },
+          "dbEveryHours": {
+            "example": 24,
+            "type": "integer"
+          },
+          "dbOnChange": {
+            "example": true,
+            "type": "boolean"
+          },
+          "dir": {
+            "example": "/root/my-panel-vpn-backups",
+            "type": "string"
+          },
+          "hasPassword": {
+            "example": false,
+            "type": "boolean"
+          },
+          "hasPrivateKey": {
+            "example": true,
+            "type": "boolean"
+          },
+          "host": {
+            "example": "backup.example.com",
+            "type": "string"
+          },
+          "hostKey": {
+            "example": "SHA256:Vf0Yb0kq3y4I2n8M2m0p1Yc3Qz8jv8p0Hq4l5r6s7t8",
+            "type": "string"
+          },
+          "keep": {
+            "example": 7,
+            "type": "integer"
+          },
+          "nodesEnable": {
+            "example": true,
+            "type": "boolean"
+          },
+          "nodesEveryHours": {
+            "example": 24,
+            "type": "integer"
+          },
+          "port": {
+            "example": 22,
+            "type": "integer"
+          },
+          "user": {
+            "example": "root",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dbEnable",
+          "dbEveryHours",
+          "dbOnChange",
+          "dir",
+          "hasPassword",
+          "hasPrivateKey",
+          "host",
+          "hostKey",
+          "keep",
+          "nodesEnable",
+          "nodesEveryHours",
+          "port",
+          "user"
+        ],
+        "type": "object"
+      },
+      "BackupSettingsRequest": {
+        "description": "BackupSettingsRequest saves BackupSettings; a nil password or key keeps the\nstored one and an empty string clears it.",
+        "properties": {
+          "dbEnable": {
+            "type": "boolean"
+          },
+          "dbEveryHours": {
+            "type": "integer"
+          },
+          "dbOnChange": {
+            "type": "boolean"
+          },
+          "dir": {
+            "type": "string"
+          },
+          "host": {
+            "type": "string"
+          },
+          "keep": {
+            "type": "integer"
+          },
+          "nodesEnable": {
+            "type": "boolean"
+          },
+          "nodesEveryHours": {
+            "type": "integer"
+          },
+          "password": {
+            "nullable": true,
+            "type": "string"
+          },
+          "port": {
+            "type": "integer"
+          },
+          "privateKey": {
+            "nullable": true,
+            "type": "string"
+          },
+          "user": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "dbEnable",
+          "dbEveryHours",
+          "dbOnChange",
+          "dir",
+          "host",
+          "keep",
+          "nodesEnable",
+          "nodesEveryHours",
+          "port",
+          "user"
+        ],
+        "type": "object"
+      },
+      "BackupStatus": {
+        "description": "BackupStatus is what the backups tab shows.",
+        "properties": {
+          "db": {
+            "$ref": "#/components/schemas/BackupRun"
+          },
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/BackupNodeRun"
+            },
+            "type": "array"
+          },
+          "nodesAt": {
+            "example": 1764039600,
+            "format": "int64",
+            "type": "integer"
+          },
+          "running": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "db",
+          "nodes",
+          "nodesAt",
+          "running"
+        ],
+        "type": "object"
+      },
       "Blocker": {
         "description": "Blocker is one unmet requirement.",
         "properties": {
@@ -5434,6 +5648,83 @@
         ],
         "type": "object"
       },
+      "NodeRestoreRequest": {
+        "description": "NodeRestoreRequest names the fresh server a lost node moves to.",
+        "properties": {
+          "backup": {
+            "description": "Backup is a file from the node's backups; empty takes the newest, \"none\" none.",
+            "type": "string"
+          },
+          "host": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "port": {
+            "type": "integer"
+          },
+          "privateKey": {
+            "type": "string"
+          },
+          "user": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "backup",
+          "host",
+          "password",
+          "port",
+          "privateKey",
+          "user"
+        ],
+        "type": "object"
+      },
+      "NodeRestoreStatus": {
+        "description": "NodeRestoreStatus is the progress of the current or last node restore.",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "finishedAt": {
+            "example": 1764090180,
+            "format": "int64",
+            "type": "integer"
+          },
+          "log": {
+            "example": [
+              "Connecting to 203.0.113.20"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "nodeId": {
+            "example": 3,
+            "type": "integer"
+          },
+          "running": {
+            "example": false,
+            "type": "boolean"
+          },
+          "startedAt": {
+            "example": 1764090000,
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "error",
+          "finishedAt",
+          "log",
+          "nodeId",
+          "running",
+          "startedAt"
+        ],
+        "type": "object"
+      },
       "NodeView": {
         "description": "NodeView is the browser/API read contract for nodes. Credentials are\nwrite-only: responses expose only whether a node has a token configured.",
         "properties": {
@@ -6638,6 +6929,31 @@
         ],
         "type": "object"
       },
+      "StoredFile": {
+        "description": "StoredFile is one backup kept on the backup server.",
+        "properties": {
+          "modTime": {
+            "example": 1764039600,
+            "format": "int64",
+            "type": "integer"
+          },
+          "name": {
+            "example": "de-fra-1_2026-11-25_030000.tar.gz",
+            "type": "string"
+          },
+          "size": {
+            "example": 524288,
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "modTime",
+          "name",
+          "size"
+        ],
+        "type": "object"
+      },
       "SubBalancer": {
         "description": "SubBalancer is one extra JSON-subscription config document whose members are\nthe selected inbounds' proxy outbounds. SortOrder shares SubSortIndex semantics.",
         "properties": {
@@ -7435,6 +7751,10 @@
     {
       "name": "Subscription Balancers",
       "description": "Client-side balancers for the JSON subscription: each enabled balancer is emitted as one extra config document whose members are the proxy outbounds of the selected inbounds (routing.balancers + burstObservatory). Managed in Settings → Sub Balancers."
+    },
+    {
+      "name": "Backups",
+      "description": "Backups to a folder on another server over SFTP (any SSH server; password or private key, both stored encrypted when NODE_TOKEN_ENCRYPTION is on). The database is copied on its own timer and two minutes after an admin edit; each node’s state (its database, TLS key and certificates) on the node timer. The newest backups are kept, older ones deleted. A lost node is restored onto a fresh server in one call: the master logs in over SSH, installs the node from its own build, unpacks the chosen backup and points the node’s record (or, for a domain, its Cloudflare A record) at the new server. All endpoints under /panel/api/backup."
     },
     {
       "name": "TLS Certificates",
@@ -9346,6 +9666,36 @@
         ],
         "summary": "Stream a full database backup as an attachment: the SQLite .db file on SQLite panels, or a pg_dump custom-format archive (.dump) on PostgreSQL panels. Use as a manual backup.",
         "operationId": "get_panel_api_server_getDb",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/server/nodeBackup": {
+      "get": {
+        "tags": [
+          "Server"
+        ],
+        "summary": "Stream this panel's own state as a gzip tar for its master's node backups: a consistent snapshot of the SQLite database (left out on PostgreSQL) and the other files in the database folder and /root/cert, under their absolute paths. Allowed for node-sync tokens.",
+        "operationId": "get_panel_api_server_nodeBackup",
         "responses": {
           "200": {
             "description": "Successful response",
@@ -22097,6 +22447,452 @@
                     "sortOrder": 1,
                     "strategy": "random",
                     "updatedAt": 1710000000000
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/backup/settings": {
+      "get": {
+        "tags": [
+          "Backups"
+        ],
+        "summary": "Read the backup server and schedule. The password and private key are never returned, only whether they are set.",
+        "operationId": "get_panel_api_backup_settings",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/BackupSettings"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "dbEnable": true,
+                    "dbEveryHours": 24,
+                    "dbOnChange": true,
+                    "dir": "/root/my-panel-vpn-backups",
+                    "hasPassword": false,
+                    "hasPrivateKey": true,
+                    "host": "backup.example.com",
+                    "hostKey": "SHA256:Vf0Yb0kq3y4I2n8M2m0p1Yc3Qz8jv8p0Hq4l5r6s7t8",
+                    "keep": 7,
+                    "nodesEnable": true,
+                    "nodesEveryHours": 24,
+                    "port": 22,
+                    "user": "root"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Backups"
+        ],
+        "summary": "Save the backup server and schedule. Omit password or privateKey to keep the stored one; an empty string clears it. Changing the host or port forgets the pinned host key.",
+        "operationId": "post_panel_api_backup_settings",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BackupSettingsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/BackupSettings"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "dbEnable": true,
+                    "dbEveryHours": 24,
+                    "dbOnChange": true,
+                    "dir": "/root/my-panel-vpn-backups",
+                    "hasPassword": false,
+                    "hasPrivateKey": true,
+                    "host": "backup.example.com",
+                    "hostKey": "SHA256:Vf0Yb0kq3y4I2n8M2m0p1Yc3Qz8jv8p0Hq4l5r6s7t8",
+                    "keep": 7,
+                    "nodesEnable": true,
+                    "nodesEveryHours": 24,
+                    "port": 22,
+                    "user": "root"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/backup/test": {
+      "post": {
+        "tags": [
+          "Backups"
+        ],
+        "summary": "Log in to the backup server and create the folder. The first successful login pins the server’s SSH host key; later logins refuse another key.",
+        "operationId": "post_panel_api_backup_test",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/BackupSettings"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "dbEnable": true,
+                    "dbEveryHours": 24,
+                    "dbOnChange": true,
+                    "dir": "/root/my-panel-vpn-backups",
+                    "hasPassword": false,
+                    "hasPrivateKey": true,
+                    "host": "backup.example.com",
+                    "hostKey": "SHA256:Vf0Yb0kq3y4I2n8M2m0p1Yc3Qz8jv8p0Hq4l5r6s7t8",
+                    "keep": 7,
+                    "nodesEnable": true,
+                    "nodesEveryHours": 24,
+                    "port": 22,
+                    "user": "root"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/backup/run/{what}": {
+      "post": {
+        "tags": [
+          "Backups"
+        ],
+        "summary": "Start a backup now in the background; poll /panel/api/backup/status for the result.",
+        "operationId": "post_panel_api_backup_run_what",
+        "parameters": [
+          {
+            "name": "what",
+            "in": "path",
+            "required": true,
+            "description": "db or nodes.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "db",
+                "nodes"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/BackupStatus"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "db": {
+                      "at": 1764039600,
+                      "error": "",
+                      "file": "panel.example.com_2026-11-25_030000.dump"
+                    },
+                    "nodes": [
+                      {
+                        "at": 1764039600,
+                        "error": "",
+                        "file": "ru-msk-1_2026-11-25_030000.tar.gz",
+                        "name": "ru-msk-1",
+                        "nodeId": 3
+                      }
+                    ],
+                    "nodesAt": 1764039600,
+                    "running": ""
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/backup/status": {
+      "get": {
+        "tags": [
+          "Backups"
+        ],
+        "summary": "The backup running now, if any, and the outcome of the last database and node backups.",
+        "operationId": "get_panel_api_backup_status",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/BackupStatus"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "db": {
+                      "at": 1764039600,
+                      "error": "",
+                      "file": "panel.example.com_2026-11-25_030000.dump"
+                    },
+                    "nodes": [
+                      {
+                        "at": 1764039600,
+                        "error": "",
+                        "file": "ru-msk-1_2026-11-25_030000.tar.gz",
+                        "name": "ru-msk-1",
+                        "nodeId": 3
+                      }
+                    ],
+                    "nodesAt": 1764039600,
+                    "running": ""
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/backup/node/{id}": {
+      "get": {
+        "tags": [
+          "Backups"
+        ],
+        "summary": "List the backups kept for a node on the backup server, newest first.",
+        "operationId": "get_panel_api_backup_node_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Node id.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/StoredFile"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": [
+                    {
+                      "modTime": 1764039600,
+                      "name": "de-fra-1_2026-11-25_030000.tar.gz",
+                      "size": 524288
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/backup/restoreNode/{id}": {
+      "post": {
+        "tags": [
+          "Backups"
+        ],
+        "summary": "Move a lost node onto a fresh server in the background. backup names a file from /panel/api/backup/node/:id; empty takes the newest and \"none\" installs a fresh node. The server must match this master’s CPU architecture. Poll /panel/api/backup/restoreStatus.",
+        "operationId": "post_panel_api_backup_restoreNode_id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Node id.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NodeRestoreRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/NodeRestoreStatus"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "error": "",
+                    "finishedAt": 1764090180,
+                    "log": [
+                      "Connecting to 203.0.113.20"
+                    ],
+                    "nodeId": 3,
+                    "running": false,
+                    "startedAt": 1764090000
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/panel/api/backup/restoreStatus": {
+      "get": {
+        "tags": [
+          "Backups"
+        ],
+        "summary": "Progress log and outcome of the current or last node restore.",
+        "operationId": "get_panel_api_backup_restoreStatus",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "msg": {
+                      "type": "string"
+                    },
+                    "obj": {
+                      "$ref": "#/components/schemas/NodeRestoreStatus"
+                    }
+                  }
+                },
+                "example": {
+                  "success": true,
+                  "obj": {
+                    "error": "",
+                    "finishedAt": 1764090180,
+                    "log": [
+                      "Connecting to 203.0.113.20"
+                    ],
+                    "nodeId": 3,
+                    "running": false,
+                    "startedAt": 1764090000
                   }
                 }
               }

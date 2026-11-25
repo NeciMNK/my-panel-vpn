@@ -8,6 +8,7 @@ import {
   ClusterOutlined,
   CloudDownloadOutlined,
   DeleteOutlined,
+  RollbackOutlined,
   EditOutlined,
   ExclamationCircleOutlined,
   EyeInvisibleOutlined,
@@ -39,6 +40,7 @@ interface NodeListProps {
   onMtls: () => void;
   onEdit: (node: NodeRecord) => void;
   onDelete: (node: NodeRecord) => void;
+  onRestore: (node: NodeRecord) => void;
   onProbe: (node: NodeRecord) => void;
   onToggleEnable: (node: NodeRecord, next: boolean) => void;
   onUpdateNode: (node: NodeRecord) => void;
@@ -196,6 +198,7 @@ export default function NodeList({
   onMtls,
   onEdit,
   onDelete,
+  onRestore,
   onProbe,
   onToggleEnable,
   onUpdateNode,
@@ -310,6 +313,16 @@ export default function NodeList({
                   icon={<EditOutlined aria-hidden />}
                   aria-label={t('edit')}
                   onClick={() => onEdit(record)}
+                />
+              </Tooltip>
+              <Tooltip title={t('pages.nodes.restore.action')}>
+                <Button
+                  type="text"
+                  size="small"
+                  style={{ fontSize: 16 }}
+                  icon={<RollbackOutlined aria-hidden />}
+                  aria-label={t('pages.nodes.restore.action')}
+                  onClick={() => onRestore(record)}
                 />
               </Tooltip>
               <Tooltip title={t('delete')}>
@@ -559,6 +572,7 @@ export default function NodeList({
       onProbe,
       onEdit,
       onDelete,
+      onRestore,
       onUpdateNode,
       nameByGuid,
     ],
@@ -724,6 +738,16 @@ export default function NodeList({
                                   </>
                                 ),
                                 onClick: () => onEdit(record),
+                              },
+                              {
+                                key: 'restore',
+                                label: (
+                                  <>
+                                    <RollbackOutlined aria-hidden />{' '}
+                                    {t('pages.nodes.restore.action')}
+                                  </>
+                                ),
+                                onClick: () => onRestore(record),
                               },
                               {
                                 key: 'delete',
