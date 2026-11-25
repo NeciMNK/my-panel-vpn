@@ -631,19 +631,20 @@ func (s *SubJsonService) buildBalancerConfig(balancer *model.SubBalancer, entrie
 		return nil
 	}
 	pinnedTag := ""
-	if len(pin.pinnedInbounds) > 0 {
+	for _, m := range members {
+		if pinnedTag == "" && slices.Contains(pin.pinnedInbounds, m.inboundId) {
+			pinnedTag = m.tag
+		}
+	}
+	if pinnedTag != "" && pin.AllTraffic {
 		// leastLoad costs: the pinned server leads while its probes pass,
 		// the rest take over without a subscription refresh when it dies.
 		balancer.Strategy = "leastLoad"
 		balancer.MemberWeights = map[int]float64{}
 		for _, m := range members {
+			balancer.MemberWeights[m.inboundId] = pinnedCostOthers
 			if slices.Contains(pin.pinnedInbounds, m.inboundId) {
 				balancer.MemberWeights[m.inboundId] = 1
-				if pinnedTag == "" {
-					pinnedTag = m.tag
-				}
-			} else {
-				balancer.MemberWeights[m.inboundId] = pinnedCostOthers
 			}
 		}
 	}

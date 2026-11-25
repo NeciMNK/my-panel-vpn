@@ -130,6 +130,14 @@ func TestSubJson_ForeignBalancerHonoursExitPin(t *testing.T) {
 		t.Fatalf("pinned server does not lead the balancer: %s", routing)
 	}
 
+	if err := db.Create(&model.CascadeAICountry{Email: "de-in@e", Country: "NL"}).Error; err != nil {
+		t.Fatal(err)
+	}
+	_, routing = balancerDoc()
+	if !strings.Contains(routing, `"outboundTag":"`+nlTag+`"`) || strings.Contains(routing, `"type":"leastLoad"`) {
+		t.Fatalf("AI-only pin must send AI to NL and leave the rest on the admin's strategy: %s", routing)
+	}
+
 	db.Model(nl).Update("status", "offline")
 	_, routing = balancerDoc()
 	if strings.Contains(routing, `"outboundTag":"`+nlTag+`"`) {

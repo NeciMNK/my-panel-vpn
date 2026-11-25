@@ -9,12 +9,13 @@ import (
 )
 
 // EntrylessPin is how a client's own auto-select (no entry server) honours
-// their exit pin: NodeId leads it and carries AIDomains only, or AIBlock is cut.
+// their exit pin: NodeId carries AIDomains (and leads with AllTraffic), or AIBlock is cut.
 type EntrylessPin struct {
-	NodeId    int
-	AIDomains []string
-	AIBlock   []string
-	AllOff    bool
+	NodeId     int
+	AIDomains  []string
+	AllTraffic bool
+	AIBlock    []string
+	AllOff     bool
 }
 
 // EntrylessPinOf reads the emails' first pin on one of the balancer's servers;
@@ -34,8 +35,14 @@ func (s *CascadeService) EntrylessPinOf(emails []string, memberNodes []int) (Ent
 	}
 	w := newExitWorld(nodes, nil)
 	sites := (&SettingService{}).GetTgAIExitDomains()
+	// As on a cascade entry, a pin in the user's AI country carries AI only unless all-traffic is set.
+	var ai model.CascadeAICountry
+	if err := db.Where("email = ?", pin.Email).Limit(1).Find(&ai).Error; err != nil {
+		return EntrylessPin{}, err
+	}
+	allTraffic := ai.Email == "" || ai.AllTraffic || ai.Country != w.countryOf[pin.NodeId]
 	if !w.down(pin.NodeId) {
-		return EntrylessPin{NodeId: pin.NodeId, AIDomains: sites}, nil
+		return EntrylessPin{NodeId: pin.NodeId, AIDomains: sites, AllTraffic: allTraffic}, nil
 	}
 	choice := s.AIOutageChoiceOf([]string{pin.Email})
 	switch choice.Action {
@@ -45,7 +52,7 @@ func (s *CascadeService) EntrylessPinOf(emails []string, memberNodes []int) (Ent
 		for _, country := range []string{w.countryOf[pin.NodeId], strings.ToUpper(choice.Country)} {
 			for _, n := range nodes {
 				if country != "" && n.Country == country && !w.down(n.Id) {
-					return EntrylessPin{NodeId: n.Id, AIDomains: sites}, nil
+					return EntrylessPin{NodeId: n.Id, AIDomains: sites, AllTraffic: allTraffic}, nil
 				}
 			}
 		}

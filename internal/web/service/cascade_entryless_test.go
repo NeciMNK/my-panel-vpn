@@ -42,17 +42,20 @@ func TestEntrylessPinFollowsPinAndOutageChoice(t *testing.T) {
 	}
 
 	check("no pin", []string{"bob"}, EntrylessPin{})
-	check("pin up", []string{"anna"}, EntrylessPin{NodeId: 2, AIDomains: sites})
+	db.Create(&model.CascadeFixedExit{Email: "dina", NodeId: 4})
+	db.Create(&model.CascadeAICountry{Email: "dina", Country: "NL"})
+	check("AI-only pin leaves the rest to auto-select", []string{"dina"}, EntrylessPin{NodeId: 4, AIDomains: sites})
+	check("pin up", []string{"anna"}, EntrylessPin{NodeId: 2, AIDomains: sites, AllTraffic: true})
 
 	setNodeStatus(t, 2, "offline")
 	check("pin down, no choice blocks AI", []string{"anna"}, EntrylessPin{AIBlock: sites})
 
 	db.Create(&model.AIOutageChoice{Email: "anna", Action: AIOutageOther})
-	check("pin down, other picks a live server of its country", []string{"anna"}, EntrylessPin{NodeId: 3, AIDomains: sites})
+	check("pin down, other picks a live server of its country", []string{"anna"}, EntrylessPin{NodeId: 3, AIDomains: sites, AllTraffic: true})
 
 	setNodeStatus(t, 3, "offline")
 	db.Model(&model.AIOutageChoice{}).Where("email = ?", "anna").Update("country", "NL")
-	check("other falls back to the chosen country", []string{"anna"}, EntrylessPin{NodeId: 4, AIDomains: sites})
+	check("other falls back to the chosen country", []string{"anna"}, EntrylessPin{NodeId: 4, AIDomains: sites, AllTraffic: true})
 
 	db.Model(&model.AIOutageChoice{}).Where("email = ?", "anna").Updates(map[string]any{"action": AIOutageOff})
 	check("off cuts everything", []string{"anna"}, EntrylessPin{AllOff: true})

@@ -1420,7 +1420,7 @@
         "noEntry": "No entry",
         "noEntryTitle": "Without an entry server",
         "noEntryAdd": "Auto-select without entry",
-        "noEntryDesc": "The client app connects straight to the fastest foreign server, with no entry server. Works in the JSON subscription (Happ, v2rayN, …); routing rules (local sites direct) come from the JSON subscription settings. A client with an exit pin gets their pinned server first and AI only through it; while it is down, their bot outage choice applies (after a subscription refresh).",
+        "noEntryDesc": "The client app connects straight to the fastest foreign server, with no entry server. Works in the JSON subscription (Happ, v2rayN, …); routing rules (local sites direct) come from the JSON subscription settings. An exit pin works as on a cascade: \"All traffic\" makes the pinned server lead, \"AI sites only\" sends just AI through it and the rest stays on auto-select; while it is down, their bot outage choice applies (after a subscription refresh).",
         "autoTitle": "Server auto-select",
         "autoAdd": "New auto-select",
         "autoEdit": "Edit auto-select",
