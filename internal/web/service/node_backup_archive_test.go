@@ -22,6 +22,13 @@ import (
 func TestWriteNodeBackupSnapshotsDatabaseAndFiles(t *testing.T) {
 	setupConflictDB(t)
 	dir := config.GetDBFolderPath()
+	certRoot := t.TempDir()
+	prevCertRoot := nodeCertRoot
+	nodeCertRoot = certRoot
+	t.Cleanup(func() { nodeCertRoot = prevCertRoot })
+	if err := os.WriteFile(filepath.Join(certRoot, "fullchain.cer"), []byte("ACME"), 0o600); err != nil {
+		t.Fatal(err)
+	}
 	if err := os.MkdirAll(filepath.Join(dir, "node-cert"), 0o700); err != nil {
 		t.Fatal(err)
 	}
@@ -56,6 +63,9 @@ func TestWriteNodeBackupSnapshotsDatabaseAndFiles(t *testing.T) {
 	prefix := strings.TrimPrefix(filepath.ToSlash(dir), "/") + "/"
 	if string(entries[prefix+"node-cert/cert.pem"]) != "PEM" {
 		t.Fatalf("certificate missing; entries: %v", keys(entries))
+	}
+	if string(entries[strings.TrimPrefix(filepath.ToSlash(certRoot), "/")+"/fullchain.cer"]) != "ACME" {
+		t.Fatalf("acme certificate missing; entries: %v", keys(entries))
 	}
 	for name := range entries {
 		if strings.HasSuffix(name, "-wal") || strings.HasSuffix(name, "-shm") || strings.Contains(name, ".x-ui-backup-") {

@@ -11,7 +11,7 @@ import (
 )
 
 // nodeCertRoot is where acme.sh, which x-ui.sh drives, keeps issued certificates.
-const nodeCertRoot = "/root/cert"
+var nodeCertRoot = "/root/cert"
 
 // WriteNodeBackup streams this panel's own state as a node archive: a
 // consistent snapshot of its SQLite database and the files beside it.
