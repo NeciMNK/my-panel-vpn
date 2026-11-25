@@ -100,3 +100,18 @@ func TestSubBalancerController_UpdatePreservesEnabledWhenAbsent(t *testing.T) {
 		t.Fatalf("enabled=true -> %v, want true", bal["enabled"])
 	}
 }
+
+// An auto-select without an entry server arrives with no inboundIds at all;
+// exitForeign must reach the service or the create is rejected as empty.
+func TestSubBalancerController_ParsesForeignExits(t *testing.T) {
+	router := setupSubBalancerRouter(t)
+	resp := subBalancerPost(t, router, "/panel/api/sub-balancers", "remark=abroad&strategy=leastPing&sortOrder=1&exitForeign=true")
+	bal, _ := responseObj(t, resp.Body.String())["obj"].(map[string]any)
+	if bal == nil || bal["exitForeign"] != true {
+		t.Fatalf("exitForeign create: %s", resp.Body.String())
+	}
+	resp = subBalancerPost(t, router, "/panel/api/sub-balancers", "remark=x&sortOrder=1&exitNodeIds=abc")
+	if !strings.Contains(resp.Body.String(), `invalid exit node id`) {
+		t.Fatalf("non-numeric exitNodeIds accepted: %s", resp.Body.String())
+	}
+}

@@ -1581,6 +1581,8 @@ export type SpeedTier = z.infer<typeof SpeedTierSchema>;
 export const SubBalancerSchema = z.object({
   createdAt: z.number().int(),
   enabled: z.boolean(),
+  exitForeign: z.boolean(),
+  exitNodeIds: z.array(z.number().int()),
   id: z.number().int(),
   inboundIds: z.array(z.number().int()),
   memberWeights: z.record(z.number().int(), z.number()).optional(),

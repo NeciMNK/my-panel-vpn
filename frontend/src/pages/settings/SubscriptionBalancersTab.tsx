@@ -31,6 +31,7 @@ import { onNumber } from '@/utils/onNumber';
 import { SettingListItem } from '@/components/ui';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import type { SubBalancer, SubBalancerFormValues } from '@/schemas/subBalancer';
+import { isEntrylessAutoSelect } from '@/pages/nodes/EntrylessAutoSelectList';
 import { PingConfigSchema, type PingConfigObject } from '@/schemas/observatory';
 import { DEFAULT_BURST_OBSERVATORY } from '@/pages/xray/balancers/balancer-helpers';
 import SubBalancerFormModal from './SubBalancerFormModal';
@@ -67,7 +68,9 @@ export default function SubscriptionBalancersTab({
 }: SubscriptionBalancersTabProps) {
   const { t } = useTranslation();
   const { isMobile } = useMediaQuery();
-  const { balancers, loading, fetched, fetchError, refetch } = useSubBalancersQuery();
+  const { balancers: allBalancers, loading, fetched, fetchError, refetch } = useSubBalancersQuery();
+  // Balancers over foreign nodes are auto-selects without an entry, edited on the Nodes page.
+  const balancers = allBalancers.filter((b) => !isEntrylessAutoSelect(b));
   const { create, update, remove } = useSubBalancerMutations();
   const { data: inboundOptionsRaw } = useInboundOptions();
   const [modalOpen, setModalOpen] = useState(false);

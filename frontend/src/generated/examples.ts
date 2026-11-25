@@ -1748,6 +1748,11 @@ export const EXAMPLES: Record<string, unknown> = {
   "SubBalancer": {
     "createdAt": 1710000000000,
     "enabled": true,
+    "exitForeign": false,
+    "exitNodeIds": [
+      2,
+      3
+    ],
     "id": 1,
     "inboundIds": [
       1,

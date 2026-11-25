@@ -19,6 +19,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/util/maskcompat"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/random"
 	wgutil "github.com/mhsanaei/3x-ui/v3/internal/util/wireguard"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 )
 
 //go:embed default.json
@@ -440,6 +441,12 @@ func (s *SubJsonService) appendBalancerEntries(entries []subConfigEntry) []subCo
 		}
 	}
 	for i := range balancers {
+		ids, err := (&service.SubBalancerService{}).MemberInboundIds(&balancers[i])
+		if err != nil {
+			logger.Warning("subscription: resolve balancer", balancers[i].Id, "members:", err)
+			continue
+		}
+		balancers[i].InboundIds = ids
 		config := s.buildBalancerConfig(&balancers[i], entries, entryProxies)
 		if config == nil {
 			continue

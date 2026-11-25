@@ -159,7 +159,21 @@ const subBalancerBodyParams: EndpointParam[] = [
     name: 'inboundIds',
     in: 'body (form)',
     type: 'integer[]',
-    desc: 'Repeated form keys selecting the member inbounds (required, at least one).',
+    desc: 'Repeated form keys selecting the member inbounds (at least one unless exitNodeIds or exitForeign is set).',
+  },
+  {
+    name: 'exitNodeIds',
+    in: 'body (form)',
+    type: 'integer[]',
+    desc: 'Repeated form keys: foreign nodes whose enabled inbounds also become members (auto-select without an entry server). A node in Russia or without a country is rejected.',
+    optional: true,
+  },
+  {
+    name: 'exitForeign',
+    in: 'body (form)',
+    type: 'boolean',
+    desc: 'true adds the enabled inbounds of every enabled foreign node (country set and not RU), re-resolved on each subscription fetch.',
+    optional: true,
   },
   {
     name: 'memberWeights',
