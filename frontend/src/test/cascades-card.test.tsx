@@ -6,6 +6,7 @@ import {
   emptyCascadeForm,
   toggleCascadeMode,
   exitOptions,
+  foreignExitIds,
   nodeCountries,
 } from '@/pages/nodes/CascadesCard';
 
@@ -69,5 +70,25 @@ describe('country helpers', () => {
   it('turns a country code into its flag emoji', () => {
     expect(countryFlag('de')).toBe('🇩🇪');
     expect(countryFlag('xyz')).toBe('');
+  });
+});
+
+describe('auto-select exits', () => {
+  const nodes = [
+    { id: 1, country: 'ru' },
+    { id: 2, country: 'RU' },
+    { id: 3, country: 'de' },
+    { id: 4 },
+    { id: 5, country: 'NL', transitive: true },
+    { id: 6, country: 'FI' },
+  ];
+
+  it('offers only nodes outside the entry country, never the entry or a node without one', () => {
+    expect(foreignExitIds(nodes, 1)).toEqual([3, 6]);
+    expect(foreignExitIds(nodes, 3)).toEqual([1, 2, 6]);
+  });
+
+  it('treats the panel as a Russian entry, as the server does', () => {
+    expect(foreignExitIds(nodes, 0)).toEqual([3, 6]);
   });
 });

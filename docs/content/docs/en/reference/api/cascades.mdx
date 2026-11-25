@@ -4,21 +4,23 @@ description: 'Entry → exit server chains. The panel provisions a hidden
   VLESS+REALITY inbound on every exit and an outbound plus routing rules (or a
   balancer for several exits) on the entry. Node id 0 means this panel. Exits
   are either listed in exitNodeIds or picked by country: exitCountry "DE" makes
-  every enabled node of that country (except the entry) an exit, and the list is
-  re-resolved whenever a node is added, removed, disabled or moved to another
-  country. Sticky sessions are always on for a cascade with several exits; there
-  is no switch. Every 15 seconds each newly online user is pinned to the
-  least-loaded healthy exit that still has their minMbps free
-  (/panel/api/speed); the pin keeps them on that exit, so on that IP, while they
-  stay connected and for 15 minutes after they go offline. A pin is dropped at
-  once when its exit goes offline (the user moves to another exit), when the
-  user connects to a different server themselves, or when the admin pins them
-  with /cascades/fixedExits. strategy only spreads traffic that has no pin yet.
-  Modes: split (default) sends the entry country’s own sites (its TLDs, geoip
-  and geosite list, Russia when the entry has no country) plus
-  directDomains/directIps straight out of the entry and the rest to the exit;
-  relay sends everything to the exit; both runs split on entryInboundTags and
-  relay on relayInboundTags. All endpoints under /panel/api/cascades.'
+  every enabled node of that country (except the entry) an exit, exitCountry
+  "FOREIGN" makes every enabled node outside the entry country (Russia when the
+  entry is this panel) an exit, and the list is re-resolved whenever a node is
+  added, removed, disabled or moved to another country. Sticky sessions are
+  always on for a cascade with several exits; there is no switch. Every 15
+  seconds each newly online user is pinned to the least-loaded healthy exit that
+  still has their minMbps free (/panel/api/speed); the pin keeps them on that
+  exit, so on that IP, while they stay connected and for 15 minutes after they
+  go offline. A pin is dropped at once when its exit goes offline (the user
+  moves to another exit), when the user connects to a different server
+  themselves, or when the admin pins them with /cascades/fixedExits. strategy
+  only spreads traffic that has no pin yet. Modes: split (default) sends the
+  entry country’s own sites (its TLDs, geoip and geosite list, Russia when the
+  entry has no country) plus directDomains/directIps straight out of the entry
+  and the rest to the exit; relay sends everything to the exit; both runs split
+  on entryInboundTags and relay on relayInboundTags. All endpoints under
+  /panel/api/cascades.'
 full: true
 _openapi:
   preload:

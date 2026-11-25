@@ -38,7 +38,7 @@ type CascadeRequest struct {
 	// is set. Several exits share a balancer and keep each user on one exit.
 	ExitNodeIds []int `json:"exitNodeIds" example:"[2,3]"`
 	// ExitCountry (ISO code) makes every enabled node of that country except the
-	// entry an exit, re-resolved whenever nodes are added, moved or disabled.
+	// entry an exit; FOREIGN makes every node outside the entry's country one.
 	ExitCountry string `json:"exitCountry" example:"DE"`
 	// EntryInboundTags are the entry inbounds whose users are chained; empty
 	// chains every inbound of the entry.
@@ -57,6 +57,9 @@ type CascadeRequest struct {
 	// RelayInboundTags are, in both mode only (and then required), the entry
 	// inbounds that relay everything; they must not be in entryInboundTags.
 	RelayInboundTags []string `json:"relayInboundTags"`
+	// AutoSelect makes it an auto-select over foreign servers: exits are picked
+	// foreign nodes or exitCountry FOREIGN, every one outside the entry's country.
+	AutoSelect bool `json:"autoSelect" example:"false"`
 }
 
 var cascadeMu sync.Mutex
@@ -89,17 +92,25 @@ func (s *CascadeService) validate(req *CascadeRequest) error {
 		return common.NewError("cascade request is required")
 	}
 	req.ExitCountry = strings.ToUpper(strings.TrimSpace(req.ExitCountry))
+	if err := validateAutoSelectKind(req); err != nil {
+		return err
+	}
 	if req.ExitCountry != "" {
-		if !isCountryCode(req.ExitCountry) {
-			return common.NewError("country must be a two-letter code such as DE")
+		if req.ExitCountry != CascadeExitForeign && !isCountryCode(req.ExitCountry) {
+			return common.NewError("country must be a two-letter code such as DE, or FOREIGN")
 		}
-		exits, err := countryExits(req.ExitCountry, req.EntryNodeId)
+		exits, err := cascadeExits(req.ExitCountry, req.EntryNodeId)
 		if err != nil {
 			return err
 		}
 		req.ExitNodeIds = exits
 	} else if len(req.ExitNodeIds) == 0 {
 		return common.NewError("pick at least one exit server")
+	}
+	if req.AutoSelect && req.ExitCountry == "" {
+		if err := requireForeignExits(req.EntryNodeId, req.ExitNodeIds); err != nil {
+			return err
+		}
 	}
 	seen := map[int]bool{}
 	for _, id := range req.ExitNodeIds {
@@ -150,7 +161,7 @@ func (s *CascadeService) Create(ctx context.Context, req *CascadeRequest, userID
 		Name: strings.TrimSpace(req.Name), Enable: req.Enable, EntryNodeId: req.EntryNodeId,
 		ExitNodeIds: req.ExitNodeIds, ExitCountry: req.ExitCountry, EntryInboundTags: req.EntryInboundTags,
 		Strategy: req.Strategy, Mode: req.Mode, DirectDomains: req.DirectDomains,
-		DirectIPs: req.DirectIPs, RelayInboundTags: req.RelayInboundTags,
+		DirectIPs: req.DirectIPs, RelayInboundTags: req.RelayInboundTags, AutoSelect: req.AutoSelect,
 	}
 	if err := database.GetDB().Create(c).Error; err != nil {
 		return nil, err
@@ -188,6 +199,7 @@ func (s *CascadeService) Update(ctx context.Context, id int, req *CascadeRequest
 	c.DirectDomains = req.DirectDomains
 	c.DirectIPs = req.DirectIPs
 	c.RelayInboundTags = req.RelayInboundTags
+	c.AutoSelect = req.AutoSelect
 	err = s.apply(ctx, c, prevEntry, userID, masterAddress)
 	s.saveState(c, err)
 	return c, err
@@ -536,12 +548,54 @@ func (s *CascadeService) removeLink(l model.CascadeLink) {
 	}
 }
 
-// countryExits lists the enabled nodes of a country, entry excluded, in id order.
-func countryExits(country string, entryNodeID int) ([]int, error) {
+// CascadeExitForeign as an exit country picks every enabled node whose country
+// differs from the entry's; the panel itself counts as Russia, as in splitZone.
+const CascadeExitForeign = "FOREIGN"
+
+func validateAutoSelectKind(req *CascadeRequest) error {
+	switch {
+	case !req.AutoSelect && req.ExitCountry == CascadeExitForeign:
+		return common.NewError("all foreign servers is an auto-select option")
+	case req.AutoSelect && req.ExitCountry != "" && req.ExitCountry != CascadeExitForeign:
+		return common.NewError("auto-select takes all foreign servers or picked ones, not a country")
+	}
+	return nil
+}
+
+// cascadeHomeCountry is the entry's country; the panel and a node without one count as Russia.
+func cascadeHomeCountry(entryNodeID int) string {
+	if home := strings.ToUpper(strings.TrimSpace(nodeCountry(entryNodeID))); home != "" {
+		return home
+	}
+	return "RU"
+}
+
+func requireForeignExits(entryNodeID int, exits []int) error {
+	home := cascadeHomeCountry(entryNodeID)
+	var foreign []int
+	if err := database.GetDB().Model(model.Node{}).
+		Where("id IN ? AND country <> '' AND country <> ?", exits, home).
+		Pluck("id", &foreign).Error; err != nil {
+		return err
+	}
+	for _, id := range exits {
+		if !slices.Contains(foreign, id) {
+			return common.NewError("auto-select exits must be foreign servers")
+		}
+	}
+	return nil
+}
+
+// cascadeExits lists the enabled exits of a country cascade, entry excluded, in id order.
+func cascadeExits(country string, entryNodeID int) ([]int, error) {
+	q := database.GetDB().Model(model.Node{}).Where("enable = ? AND id <> ?", true, entryNodeID)
+	if country == CascadeExitForeign {
+		q = q.Where("country <> '' AND country <> ?", cascadeHomeCountry(entryNodeID))
+	} else {
+		q = q.Where("country = ?", country)
+	}
 	var ids []int
-	err := database.GetDB().Model(model.Node{}).
-		Where("country = ? AND enable = ? AND id <> ?", country, true, entryNodeID).
-		Order("id asc").Pluck("id", &ids).Error
+	err := q.Order("id asc").Pluck("id", &ids).Error
 	return ids, err
 }
 
@@ -557,7 +611,7 @@ func (s *CascadeService) ReconcileCountryCascades(ctx context.Context) {
 		return
 	}
 	for _, c := range rows {
-		exits, err := countryExits(c.ExitCountry, c.EntryNodeId)
+		exits, err := cascadeExits(c.ExitCountry, c.EntryNodeId)
 		if err != nil {
 			logger.Warning("cascade", c.Id, ": resolve country exits:", err)
 			continue

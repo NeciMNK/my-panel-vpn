@@ -10,7 +10,8 @@ type Cascade struct {
 	EntryNodeId int    `json:"entryNodeId" gorm:"column:entry_node_id" example:"1"`
 	// ExitNodeIds are the exits in use; for a country cascade, the resolved list.
 	ExitNodeIds []int `json:"exitNodeIds" gorm:"serializer:json;column:exit_node_ids"`
-	// ExitCountry, when set, makes every enabled node of that country an exit.
+	// ExitCountry, when set, makes every enabled node of that country an exit;
+	// FOREIGN makes every node outside the entry's country one.
 	ExitCountry string `json:"exitCountry" gorm:"column:exit_country" example:"DE"`
 	// EntryInboundTags are the chained entry inbounds; empty means all of them.
 	EntryInboundTags []string `json:"entryInboundTags" gorm:"serializer:json;column:entry_inbound_tags"`
@@ -24,6 +25,8 @@ type Cascade struct {
 	DirectIPs []string `json:"directIps" gorm:"serializer:json;column:direct_ips"`
 	// RelayInboundTags are the entry inbounds that relay everything in both mode.
 	RelayInboundTags []string `json:"relayInboundTags" gorm:"serializer:json;column:relay_inbound_tags"`
+	// AutoSelect marks an auto-select over foreign servers, listed apart from cascades.
+	AutoSelect bool `json:"autoSelect" gorm:"column:auto_select;default:false" example:"false"`
 	// Links are the provisioned hops, one per exit; read-only, set by the panel.
 	Links []CascadeLink `json:"links" gorm:"serializer:json"`
 	// LastError is why the last apply failed; empty when the cascade is live.
