@@ -19,6 +19,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/util/maskcompat"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/random"
 	wgutil "github.com/mhsanaei/3x-ui/v3/internal/util/wireguard"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
 )
 
 //go:embed default.json
@@ -209,7 +210,7 @@ func (s *SubJsonService) GetJson(subId string, host string, alwaysReturnArray bo
 			}
 		}
 	}
-	entries = s.appendBalancerEntries(entries)
+	entries = s.appendBalancerEntries(entries, slices.Sorted(maps.Keys(seenEmails)))
 
 	// Inbounds arrive sorted by (sub_sort_index, id); balancers interleave by
 	// the same key and, on an equal number, follow the inbound group.
@@ -320,6 +321,7 @@ type subConfigEntry struct {
 }
 
 const (
+	pinnedCostOthers    = 100
 	subBalancerTag      = "balancer"
 	subBalancerProbeURL = "https://www.google.com/generate_204"
 )
@@ -421,7 +423,7 @@ func (s *SubJsonService) balancerObservatory(prefix string) map[string]any {
 
 // appendBalancerEntries appends one entry per enabled balancer that has at
 // least one member outbound among the inbound entries.
-func (s *SubJsonService) appendBalancerEntries(entries []subConfigEntry) []subConfigEntry {
+func (s *SubJsonService) appendBalancerEntries(entries []subConfigEntry, emails []string) []subConfigEntry {
 	balancers := getEnabledSubBalancers()
 	if len(balancers) == 0 {
 		return entries
@@ -440,7 +442,14 @@ func (s *SubJsonService) appendBalancerEntries(entries []subConfigEntry) []subCo
 		}
 	}
 	for i := range balancers {
-		config := s.buildBalancerConfig(&balancers[i], entries, entryProxies)
+		ids, err := (&service.SubBalancerService{}).MemberInboundIds(&balancers[i])
+		if err != nil {
+			logger.Warning("subscription: resolve balancer", balancers[i].Id, "members:", err)
+			continue
+		}
+		balancers[i].InboundIds = ids
+		pin := entrylessPin(&balancers[i], emails)
+		config := s.buildBalancerConfig(&balancers[i], entries, entryProxies, pin)
 		if config == nil {
 			continue
 		}
@@ -452,6 +461,58 @@ func (s *SubJsonService) appendBalancerEntries(entries []subConfigEntry) []subCo
 		})
 	}
 	return entries
+}
+
+// balancerPin is a client's exit pin applied to their own auto-select.
+type balancerPin struct {
+	service.EntrylessPin
+	pinnedInbounds []int
+}
+
+// entrylessPin reads the client's pin for an auto-select without an entry
+// server; a balancer of picked inbounds keeps no pins, as before.
+func entrylessPin(b *model.SubBalancer, emails []string) balancerPin {
+	if (!b.ExitForeign && len(b.ExitNodeIds) == 0) || len(emails) == 0 {
+		return balancerPin{}
+	}
+	var rows []model.Inbound
+	if err := database.GetDB().Select("id, node_id").Where("id IN ? AND node_id IS NOT NULL", b.InboundIds).
+		Find(&rows).Error; err != nil {
+		logger.Warning("subscription: balancer", b.Id, "member nodes:", err)
+		return balancerPin{}
+	}
+	var nodeIDs []int
+	for _, ib := range rows {
+		if !slices.Contains(nodeIDs, *ib.NodeID) {
+			nodeIDs = append(nodeIDs, *ib.NodeID)
+		}
+	}
+	pin, err := (&service.CascadeService{}).EntrylessPinOf(emails, nodeIDs)
+	if err != nil {
+		logger.Warning("subscription: balancer", b.Id, "exit pin:", err)
+		return balancerPin{}
+	}
+	out := balancerPin{EntrylessPin: pin}
+	for _, ib := range rows {
+		if pin.NodeId != 0 && *ib.NodeID == pin.NodeId {
+			out.pinnedInbounds = append(out.pinnedInbounds, ib.Id)
+		}
+	}
+	return out
+}
+
+// pinRules go ahead of the template's rules: everything cut, the AI services
+// cut, or the AI services sent only to the pinned member.
+func (p balancerPin) pinRules(pinnedTag string) []any {
+	switch {
+	case p.AllOff:
+		return []any{map[string]any{"type": "field", "network": "tcp,udp", "outboundTag": "block"}}
+	case len(p.AIBlock) > 0:
+		return []any{map[string]any{"type": "field", "domain": slices.Clone(p.AIBlock), "outboundTag": "block"}}
+	case pinnedTag != "" && len(p.AIDomains) > 0:
+		return []any{map[string]any{"type": "field", "domain": slices.Clone(p.AIDomains), "outboundTag": pinnedTag}}
+	}
+	return nil
 }
 
 // extractProxyOutbound returns the first outbound of a document when it is the
@@ -528,7 +589,7 @@ func leastLoadCosts(balancer *model.SubBalancer, members []balMember) []any {
 
 // buildBalancerConfig assembles the balancer profile: members retagged under a
 // per-balancer prefix, a routing.balancers entry, and (for leastPing/leastLoad) an observatory.
-func (s *SubJsonService) buildBalancerConfig(balancer *model.SubBalancer, entries []subConfigEntry, entryProxies [][]map[string]any) json_util.RawMessage {
+func (s *SubJsonService) buildBalancerConfig(balancer *model.SubBalancer, entries []subConfigEntry, entryProxies [][]map[string]any, pin balancerPin) json_util.RawMessage {
 	prefix := fmt.Sprintf("bal-%d-", balancer.Id)
 	usedTags := make(map[string]bool)
 	// Next suffix to try per base: tags are only ever added, so every lower one
@@ -569,6 +630,24 @@ func (s *SubJsonService) buildBalancerConfig(balancer *model.SubBalancer, entrie
 	if len(proxies) == 0 {
 		return nil
 	}
+	pinnedTag := ""
+	for _, m := range members {
+		if pinnedTag == "" && slices.Contains(pin.pinnedInbounds, m.inboundId) {
+			pinnedTag = m.tag
+		}
+	}
+	if pinnedTag != "" && pin.AllTraffic {
+		// leastLoad costs: the pinned server leads while its probes pass,
+		// the rest take over without a subscription refresh when it dies.
+		balancer.Strategy = "leastLoad"
+		balancer.MemberWeights = map[int]float64{}
+		for _, m := range members {
+			balancer.MemberWeights[m.inboundId] = pinnedCostOthers
+			if slices.Contains(pin.pinnedInbounds, m.inboundId) {
+				balancer.MemberWeights[m.inboundId] = 1
+			}
+		}
+	}
 
 	outbounds := append([]json_util.RawMessage{}, proxies...)
 	outbounds = append(outbounds, s.defaultOutbounds...)
@@ -582,7 +661,7 @@ func (s *SubJsonService) buildBalancerConfig(balancer *model.SubBalancer, entrie
 	routing := make(map[string]any, len(baseRouting)+1)
 	maps.Copy(routing, baseRouting)
 	baseRules, _ := baseRouting["rules"].([]any)
-	rules := make([]any, 0, len(baseRules)+1)
+	rules := pin.pinRules(pinnedTag)
 	for _, rule := range baseRules {
 		ruleMap, ok := rule.(map[string]any)
 		if !ok {

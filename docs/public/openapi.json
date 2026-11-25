@@ -6967,6 +6967,22 @@
             "example": true,
             "type": "boolean"
           },
+          "exitForeign": {
+            "description": "ExitForeign adds the client's inbounds on every enabled foreign node: an\nauto-select without an entry server, re-resolved on each subscription fetch.",
+            "example": false,
+            "type": "boolean"
+          },
+          "exitNodeIds": {
+            "description": "ExitNodeIds adds the client's inbounds on these foreign nodes.",
+            "example": [
+              2,
+              3
+            ],
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
           "id": {
             "example": 1,
             "type": "integer"
@@ -7017,6 +7033,8 @@
         "required": [
           "createdAt",
           "enabled",
+          "exitForeign",
+          "exitNodeIds",
           "id",
           "inboundIds",
           "remark",
@@ -22103,6 +22121,11 @@
                     {
                       "createdAt": 1710000000000,
                       "enabled": true,
+                      "exitForeign": false,
+                      "exitNodeIds": [
+                        2,
+                        3
+                      ],
                       "id": 1,
                       "inboundIds": [
                         1,
@@ -22148,7 +22171,18 @@
                     "items": {
                       "type": "integer"
                     },
-                    "description": "Repeated form keys selecting the member inbounds (required, at least one)."
+                    "description": "Repeated form keys selecting the member inbounds (at least one unless exitNodeIds or exitForeign is set)."
+                  },
+                  "exitNodeIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    },
+                    "description": "Repeated form keys: foreign nodes whose enabled inbounds also become members (auto-select without an entry server). A node in Russia or without a country is rejected."
+                  },
+                  "exitForeign": {
+                    "type": "boolean",
+                    "description": "true adds the enabled inbounds of every enabled foreign node (country set and not RU), re-resolved on each subscription fetch."
                   },
                   "memberWeights": {
                     "type": "object",
@@ -22171,6 +22205,10 @@
               },
               "encoding": {
                 "inboundIds": {
+                  "style": "form",
+                  "explode": true
+                },
+                "exitNodeIds": {
                   "style": "form",
                   "explode": true
                 },
@@ -22205,6 +22243,11 @@
                   "obj": {
                     "createdAt": 1710000000000,
                     "enabled": true,
+                    "exitForeign": false,
+                    "exitNodeIds": [
+                      2,
+                      3
+                    ],
                     "id": 1,
                     "inboundIds": [
                       1,
@@ -22262,7 +22305,18 @@
                     "items": {
                       "type": "integer"
                     },
-                    "description": "Repeated form keys selecting the member inbounds (required, at least one)."
+                    "description": "Repeated form keys selecting the member inbounds (at least one unless exitNodeIds or exitForeign is set)."
+                  },
+                  "exitNodeIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    },
+                    "description": "Repeated form keys: foreign nodes whose enabled inbounds also become members (auto-select without an entry server). A node in Russia or without a country is rejected."
+                  },
+                  "exitForeign": {
+                    "type": "boolean",
+                    "description": "true adds the enabled inbounds of every enabled foreign node (country set and not RU), re-resolved on each subscription fetch."
                   },
                   "memberWeights": {
                     "type": "object",
@@ -22285,6 +22339,10 @@
               },
               "encoding": {
                 "inboundIds": {
+                  "style": "form",
+                  "explode": true
+                },
+                "exitNodeIds": {
                   "style": "form",
                   "explode": true
                 },
@@ -22319,6 +22377,11 @@
                   "obj": {
                     "createdAt": 1710000000000,
                     "enabled": true,
+                    "exitForeign": false,
+                    "exitNodeIds": [
+                      2,
+                      3
+                    ],
                     "id": 1,
                     "inboundIds": [
                       1,
@@ -22377,6 +22440,11 @@
                   "obj": {
                     "createdAt": 1710000000000,
                     "enabled": true,
+                    "exitForeign": false,
+                    "exitNodeIds": [
+                      2,
+                      3
+                    ],
                     "id": 1,
                     "inboundIds": [
                       1,
@@ -22437,6 +22505,11 @@
                   "obj": {
                     "createdAt": 1710000000000,
                     "enabled": true,
+                    "exitForeign": false,
+                    "exitNodeIds": [
+                      2,
+                      3
+                    ],
                     "id": 1,
                     "inboundIds": [
                       1,

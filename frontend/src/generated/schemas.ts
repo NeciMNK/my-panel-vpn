@@ -6941,6 +6941,22 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": true,
         "type": "boolean"
       },
+      "exitForeign": {
+        "description": "ExitForeign adds the client's inbounds on every enabled foreign node: an\nauto-select without an entry server, re-resolved on each subscription fetch.",
+        "example": false,
+        "type": "boolean"
+      },
+      "exitNodeIds": {
+        "description": "ExitNodeIds adds the client's inbounds on these foreign nodes.",
+        "example": [
+          2,
+          3
+        ],
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      },
       "id": {
         "example": 1,
         "type": "integer"
@@ -6991,6 +7007,8 @@ export const SCHEMAS: Record<string, unknown> = {
     "required": [
       "createdAt",
       "enabled",
+      "exitForeign",
+      "exitNodeIds",
       "id",
       "inboundIds",
       "remark",

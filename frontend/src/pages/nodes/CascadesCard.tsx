@@ -29,6 +29,8 @@ import { HttpUtil } from '@/utils';
 import { selectTagRender } from '@/components/form';
 import type { NodeRecord } from '@/api/queries/useNodesQuery';
 
+import EntrylessAutoSelectList from './EntrylessAutoSelectList';
+
 export interface CascadeLink {
   nodeId: number;
   inboundId: number;
@@ -333,6 +335,7 @@ export default function CascadesCard({ nodes, autoSelect = false }: CascadesCard
         pagination={false}
         scroll={{ x: 'max-content' }}
       />
+      {autoSelect && <EntrylessAutoSelectList nodes={nodes} />}
 
       <Modal
         open={form !== null}

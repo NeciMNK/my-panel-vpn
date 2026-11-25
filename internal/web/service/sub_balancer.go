@@ -35,8 +35,13 @@ func (s *SubBalancerService) validate(b *model.SubBalancer) error {
 	if _, ok := subBalancerStrategies[b.Strategy]; !ok {
 		return common.NewError("invalid balancer strategy:", b.Strategy)
 	}
-	if len(b.InboundIds) == 0 {
+	if len(b.InboundIds) == 0 && len(b.ExitNodeIds) == 0 && !b.ExitForeign {
 		return common.NewError("balancer must select at least one inbound")
+	}
+	if len(b.ExitNodeIds) > 0 {
+		if err := requireForeignExits(0, b.ExitNodeIds); err != nil {
+			return err
+		}
 	}
 	if err := s.validateWeights(b); err != nil {
 		return err
@@ -74,6 +79,35 @@ func (s *SubBalancerService) validateWeights(b *model.SubBalancer) error {
 	}
 	b.MemberWeights = cleaned
 	return nil
+}
+
+// MemberInboundIds is the balancer's picked inbounds plus every enabled inbound
+// on its foreign exit nodes; the panel counts as Russia, as for cascades.
+func (s *SubBalancerService) MemberInboundIds(b *model.SubBalancer) ([]int, error) {
+	nodeIDs := slices.Clone(b.ExitNodeIds)
+	if b.ExitForeign {
+		foreign, err := cascadeExits(CascadeExitForeign, 0)
+		if err != nil {
+			return nil, err
+		}
+		nodeIDs = append(nodeIDs, foreign...)
+	}
+	if len(nodeIDs) == 0 {
+		return b.InboundIds, nil
+	}
+	var onNodes []int
+	if err := database.GetDB().Model(&model.Inbound{}).
+		Where("node_id IN ? AND enable = ?", nodeIDs, true).Order("id asc").
+		Pluck("id", &onNodes).Error; err != nil {
+		return nil, err
+	}
+	ids := slices.Clone(b.InboundIds)
+	for _, id := range onNodes {
+		if !slices.Contains(ids, id) {
+			ids = append(ids, id)
+		}
+	}
+	return ids, nil
 }
 
 // List returns all balancers in subscription order.
@@ -114,6 +148,8 @@ func (s *SubBalancerService) Update(id int, balancer *model.SubBalancer, enabled
 	current.Strategy = balancer.Strategy
 	current.InboundIds = balancer.InboundIds
 	current.MemberWeights = balancer.MemberWeights
+	current.ExitForeign = balancer.ExitForeign
+	current.ExitNodeIds = balancer.ExitNodeIds
 	current.SortOrder = balancer.SortOrder
 	if enabled != nil {
 		current.Enabled = *enabled

@@ -1640,6 +1640,11 @@ type SubBalancer struct {
 	// with Strategy "leastLoad" — xray ignores costs on every other strategy.
 	MemberWeights map[int]float64 `json:"memberWeights,omitempty" form:"memberWeights" gorm:"serializer:json;column:member_weights"`
 	SortOrder     int             `json:"sortOrder" form:"sortOrder" gorm:"column:sort_order" validate:"omitempty,gte=1" example:"1"`
+	// ExitForeign adds the client's inbounds on every enabled foreign node: an
+	// auto-select without an entry server, re-resolved on each subscription fetch.
+	ExitForeign bool `json:"exitForeign" form:"exitForeign" gorm:"column:exit_foreign;default:false" example:"false"`
+	// ExitNodeIds adds the client's inbounds on these foreign nodes.
+	ExitNodeIds []int `json:"exitNodeIds" form:"exitNodeIds" gorm:"serializer:json;column:exit_node_ids" example:"[2,3]"`
 	// No gorm default:true — a bool default makes an explicit false at insert
 	// collapse back to the column default (zero value is skipped).
 	Enabled   bool  `json:"enabled" form:"enabled" example:"true"`

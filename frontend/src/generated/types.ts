@@ -1549,6 +1549,8 @@ export interface StoredFile {
 export interface SubBalancer {
   createdAt: number;
   enabled: boolean;
+  exitForeign: boolean;
+  exitNodeIds: number[];
   id: number;
   inboundIds: number[];
   memberWeights?: Record<number, number>;

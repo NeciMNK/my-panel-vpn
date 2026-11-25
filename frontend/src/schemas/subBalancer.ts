@@ -11,6 +11,8 @@ export const SubBalancerSchema = z.object({
   memberWeights: z.record(z.string(), z.number()).nullish(),
   sortOrder: z.number(),
   enabled: z.boolean(),
+  exitForeign: z.boolean().optional(),
+  exitNodeIds: z.array(z.number()).nullish(),
   createdAt: z.number().optional(),
   updatedAt: z.number().optional(),
 });
@@ -42,5 +44,7 @@ export const SubBalancerFormSchema = z.object({
     .int('pages.settings.subBalancers.errSortOrder')
     .min(1, 'pages.settings.subBalancers.errSortOrder'),
   enabled: z.boolean(),
+  exitForeign: z.boolean().optional(),
+  exitNodeIds: z.array(z.number().int().positive()).optional(),
 });
 export type SubBalancerFormValues = z.infer<typeof SubBalancerFormSchema>;

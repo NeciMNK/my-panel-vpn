@@ -60,6 +60,20 @@ func parseSubBalancerForm(c *gin.Context) (*model.SubBalancer, *bool, error) {
 		}
 		balancer.InboundIds = append(balancer.InboundIds, id)
 	}
+	for _, raw := range c.PostFormArray("exitNodeIds") {
+		id, err := strconv.Atoi(raw)
+		if err != nil {
+			return nil, nil, fmt.Errorf("invalid exit node id %q: %w", raw, err)
+		}
+		balancer.ExitNodeIds = append(balancer.ExitNodeIds, id)
+	}
+	if raw, ok := c.GetPostForm("exitForeign"); ok {
+		v, err := strconv.ParseBool(raw)
+		if err != nil {
+			return nil, nil, fmt.Errorf("invalid exitForeign %q: %w", raw, err)
+		}
+		balancer.ExitForeign = v
+	}
 	// Weights arrive as one JSON object ("memberWeights":{"3":0.5}); gin cannot
 	// bind bracket-keyed maps from urlencoded forms, unlike repeated scalars.
 	if raw, ok := c.GetPostForm("memberWeights"); ok && strings.TrimSpace(raw) != "" {
