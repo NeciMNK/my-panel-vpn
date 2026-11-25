@@ -464,6 +464,65 @@ export const EXAMPLES: Record<string, unknown> = {
     "scope": "admin",
     "token": "new-token-string"
   },
+  "BackupNodeRun": {
+    "at": 1764039600,
+    "error": "",
+    "file": "ru-msk-1_2026-11-25_030000.tar.gz",
+    "name": "ru-msk-1",
+    "nodeId": 3
+  },
+  "BackupRun": {
+    "at": 1764039600,
+    "error": "",
+    "file": "panel.example.com_2026-11-25_030000.dump"
+  },
+  "BackupSettings": {
+    "dbEnable": true,
+    "dbEveryHours": 24,
+    "dbOnChange": true,
+    "dir": "/root/my-panel-vpn-backups",
+    "hasPassword": false,
+    "hasPrivateKey": true,
+    "host": "backup.example.com",
+    "hostKey": "SHA256:Vf0Yb0kq3y4I2n8M2m0p1Yc3Qz8jv8p0Hq4l5r6s7t8",
+    "keep": 7,
+    "nodesEnable": true,
+    "nodesEveryHours": 24,
+    "port": 22,
+    "user": "root"
+  },
+  "BackupSettingsRequest": {
+    "dbEnable": false,
+    "dbEveryHours": 0,
+    "dbOnChange": false,
+    "dir": "",
+    "host": "",
+    "keep": 0,
+    "nodesEnable": false,
+    "nodesEveryHours": 0,
+    "password": null,
+    "port": 0,
+    "privateKey": null,
+    "user": ""
+  },
+  "BackupStatus": {
+    "db": {
+      "at": 1764039600,
+      "error": "",
+      "file": "panel.example.com_2026-11-25_030000.dump"
+    },
+    "nodes": [
+      {
+        "at": 1764039600,
+        "error": "",
+        "file": "ru-msk-1_2026-11-25_030000.tar.gz",
+        "name": "ru-msk-1",
+        "nodeId": 3
+      }
+    ],
+    "nodesAt": 1764039600,
+    "running": ""
+  },
   "Blocker": {
     "code": "tools",
     "detail": "awg"
@@ -1417,6 +1476,24 @@ export const EXAMPLES: Record<string, unknown> = {
     "scheme": "http",
     "tlsVerifyMode": "verify"
   },
+  "NodeRestoreRequest": {
+    "backup": "",
+    "host": "",
+    "password": "",
+    "port": 0,
+    "privateKey": "",
+    "user": ""
+  },
+  "NodeRestoreStatus": {
+    "error": "",
+    "finishedAt": 1764090180,
+    "log": [
+      "Connecting to 203.0.113.20"
+    ],
+    "nodeId": 3,
+    "running": false,
+    "startedAt": 1764090000
+  },
   "NodeView": {
     "activeCount": 20,
     "address": "node.example.com",
@@ -1742,6 +1819,11 @@ export const EXAMPLES: Record<string, unknown> = {
     "minMbps": 200,
     "monthlyPrice": 100,
     "name": "Plus"
+  },
+  "StoredFile": {
+    "modTime": 1764039600,
+    "name": "de-fra-1_2026-11-25_030000.tar.gz",
+    "size": 524288
   },
   "SubBalancer": {
     "createdAt": 1710000000000,

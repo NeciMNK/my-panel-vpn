@@ -428,6 +428,7 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	_, _ = s.cron.AddJob("@daily", job.LeaderOnly(job.NewPeriodicTrafficResetJob("monthly", loc)))
 
 	_, _ = s.cron.AddJob("@every 1m", job.NewTrafficUsageFlushJob())
+	_, _ = s.cron.AddJob("@every 1m", job.NewBackupJob())
 	_, _ = s.cron.AddJob("@daily", job.LeaderOnly(job.NewTrafficUsageRollupJob(loc)))
 
 	// LDAP sync scheduling

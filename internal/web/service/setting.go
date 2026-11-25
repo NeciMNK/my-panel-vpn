@@ -74,6 +74,21 @@ var defaultValueMap = map[string]string{
 	// token never reaches the settings UI/export.
 	"tlsCloudflareToken": "",
 	"tlsAcmeAccountKey":  "",
+	// Remote backups, edited on their own settings tab; secrets are stored encrypted.
+	"backupHost":            "",
+	"backupPort":            "22",
+	"backupUser":            "root",
+	"backupPassword":        "",
+	"backupPrivateKey":      "",
+	"backupDir":             "/root/my-panel-vpn-backups",
+	"backupHostKey":         "",
+	"backupDbEnable":        "false",
+	"backupDbEveryHours":    "24",
+	"backupDbOnChange":      "true",
+	"backupNodesEnable":     "false",
+	"backupNodesEveryHours": "24",
+	"backupKeep":            "7",
+	"backupStatus":          "",
 	// Edited from the speed card, not the settings page, so kept out of entity.AllSetting.
 	"speedTestAutoCapacity": "true",
 	"speedTestEveryHours":   "0",

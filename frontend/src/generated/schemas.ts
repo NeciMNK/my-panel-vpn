@@ -1905,6 +1905,220 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "BackupNodeRun": {
+    "description": "BackupNodeRun is the last backup of one node.",
+    "properties": {
+      "at": {
+        "example": 1764039600,
+        "format": "int64",
+        "type": "integer"
+      },
+      "error": {
+        "type": "string"
+      },
+      "file": {
+        "example": "ru-msk-1_2026-11-25_030000.tar.gz",
+        "type": "string"
+      },
+      "name": {
+        "example": "ru-msk-1",
+        "type": "string"
+      },
+      "nodeId": {
+        "example": 3,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "at",
+      "error",
+      "file",
+      "name",
+      "nodeId"
+    ],
+    "type": "object"
+  },
+  "BackupRun": {
+    "description": "BackupRun is the outcome of the last backup of one thing.",
+    "properties": {
+      "at": {
+        "example": 1764039600,
+        "format": "int64",
+        "type": "integer"
+      },
+      "error": {
+        "type": "string"
+      },
+      "file": {
+        "example": "panel.example.com_2026-11-25_030000.dump",
+        "type": "string"
+      }
+    },
+    "required": [
+      "at",
+      "error",
+      "file"
+    ],
+    "type": "object"
+  },
+  "BackupSettings": {
+    "description": "BackupSettings is the backup server and schedule; the password and key are\nnever sent back, only whether they are set.",
+    "properties": {
+      "dbEnable": {
+        "example": true,
+        "type": "boolean"
+      },
+      "dbEveryHours": {
+        "example": 24,
+        "type": "integer"
+      },
+      "dbOnChange": {
+        "example": true,
+        "type": "boolean"
+      },
+      "dir": {
+        "example": "/root/my-panel-vpn-backups",
+        "type": "string"
+      },
+      "hasPassword": {
+        "example": false,
+        "type": "boolean"
+      },
+      "hasPrivateKey": {
+        "example": true,
+        "type": "boolean"
+      },
+      "host": {
+        "example": "backup.example.com",
+        "type": "string"
+      },
+      "hostKey": {
+        "example": "SHA256:Vf0Yb0kq3y4I2n8M2m0p1Yc3Qz8jv8p0Hq4l5r6s7t8",
+        "type": "string"
+      },
+      "keep": {
+        "example": 7,
+        "type": "integer"
+      },
+      "nodesEnable": {
+        "example": true,
+        "type": "boolean"
+      },
+      "nodesEveryHours": {
+        "example": 24,
+        "type": "integer"
+      },
+      "port": {
+        "example": 22,
+        "type": "integer"
+      },
+      "user": {
+        "example": "root",
+        "type": "string"
+      }
+    },
+    "required": [
+      "dbEnable",
+      "dbEveryHours",
+      "dbOnChange",
+      "dir",
+      "hasPassword",
+      "hasPrivateKey",
+      "host",
+      "hostKey",
+      "keep",
+      "nodesEnable",
+      "nodesEveryHours",
+      "port",
+      "user"
+    ],
+    "type": "object"
+  },
+  "BackupSettingsRequest": {
+    "description": "BackupSettingsRequest saves BackupSettings; a nil password or key keeps the\nstored one and an empty string clears it.",
+    "properties": {
+      "dbEnable": {
+        "type": "boolean"
+      },
+      "dbEveryHours": {
+        "type": "integer"
+      },
+      "dbOnChange": {
+        "type": "boolean"
+      },
+      "dir": {
+        "type": "string"
+      },
+      "host": {
+        "type": "string"
+      },
+      "keep": {
+        "type": "integer"
+      },
+      "nodesEnable": {
+        "type": "boolean"
+      },
+      "nodesEveryHours": {
+        "type": "integer"
+      },
+      "password": {
+        "nullable": true,
+        "type": "string"
+      },
+      "port": {
+        "type": "integer"
+      },
+      "privateKey": {
+        "nullable": true,
+        "type": "string"
+      },
+      "user": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "dbEnable",
+      "dbEveryHours",
+      "dbOnChange",
+      "dir",
+      "host",
+      "keep",
+      "nodesEnable",
+      "nodesEveryHours",
+      "port",
+      "user"
+    ],
+    "type": "object"
+  },
+  "BackupStatus": {
+    "description": "BackupStatus is what the backups tab shows.",
+    "properties": {
+      "db": {
+        "$ref": "#/components/schemas/BackupRun"
+      },
+      "nodes": {
+        "items": {
+          "$ref": "#/components/schemas/BackupNodeRun"
+        },
+        "type": "array"
+      },
+      "nodesAt": {
+        "example": 1764039600,
+        "format": "int64",
+        "type": "integer"
+      },
+      "running": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "db",
+      "nodes",
+      "nodesAt",
+      "running"
+    ],
+    "type": "object"
+  },
   "Blocker": {
     "description": "Blocker is one unmet requirement.",
     "properties": {
@@ -5396,6 +5610,83 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "NodeRestoreRequest": {
+    "description": "NodeRestoreRequest names the fresh server a lost node moves to.",
+    "properties": {
+      "backup": {
+        "description": "Backup is a file from the node's backups; empty takes the newest, \"none\" none.",
+        "type": "string"
+      },
+      "host": {
+        "type": "string"
+      },
+      "password": {
+        "type": "string"
+      },
+      "port": {
+        "type": "integer"
+      },
+      "privateKey": {
+        "type": "string"
+      },
+      "user": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "backup",
+      "host",
+      "password",
+      "port",
+      "privateKey",
+      "user"
+    ],
+    "type": "object"
+  },
+  "NodeRestoreStatus": {
+    "description": "NodeRestoreStatus is the progress of the current or last node restore.",
+    "properties": {
+      "error": {
+        "type": "string"
+      },
+      "finishedAt": {
+        "example": 1764090180,
+        "format": "int64",
+        "type": "integer"
+      },
+      "log": {
+        "example": [
+          "Connecting to 203.0.113.20"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "nodeId": {
+        "example": 3,
+        "type": "integer"
+      },
+      "running": {
+        "example": false,
+        "type": "boolean"
+      },
+      "startedAt": {
+        "example": 1764090000,
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "error",
+      "finishedAt",
+      "log",
+      "nodeId",
+      "running",
+      "startedAt"
+    ],
+    "type": "object"
+  },
   "NodeView": {
     "description": "NodeView is the browser/API read contract for nodes. Credentials are\nwrite-only: responses expose only whether a node has a token configured.",
     "properties": {
@@ -6597,6 +6888,31 @@ export const SCHEMAS: Record<string, unknown> = {
       "minMbps",
       "monthlyPrice",
       "name"
+    ],
+    "type": "object"
+  },
+  "StoredFile": {
+    "description": "StoredFile is one backup kept on the backup server.",
+    "properties": {
+      "modTime": {
+        "example": 1764039600,
+        "format": "int64",
+        "type": "integer"
+      },
+      "name": {
+        "example": "de-fra-1_2026-11-25_030000.tar.gz",
+        "type": "string"
+      },
+      "size": {
+        "example": 524288,
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "modTime",
+      "name",
+      "size"
     ],
     "type": "object"
   },

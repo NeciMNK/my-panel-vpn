@@ -24,6 +24,7 @@ import {
   PlusOutlined,
   ReloadOutlined,
   SafetyCertificateOutlined,
+  CloudUploadOutlined,
   SafetyOutlined,
   SearchOutlined,
   SettingOutlined,
@@ -414,6 +415,13 @@ export default function CommandPalette() {
         subtitle: t('pages.settings.tlsCerts.menu'),
         keywords: ['ssl', 'tls', 'certificate', 'https', 'cloudflare', 'acme', 'wildcard'],
         icon: <SafetyCertificateOutlined aria-hidden />,
+      },
+      {
+        path: '/settings#backup',
+        title: `${t('menu.settings')} · ${t('pages.settings.backup.menu')}`,
+        subtitle: t('pages.settings.backup.menu'),
+        keywords: ['backup', 'restore', 'sftp', 'ssh', 'node', 'database'],
+        icon: <CloudUploadOutlined aria-hidden />,
       },
       {
         path: '/settings#telegram',

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Turns this server into a node of a my-panel-vpn master. Served by the master:
 #   curl -fsSL <master>/node-join/install.sh | bash -s -- --master <master> --join <token>
+# A master restoring a lost node uploads it with --bundle, --restore and --identity.
 set -euo pipefail
 
 MASTER=""
@@ -11,6 +12,9 @@ NAME=""
 COUNTRY=""
 INSECURE=0
 REPLACE=0
+BUNDLE=""
+RESTORE=""
+IDENTITY=0
 XUI_DIR="${XUI_MAIN_FOLDER:-/usr/local/x-ui}"
 CERT_DIR="/etc/x-ui/node-cert"
 LOGIN_FILE="/etc/x-ui/node-login.txt"
@@ -48,6 +52,9 @@ Usage: install-node.sh --master <url> --join <token> [options]
   --country CC     two-letter country code, joins that country's cascades (e.g. DE)
   --insecure       accept a self-signed certificate on the master
   --replace        back up and replace a full my-panel-vpn panel already on this server
+  --bundle FILE    install this panel build instead of downloading it (no --master/--join needed)
+  --restore FILE   bring back a node backup made by the master before configuring
+  --identity       print the node's address details for the master instead of registering
 USAGE
 }
 
@@ -61,15 +68,25 @@ while [[ $# -gt 0 ]]; do
     --country) COUNTRY="${2:-}"; shift 2 ;;
     --insecure) INSECURE=1; shift ;;
     --replace) REPLACE=1; shift ;;
+    --bundle) BUNDLE="${2:-}"; shift 2 ;;
+    --restore) RESTORE="${2:-}"; shift 2 ;;
+    --identity) IDENTITY=1; shift ;;
     -h | --help) usage; exit 0 ;;
     *) usage; die "unknown option: $1" ;;
     esac
 done
 
-[[ -n "$MASTER" && -n "$JOIN" ]] || { usage; die "--master and --join are required"; }
+if [[ -n "$BUNDLE" ]]; then
+    [[ -f "$BUNDLE" ]] || die "no panel build at $BUNDLE"
+    [[ $IDENTITY -eq 1 || -n "$JOIN" ]] || die "--bundle needs --identity or --join"
+else
+    [[ -n "$MASTER" && -n "$JOIN" ]] || { usage; die "--master and --join are required"; }
+fi
+[[ -z "$RESTORE" || -f "$RESTORE" ]] || die "no node backup at $RESTORE"
 [[ $EUID -eq 0 ]] || die "run as root"
-[[ "$JOIN" =~ ^[A-Za-z0-9_-]+$ ]] || die "malformed join token"
+[[ -z "$JOIN" || "$JOIN" =~ ^[A-Za-z0-9_-]+$ ]] || die "malformed join token"
 MASTER="${MASTER%/}"
+NODE_OF="${MASTER:-a my-panel-vpn master}"
 
 case "$(uname -m)" in
 x86_64 | amd64) ARCH=amd64 ;;
@@ -222,9 +239,13 @@ fi
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
-info "Downloading the panel build from the master"
-"${CURL[@]}" -o "$TMP/bundle.tar.gz" "$MASTER/node-join/bundle?join=$JOIN&arch=$ARCH" ||
-    die "download failed: the token may be expired or used, or this server's CPU architecture differs from the master's"
+if [[ -n "$BUNDLE" ]]; then
+    cp "$BUNDLE" "$TMP/bundle.tar.gz"
+else
+    info "Downloading the panel build from the master"
+    "${CURL[@]}" -o "$TMP/bundle.tar.gz" "$MASTER/node-join/bundle?join=$JOIN&arch=$ARCH" ||
+        die "download failed: the token may be expired or used, or this server's CPU architecture differs from the master's"
+fi
 
 if [[ $replace_existing_xui == 1 ]]; then
     remove_foreign_xui || die "could not back up the existing panel; it was left running"
@@ -240,7 +261,7 @@ fi
 
 cat >/etc/systemd/system/x-ui.service <<UNIT
 [Unit]
-Description=x-ui node of ${MASTER}
+Description=x-ui node of ${NODE_OF}
 After=network.target
 Wants=network.target
 
@@ -256,21 +277,45 @@ LimitNOFILE=1048576
 WantedBy=multi-user.target
 UNIT
 
+# restore_node_state unpacks a node backup into / and reports whether it brought
+# back a configured node: its database and its TLS certificate.
+restore_node_state() {
+    local archive="$1" root="${2:-/}"
+    tar -xzmf "$archive" -C "$root" --no-same-owner || die "could not unpack the node backup"
+    [[ -f "$root/etc/x-ui/x-ui.db" && -f "$root/${CERT_DIR#/}/cert.pem" && -f "$root/${CERT_DIR#/}/key.pem" ]]
+}
+
 info "Configuring the node panel"
 cd "$XUI_DIR"
-BASE_PATH="/$(rand_hex 9)/"
-ADMIN_USER="admin-$(rand_hex 3)"
-ADMIN_PASS="$(rand_hex 12)"
-# The master serves subscriptions; a node's own sub server only fights for :2096.
-./x-ui setting -port "$PANEL_PORT" -webBasePath "$BASE_PATH" -username "$ADMIN_USER" -password "$ADMIN_PASS" -subEnable=false >/dev/null
+RESTORED=0
+if [[ -n "$RESTORE" ]]; then
+    info "Restoring the node backup"
+    if restore_node_state "$RESTORE"; then
+        RESTORED=1
+    else
+        info "The backup has no node database or certificate; configuring this node from scratch"
+    fi
+fi
+if [[ $RESTORED -eq 1 ]]; then
+    SHOWN="$(./x-ui setting -show)"
+    PANEL_PORT="$(printf '%s\n' "$SHOWN" | awk '/^port:/{print $2}' | tail -n1)"
+    BASE_PATH="$(printf '%s\n' "$SHOWN" | awk '/^webBasePath:/{print $2}' | tail -n1)"
+    [[ -n "$PANEL_PORT" && -n "$BASE_PATH" ]] || die "the restored node database has no panel port or path"
+else
+    BASE_PATH="/$(rand_hex 9)/"
+    ADMIN_USER="admin-$(rand_hex 3)"
+    ADMIN_PASS="$(rand_hex 12)"
+    # The master serves subscriptions; a node's own sub server only fights for :2096.
+    ./x-ui setting -port "$PANEL_PORT" -webBasePath "$BASE_PATH" -username "$ADMIN_USER" -password "$ADMIN_PASS" -subEnable=false >/dev/null
 
-mkdir -p "$CERT_DIR"
-chmod 700 "$CERT_DIR"
-openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes -days 3650 \
-    -subj "/CN=x-ui-node" -keyout "$CERT_DIR/key.pem" -out "$CERT_DIR/cert.pem" >/dev/null 2>&1 ||
-    die "could not create the node TLS certificate"
-chmod 600 "$CERT_DIR/key.pem"
-./x-ui cert -webCert "$CERT_DIR/cert.pem" -webCertKey "$CERT_DIR/key.pem" >/dev/null
+    mkdir -p "$CERT_DIR"
+    chmod 700 "$CERT_DIR"
+    openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes -days 3650 \
+        -subj "/CN=x-ui-node" -keyout "$CERT_DIR/key.pem" -out "$CERT_DIR/cert.pem" >/dev/null 2>&1 ||
+        die "could not create the node TLS certificate"
+    chmod 600 "$CERT_DIR/key.pem"
+    ./x-ui cert -webCert "$CERT_DIR/cert.pem" -webCertKey "$CERT_DIR/key.pem" >/dev/null
+fi
 CERT_PIN="$(openssl x509 -in "$CERT_DIR/cert.pem" -outform der | openssl dgst -sha256 -hex | awk '{print $NF}')"
 
 API_TOKEN="$(./x-ui setting -getApiToken -tokenName master-sync -tokenScope node-sync | awk '/^apiToken:/{print $2}' | tail -n1)"
@@ -282,6 +327,15 @@ systemctl restart x-ui
 
 if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -q "Status: active"; then
     ufw allow "$PANEL_PORT"/tcp >/dev/null
+fi
+
+if [[ $IDENTITY -eq 1 ]]; then
+    # The master reads this line over SSH to point the node's record here.
+    echo "node-identity: port=${PANEL_PORT} basePath=${BASE_PATH} apiToken=${API_TOKEN} certSha256=${CERT_PIN}"
+    if [[ $RESTORED -eq 0 ]]; then
+        save_emergency_login "$LOGIN_FILE" "https://$(hostname -I 2>/dev/null | awk '{print $1}'):${PANEL_PORT}${BASE_PATH}" "$ADMIN_USER" "$ADMIN_PASS"
+    fi
+    exit 0
 fi
 
 [[ -n "$NAME" ]] || NAME="$(hostname -s 2>/dev/null || hostname)"

@@ -70,6 +70,14 @@ func (f *fakeCloudflare) serve(w http.ResponseWriter, r *http.Request) {
 		_ = json.NewDecoder(r.Body).Decode(&rec)
 		f.add(rec)
 		reply(rec)
+	case r.Method == http.MethodPatch && strings.HasPrefix(r.URL.Path, "/zones/z1/dns_records/"):
+		id := strings.TrimPrefix(r.URL.Path, "/zones/z1/dns_records/")
+		rec := f.records[id]
+		var patch struct{ Content string }
+		_ = json.NewDecoder(r.Body).Decode(&patch)
+		rec.Content = patch.Content
+		f.records[id] = rec
+		reply(rec)
 	case r.Method == http.MethodDelete && strings.HasPrefix(r.URL.Path, "/zones/z1/dns_records/"):
 		delete(f.records, strings.TrimPrefix(r.URL.Path, "/zones/z1/dns_records/"))
 		reply(map[string]string{})
@@ -238,5 +246,39 @@ func TestEdgeNodeSwitchesDNSOnlyWhenNoMasterOrEarlierEdgeCan(t *testing.T) {
 				t.Fatalf("acted %v, DNS %v; want acted %v, DNS %v", acted, got, tc.acts, want)
 			}
 		})
+	}
+}
+
+// A restored node gets a new IP; its name must follow even though the admin,
+// not the panel, created the record, and other names must stay as they are.
+func TestPointNameMovesEveryARecordOfTheName(t *testing.T) {
+	cf, client := newFakeCloudflare(t, "example.com",
+		cfRecord{Type: "A", Name: "ru-node-1.example.com", Content: "192.0.2.1", TTL: 1, Proxied: true},
+		cfRecord{Type: "A", Name: "de-node-1.example.com", Content: "192.0.2.50", TTL: 1},
+	)
+	changed, err := client.PointName(context.Background(), "ru-node-1.example.com", "203.0.113.20")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if changed != 1 {
+		t.Fatalf("changed = %d, want 1", changed)
+	}
+	got := map[string]cfRecord{}
+	for _, r := range cf.records {
+		got[r.Name] = r
+	}
+	if r := got["ru-node-1.example.com"]; r.Content != "203.0.113.20" || !r.Proxied {
+		t.Fatalf("node record = %+v, want the new IP with proxying kept", r)
+	}
+	if got["de-node-1.example.com"].Content != "192.0.2.50" {
+		t.Fatalf("another name changed: %+v", got["de-node-1.example.com"])
+	}
+
+	changed, err = client.PointName(context.Background(), "new-node.example.com", "203.0.113.21")
+	if err != nil || changed != 1 {
+		t.Fatalf("missing name: changed=%d err=%v", changed, err)
+	}
+	if cf.records["3"].Name != "new-node.example.com" || cf.records["3"].Content != "203.0.113.21" {
+		t.Fatalf("created = %+v", cf.records["3"])
 	}
 }

@@ -53,6 +53,7 @@ describe('NodeList re-render', () => {
       onMtls: noop,
       onEdit: noop,
       onDelete: noop,
+      onRestore: noop,
       onProbe: noop,
       onToggleEnable: noop,
       onUpdateNode: noop,

@@ -483,6 +483,63 @@ export const ApiTokenViewSchema = z.object({
 });
 export type ApiTokenView = z.infer<typeof ApiTokenViewSchema>;
 
+export const BackupNodeRunSchema = z.object({
+  at: z.number().int(),
+  error: z.string(),
+  file: z.string(),
+  name: z.string(),
+  nodeId: z.number().int(),
+});
+export type BackupNodeRun = z.infer<typeof BackupNodeRunSchema>;
+
+export const BackupRunSchema = z.object({
+  at: z.number().int(),
+  error: z.string(),
+  file: z.string(),
+});
+export type BackupRun = z.infer<typeof BackupRunSchema>;
+
+export const BackupSettingsSchema = z.object({
+  dbEnable: z.boolean(),
+  dbEveryHours: z.number().int(),
+  dbOnChange: z.boolean(),
+  dir: z.string(),
+  hasPassword: z.boolean(),
+  hasPrivateKey: z.boolean(),
+  host: z.string(),
+  hostKey: z.string(),
+  keep: z.number().int(),
+  nodesEnable: z.boolean(),
+  nodesEveryHours: z.number().int(),
+  port: z.number().int(),
+  user: z.string(),
+});
+export type BackupSettings = z.infer<typeof BackupSettingsSchema>;
+
+export const BackupSettingsRequestSchema = z.object({
+  dbEnable: z.boolean(),
+  dbEveryHours: z.number().int(),
+  dbOnChange: z.boolean(),
+  dir: z.string(),
+  host: z.string(),
+  keep: z.number().int(),
+  nodesEnable: z.boolean(),
+  nodesEveryHours: z.number().int(),
+  password: z.string().nullable().optional(),
+  port: z.number().int(),
+  privateKey: z.string().nullable().optional(),
+  user: z.string(),
+});
+export type BackupSettingsRequest = z.infer<typeof BackupSettingsRequestSchema>;
+
+export const BackupStatusSchema = z.object({
+  db: z.lazy(() => BackupRunSchema),
+  nodes: z.array(z.lazy(() => BackupNodeRunSchema)),
+  nodesAt: z.number().int(),
+  running: z.string(),
+});
+export type BackupStatus = z.infer<typeof BackupStatusSchema>;
+
 export const BlockerSchema = z.object({
   code: z.lazy(() => BlockerCodeSchema),
   detail: z.string().optional(),
@@ -1284,6 +1341,26 @@ export const NodeMutationRequestSchema = z.object({
 });
 export type NodeMutationRequest = z.infer<typeof NodeMutationRequestSchema>;
 
+export const NodeRestoreRequestSchema = z.object({
+  backup: z.string(),
+  host: z.string(),
+  password: z.string(),
+  port: z.number().int(),
+  privateKey: z.string(),
+  user: z.string(),
+});
+export type NodeRestoreRequest = z.infer<typeof NodeRestoreRequestSchema>;
+
+export const NodeRestoreStatusSchema = z.object({
+  error: z.string(),
+  finishedAt: z.number().int(),
+  log: z.array(z.string()),
+  nodeId: z.number().int(),
+  running: z.boolean(),
+  startedAt: z.number().int(),
+});
+export type NodeRestoreStatus = z.infer<typeof NodeRestoreStatusSchema>;
+
 export const NodeViewSchema = z.object({
   activeCount: z.number().int(),
   address: z.string(),
@@ -1575,6 +1652,13 @@ export const SpeedTierSchema = z.object({
   name: z.string(),
 });
 export type SpeedTier = z.infer<typeof SpeedTierSchema>;
+
+export const StoredFileSchema = z.object({
+  modTime: z.number().int(),
+  name: z.string(),
+  size: z.number().int(),
+});
+export type StoredFile = z.infer<typeof StoredFileSchema>;
 
 export const SubBalancerSchema = z.object({
   createdAt: z.number().int(),

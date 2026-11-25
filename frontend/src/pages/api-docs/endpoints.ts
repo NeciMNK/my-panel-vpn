@@ -590,6 +590,12 @@ export const sections: readonly Section[] = [
       },
       {
         method: 'GET',
+        path: '/panel/api/server/nodeBackup',
+        summary:
+          "Stream this panel's own state as a gzip tar for its master's node backups: a consistent snapshot of the SQLite database (left out on PostgreSQL) and the other files in the database folder and /root/cert, under their absolute paths. Allowed for node-sync tokens.",
+      },
+      {
+        method: 'GET',
         path: '/panel/api/server/getMigration',
         summary:
           'Stream a cross-engine migration file as an attachment: a .dump (SQL text) on SQLite, or a .db SQLite database built from the live data on PostgreSQL.',
@@ -3490,6 +3496,83 @@ export const sections: readonly Section[] = [
           'Delete a balancer by id (POST alias of DELETE for clients that cannot send DELETE).',
         params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Balancer id.' }],
         responseSchema: 'SubBalancer',
+      },
+    ],
+  },
+
+  {
+    id: 'backups',
+    title: 'Backups',
+    description:
+      'Backups to a folder on another server over SFTP (any SSH server; password or private key, both stored encrypted when NODE_TOKEN_ENCRYPTION is on). The database is copied on its own timer and two minutes after an admin edit; each node\u2019s state (its database, TLS key and certificates) on the node timer. The newest backups are kept, older ones deleted. A lost node is restored onto a fresh server in one call: the master logs in over SSH, installs the node from its own build, unpacks the chosen backup and points the node\u2019s record (or, for a domain, its Cloudflare A record) at the new server. All endpoints under /panel/api/backup.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/backup/settings',
+        summary:
+          'Read the backup server and schedule. The password and private key are never returned, only whether they are set.',
+        responseSchema: 'BackupSettings',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/backup/settings',
+        summary:
+          'Save the backup server and schedule. Omit password or privateKey to keep the stored one; an empty string clears it. Changing the host or port forgets the pinned host key.',
+        requestSchema: { $ref: '#/components/schemas/BackupSettingsRequest' },
+        responseSchema: 'BackupSettings',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/backup/test',
+        summary:
+          'Log in to the backup server and create the folder. The first successful login pins the server\u2019s SSH host key; later logins refuse another key.',
+        responseSchema: 'BackupSettings',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/backup/run/:what',
+        summary:
+          'Start a backup now in the background; poll /panel/api/backup/status for the result.',
+        params: [
+          {
+            name: 'what',
+            in: 'path',
+            type: 'string',
+            desc: 'db or nodes.',
+            enum: ['db', 'nodes'],
+          },
+        ],
+        responseSchema: 'BackupStatus',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/backup/status',
+        summary:
+          'The backup running now, if any, and the outcome of the last database and node backups.',
+        responseSchema: 'BackupStatus',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/backup/node/:id',
+        summary: 'List the backups kept for a node on the backup server, newest first.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Node id.' }],
+        responseSchema: 'StoredFile',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/backup/restoreNode/:id',
+        summary:
+          'Move a lost node onto a fresh server in the background. backup names a file from /panel/api/backup/node/:id; empty takes the newest and "none" installs a fresh node. The server must match this master\u2019s CPU architecture. Poll /panel/api/backup/restoreStatus.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Node id.' }],
+        requestSchema: { $ref: '#/components/schemas/NodeRestoreRequest' },
+        responseSchema: 'NodeRestoreStatus',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/backup/restoreStatus',
+        summary: 'Progress log and outcome of the current or last node restore.',
+        responseSchema: 'NodeRestoreStatus',
       },
     ],
   },

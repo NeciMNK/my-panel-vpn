@@ -203,6 +203,34 @@ func (c *Cloudflare) Publish(ctx context.Context, domain string, ips []string) e
 	return nil
 }
 
+// PointName makes every A record of domain resolve to ip, whoever created it,
+// and adds one when there is none; it returns how many records it wrote.
+func (c *Cloudflare) PointName(ctx context.Context, domain, ip string) (int, error) {
+	zone, err := c.zoneID(ctx, domain)
+	if err != nil {
+		return 0, err
+	}
+	recs, err := c.records(ctx, zone, domain)
+	if err != nil {
+		return 0, err
+	}
+	if len(recs) == 0 {
+		rec := cfRecord{Type: "A", Name: domain, Content: ip, TTL: dnsRecordTTL}
+		return 1, c.call(ctx, http.MethodPost, "/zones/"+zone+"/dns_records", rec, nil)
+	}
+	changed := 0
+	for _, r := range recs {
+		if r.Content == ip {
+			continue
+		}
+		if err := c.call(ctx, http.MethodPatch, "/zones/"+zone+"/dns_records/"+r.ID, map[string]string{"content": ip}, nil); err != nil {
+			return changed, err
+		}
+		changed++
+	}
+	return changed, nil
+}
+
 // Prober checks that an address serves the subscription domain over TLS.
 type Prober struct {
 	Domain string
