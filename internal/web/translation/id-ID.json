@@ -1870,6 +1870,7 @@
       "eventOutboundDown": "Mati",
       "eventOutboundUp": "Aktif",
       "eventDownThresholdHint": "pemeriksaan gagal berturut-turut",
+      "eventNodeDownSecondsHint": "detik tanpa koneksi",
       "eventXrayCrash": "Crash",
       "eventNodeDown": "Mati",
       "eventNodeUp": "Aktif",

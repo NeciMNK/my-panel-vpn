@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/op/go-logging"
 
@@ -92,17 +93,24 @@ func TestHeartbeatHoldsNodeDownUntilThreshold(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			up := switchableNode(t)
-			if err := (&service.SettingService{}).SetNodeDownThreshold(3); err != nil {
+			if err := (&service.SettingService{}).SetNodeDownThreshold(10); err != nil {
 				t.Fatalf("SetNodeDownThreshold: %v", err)
 			}
 			events := collectNodeEvents(t)
-			job := NewNodeHeartbeatJob()
+			var clock time.Time
+			newJob := func() *NodeHeartbeatJob {
+				j := NewNodeHeartbeatJob()
+				j.now = func() time.Time { return clock }
+				return j
+			}
+			job := newJob()
 
 			var got []string
 			for i, probeOK := range tc.probes {
 				if i+1 == tc.restartBefore {
-					job = NewNodeHeartbeatJob()
+					job = newJob()
 				}
+				clock = time.Unix(0, 0).Add(time.Duration(i) * 5 * time.Second)
 				up.Store(probeOK)
 				job.Run()
 				for _, e := range events()[len(got):] {

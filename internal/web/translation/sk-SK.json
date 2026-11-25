@@ -1996,6 +1996,7 @@
       "eventOutboundDown": "Nedostupný",
       "eventOutboundUp": "Dostupný",
       "eventDownThresholdHint": "neúspešných kontrol za sebou",
+      "eventNodeDownSecondsHint": "sekúnd bez spojenia",
       "eventXrayCrash": "Pád procesu",
       "eventNodeDown": "Nedostupný",
       "eventNodeUp": "Dostupný",

@@ -1870,6 +1870,7 @@
       "eventOutboundDown": "Ngừng hoạt động",
       "eventOutboundUp": "Hoạt động",
       "eventDownThresholdHint": "lần kiểm tra thất bại liên tiếp",
+      "eventNodeDownSecondsHint": "giây mất kết nối",
       "eventXrayCrash": "Sự cố",
       "eventNodeDown": "Ngừng hoạt động",
       "eventNodeUp": "Hoạt động",

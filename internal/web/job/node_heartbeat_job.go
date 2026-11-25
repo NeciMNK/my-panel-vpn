@@ -36,11 +36,13 @@ type NodeHeartbeatJob struct {
 	witnessed      map[int]witnessCheck
 	// witnessRecheck spaces the asks about a node the master keeps failing to reach.
 	witnessRecheck time.Duration
+	now            func() time.Time
 }
 
 type nodeHealth struct {
-	failStreak int
-	notified   bool
+	// downSince is the first failed probe of the current outage; zero while online.
+	downSince time.Time
+	notified  bool
 	// announcedIsolated: the last node.down said other nodes still reached it.
 	announcedIsolated bool
 }
@@ -56,7 +58,7 @@ type nodeProbe struct {
 }
 
 func NewNodeHeartbeatJob() *NodeHeartbeatJob {
-	return &NodeHeartbeatJob{witnessRecheck: nodeWitnessRecheck}
+	return &NodeHeartbeatJob{witnessRecheck: nodeWitnessRecheck, now: time.Now}
 }
 
 func (j *NodeHeartbeatJob) Run() {
@@ -192,10 +194,11 @@ func (j *NodeHeartbeatJob) record(p nodeProbe) {
 }
 
 func (j *NodeHeartbeatJob) healthTransitions(probes []nodeProbe) []eventbus.Event {
-	threshold := 1
-	if v, err := j.settingService.GetNodeDownThreshold(); err == nil && v > 0 {
-		threshold = v
+	threshold := service.DefaultNodeDownThreshold
+	if v, err := j.settingService.GetNodeDownThreshold(); err == nil && v >= 0 {
+		threshold = time.Duration(v) * time.Second
 	}
+	now := j.now()
 	prev := j.health
 	j.health = make(map[int]nodeHealth, len(probes))
 	var events []eventbus.Event
@@ -213,9 +216,11 @@ func (j *NodeHeartbeatJob) healthTransitions(probes []nodeProbe) []eventbus.Even
 			h = nodeHealth{}
 		} else {
 			isolated := p.patch.Status == model.NodeStatusIsolated
-			h.failStreak++
+			if h.downSince.IsZero() {
+				h.downSince = now
+			}
 			// An isolated node that then dies for everyone (or back) is news again.
-			if h.failStreak >= threshold && (!h.notified || h.announcedIsolated != isolated) {
+			if now.Sub(h.downSince) >= threshold && (!h.notified || h.announcedIsolated != isolated) {
 				events = append(events, nodeHealthEvent(eventbus.EventNodeDown, p.node, p.patch))
 				if !h.notified {
 					j.saveDownNotified(p.node.Id, true)

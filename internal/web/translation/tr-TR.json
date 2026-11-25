@@ -1870,6 +1870,7 @@
       "eventOutboundDown": "Çevrimdışı",
       "eventOutboundUp": "Çevrimiçi",
       "eventDownThresholdHint": "art arda başarısız kontrol",
+      "eventNodeDownSecondsHint": "saniye bağlantısız",
       "eventXrayCrash": "Çökme",
       "eventNodeDown": "Çevrimdışı",
       "eventNodeUp": "Çevrimiçi",

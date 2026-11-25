@@ -29,7 +29,7 @@ func goingDownNodes(t *testing.T, n int) {
 	dbtest.InitDB(t, filepath.Join(t.TempDir(), "x-ui.db"))
 	runtime.SetManager(runtime.NewManager(runtime.LocalDeps{APIPort: func() int { return 0 }, SetNeedRestart: func() {}}))
 	t.Cleanup(func() { runtime.SetManager(nil) })
-	if err := (&service.SettingService{}).SetNodeDownThreshold(1); err != nil {
+	if err := (&service.SettingService{}).SetNodeDownThreshold(0); err != nil {
 		t.Fatalf("SetNodeDownThreshold: %v", err)
 	}
 	srv := httptest.NewServer(nil)
