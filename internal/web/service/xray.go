@@ -16,6 +16,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/config"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/protocol"
 	"github.com/mhsanaei/3x-ui/v3/internal/tuic"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/json_util"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/maskcompat"
@@ -58,6 +59,12 @@ func (s *xrayLifecycle) holdBack(reason string) {
 	s.mu.Lock()
 	s.heldBack = reason
 	s.mu.Unlock()
+}
+
+// caughtUp drops a stale refusal once the running core serves the desired
+// config again, e.g. after a database outage that only failed one rebuild.
+func (s *xrayLifecycle) caughtUp() {
+	s.holdBack("")
 }
 
 func (s *xrayLifecycle) heldBackReason() string {
@@ -211,7 +218,7 @@ func (s *XrayService) GetXrayConfig() (*xray.Config, error) {
 		if inbound.NodeID != nil {
 			continue
 		}
-		if inbound.Protocol == model.MTProto || inbound.Protocol == model.AmneziaWG || inbound.Protocol == model.TUIC {
+		if !protocol.ServedByXray(inbound.Protocol) {
 			continue
 		}
 		if err := normalizeVlessFallbacks(inbound); err != nil {
@@ -1523,6 +1530,7 @@ func (s *XrayService) RestartXray(isForce bool) error {
 		configUnchanged := process.GetConfig().Equals(xrayConfig)
 		if !isForce && configUnchanged && !isNeedXrayRestart.Load() {
 			logger.Debug("It does not need to restart Xray")
+			xrayState.caughtUp()
 			return repairUnavailableTuicRelays(xrayConfig, process.GetAPIPort())
 		}
 		// A config the core cannot bind never replaces one that works: its failed
@@ -1543,6 +1551,7 @@ func (s *XrayService) RestartXray(isForce bool) error {
 				return err
 			}
 			if applied {
+				xrayState.caughtUp()
 				logger.Info("Xray config changes applied through the core API, no restart needed")
 				return nil
 			}

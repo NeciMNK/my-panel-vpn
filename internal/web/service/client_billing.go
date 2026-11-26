@@ -36,20 +36,78 @@ func (s *ClientService) SaveBilling(billing *model.ClientBilling) error {
 	}).Create(billing).Error
 }
 
-// SetPendingPayment records the term a client reports paying; SaveBilling never
-// touches it, so only ClaimPendingPayment clears it.
-func (s *ClientService) SetPendingPayment(clientID, months int) error {
+// SetPendingPayment records the term and speed tier a client reports paying;
+// SaveBilling never touches them, so only ClaimPendingPayment clears them.
+func (s *ClientService) SetPendingPayment(clientID, months, tierID int) error {
 	return database.GetDB().Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "client_id"}},
-		DoUpdates: clause.AssignmentColumns([]string{"pending_months"}),
-	}).Create(&model.ClientBilling{ClientId: clientID, PendingMonths: months}).Error
+		DoUpdates: clause.AssignmentColumns([]string{"pending_months", "pending_speed_tier"}),
+	}).Create(&model.ClientBilling{ClientId: clientID, PendingMonths: months, PendingSpeedTier: tierID}).Error
 }
 
-// ClaimPendingPayment clears a pending report for months and says whether this
-// caller cleared it, so concurrent or repeated confirms apply the payment once.
-func (s *ClientService) ClaimPendingPayment(clientID, months int) (bool, error) {
+// ClaimPendingPayment clears a pending report for months and tier and says whether
+// this caller cleared it, so concurrent or repeated confirms apply the payment once.
+func (s *ClientService) ClaimPendingPayment(clientID, months, tierID int) (bool, error) {
 	res := database.GetDB().Model(&model.ClientBilling{}).
-		Where("client_id = ? AND pending_months = ?", clientID, months).
-		Update("pending_months", 0)
+		Where("client_id = ? AND pending_months = ? AND pending_speed_tier = ?", clientID, months, tierID).
+		Updates(map[string]any{"pending_months": 0, "pending_speed_tier": 0})
 	return res.RowsAffected == 1, res.Error
+}
+
+// SetFriend marks or unmarks a friend and moves the client into or out of the friends
+// group; unmarking returns only a client still in friends to paid or users.
+func (s *ClientService) SetFriend(email string, friend bool) error {
+	billing, err := s.GetBillingByEmail(email)
+	if err != nil {
+		return err
+	}
+	billing.Friend = friend
+	if err := s.SaveBilling(billing); err != nil {
+		return err
+	}
+	if friend {
+		_, err = s.AddToGroup([]string{email}, model.ClientGroupFriends)
+		return err
+	}
+	rec, err := s.GetRecordByEmail(nil, email)
+	if err != nil || rec.Group != model.ClientGroupFriends {
+		return err
+	}
+	group, err := regularClientGroup(email, billing)
+	if err != nil {
+		return err
+	}
+	_, err = s.AddToGroup([]string{email}, group)
+	return err
+}
+
+// regularClientGroup is paid for a client with a booked payment and no free plan
+// since, users for everyone else.
+func regularClientGroup(email string, billing *model.ClientBilling) (string, error) {
+	if billing.FreePlan {
+		return model.ClientGroupUsers, nil
+	}
+	var payments int64
+	if err := database.GetDB().Model(&model.LedgerEntry{}).
+		Where("email = ? AND kind = ?", email, model.LedgerIncome).Count(&payments).Error; err != nil {
+		return "", err
+	}
+	if payments > 0 {
+		return model.ClientGroupPaid, nil
+	}
+	return model.ClientGroupUsers, nil
+}
+
+// MarkPaid moves a free user who just paid into paid; friends, tech and groups the
+// admin chose keep theirs.
+func (s *ClientService) MarkPaid(email string) error {
+	rec, err := s.GetRecordByEmail(nil, email)
+	if err != nil {
+		return err
+	}
+	if rec.Group != "" && rec.Group != model.ClientGroupUsers {
+		return nil
+	}
+	_, err = s.AddToGroup([]string{email}, model.ClientGroupPaid)
+	return err
 }

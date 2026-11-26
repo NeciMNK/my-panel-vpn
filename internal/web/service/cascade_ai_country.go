@@ -105,27 +105,77 @@ type aiExitPlan struct {
 	Domains map[string]int
 	All     map[string]int
 	Sites   []string
+	// Fixed is the pin rows with every dead pin moved to the user's stand-in.
+	Fixed   []model.CascadeFixedExit
+	Outages []AIPinOutage
+	// domainRows are the pin rows that carry AI domains only, dead or alive.
+	domainRows map[int]bool
 }
 
 // isDomainPin reports whether a fixed exit only carries the user's AI domains.
 func (p aiExitPlan) isDomainPin(r model.CascadeFixedExit) bool {
-	id, ok := p.Domains[r.Email]
-	return ok && id == r.NodeId
+	return p.domainRows[r.Id]
 }
 
-func aiCountryExits(fixed []model.CascadeFixedExit, countryOf map[int]string) (aiExitPlan, error) {
-	plan := aiExitPlan{Domains: map[string]int{}, All: map[string]int{}, Sites: (&SettingService{}).GetTgAIExitDomains()}
+// exitWorld is what a plan needs to know about the servers.
+type exitWorld struct {
+	countryOf map[int]string
+	healthy   map[int]bool
+	cascades  []*model.Cascade
+}
+
+func newExitWorld(nodes []*model.Node, enabled []*model.Cascade) exitWorld {
+	w := exitWorld{countryOf: map[int]string{}, healthy: map[int]bool{0: true}, cascades: enabled}
+	for _, n := range nodes {
+		w.countryOf[n.Id] = n.Country
+		w.healthy[n.Id] = n.Enable && n.Status == "online"
+	}
+	return w
+}
+
+// down reports a known server that is not serving; a pin on a deleted one is
+// no outage, it just never matches a cascade link.
+func (w exitWorld) down(id int) bool {
+	_, known := w.countryOf[id]
+	return known && !w.healthy[id]
+}
+
+func aiCountryExits(fixed []model.CascadeFixedExit, w exitWorld) (aiExitPlan, error) {
+	plan := aiExitPlan{
+		Domains: map[string]int{}, All: map[string]int{}, Sites: (&SettingService{}).GetTgAIExitDomains(),
+		Fixed: slices.Clone(fixed), domainRows: map[int]bool{},
+	}
 	var rows []model.CascadeAICountry
 	if err := database.GetDB().Find(&rows).Error; err != nil {
+		return plan, err
+	}
+	choices, err := loadAIOutageChoices()
+	if err != nil {
 		return plan, err
 	}
 	want := make(map[string]model.CascadeAICountry, len(rows))
 	for _, r := range rows {
 		want[r.Email] = r
 	}
-	for _, f := range fixed {
+	for i, f := range fixed {
+		if !w.down(f.NodeId) {
+			continue
+		}
+		o := w.outage(f, choices[f.Email], plan.Sites)
+		plan.Outages = append(plan.Outages, o)
+		if o.Swapped {
+			plan.Fixed[i].NodeId = o.SwapNodeId
+		}
+	}
+	for i, f := range plan.Fixed {
 		r, ok := want[f.Email]
-		if !ok || countryOf[f.NodeId] != r.Country {
+		if !ok || w.countryOf[fixed[i].NodeId] != r.Country {
+			continue
+		}
+		if !r.AllTraffic {
+			plan.domainRows[f.Id] = true
+		}
+		if w.down(f.NodeId) {
 			continue
 		}
 		if r.AllTraffic {
@@ -143,15 +193,15 @@ func loadAIExitPlan() (aiExitPlan, error) {
 	if err := database.GetDB().Order("id asc").Find(&fixed).Error; err != nil {
 		return aiExitPlan{}, err
 	}
-	var nodes []model.Node
-	if err := database.GetDB().Select("id, country").Find(&nodes).Error; err != nil {
+	var nodes []*model.Node
+	if err := database.GetDB().Select("id, country, enable, status").Find(&nodes).Error; err != nil {
 		return aiExitPlan{}, err
 	}
-	countryOf := make(map[int]string, len(nodes))
-	for _, n := range nodes {
-		countryOf[n.Id] = n.Country
+	var cascades []*model.Cascade
+	if err := database.GetDB().Where("enable = ?", true).Find(&cascades).Error; err != nil {
+		return aiExitPlan{}, err
 	}
-	return aiCountryExits(fixed, countryOf)
+	return aiCountryExits(fixed, newExitWorld(nodes, cascades))
 }
 
 // defaultAIServiceDomains are the AI services that ban accounts whose IP keeps
@@ -193,9 +243,12 @@ func cascadeAIRules(c *model.Cascade, aiDomains map[string]int, domains []string
 	return rules
 }
 
-// aiRulesKey fingerprints the AI rules of c, so the sticky pass rewrites the
-// entry when only they changed.
-func aiRulesKey(c *model.Cascade, aiDomains map[string]int, domains []string) string {
-	raw, _ := json.Marshal(cascadeAIRules(c, aiDomains, domains, "", nil))
+// aiRulesKey fingerprints the AI and outage rules of c, so the sticky pass
+// rewrites the entry when only they changed.
+func aiRulesKey(c *model.Cascade, ai aiExitPlan) string {
+	raw, _ := json.Marshal([]any{
+		cascadeAIRules(c, ai.Domains, ai.Sites, "", nil),
+		cascadeOutageRules(c, ai.Outages, "", nil),
+	})
 	return string(raw)
 }

@@ -72,14 +72,21 @@ func migrationModels() []any {
 		&model.CascadeFixedExit{},
 		&model.CascadeAICountry{},
 		&model.AIDomainSuggestion{},
+		&model.AIOutageChoice{},
 		&model.HomeNetwork{},
 		&model.WarpSwitch{},
 		&model.ClientSpeed{},
+		&model.GroupSpeed{},
+		&model.SpeedTier{},
 		&model.ServerCapacity{},
 		&model.SpeedTestResult{},
 		&model.MasterMember{},
 		&model.TlsCertificate{},
 		&model.TelegramTag{},
+		&model.PaymentReminder{},
+		&model.SubEdge{},
+		&model.TrafficUsageHour{},
+		&model.TrafficUsageDay{},
 	}
 }
 

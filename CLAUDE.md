@@ -37,6 +37,8 @@ file locations when it can answer in one hop.
 - `internal/database/` + `internal/database/model/` — GORM schema (~24 models;
   Inbound, Client, Setting, User are the core), inbound Protocol enum,
   AutoMigrate + hand-written migrations in `db.go`.
+- `internal/protocol/` — inbound protocol registry (one `Spec` per protocol); the
+  place to declare a new protocol before wiring it (`docs/architecture.md` §8).
 - `internal/xray/` — Xray child-process lifecycle, config generation, gRPC API.
 - `internal/xray/geodata/` — streaming geosite/geoip `.dat` reader (cached
   category index + paged entries) and `geosite:`/`geoip:`/`ext:` token parsing.
@@ -50,6 +52,8 @@ file locations when it can answer in one hop.
   relay into a loopback per-peer-auth SOCKS5 Xray inbound, port-forward
   listeners, per-peer IPv6 egress aliases.
 - `internal/pia/` — PIA WireGuard protocol client (auth, signed server list, `/addKey`).
+- `internal/subedge/` — subscription edge: a node's public listener that forwards
+  subscription requests over HTTP/2 tunnels each master opens to it.
 - `internal/sub/` — subscription server (raw / JSON / Clash).
 - `internal/eventbus/` — in-process pub/sub (outbound/node health, xray.crash,
   cpu.high, memory.high, login.attempt).

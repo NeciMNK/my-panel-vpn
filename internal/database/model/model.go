@@ -29,6 +29,7 @@ const (
 	VMESS       Protocol = "vmess"
 	VLESS       Protocol = "vless"
 	Tunnel      Protocol = "tunnel"
+	TUN         Protocol = "tun"
 	HTTP        Protocol = "http"
 	Trojan      Protocol = "trojan"
 	Shadowsocks Protocol = "shadowsocks"
@@ -838,6 +839,13 @@ type Setting struct {
 	Value string `json:"value" form:"value"`
 }
 
+// Node heartbeat statuses. Isolated: the master lost the node, other nodes still reach it.
+const (
+	NodeStatusOnline   = "online"
+	NodeStatusOffline  = "offline"
+	NodeStatusIsolated = "isolated"
+)
+
 // Node represents a remote 3x-ui panel registered with the central panel.
 // The central panel polls each node's existing /panel/api/server/status
 // endpoint over HTTP using the per-node ApiToken to populate the runtime
@@ -860,6 +868,9 @@ type Node struct {
 	OutboundTag         string   `json:"outboundTag" form:"outboundTag" gorm:"column:outbound_tag"`
 	// Country is the ISO 3166-1 alpha-2 code country cascades group exits by.
 	Country string `json:"country" form:"country" gorm:"column:country" example:"DE"`
+	// AlertCpu and AlertMemory (percent) replace the notifiers' CPU/RAM threshold for this node; 0 keeps them.
+	AlertCpu    int `json:"alertCpu" form:"alertCpu" gorm:"column:alert_cpu;default:0" example:"90"`
+	AlertMemory int `json:"alertMemory" form:"alertMemory" gorm:"column:alert_memory;default:0" example:"0"`
 
 	// Guid is the remote panel's stable self-identifier (its panelGuid),
 	// learned from each heartbeat. It is the globally stable node identity used
@@ -871,7 +882,7 @@ type Node struct {
 	// Heartbeat-updated fields. UpdatedAt advances on every probe even when
 	// the row is otherwise unchanged so the UI's "last seen" tooltip is
 	// truthful without us having to read LastHeartbeat separately.
-	Status        string  `json:"status" gorm:"default:unknown" example:"online"` // online|offline|unknown
+	Status        string  `json:"status" gorm:"default:unknown" example:"online"` // online|offline|isolated|unknown
 	LastHeartbeat int64   `json:"lastHeartbeat" example:"1700000000"`             // unix seconds, 0 = never
 	LatencyMs     int     `json:"latencyMs" example:"42"`
 	XrayVersion   string  `json:"xrayVersion" example:"25.10.31"`
@@ -890,6 +901,8 @@ type Node struct {
 	// (status=online) from "Xray core itself has failed on the node" for monitoring.
 	XrayState string `json:"xrayState" gorm:"column:xray_state"`
 	XrayError string `json:"xrayError" gorm:"column:xray_error"`
+	// SeenBy names the nodes that still reached this node while the master could not.
+	SeenBy string `json:"seenBy" gorm:"column:seen_by" example:""`
 
 	ConfigDirty   bool  `json:"configDirty" gorm:"default:false"`
 	ConfigDirtyAt int64 `json:"configDirtyAt"`
@@ -1089,6 +1102,26 @@ type ClientGroup struct {
 
 func (ClientGroup) TableName() string { return "client_groups" }
 
+// Groups the panel assigns by itself: a new client joins one, a payment or friend mark moves it.
+const (
+	ClientGroupUsers   = "users"
+	ClientGroupPaid    = "paid"
+	ClientGroupFriends = "friends"
+	ClientGroupTech    = "tech"
+)
+
+// ManagedClientPrefix starts the email of every client the panel creates for its own
+// cascade and home-network links.
+const ManagedClientPrefix = "mp-"
+
+// DefaultClientGroup is the group a new client without one joins.
+func DefaultClientGroup(email string) string {
+	if strings.HasPrefix(email, ManagedClientPrefix) {
+		return ClientGroupTech
+	}
+	return ClientGroupUsers
+}
+
 // MarshalJSON emits the reverse column as a nested JSON object rather than an
 // escaped JSON-text string, matching the same convention Inbound uses for its
 // JSON-text columns. Empty storage renders as null.
@@ -1164,6 +1197,10 @@ type ClientBilling struct {
 	Credit int `json:"credit" gorm:"column:credit;default:0"`
 	// AIPaid is the one-off purchase of the bot's AI button (a permanent exit IP).
 	AIPaid bool `json:"aiPaid" gorm:"column:ai_paid;default:false"`
+	// SpeedTierId is the speed tier paid with the current term; 0 = the group's speed.
+	SpeedTierId int `json:"speedTierId" gorm:"column:speed_tier_id;default:0"`
+	// PendingSpeedTier is the tier of the term in PendingMonths, claimed together with it.
+	PendingSpeedTier int `json:"pendingSpeedTier" gorm:"column:pending_speed_tier;default:0"`
 }
 
 // PaymentOrder is one online payment through the acquiring provider: a plan term
@@ -1178,6 +1215,7 @@ type PaymentOrder struct {
 	TgID      int64  `json:"tgId" gorm:"column:tg_id;index"`
 	Email     string `json:"email" gorm:"default:''"`
 	Months    int    `json:"months" gorm:"default:0"`
+	SpeedTier int    `json:"speedTier" gorm:"column:speed_tier;default:0"`
 	Amount    int    `json:"amount" gorm:"not null"`
 	Currency  string `json:"currency" gorm:"not null"`
 	// Status moves pending -> paid -> done (or canceled/failed); each step is a guarded UPDATE.
@@ -1220,6 +1258,9 @@ type LedgerEntry struct {
 }
 
 func (LedgerEntry) TableName() string { return "ledger_entries" }
+
+// LedgerIncome is the kind of a ledger entry that books a client's payment.
+const LedgerIncome = "income"
 
 // LedgerFreeGroup marks a client group (e.g. family) whose members never pay.
 type LedgerFreeGroup struct {
@@ -1599,6 +1640,11 @@ type SubBalancer struct {
 	// with Strategy "leastLoad" — xray ignores costs on every other strategy.
 	MemberWeights map[int]float64 `json:"memberWeights,omitempty" form:"memberWeights" gorm:"serializer:json;column:member_weights"`
 	SortOrder     int             `json:"sortOrder" form:"sortOrder" gorm:"column:sort_order" validate:"omitempty,gte=1" example:"1"`
+	// ExitForeign adds the client's inbounds on every enabled foreign node: an
+	// auto-select without an entry server, re-resolved on each subscription fetch.
+	ExitForeign bool `json:"exitForeign" form:"exitForeign" gorm:"column:exit_foreign;default:false" example:"false"`
+	// ExitNodeIds adds the client's inbounds on these foreign nodes.
+	ExitNodeIds []int `json:"exitNodeIds" form:"exitNodeIds" gorm:"serializer:json;column:exit_node_ids" example:"[2,3]"`
 	// No gorm default:true — a bool default makes an explicit false at insert
 	// collapse back to the column default (zero value is skipped).
 	Enabled   bool  `json:"enabled" form:"enabled" example:"true"`
@@ -1856,6 +1902,7 @@ type TlsCertificate struct {
 	NotAfter     int64                      `json:"notAfter" example:"1717000000000"`
 	AutoRenew    bool                       `json:"autoRenew" example:"true"`
 	ApplyToPanel bool                       `json:"applyToPanel" example:"false"`
+	ApplyToSub   bool                       `json:"applyToSub" example:"false"`
 	LastError    string                     `json:"lastError" gorm:"type:text" example:""`
 	NodeInstalls map[int]TlsCertNodeInstall `json:"nodeInstalls" gorm:"serializer:json;type:text"`
 	CreatedAt    int64                      `json:"createdAt" gorm:"autoCreateTime:milli" example:"1710000000000"`
@@ -1876,3 +1923,20 @@ const (
 	TlsCertStatusValid   = "valid"
 	TlsCertStatusError   = "error"
 )
+
+// PaymentReminder is a Telegram account's own payment-reminder choice. Days
+// lists how many days before the due date to remind ("" = the panel default).
+type PaymentReminder struct {
+	TgID     int64  `json:"tgId" gorm:"primaryKey;autoIncrement:false;column:tg_id"`
+	Disabled bool   `json:"disabled" gorm:"column:disabled;default:false"`
+	Days     string `json:"days" gorm:"column:days;default:''"`
+	// SentDue and SentDay (unix ms, days) are the due date and the threshold last reminded of.
+	SentDue int64 `json:"-" gorm:"column:sent_due;default:0"`
+	SentDay int   `json:"-" gorm:"column:sent_day;default:0"`
+}
+
+// Serving reports whether users can still connect to the node, even when the
+// master itself cannot reach it.
+func (n *Node) Serving() bool {
+	return n.Enable && (n.Status == NodeStatusOnline || n.Status == NodeStatusIsolated)
+}

@@ -13,6 +13,8 @@ export const NodeRecordSchema = z
     hasApiToken: z.boolean().optional(),
     enable: z.boolean().optional(),
     status: z.string().optional(),
+    // Set while status=isolated: the nodes that still reach this node the master lost.
+    seenBy: z.string().optional(),
     latencyMs: z.number().optional(),
     cpuPct: z.number().optional(),
     memPct: z.number().optional(),
@@ -41,6 +43,8 @@ export const NodeRecordSchema = z
     inboundTags: z.array(z.string()).nullish(),
     outboundTag: z.string().optional(),
     country: z.string().optional(),
+    alertCpu: z.number().optional(),
+    alertMemory: z.number().optional(),
     // Multi-hop node tree (#4983): a node's stable GUID, its parent's GUID, and
     // whether it's a read-only transitive sub-node surfaced from a downstream node.
     guid: z.string().optional(),
@@ -95,6 +99,9 @@ export const NodeFormSchema = z
       .regex(/^([A-Za-z]{2})?$/, 'pages.nodes.countryInvalid')
       .optional()
       .default(''),
+    // 0 keeps the notifiers' own CPU/RAM threshold for this node.
+    alertCpu: z.number().int().min(0).max(100).optional().default(0),
+    alertMemory: z.number().int().min(0).max(100).optional().default(0),
   })
   .superRefine((val, ctx) => {
     if (val.tlsVerifyMode !== 'mtls' && val.apiToken.length === 0 && !val.hasStoredToken) {

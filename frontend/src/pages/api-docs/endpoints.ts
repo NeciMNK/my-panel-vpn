@@ -159,7 +159,21 @@ const subBalancerBodyParams: EndpointParam[] = [
     name: 'inboundIds',
     in: 'body (form)',
     type: 'integer[]',
-    desc: 'Repeated form keys selecting the member inbounds (required, at least one).',
+    desc: 'Repeated form keys selecting the member inbounds (at least one unless exitNodeIds or exitForeign is set).',
+  },
+  {
+    name: 'exitNodeIds',
+    in: 'body (form)',
+    type: 'integer[]',
+    desc: 'Repeated form keys: foreign nodes whose enabled inbounds also become members (auto-select without an entry server). A node in Russia or without a country is rejected.',
+    optional: true,
+  },
+  {
+    name: 'exitForeign',
+    in: 'body (form)',
+    type: 'boolean',
+    desc: 'true adds the enabled inbounds of every enabled foreign node (country set and not RU), re-resolved on each subscription fetch.',
+    optional: true,
   },
   {
     name: 'memberWeights',
@@ -344,6 +358,16 @@ export const sections: readonly Section[] = [
           'Set only the subscription sort order. Reads the stored inbound, so a reorder cannot carry a stale client list over a concurrent edit.',
         params: [{ name: 'id', in: 'path', type: 'number', desc: 'Inbound ID.' }],
         body: '{\n  "subSortIndex": 2\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/inbounds/:id/copyAsXhttp',
+        summary:
+          'Add an XHTTP copy of a gRPC inbound (gRPC is deprecated since Xray 26.10) on the given port: same node, security and clients; serviceName becomes the XHTTP path. The gRPC inbound keeps running until you delete it.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'ID of the gRPC inbound.' }],
+        body: '{\n  "port": 34567\n}',
+        errorResponse:
+          '{\n  "success": false,\n  "msg": "Something went wrong: inbound does not use the gRPC transport"\n}',
       },
       {
         method: 'POST',
@@ -577,6 +601,12 @@ export const sections: readonly Section[] = [
         path: '/panel/api/server/getDb',
         summary:
           'Stream a full database backup as an attachment: the SQLite .db file on SQLite panels, or a pg_dump custom-format archive (.dump) on PostgreSQL panels. Use as a manual backup.',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/server/nodeBackup',
+        summary:
+          "Stream this panel's own state as a gzip tar for its master's node backups: a consistent snapshot of the SQLite database (left out on PostgreSQL) and the other files in the database folder and /root/cert, under their absolute paths. Allowed for node-sync tokens.",
       },
       {
         method: 'GET',
@@ -975,6 +1005,26 @@ export const sections: readonly Section[] = [
             required: ['clientEmail', 'ips'],
           },
         },
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/server/probePeer',
+        summary:
+          'Check from this node whether another node accepts TCP on any of 1-4 ports. The master calls it on its other nodes when it cannot reach a node itself, to tell a dead node from a master-side network problem. It only connects and hangs up.',
+        requestSchema: {
+          type: 'object',
+          properties: {
+            address: { type: 'string' },
+            ports: {
+              type: 'array',
+              items: { type: 'integer', minimum: 1, maximum: 65535 },
+              minItems: 1,
+              maxItems: 4,
+            },
+          },
+          required: ['address', 'ports'],
+        },
+        responseSchema: 'PeerProbeResult',
       },
     ],
   },
@@ -1739,7 +1789,11 @@ export const sections: readonly Section[] = [
     id: 'cascades',
     title: 'Cascades',
     description:
-      'Entry → exit server chains. The panel provisions a hidden VLESS+REALITY inbound on every exit and an outbound plus a catch-all routing rule (or a balancer for several exits) on the entry. Node id 0 means this panel. All endpoints under /panel/api/cascades.',
+      'Entry → exit server chains. The panel provisions a hidden VLESS+REALITY inbound on every exit and an outbound plus routing rules (or a balancer for several exits) on the entry. Node id 0 means this panel. ' +
+      'Exits are either listed in exitNodeIds or picked by country: exitCountry "DE" makes every enabled node of that country (except the entry) an exit, exitCountry "FOREIGN" makes every enabled node outside the entry country (Russia when the entry is this panel) an exit, and the list is re-resolved whenever a node is added, removed, disabled or moved to another country. ' +
+      'Sticky sessions are always on for a cascade with several exits; there is no switch. Every 15 seconds each newly online user is pinned to the least-loaded healthy exit that still has their minMbps free (/panel/api/speed); the pin keeps them on that exit, so on that IP, while they stay connected and for 15 minutes after they go offline. ' +
+      'A pin is dropped at once when its exit goes offline (the user moves to another exit), when the user connects to a different server themselves, or when the admin pins them with /cascades/fixedExits. strategy only spreads traffic that has no pin yet. ' +
+      'Modes: split (default) sends the entry country\u2019s own sites (its TLDs, geoip and geosite list, Russia when the entry has no country) plus directDomains/directIps straight out of the entry and the rest to the exit; relay sends everything to the exit; both runs split on entryInboundTags and relay on relayInboundTags. All endpoints under /panel/api/cascades.',
     endpoints: [
       {
         method: 'GET',
@@ -1752,17 +1806,19 @@ export const sections: readonly Section[] = [
         method: 'POST',
         path: '/panel/api/cascades/add',
         summary:
-          'Create a cascade and apply it: exits get their link inbound, the entry gets the outbound(s) and the routing rule. Empty entryInboundTags chains every inbound of the entry.',
-        body: '{\n  "name": "RU → DE",\n  "enable": true,\n  "entryNodeId": 1,\n  "exitNodeIds": [2, 3],\n  "entryInboundTags": [],\n  "strategy": "leastPing"\n}',
+          'Create a cascade and apply it: exits get their link inbound, the entry gets the outbound(s) and the routing rules. Give either exitNodeIds or exitCountry; when both are set, exitCountry wins. Empty entryInboundTags chains every inbound of the entry. A failed apply still saves the cascade, with the reason in lastError.',
+        body: '{\n  "name": "RU → DE",\n  "enable": true,\n  "entryNodeId": 1,\n  "exitNodeIds": [],\n  "exitCountry": "DE",\n  "entryInboundTags": [],\n  "strategy": "leastPing",\n  "mode": "split",\n  "directDomains": ["domain:example.ru"],\n  "directIps": [],\n  "relayInboundTags": []\n}',
+        requestSchema: { $ref: '#/components/schemas/CascadeRequest' },
         responseSchema: 'Cascade',
       },
       {
         method: 'POST',
         path: '/panel/api/cascades/update/:id',
         summary:
-          'Change a cascade (entry, exits, chained inbounds, strategy, enable) and re-apply it. Removed exits lose their link inbound; adding an exit adds it to the balancer.',
+          'Replace a cascade and re-apply it. The body is the full cascade as for add: a field left out is cleared, not kept, so send back everything from list. Removed exits lose their link inbound; an added exit joins the balancer.',
         params: [{ name: 'id', in: 'path', type: 'number', desc: 'Cascade ID.' }],
-        body: '{\n  "name": "RU → DE",\n  "enable": true,\n  "entryNodeId": 1,\n  "exitNodeIds": [2, 3],\n  "entryInboundTags": [],\n  "strategy": "leastPing"\n}',
+        body: '{\n  "name": "RU → DE, NL",\n  "enable": true,\n  "entryNodeId": 1,\n  "exitNodeIds": [2, 3],\n  "exitCountry": "",\n  "entryInboundTags": ["inbound-443"],\n  "strategy": "leastPing",\n  "mode": "both",\n  "directDomains": [],\n  "directIps": [],\n  "relayInboundTags": ["inbound-8443"]\n}',
+        requestSchema: { $ref: '#/components/schemas/CascadeRequest' },
         responseSchema: 'Cascade',
       },
       {
@@ -1777,15 +1833,16 @@ export const sections: readonly Section[] = [
         path: '/panel/api/cascades/fixedExits',
         summary:
           'List the exits users are permanently pinned to. In every multi-exit cascade that has the pinned exit, the user always leaves from it, connected or not; while it is down they fall back to another exit and return as soon as it is back.',
-        responseSchema: 'CascadeFixedExit',
+        responseSchema: 'CascadeFixedExitRow',
         responseSchemaArray: true,
       },
       {
         method: 'POST',
         path: '/panel/api/cascades/fixedExits/set',
         summary:
-          'Pin a user to an exit server (node id 0 = this panel). A user keeps one pin per country: pinning another exit of the same country replaces it. Routing is rewritten at once.',
-        body: '{\n  "email": "anna",\n  "nodeId": 2\n}',
+          'Pin a user to an exit server (node id 0 = this panel). A user keeps one pin per country: pinning another exit of the same country replaces it. trafficMode "all" sends all their traffic through it, "ai" only AI sites (one country per user, as the AI button in the bot sets it; needs a server with a country); omitted keeps the current mode. Routing is rewritten at once.',
+        body: '{\n  "email": "anna",\n  "nodeId": 2,\n  "trafficMode": "ai"\n}',
+        requestSchema: { $ref: '#/components/schemas/CascadeFixedExitRequest' },
       },
       {
         method: 'POST',
@@ -1793,6 +1850,94 @@ export const sections: readonly Section[] = [
         summary:
           'Remove a pin: the user goes back to automatic exit choice and keeps their current exit under the usual 15-minute hold.',
         body: '{\n  "email": "anna",\n  "nodeId": 2\n}',
+        requestSchema: { $ref: '#/components/schemas/CascadeFixedExitRequest' },
+      },
+    ],
+  },
+
+  {
+    id: 'sub-edges',
+    title: 'Subscription edges',
+    description:
+      'Nodes that serve this panel\u2019s subscriptions on their own port, so the master\u2019s subscription server needs no public address. Every master keeps a tunnel to each enabled edge over the node\u2019s API connection; the edge forwards each request to the highest-priority master that answers without a server error, and answers 503 while no master is reachable. ' +
+      'certId names a panel-managed certificate (/panel/api/certs) that the panel has already pushed to the node; 0 serves plain HTTP. Point the subscription domain\u2019s DNS at the edge nodes and set subURI to it. All endpoints under /panel/api/subEdges.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/subEdges/list',
+        summary: 'List every subscription edge with the state of this master\u2019s tunnel to it.',
+        responseSchema: 'SubEdge',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/subEdges/add',
+        summary:
+          'Make a node a subscription edge: the node starts its edge listener and every master opens a tunnel to it. One edge per node.',
+        body: '{\n  "nodeId": 2,\n  "enable": true,\n  "port": 443,\n  "certId": 1\n}',
+        requestSchema: { $ref: '#/components/schemas/SubEdgeRequest' },
+        responseSchema: 'SubEdge',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/subEdges/update/:id',
+        summary:
+          'Replace an edge\u2019s node, port, certificate or switch. Moving it to another node stops the listener on the old one.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Edge ID.' }],
+        body: '{\n  "nodeId": 2,\n  "enable": true,\n  "port": 8443,\n  "certId": 1\n}',
+        requestSchema: { $ref: '#/components/schemas/SubEdgeRequest' },
+        responseSchema: 'SubEdge',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/subEdges/del/:id',
+        summary: 'Stop the edge listener on the node and close the tunnels to it.',
+        params: [{ name: 'id', in: 'path', type: 'number', desc: 'Edge ID.' }],
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/subEdges/node/configure',
+        summary:
+          'Node side: start, move or stop this node\u2019s edge listener. The certificate files must be under the node\u2019s certificate folder. Allowed for node-sync tokens.',
+        body: '{\n  "enable": true,\n  "port": 443,\n  "certFile": "/etc/x-ui/certs/sub.example.com/fullchain.pem",\n  "keyFile": "/etc/x-ui/certs/sub.example.com/privkey.pem"\n}',
+        requestSchema: { $ref: '#/components/schemas/ListenerConfig' },
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/subEdges/node/tunnel',
+        summary:
+          'Node side: a master upgrades this request (Connection: Upgrade, Upgrade: x-ui-sub-edge/1) into the tunnel the edge forwards subscription requests through. Answers 101 Switching Protocols. Allowed for node-sync tokens.',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/subEdges/node/cache',
+        summary:
+          'Node side: store subscription responses a master gave client apps, and drop those of subscriptions not in subIds. The edge answers from this cache (with Age and Warning: 110) while no master answers, for up to 7 days. Allowed for node-sync tokens.',
+        body: '{\n  "subIds": ["abc123"],\n  "responses": [\n    {\n      "host": "sub.example.com",\n      "uri": "/sub/abc123",\n      "agent": "happ",\n      "device": "",\n      "subId": "abc123",\n      "header": { "Profile-Title": ["My VPN"] },\n      "body": "dmxlc3M6Ly8uLi4=",\n      "stored": 1762736400\n    }\n  ]\n}',
+        requestSchema: { $ref: '#/components/schemas/CacheUpdate' },
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/subEdges/node/dns',
+        summary:
+          'Node side: the DNS plan this edge node follows while no master reaches it and no edge in edgesBefore answers. An empty plan turns node-side switching off. Allowed for node-sync tokens.',
+        body: '{\n  "domain": "sub.example.com",\n  "token": "cf-dns-token",\n  "tiers": [["198.51.100.1"], ["203.0.113.7"], []],\n  "edgesBefore": []\n}',
+        requestSchema: { $ref: '#/components/schemas/DNSPlan' },
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/subEdges/dns',
+        summary:
+          'DNS switching for the subscription domain: the domain, whether the Cloudflare token is set, the masters\u2019 IPv4 addresses (tier 1), and what the last step published.',
+        responseSchema: 'SubEdgeDNSView',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/subEdges/dns',
+        summary:
+          'Save DNS switching. The leading master points the domain\u2019s A records at the masters, else the edge nodes in Russia, else the others, and returns to a better tier after it stays up for 2 minutes. Only records it created (comment managed-by: my-panel-vpn) are touched. An empty token keeps the saved one; an empty domain turns switching off.',
+        body: '{\n  "domain": "sub.example.com",\n  "token": "cf-dns-token",\n  "masterIps": ["198.51.100.1"]\n}',
+        requestSchema: { $ref: '#/components/schemas/SubEdgeDNSRequest' },
       },
     ],
   },
@@ -1876,6 +2021,22 @@ export const sections: readonly Section[] = [
   },
 
   {
+    id: 'trafficUsage',
+    title: 'Traffic by period',
+    description:
+      'Traffic history that survives counter resets: every server and client, summed over the periods picked in the settings (trafficUsagePeriods). Rolling 24h and 7d are hour-accurate; longer rolling periods count whole days; calendar periods (day, Monday-based week, month, half-year, year) start in the panel timezone. All endpoints under /panel/api/trafficUsage.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/trafficUsage/report',
+        summary:
+          'Usage of every server (subject = node id, "0" = this panel) and client (subject = email); each usage array lines up with periods.',
+        responseSchema: 'TrafficUsageReport',
+      },
+    ],
+  },
+
+  {
     id: 'speed',
     title: 'Speed limits',
     description:
@@ -1885,7 +2046,7 @@ export const sections: readonly Section[] = [
         method: 'GET',
         path: '/panel/api/speed/overview',
         summary:
-          'User limits, server link speeds, and the live load of every server with a link speed.',
+          'User and group limits, server link speeds, and the live load of every server with a link speed.',
         responseSchema: 'SpeedOverview',
       },
       {
@@ -1893,6 +2054,26 @@ export const sections: readonly Section[] = [
         path: '/panel/api/speed/client',
         summary: "Set one user's minimum and maximum speed in Mbit/s; both 0 removes them.",
         body: '{\n  "email": "anna",\n  "minMbps": 20,\n  "maxMbps": 100\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/speed/group',
+        summary:
+          "Set a client group's speed in Mbit/s; all 0 removes it. A client's own speed replaces their group's. minMbps is guaranteed on the server the client connects to; floorMbps > 0 makes the cap float between floorMbps and maxMbps by what the guarantees leave free.",
+        body: '{\n  "group": "users",\n  "minMbps": 0,\n  "maxMbps": 100,\n  "floorMbps": 50\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/speed/tier',
+        summary:
+          "Add (id 0) or edit a speed tier clients can buy in the bot: a guaranteed minMbps for monthlyPrice added to every month of the term they pay. It beats the group speed and lapses with the term; a client's own speed still wins.",
+        body: '{\n  "id": 0,\n  "name": "Plus",\n  "minMbps": 200,\n  "monthlyPrice": 100\n}',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/speed/tier/delete',
+        summary: 'Stop selling a speed tier; clients who bought it fall back to their group speed.',
+        body: '{\n  "id": 1\n}',
       },
       {
         method: 'POST',
@@ -2258,8 +2439,8 @@ export const sections: readonly Section[] = [
         method: 'POST',
         path: '/panel/api/billing/pay',
         summary:
-          'Apply a payment for 1-36 months. A running term is extended from its end, a lapsed one restarts from now. Any payment the client reported in the bot is settled, so a later confirm there cannot apply it twice. note defaults to "<months> mo" in the ledger.',
-        body: '{\n  "email": "alice",\n  "months": 3,\n  "note": "YooKassa 2c4f"\n}',
+          'Apply a payment for 1-36 months. A running term is extended from its end, a lapsed one restarts from now. speedTierId (0 = none) buys that speed tier for the term: its monthly price is added per month and its guaranteed speed applies until the term ends; a term without one drops the tier. Any payment the client reported in the bot is settled, so a later confirm there cannot apply it twice. note defaults to "<months> mo" in the ledger.',
+        body: '{\n  "email": "alice",\n  "months": 3,\n  "speedTierId": 0,\n  "note": "YooKassa 2c4f"\n}',
         responseSchema: 'PaymentResult',
       },
     ],
@@ -3334,6 +3515,83 @@ export const sections: readonly Section[] = [
   },
 
   {
+    id: 'backups',
+    title: 'Backups',
+    description:
+      'Backups to a folder on another server over SFTP (any SSH server; password or private key, both stored encrypted when NODE_TOKEN_ENCRYPTION is on). The database is copied on its own timer and two minutes after an admin edit; each node\u2019s state (its database, TLS key and certificates) on the node timer. The newest backups are kept, older ones deleted. A lost node is restored onto a fresh server in one call: the master logs in over SSH, installs the node from its own build, unpacks the chosen backup and points the node\u2019s record (or, for a domain, its Cloudflare A record) at the new server. All endpoints under /panel/api/backup.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/panel/api/backup/settings',
+        summary:
+          'Read the backup server and schedule. The password and private key are never returned, only whether they are set.',
+        responseSchema: 'BackupSettings',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/backup/settings',
+        summary:
+          'Save the backup server and schedule. Omit password or privateKey to keep the stored one; an empty string clears it. Changing the host or port forgets the pinned host key.',
+        requestSchema: { $ref: '#/components/schemas/BackupSettingsRequest' },
+        responseSchema: 'BackupSettings',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/backup/test',
+        summary:
+          'Log in to the backup server and create the folder. The first successful login pins the server\u2019s SSH host key; later logins refuse another key.',
+        responseSchema: 'BackupSettings',
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/backup/run/:what',
+        summary:
+          'Start a backup now in the background; poll /panel/api/backup/status for the result.',
+        params: [
+          {
+            name: 'what',
+            in: 'path',
+            type: 'string',
+            desc: 'db or nodes.',
+            enum: ['db', 'nodes'],
+          },
+        ],
+        responseSchema: 'BackupStatus',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/backup/status',
+        summary:
+          'The backup running now, if any, and the outcome of the last database and node backups.',
+        responseSchema: 'BackupStatus',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/backup/node/:id',
+        summary: 'List the backups kept for a node on the backup server, newest first.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Node id.' }],
+        responseSchema: 'StoredFile',
+        responseSchemaArray: true,
+      },
+      {
+        method: 'POST',
+        path: '/panel/api/backup/restoreNode/:id',
+        summary:
+          'Move a lost node onto a fresh server in the background. backup names a file from /panel/api/backup/node/:id; empty takes the newest and "none" installs a fresh node. The server must match this master\u2019s CPU architecture. Poll /panel/api/backup/restoreStatus.',
+        params: [{ name: 'id', in: 'path', type: 'integer', desc: 'Node id.' }],
+        requestSchema: { $ref: '#/components/schemas/NodeRestoreRequest' },
+        responseSchema: 'NodeRestoreStatus',
+      },
+      {
+        method: 'GET',
+        path: '/panel/api/backup/restoreStatus',
+        summary: 'Progress log and outcome of the current or last node restore.',
+        responseSchema: 'NodeRestoreStatus',
+      },
+    ],
+  },
+
+  {
     id: 'tls-certs',
     title: 'TLS Certificates',
     description:
@@ -3394,6 +3652,13 @@ export const sections: readonly Section[] = [
             type: 'boolean',
             optional: true,
             desc: 'Serve the panel over this certificate once issued (restarts the panel when the paths change).',
+          },
+          {
+            name: 'applyToSub',
+            in: 'body (form)',
+            type: 'boolean',
+            optional: true,
+            desc: 'Serve the subscription server over this certificate once issued, when its cert field is empty or the certificate covers the subscription host (restarts the panel). Off by default: a reverse proxy in front of the subscription port usually talks plain HTTP to it.',
           },
         ],
         responseSchema: 'TlsCertificate',

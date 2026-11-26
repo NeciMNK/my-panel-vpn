@@ -1,6 +1,7 @@
 package web
 
 import (
+	"bufio"
 	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
@@ -8,8 +9,11 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"errors"
 	"fmt"
+	"io"
 	"math/big"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -28,7 +32,9 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/dbtest"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/subedge"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/crypto"
+	"github.com/mhsanaei/3x-ui/v3/internal/web/entity"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/global"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/runtime"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/service"
@@ -86,6 +92,11 @@ type statusRecorder struct {
 func (r *statusRecorder) WriteHeader(code int) {
 	r.status = code
 	r.ResponseWriter.WriteHeader(code)
+}
+
+// Hijack lets the sub edge tunnel take over the connection, as on a real node.
+func (r *statusRecorder) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	return http.NewResponseController(r.ResponseWriter).Hijack()
 }
 
 func (n *nodeUnderContract) takeRefused() []string {
@@ -311,6 +322,22 @@ func TestMasterNodeContract(t *testing.T) {
 					_, err := master.ListRemoteTags(ctx)
 					return err
 				}, nil},
+				{"ProbePeer dials the peer from the node", []string{"ProbePeer"}, func() error {
+					peer, err := net.Listen("tcp", "127.0.0.1:0")
+					if err != nil {
+						return err
+					}
+					defer peer.Close()
+					port := peer.Addr().(*net.TCPAddr).Port
+					res, err := master.ProbePeer(ctx, entity.PeerProbeRequest{Address: "127.0.0.1", Ports: []int{port}})
+					if err != nil {
+						return err
+					}
+					if !res.Reachable || res.Port != port {
+						return fmt.Errorf("probe = %+v, want reachable on %d", res, port)
+					}
+					return nil
+				}, nil},
 				{"ProxyXray reads and writes the node's Xray template", []string{"ProxyXray"}, func() error {
 					resp, err := master.ProxyXray(ctx, http.MethodPost, "/", "", "", nil)
 					if err != nil {
@@ -340,6 +367,82 @@ func TestMasterNodeContract(t *testing.T) {
 					}
 					if got, rerr := os.ReadFile(certFile); rerr != nil || string(got) != string(certPEM) {
 						t.Fatalf("node cert file = %q, %v; want the pushed chain", got, rerr)
+					}
+					return nil
+				}, nil},
+				{"a subscription edge on the node forwards through the master's tunnel", []string{"ConfigureSubEdge", "OpenSubEdgeTunnel"}, func() error {
+					port := contractFreePort(t)
+					if err := master.ConfigureSubEdge(ctx, subedge.ListenerConfig{Enable: true, Port: port}); err != nil {
+						return err
+					}
+					defer func() { _ = master.ConfigureSubEdge(ctx, subedge.ListenerConfig{}) }()
+					conn, err := master.OpenSubEdgeTunnel(ctx, subedge.Master{Name: "master-1", Priority: 1})
+					if err != nil {
+						return err
+					}
+					tctx, stop := context.WithCancel(ctx)
+					defer stop()
+					go subedge.ServeTunnel(tctx, conn, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						fmt.Fprint(w, "master answered "+r.URL.Path)
+					}))
+					for deadline := time.Now().Add(5 * time.Second); len(service.SubEdgeNode().Tunnels()) == 0; time.Sleep(10 * time.Millisecond) {
+						if time.Now().After(deadline) {
+							return errors.New("the node never registered the tunnel")
+						}
+					}
+					resp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/sub/abc", port))
+					if err != nil {
+						return err
+					}
+					defer resp.Body.Close()
+					body, _ := io.ReadAll(resp.Body)
+					if resp.StatusCode != http.StatusOK || string(body) != "master answered /sub/abc" {
+						return fmt.Errorf("edge answered %d %q", resp.StatusCode, body)
+					}
+					return nil
+				}, nil},
+				{"the node's edge answers from the cache a master sent while no master answers", []string{"UpdateSubEdgeCache"}, func() error {
+					port := contractFreePort(t)
+					if err := master.ConfigureSubEdge(ctx, subedge.ListenerConfig{Enable: true, Port: port}); err != nil {
+						return err
+					}
+					defer func() { _ = master.ConfigureSubEdge(ctx, subedge.ListenerConfig{}) }()
+					update := subedge.CacheUpdate{SubIDs: []string{"cached"}, Responses: []subedge.CachedResponse{{
+						Host: "127.0.0.1", URI: "/sub/cached", Agent: "happ", SubID: "cached",
+						Header: map[string][]string{"Profile-Title": {"My VPN"}}, Body: []byte("vless://cached"), Stored: time.Now().Unix(),
+					}}}
+					if err := master.UpdateSubEdgeCache(ctx, update); err != nil {
+						return err
+					}
+					req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("http://127.0.0.1:%d/sub/cached", port), nil)
+					if err != nil {
+						return err
+					}
+					req.Header.Set("User-Agent", "Happ/3.1.0")
+					resp, err := http.DefaultClient.Do(req)
+					if err != nil {
+						return err
+					}
+					defer resp.Body.Close()
+					body, _ := io.ReadAll(resp.Body)
+					if resp.StatusCode != http.StatusOK || string(body) != "vless://cached" || resp.Header.Get("Profile-Title") != "My VPN" {
+						return fmt.Errorf("edge answered %d %q %v", resp.StatusCode, body, resp.Header)
+					}
+					return nil
+				}, nil},
+				{"the node keeps the DNS plan it follows while no master can", []string{"ConfigureSubEdgeDNS"}, func() error {
+					plan := subedge.DNSPlan{Domain: "sub.example.com", Token: "tok", Tiers: [][]string{{"198.51.100.1"}, {"203.0.113.7"}, {}}, EdgesBefore: []string{}}
+					if err := master.ConfigureSubEdgeDNS(ctx, plan); err != nil {
+						return err
+					}
+					if got, ok := service.SubEdgeNodeDNSPlan(); !ok || got.Domain != plan.Domain || got.Tiers[1][0] != "203.0.113.7" {
+						return fmt.Errorf("node keeps plan %+v (%v), want the pushed one", got, ok)
+					}
+					if err := master.ConfigureSubEdgeDNS(ctx, subedge.DNSPlan{}); err != nil {
+						return err
+					}
+					if got, ok := service.SubEdgeNodeDNSPlan(); ok {
+						return fmt.Errorf("node still follows %+v after an empty plan", got)
 					}
 					return nil
 				}, nil},
@@ -445,4 +548,14 @@ func contractCertPair(t *testing.T) (certPEM, keyPEM []byte) {
 	}
 	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}),
 		pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER})
+}
+
+func contractFreePort(t *testing.T) int {
+	t.Helper()
+	l, err := (&net.ListenConfig{}).Listen(context.Background(), "tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer l.Close()
+	return l.Addr().(*net.TCPAddr).Port
 }

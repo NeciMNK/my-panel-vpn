@@ -62,6 +62,9 @@ type SubService struct {
 	// inbound whose NodeID is set. Keeps the per-link host derivation
 	// O(1) instead of O(N) DB hits.
 	nodesByID map[int]*model.Node
+	// cascades and autoNameTransports back {{AUTO_NAME}}; reset per request.
+	cascades           []model.Cascade
+	autoNameTransports map[string]string
 	// statsByEmail maps a client email to its traffic row across ALL inbounds
 	// loaded for the request. client_traffics.email is globally unique, so this
 	// lets statsForClient resolve usage for a client even on an inbound that
@@ -154,6 +157,8 @@ func (s *SubService) PrepareForRequest(host string) {
 	mode, _ := s.settingService.GetSubHostSortMode()
 	s.hostsFirst = mode == "hosts-first"
 	s.loadNodes()
+	s.loadCascades()
+	s.autoNameTransports = map[string]string{}
 	s.loadRemarkSettings()
 	s.subCalendarExpireInclusive, _ = s.settingService.GetSubCalendarExpireInclusive()
 	s.calendarExpireLocation = nil
@@ -544,6 +549,9 @@ func (s *SubService) resolveInfoNodeRemark(subId string, uniqueEmails []string, 
 			tmpl = service.DefaultRemarkTemplate
 		}
 		remark := expandRemarkVars(tmpl, ctx)
+		if strings.TrimSpace(remark) == "" {
+			remark = expandRemarkVars(service.DefaultSubActiveInfoTemplate, ctx)
+		}
 		if strings.TrimSpace(remark) != "" {
 			return infoNodeActive, remark
 		}
@@ -825,10 +833,29 @@ func (s *SubService) getInboundsBySubId(subId string) ([]*model.Inbound, error) 
 	if err != nil {
 		return nil, err
 	}
+	inbounds = s.withoutDeadNodes(inbounds)
 	if err := s.loadSubscriptionHosts(inbounds); err != nil {
 		return nil, err
 	}
 	return inbounds, nil
+}
+
+// withoutDeadNodes drops inbounds on nodes that neither the master nor any other node
+// reaches; it keeps them all rather than hand the subscriber an empty list.
+func (s *SubService) withoutDeadNodes(inbounds []*model.Inbound) []*model.Inbound {
+	alive := make([]*model.Inbound, 0, len(inbounds))
+	for _, ib := range inbounds {
+		if ib.NodeID != nil {
+			if n, ok := s.nodesByID[*ib.NodeID]; ok && n.Status == model.NodeStatusOffline {
+				continue
+			}
+		}
+		alive = append(alive, ib)
+	}
+	if len(alive) == 0 {
+		return inbounds
+	}
+	return alive
 }
 
 func (s *SubService) loadInboundsBySubId(subId string) ([]*model.Inbound, error) {

@@ -22,6 +22,7 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/crypto/nodetoken"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
+	"github.com/mhsanaei/3x-ui/v3/internal/subedge"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/json_util"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/netsafe"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/wirecodec"
@@ -265,12 +266,8 @@ func (r *Remote) do(ctx context.Context, method, path string, body any) (*envelo
 	if err != nil {
 		return nil, err
 	}
-	if r.node.ApiToken != "" {
-		token, err := nodetoken.Decrypt(r.node.Id, r.node.ApiToken)
-		if err != nil {
-			return nil, fmt.Errorf("decrypt node token: %w", err)
-		}
-		req.Header.Set("Authorization", "Bearer "+token)
+	if err := r.authorize(req); err != nil {
+		return nil, err
 	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set(wirecodec.MasterPushHeader, "1")
@@ -778,6 +775,71 @@ func (r *Remote) InstallTlsCert(ctx context.Context, name string, certPEM, keyPE
 	return files.CertFile, files.KeyFile, nil
 }
 
+func (r *Remote) authorize(req *http.Request) error {
+	if r.node.ApiToken == "" {
+		return nil
+	}
+	token, err := nodetoken.Decrypt(r.node.Id, r.node.ApiToken)
+	if err != nil {
+		return fmt.Errorf("decrypt node token: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+	return nil
+}
+
+// ConfigureSubEdge starts, moves or stops the node's subscription edge listener.
+func (r *Remote) ConfigureSubEdge(ctx context.Context, cfg subedge.ListenerConfig) error {
+	_, err := r.do(ctx, http.MethodPost, "panel/api/subEdges/node/configure", cfg)
+	return err
+}
+
+// UpdateSubEdgeCache stores a master's subscription responses in the node's
+// edge cache.
+func (r *Remote) UpdateSubEdgeCache(ctx context.Context, update subedge.CacheUpdate) error {
+	_, err := r.do(ctx, http.MethodPost, "panel/api/subEdges/node/cache", update)
+	return err
+}
+
+// ConfigureSubEdgeDNS gives the node the DNS plan it follows while no master
+// can switch the subscription domain; an empty plan turns that off.
+func (r *Remote) ConfigureSubEdgeDNS(ctx context.Context, plan subedge.DNSPlan) error {
+	_, err := r.do(ctx, http.MethodPost, "panel/api/subEdges/node/dns", plan)
+	return err
+}
+
+// OpenSubEdgeTunnel opens the long-lived tunnel the node forwards subscription
+// requests through; it bypasses the client timeout that would cut it.
+func (r *Remote) OpenSubEdgeTunnel(ctx context.Context, master subedge.Master) (net.Conn, error) {
+	if r.node.ApiToken == "" && r.node.TlsVerifyMode != "mtls" {
+		return nil, errors.New("node has no API token configured")
+	}
+	base, err := r.baseURL()
+	if err != nil {
+		return nil, err
+	}
+	req, err := subedge.NewTunnelRequest(netsafe.ContextWithAllowPrivate(ctx, r.node.AllowPrivateAddress), base+"panel/api/subEdges/node/tunnel", master)
+	if err != nil {
+		return nil, err
+	}
+	if err := r.authorize(req); err != nil {
+		return nil, err
+	}
+	req.Header.Set(wirecodec.MasterPushHeader, "1")
+	client, err := r.httpClient()
+	if err != nil {
+		return nil, err
+	}
+	transport := client.Transport
+	if transport == nil {
+		transport = http.DefaultTransport
+	}
+	resp, err := transport.RoundTrip(req) //nolint:bodyclose // the body becomes the tunnel; TunnelConn closes it on failure
+	if err != nil {
+		return nil, fmt.Errorf("open sub edge tunnel: %w", err)
+	}
+	return subedge.TunnelConn(resp)
+}
+
 // GetDescendants fetches the node's read-only summaries of the nodes IT
 // manages, so this panel can surface them as transitive sub-nodes in a chained
 // topology (#4983). Best-effort: an old-build node without the endpoint returns
@@ -792,6 +854,20 @@ func (r *Remote) GetDescendants(ctx context.Context) ([]model.NodeSummary, error
 		return nil, fmt.Errorf("decode descendants: %w", err)
 	}
 	return out, nil
+}
+
+// ProbePeer asks this node whether it reaches another node at any of the ports.
+// An old-build node without the endpoint returns an error the caller skips.
+func (r *Remote) ProbePeer(ctx context.Context, req entity.PeerProbeRequest) (entity.PeerProbeResult, error) {
+	env, err := r.do(ctx, http.MethodPost, "panel/api/server/probePeer", req)
+	if err != nil {
+		return entity.PeerProbeResult{}, err
+	}
+	var res entity.PeerProbeResult
+	if err := json.Unmarshal(env.Obj, &res); err != nil {
+		return entity.PeerProbeResult{}, fmt.Errorf("decode peer probe: %w", err)
+	}
+	return res, nil
 }
 
 func (r *Remote) ResetClientTraffic(ctx context.Context, _ *model.Inbound, email string) error {

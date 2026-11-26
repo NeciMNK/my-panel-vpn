@@ -1,0 +1,118 @@
+---
+title: Subscription edges
+description: Nodes that serve this panel’s subscriptions on their own port, so
+  the master’s subscription server needs no public address. Every master keeps a
+  tunnel to each enabled edge over the node’s API connection; the edge forwards
+  each request to the highest-priority master that answers without a server
+  error, and answers 503 while no master is reachable. certId names a
+  panel-managed certificate (/panel/api/certs) that the panel has already pushed
+  to the node; 0 serves plain HTTP. Point the subscription domain’s DNS at the
+  edge nodes and set subURI to it. All endpoints under /panel/api/subEdges.
+full: true
+_openapi:
+  preload:
+    - ./public/openapi.json
+  toc:
+    - depth: 2
+      title: List every subscription edge with the state of this master’s tunnel to
+        it.
+      url: '#list-every-subscription-edge-with-the-state-of-this-masters-tunnel-to-it'
+    - depth: 2
+      title: 'Make a node a subscription edge: the node starts its edge listener and
+        every master opens a tunnel to it. One edge per node.'
+      url: '#make-a-node-a-subscription-edge-the-node-starts-its-edge-listener-and-every-master-opens-a-tunnel-to-it-one-edge-per-node'
+    - depth: 2
+      title: Replace an edge’s node, port, certificate or switch. Moving it to another
+        node stops the listener on the old one.
+      url: '#replace-an-edges-node-port-certificate-or-switch-moving-it-to-another-node-stops-the-listener-on-the-old-one'
+    - depth: 2
+      title: Stop the edge listener on the node and close the tunnels to it.
+      url: '#stop-the-edge-listener-on-the-node-and-close-the-tunnels-to-it'
+    - depth: 2
+      title: 'Node side: start, move or stop this node’s edge listener. The
+        certificate files must be under the node’s certificate folder. Allowed
+        for node-sync tokens.'
+      url: '#node-side-start-move-or-stop-this-nodes-edge-listener-the-certificate-files-must-be-under-the-nodes-certificate-folder-allowed-for-node-sync-tokens'
+    - depth: 2
+      title: 'Node side: a master upgrades this request (Connection: Upgrade, Upgrade:
+        x-ui-sub-edge/1) into the tunnel the edge forwards subscription requests
+        through. Answers 101 Switching Protocols. Allowed for node-sync tokens.'
+      url: '#node-side-a-master-upgrades-this-request-connection-upgrade-upgrade-x-ui-sub-edge1-into-the-tunnel-the-edge-forwards-subscription-requests-through-answers-101-switching-protocols-allowed-for-node-sync-tokens'
+    - depth: 2
+      title: 'Node side: store subscription responses a master gave client apps, and
+        drop those of subscriptions not in subIds. The edge answers from this
+        cache (with Age and Warning: 110) while no master answers, for up to 7
+        days. Allowed for node-sync tokens.'
+      url: '#node-side-store-subscription-responses-a-master-gave-client-apps-and-drop-those-of-subscriptions-not-in-subids-the-edge-answers-from-this-cache-with-age-and-warning-110-while-no-master-answers-for-up-to-7-days-allowed-for-node-sync-tokens'
+    - depth: 2
+      title: 'Node side: the DNS plan this edge node follows while no master reaches
+        it and no edge in edgesBefore answers. An empty plan turns node-side
+        switching off. Allowed for node-sync tokens.'
+      url: '#node-side-the-dns-plan-this-edge-node-follows-while-no-master-reaches-it-and-no-edge-in-edgesbefore-answers-an-empty-plan-turns-node-side-switching-off-allowed-for-node-sync-tokens'
+    - depth: 2
+      title: 'DNS switching for the subscription domain: the domain, whether the
+        Cloudflare token is set, the masters’ IPv4 addresses (tier 1), and what
+        the last step published.'
+      url: '#dns-switching-for-the-subscription-domain-the-domain-whether-the-cloudflare-token-is-set-the-masters-ipv4-addresses-tier-1-and-what-the-last-step-published'
+    - depth: 2
+      title: 'Save DNS switching. The leading master points the domain’s A records at
+        the masters, else the edge nodes in Russia, else the others, and returns
+        to a better tier after it stays up for 2 minutes. Only records it
+        created (comment managed-by: my-panel-vpn) are touched. An empty token
+        keeps the saved one; an empty domain turns switching off.'
+      url: '#save-dns-switching-the-leading-master-points-the-domains-a-records-at-the-masters-else-the-edge-nodes-in-russia-else-the-others-and-returns-to-a-better-tier-after-it-stays-up-for-2-minutes-only-records-it-created-comment-managed-by-my-panel-vpn-are-touched-an-empty-token-keeps-the-saved-one-an-empty-domain-turns-switching-off'
+  structuredData:
+    headings:
+      - content: List every subscription edge with the state of this master’s tunnel to
+          it.
+        id: list-every-subscription-edge-with-the-state-of-this-masters-tunnel-to-it
+      - content: 'Make a node a subscription edge: the node starts its edge listener and
+          every master opens a tunnel to it. One edge per node.'
+        id: make-a-node-a-subscription-edge-the-node-starts-its-edge-listener-and-every-master-opens-a-tunnel-to-it-one-edge-per-node
+      - content: Replace an edge’s node, port, certificate or switch. Moving it to
+          another node stops the listener on the old one.
+        id: replace-an-edges-node-port-certificate-or-switch-moving-it-to-another-node-stops-the-listener-on-the-old-one
+      - content: Stop the edge listener on the node and close the tunnels to it.
+        id: stop-the-edge-listener-on-the-node-and-close-the-tunnels-to-it
+      - content: 'Node side: start, move or stop this node’s edge listener. The
+          certificate files must be under the node’s certificate folder. Allowed
+          for node-sync tokens.'
+        id: node-side-start-move-or-stop-this-nodes-edge-listener-the-certificate-files-must-be-under-the-nodes-certificate-folder-allowed-for-node-sync-tokens
+      - content: 'Node side: a master upgrades this request (Connection: Upgrade,
+          Upgrade: x-ui-sub-edge/1) into the tunnel the edge forwards
+          subscription requests through. Answers 101 Switching Protocols.
+          Allowed for node-sync tokens.'
+        id: node-side-a-master-upgrades-this-request-connection-upgrade-upgrade-x-ui-sub-edge1-into-the-tunnel-the-edge-forwards-subscription-requests-through-answers-101-switching-protocols-allowed-for-node-sync-tokens
+      - content: 'Node side: store subscription responses a master gave client apps, and
+          drop those of subscriptions not in subIds. The edge answers from this
+          cache (with Age and Warning: 110) while no master answers, for up to 7
+          days. Allowed for node-sync tokens.'
+        id: node-side-store-subscription-responses-a-master-gave-client-apps-and-drop-those-of-subscriptions-not-in-subids-the-edge-answers-from-this-cache-with-age-and-warning-110-while-no-master-answers-for-up-to-7-days-allowed-for-node-sync-tokens
+      - content: 'Node side: the DNS plan this edge node follows while no master reaches
+          it and no edge in edgesBefore answers. An empty plan turns node-side
+          switching off. Allowed for node-sync tokens.'
+        id: node-side-the-dns-plan-this-edge-node-follows-while-no-master-reaches-it-and-no-edge-in-edgesbefore-answers-an-empty-plan-turns-node-side-switching-off-allowed-for-node-sync-tokens
+      - content: 'DNS switching for the subscription domain: the domain, whether the
+          Cloudflare token is set, the masters’ IPv4 addresses (tier 1), and
+          what the last step published.'
+        id: dns-switching-for-the-subscription-domain-the-domain-whether-the-cloudflare-token-is-set-the-masters-ipv4-addresses-tier-1-and-what-the-last-step-published
+      - content: 'Save DNS switching. The leading master points the domain’s A records
+          at the masters, else the edge nodes in Russia, else the others, and
+          returns to a better tier after it stays up for 2 minutes. Only records
+          it created (comment managed-by: my-panel-vpn) are touched. An empty
+          token keeps the saved one; an empty domain turns switching off.'
+        id: save-dns-switching-the-leading-master-points-the-domains-a-records-at-the-masters-else-the-edge-nodes-in-russia-else-the-others-and-returns-to-a-better-tier-after-it-stays-up-for-2-minutes-only-records-it-created-comment-managed-by-my-panel-vpn-are-touched-an-empty-token-keeps-the-saved-one-an-empty-domain-turns-switching-off
+    contents: []
+---
+
+{/* This file was generated by Fumadocs. Do not edit this file directly. Any changes should be made by running the generation command again. */}
+
+export default function Layout(props) {
+  const { OpenAPIPage } = props.components ?? {};
+  return (
+    <>
+      {props.children}
+      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/subEdges/list","method":"get"},{"path":"/panel/api/subEdges/add","method":"post"},{"path":"/panel/api/subEdges/update/{id}","method":"post"},{"path":"/panel/api/subEdges/del/{id}","method":"post"},{"path":"/panel/api/subEdges/node/configure","method":"post"},{"path":"/panel/api/subEdges/node/tunnel","method":"post"},{"path":"/panel/api/subEdges/node/cache","method":"post"},{"path":"/panel/api/subEdges/node/dns","method":"post"},{"path":"/panel/api/subEdges/dns","method":"get"},{"path":"/panel/api/subEdges/dns","method":"post"}]} showTitle />
+    </>
+  );
+}

@@ -22,7 +22,7 @@ type GeodataTokenIssue struct {
 const (
 	geodataReasonSyntax           = "syntax"
 	geodataReasonFileMissing      = "fileMissing"
-	geodataReasonCategoryMissing  = "categoryMissing"
+	GeodataReasonCategoryMissing  = "categoryMissing"
 	geodataReasonAttributeMissing = "attributeMissing"
 	geodataReasonWrongKind        = "wrongKind"
 )
@@ -150,7 +150,7 @@ func unknownAttributes(category geodata.GeoCategory, wanted []string) string {
 
 func geodataIssueReason(err error) string {
 	if errors.Is(err, geodata.ErrUnknownCategory) {
-		return geodataReasonCategoryMissing
+		return GeodataReasonCategoryMissing
 	}
 	return geodataReasonFileMissing
 }

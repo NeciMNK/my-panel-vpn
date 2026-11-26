@@ -26,6 +26,8 @@ type NodeView struct {
 	InboundTags         []string `json:"inboundTags" example:"[\"in-443-tcp\"]"`
 	OutboundTag         string   `json:"outboundTag" example:"direct"`
 	Country             string   `json:"country" example:"DE"`
+	AlertCpu            int      `json:"alertCpu" example:"90"`
+	AlertMemory         int      `json:"alertMemory" example:"0"`
 	Guid                string   `json:"guid" example:"node-guid"`
 	Status              string   `json:"status" example:"online"`
 	LastHeartbeat       int64    `json:"lastHeartbeat" example:"1700000000"`
@@ -41,6 +43,7 @@ type NodeView struct {
 	LastError           string   `json:"lastError" example:""`
 	XrayState           string   `json:"xrayState" example:"running"`
 	XrayError           string   `json:"xrayError" example:""`
+	SeenBy              string   `json:"seenBy" example:""`
 	ConfigDirty         bool     `json:"configDirty" example:"false"`
 	ConfigDirtyAt       int64    `json:"configDirtyAt" example:"0"`
 	InboundCount        int      `json:"inboundCount" example:"3"`
@@ -76,6 +79,8 @@ func toNodeView(n *model.Node) *NodeView {
 		InboundTags:         n.InboundTags,
 		OutboundTag:         n.OutboundTag,
 		Country:             n.Country,
+		AlertCpu:            n.AlertCpu,
+		AlertMemory:         n.AlertMemory,
 		Guid:                n.Guid,
 		Status:              n.Status,
 		LastHeartbeat:       n.LastHeartbeat,
@@ -91,6 +96,7 @@ func toNodeView(n *model.Node) *NodeView {
 		LastError:           n.LastError,
 		XrayState:           n.XrayState,
 		XrayError:           n.XrayError,
+		SeenBy:              n.SeenBy,
 		ConfigDirty:         n.ConfigDirty,
 		ConfigDirtyAt:       n.ConfigDirtyAt,
 		InboundCount:        n.InboundCount,
@@ -135,6 +141,8 @@ type NodeMutationRequest struct {
 	InboundTags         []string `json:"inboundTags" form:"inboundTags"`
 	OutboundTag         string   `json:"outboundTag" form:"outboundTag"`
 	Country             string   `json:"country" form:"country"`
+	AlertCpu            int      `json:"alertCpu" form:"alertCpu"`
+	AlertMemory         int      `json:"alertMemory" form:"alertMemory"`
 }
 
 func (r *NodeMutationRequest) validateCredentials(create bool) error {
@@ -184,6 +192,8 @@ func (r *NodeMutationRequest) toNode() *model.Node {
 		InboundTags:         r.InboundTags,
 		OutboundTag:         r.OutboundTag,
 		Country:             r.Country,
+		AlertCpu:            r.AlertCpu,
+		AlertMemory:         r.AlertMemory,
 	}
 	if r.ApiToken != nil {
 		n.ApiToken = *r.ApiToken

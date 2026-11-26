@@ -389,8 +389,11 @@ func isCommandForBot(text string, username string) bool {
 func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool) {
 	chatId := callbackQuery.Message.GetChat().ID
 	actor := callbackActor(callbackQuery)
-	if data, err := t.decodeQuery(callbackQuery.Data); err == nil && t.answerOnlinePayment(callbackQuery, data) {
-		return
+	if data, err := t.decodeQuery(callbackQuery.Data); err == nil {
+		if t.answerOnlinePayment(callbackQuery, data) || t.answerOwnSubscriptionCallback(callbackQuery, data) ||
+			t.answerReminderCallback(callbackQuery, data) {
+			return
+		}
 	}
 
 	// Only an admin's wizard callbacks touch a draft, so only they take its lock:
@@ -419,6 +422,14 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 			switch dataArray[0] {
 			case "broadcast_confirm":
 				t.confirmBroadcast(actor, dataArray[1], callbackQuery.Message.GetMessageID(), callbackQuery.ID)
+			case "broadcast_next":
+				t.broadcastNextGroups(actor, dataArray[1], callbackQuery.Message.GetMessageID(), callbackQuery.ID)
+			case "broadcast_group":
+				if len(dataArray) < 3 {
+					t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.wentWrong"))
+					return
+				}
+				t.pickBroadcastGroup(actor, dataArray[1], dataArray[2], callbackQuery.Message.GetMessageID(), callbackQuery.ID)
 			case "get_clients_for_sub":
 				inboundIdInt, err := strconv.Atoi(dataArray[1])
 				if err != nil {
@@ -450,8 +461,22 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 				t.screenClientQR(chatId, email)
 				return
 			case "pay_ok":
-				if len(dataArray) == 3 {
-					t.confirmPayment(callbackQuery, email, dataArray[2])
+				switch len(dataArray) {
+				case 3:
+					t.confirmPayment(callbackQuery, email, dataArray[2], "0")
+					return
+				case 4:
+					t.confirmPayment(callbackQuery, email, dataArray[2], dataArray[3])
+					return
+				}
+				t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
+			case "pay_no":
+				switch len(dataArray) {
+				case 3:
+					t.refusePayment(callbackQuery, email, dataArray[2], "0")
+					return
+				case 4:
+					t.refusePayment(callbackQuery, email, dataArray[2], dataArray[3])
 					return
 				}
 				t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.answers.errorOperation"))
@@ -499,8 +524,6 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 				t.answerSilent(callbackQuery.ID)
 			case "free_no":
 				t.declineFreePlan(callbackQuery, dataArray[1])
-			case cbClientPaid:
-				t.reportClientPayment(callbackQuery, dataArray[1])
 			case "client_get_usage":
 				t.sendCallbackAnswerTgBot(callbackQuery.ID, t.I18nBot("tgbot.messages.email", "Email=="+email))
 				t.searchClientScreen(chatId, email)
@@ -1071,15 +1094,6 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 		}
 	}
 
-	if months, ok := strings.CutPrefix(callbackQuery.Data, cbClientPaid+" "); ok {
-		t.reportClientPayment(callbackQuery, months)
-		return
-	}
-	if isAIExitCallback(callbackQuery.Data) {
-		t.answerAIExit(callbackQuery)
-		return
-	}
-
 	switch callbackQuery.Data {
 	case "home":
 		t.screenHome(chatId, callbackQuery.From.ID)
@@ -1147,9 +1161,12 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 	case cbMySubscription:
 		t.answerSilent(callbackQuery.ID)
 		t.screenClientHome(chatId, callbackQuery.From.ID)
+	case cbClientPay:
+		t.answerSilent(callbackQuery.ID)
+		t.screenClientPay(chatId, callbackQuery.From.ID)
 	case cbClientPaid:
 		t.answerSilent(callbackQuery.ID)
-		t.screenPlanPicker(chatId, callbackQuery.From.ID)
+		t.screenPlanPicker(chatId, callbackQuery.From.ID, 0, false)
 	case cbClientDefer:
 		t.deferPayment(callbackQuery)
 	case "client_traffic":
@@ -1357,6 +1374,26 @@ func (t *Tgbot) answerCallback(callbackQuery *telego.CallbackQuery, isAdmin bool
 	}
 }
 
+// answerOwnSubscriptionCallback serves the caller's own "I paid" term and AI quiz taps
+// ahead of the admin switch, whose default refused an admin's own "<action> <arg>".
+func (t *Tgbot) answerOwnSubscriptionCallback(callbackQuery *telego.CallbackQuery, data string) bool {
+	if args, ok := strings.CutPrefix(data, cbClientPaid+" "); ok {
+		t.answerClientPaid(callbackQuery, args)
+		return true
+	}
+	if isAIExitCallback(data) {
+		callbackQuery.Data = data
+		t.answerAIExit(callbackQuery)
+		return true
+	}
+	if isAIOutageCallback(data) {
+		callbackQuery.Data = data
+		t.answerAIOutage(callbackQuery)
+		return true
+	}
+	return false
+}
+
 // checkAdmin checks if the given Telegram ID is an admin.
 func checkAdmin(tgId int64) bool {
 	return slices.Contains(adminSnapshot(), tgId)
@@ -1369,16 +1406,10 @@ func isClientSelfCallback(data string) bool {
 	// "hide" is how any recipient puts a message away: it carries no target of its
 	// own (it is the message it sits on), so it is safe for anyone to reach.
 	case "home", "hide", "client_traffic", "client_commands", "client_sub_links",
-		"client_individual_links", "client_qr_links", cbClientPaid, cbClientDefer:
+		"client_individual_links", "client_qr_links", cbClientPay, cbClientPaid, cbClientDefer:
 		return true
 	// Paging only turns the screen already tracked for the caller's own chat.
 	case cbPageNext, cbPagePrev, cbPageNone:
-		return true
-	}
-	if _, isReport := strings.CutPrefix(data, cbClientPaid+" "); isReport {
-		return true
-	}
-	if isAIExitCallback(data) {
 		return true
 	}
 	_, _, ok := splitClientLinkCallback(data)

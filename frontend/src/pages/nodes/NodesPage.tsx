@@ -15,6 +15,7 @@ import {
   Row,
   Spin,
   Statistic,
+  Tabs,
   Typography,
   message,
 } from 'antd';
@@ -34,10 +35,13 @@ import AppSidebar from '@/layouts/AppSidebar';
 import NodeList from './NodeList';
 import NodeFormModal from './NodeFormModal';
 import NodeJoinModal from './NodeJoinModal';
+import NodeRestoreModal from './NodeRestoreModal';
 import CascadesCard from './CascadesCard';
+import SubEdgesCard from './SubEdgesCard';
 import HomeNetworksCard from './HomeNetworksCard';
 import WarpSwitchCard from './WarpSwitchCard';
 import SpeedCard from './SpeedCard';
+import GroupSpeedCard from './GroupSpeedCard';
 import FixedExitsCard from './FixedExitsCard';
 import MastersCard from './MastersCard';
 import { setMessageInstance } from '@/utils/messageBus';
@@ -112,6 +116,7 @@ export default function NodesPage() {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [mtlsOpen, setMtlsOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
+  const [restoreNode, setRestoreNode] = useState<NodeRecord | null>(null);
   const [trustCa, setTrustCa] = useState('');
   const [copyingCa, setCopyingCa] = useState(false);
   const [savingTrustCa, setSavingTrustCa] = useState(false);
@@ -137,7 +142,9 @@ export default function NodesPage() {
   const onSaveTrustCa = useCallback(async () => {
     setSavingTrustCa(true);
     try {
-      const msg = await HttpUtil.post('/panel/api/nodes/mtls/trustCA', { caCert: trustCa });
+      const msg = await HttpUtil.post('/panel/api/nodes/mtls/trustCA', {
+        caCert: trustCa,
+      });
       if (msg?.success) {
         messageApi.success(t('pages.nodes.mtls.saved'));
         setMtlsOpen(false);
@@ -319,96 +326,129 @@ export default function NodesPage() {
                   }
                 />
               ) : (
-                <Row gutter={[isMobile ? 8 : 16, isMobile ? 8 : 12]}>
-                  <Col span={24}>
-                    <Card size="small" hoverable className="summary-card">
-                      <Row gutter={[16, isMobile ? 16 : 12]}>
-                        <Col xs={12} sm={12} md={6}>
-                          <Statistic
-                            title={t('pages.nodes.totalNodes')}
-                            value={String(totals.total)}
-                            prefix={<CloudServerOutlined aria-hidden />}
-                          />
-                        </Col>
-                        <Col xs={12} sm={12} md={6}>
-                          <Statistic
-                            title={t('pages.nodes.onlineNodes')}
-                            value={String(totals.online)}
-                            prefix={
-                              <CheckCircleOutlined
-                                aria-hidden
-                                style={{ color: 'var(--ant-color-success)' }}
-                              />
-                            }
-                          />
-                        </Col>
-                        <Col xs={12} sm={12} md={6}>
-                          <Statistic
-                            title={t('pages.nodes.offlineNodes')}
-                            value={String(totals.offline)}
-                            prefix={
-                              <CloseCircleOutlined
-                                aria-hidden
-                                style={{ color: 'var(--ant-color-error)' }}
-                              />
-                            }
-                          />
-                        </Col>
-                        <Col xs={12} sm={12} md={6}>
-                          <Statistic
-                            title={t('pages.nodes.avgLatency')}
-                            value={totals.avgLatency > 0 ? `${totals.avgLatency} ms` : '-'}
-                            prefix={<ThunderboltOutlined aria-hidden />}
-                          />
-                        </Col>
-                      </Row>
-                    </Card>
-                  </Col>
+                <Tabs
+                  items={[
+                    {
+                      key: 'nodes',
+                      label: t('pages.nodes.tabs.nodes'),
+                      children: (
+                        <Row gutter={[isMobile ? 8 : 16, isMobile ? 8 : 12]}>
+                          <Col span={24}>
+                            <Card size="small" hoverable className="summary-card">
+                              <Row gutter={[16, isMobile ? 16 : 12]}>
+                                <Col xs={12} sm={12} md={6}>
+                                  <Statistic
+                                    title={t('pages.nodes.totalNodes')}
+                                    value={String(totals.total)}
+                                    prefix={<CloudServerOutlined aria-hidden />}
+                                  />
+                                </Col>
+                                <Col xs={12} sm={12} md={6}>
+                                  <Statistic
+                                    title={t('pages.nodes.onlineNodes')}
+                                    value={String(totals.online)}
+                                    prefix={
+                                      <CheckCircleOutlined
+                                        aria-hidden
+                                        style={{
+                                          color: 'var(--ant-color-success)',
+                                        }}
+                                      />
+                                    }
+                                  />
+                                </Col>
+                                <Col xs={12} sm={12} md={6}>
+                                  <Statistic
+                                    title={t('pages.nodes.offlineNodes')}
+                                    value={String(totals.offline)}
+                                    prefix={
+                                      <CloseCircleOutlined
+                                        aria-hidden
+                                        style={{
+                                          color: 'var(--ant-color-error)',
+                                        }}
+                                      />
+                                    }
+                                  />
+                                </Col>
+                                <Col xs={12} sm={12} md={6}>
+                                  <Statistic
+                                    title={t('pages.nodes.avgLatency')}
+                                    value={totals.avgLatency > 0 ? `${totals.avgLatency} ms` : '-'}
+                                    prefix={<ThunderboltOutlined aria-hidden />}
+                                  />
+                                </Col>
+                              </Row>
+                            </Card>
+                          </Col>
 
-                  <Col span={24}>
-                    <NodeList
-                      nodes={nodes}
-                      loading={loading}
-                      isMobile={isMobile}
-                      latestVersion={latestVersion}
-                      selectedIds={selectedIds}
-                      onSelectionChange={setSelectedIds}
-                      onAdd={onAdd}
-                      onQuickJoin={() => setJoinOpen(true)}
-                      onMtls={() => setMtlsOpen(true)}
-                      onEdit={onEdit}
-                      onDelete={onDelete}
-                      onProbe={onProbe}
-                      onToggleEnable={onToggleEnable}
-                      onUpdateNode={onUpdateNode}
-                      onUpdateSelected={onUpdateSelected}
-                    />
-                  </Col>
+                          <Col span={24}>
+                            <NodeList
+                              nodes={nodes}
+                              loading={loading}
+                              isMobile={isMobile}
+                              latestVersion={latestVersion}
+                              selectedIds={selectedIds}
+                              onSelectionChange={setSelectedIds}
+                              onAdd={onAdd}
+                              onQuickJoin={() => setJoinOpen(true)}
+                              onMtls={() => setMtlsOpen(true)}
+                              onEdit={onEdit}
+                              onDelete={onDelete}
+                              onRestore={setRestoreNode}
+                              onProbe={onProbe}
+                              onToggleEnable={onToggleEnable}
+                              onUpdateNode={onUpdateNode}
+                              onUpdateSelected={onUpdateSelected}
+                            />
+                          </Col>
 
-                  <Col span={24}>
-                    <MastersCard />
-                  </Col>
+                          <Col span={24}>
+                            <MastersCard />
+                          </Col>
 
-                  <Col span={24}>
-                    <CascadesCard nodes={nodes} />
-                  </Col>
+                          <Col span={24}>
+                            <CascadesCard nodes={nodes} />
+                          </Col>
 
-                  <Col span={24}>
-                    <FixedExitsCard nodes={nodes} />
-                  </Col>
+                          <Col span={24}>
+                            <CascadesCard nodes={nodes} autoSelect />
+                          </Col>
 
-                  <Col span={24}>
-                    <HomeNetworksCard nodes={nodes} />
-                  </Col>
+                          <Col span={24}>
+                            <SubEdgesCard nodes={nodes} />
+                          </Col>
 
-                  <Col span={24}>
-                    <WarpSwitchCard nodes={nodes} />
-                  </Col>
+                          <Col span={24}>
+                            <FixedExitsCard nodes={nodes} />
+                          </Col>
 
-                  <Col span={24}>
-                    <SpeedCard nodes={nodes} />
-                  </Col>
-                </Row>
+                          <Col span={24}>
+                            <HomeNetworksCard nodes={nodes} />
+                          </Col>
+
+                          <Col span={24}>
+                            <WarpSwitchCard nodes={nodes} />
+                          </Col>
+                        </Row>
+                      ),
+                    },
+                    {
+                      key: 'speed',
+                      label: t('pages.nodes.tabs.speed'),
+                      children: (
+                        <Row gutter={[isMobile ? 8 : 16, isMobile ? 8 : 12]}>
+                          <Col span={24}>
+                            <SpeedCard nodes={nodes} />
+                          </Col>
+                          <Col span={24}>
+                            <GroupSpeedCard />
+                          </Col>
+                        </Row>
+                      ),
+                    },
+                  ]}
+                />
               )}
             </Spin>
           </Layout.Content>
@@ -421,6 +461,17 @@ export default function NodesPage() {
             void refetch();
           }}
         />
+
+        {restoreNode && (
+          <NodeRestoreModal
+            key={restoreNode.id}
+            node={restoreNode}
+            onClose={() => {
+              setRestoreNode(null);
+              void refetch();
+            }}
+          />
+        )}
 
         <NodeFormModal
           open={formOpen}

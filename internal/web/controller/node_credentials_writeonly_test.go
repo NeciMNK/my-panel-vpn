@@ -239,3 +239,41 @@ func TestNodeControllerUpdateBlankApiTokenKeepsStoredToken(t *testing.T) {
 		t.Fatalf("stored name = %q, want stored-node-renamed", stored.Name)
 	}
 }
+
+// A dead node (the lost RU node on the stand) could not be repointed at its domain:
+// the save probed it first. A disabled node is never contacted, so it must save unprobed.
+func TestNodeControllerUpdateDisabledNodeSkipsReachabilityProbe(t *testing.T) {
+	engine := newNodeCredentialTestEngine(t)
+	dead, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	deadPort := dead.Addr().(*net.TCPAddr).Port
+	_ = dead.Close()
+	node := &model.Node{
+		Name: "lost-node", Scheme: "http", Address: "127.0.0.1", Port: deadPort, BasePath: "/",
+		ApiToken: "stored-secret-token", Enable: true, AllowPrivateAddress: true,
+	}
+	if err := database.GetDB().Create(node).Error; err != nil {
+		t.Fatalf("seed node: %v", err)
+	}
+
+	raw, _ := json.Marshal(map[string]any{
+		"name": "lost-node", "scheme": "http", "address": "node.invalid", "port": deadPort,
+		"basePath": "/", "apiToken": "", "enable": false, "allowPrivateAddress": true,
+	})
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/panel/api/nodes/update/"+strconv.Itoa(node.Id), strings.NewReader(string(raw)))
+	req.Header.Set("Content-Type", "application/json")
+	engine.ServeHTTP(w, req)
+	if !strings.Contains(w.Body.String(), `"success":true`) {
+		t.Fatalf("update of a disabled dead node refused: %s", w.Body.String())
+	}
+	var stored model.Node
+	if err := database.GetDB().Where("id = ?", node.Id).First(&stored).Error; err != nil {
+		t.Fatal(err)
+	}
+	if stored.Address != "node.invalid" || stored.Enable {
+		t.Fatalf("stored address=%q enable=%v, want node.invalid disabled", stored.Address, stored.Enable)
+	}
+}

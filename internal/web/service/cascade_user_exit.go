@@ -20,7 +20,7 @@ type UserExit struct {
 	Name    string
 	Address string
 	// Saturated is true when the server's known capacity leaves no speed for
-	// one more user (below their minimum, or nothing at all).
+	// one more user, or cannot also cover their guarantee.
 	Saturated bool
 	FreeMbps  float64
 	Capacity  bool
@@ -99,10 +99,7 @@ func (s *CascadeService) UserExitGroups(emails []string) ([]UserExitGroup, error
 	if err != nil {
 		return nil, err
 	}
-	mins, err := minSpeeds()
-	if err != nil {
-		return nil, err
-	}
+	mins := guarantees(world.rules)
 	need := 0
 	for _, e := range emails {
 		need = max(need, mins[e])
@@ -121,14 +118,17 @@ func (s *CascadeService) UserExitGroups(emails []string) ([]UserExitGroup, error
 		country := ""
 		if id != 0 {
 			n := nodes[id]
-			if n == nil || !n.Enable || n.Status != "online" {
+			if n == nil || !n.Serving() {
 				continue
 			}
 			exit.Name, exit.Address, country = n.Name, n.Address, n.Country
 		}
 		if l, known := loads[id]; known {
+			if slices.ContainsFunc(world.users(id), func(e string) bool { return slices.Contains(emails, e) }) {
+				l.Reserved -= float64(need)
+			}
 			exit.Capacity, exit.FreeMbps = true, l.freeForNewUser()
-			exit.Saturated = exit.FreeMbps <= 0 || exit.FreeMbps < float64(need)
+			exit.Saturated = exit.FreeMbps <= 0 || !l.roomFor(need)
 		}
 		exit.Pinned = slices.ContainsFunc(pins, func(p model.CascadeFixedExit) bool { return p.NodeId == id })
 		byCountry[country] = append(byCountry[country], exit)
@@ -176,15 +176,29 @@ func userCascadeExits(emails []string) ([]int, error) {
 
 // cascadeEnters reports whether traffic of inbound ib leaves through cascade c.
 func cascadeEnters(c *model.Cascade, ib *model.Inbound) bool {
+	return CascadeRoute(c, ib) != ""
+}
+
+// CascadeRoute is how cascade c carries inbound ib's traffic: CascadeModeSplit,
+// CascadeModeRelay, or "" when ib does not enter c.
+func CascadeRoute(c *model.Cascade, ib *model.Inbound) string {
 	entry := 0
 	if ib.NodeID != nil {
 		entry = *ib.NodeID
 	}
 	if entry != c.EntryNodeId {
-		return false
+		return ""
 	}
-	return len(c.EntryInboundTags) == 0 || slices.Contains(c.EntryInboundTags, ib.Tag) ||
-		slices.Contains(c.RelayInboundTags, ib.Tag)
+	mode := cascadeMode(c)
+	switch {
+	case mode == CascadeModeBoth && slices.Contains(c.RelayInboundTags, ib.Tag):
+		return CascadeModeRelay
+	case len(c.EntryInboundTags) > 0 && !slices.Contains(c.EntryInboundTags, ib.Tag):
+		return ""
+	case mode == CascadeModeRelay:
+		return CascadeModeRelay
+	}
+	return CascadeModeSplit
 }
 
 // PinUserExit pins every one of the emails to nodeID in place of their pin in

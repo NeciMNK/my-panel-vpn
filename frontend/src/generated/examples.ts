@@ -62,7 +62,8 @@ export const EXAMPLES: Record<string, unknown> = {
     "ldapUserAttr": "",
     "ldapUserFilter": "",
     "ldapVlessField": "",
-    "nodeDownThreshold": 1,
+    "nodeDownThreshold": 0,
+    "nodeLoadMinutes": 1,
     "outboundDownThreshold": 1,
     "pageSize": 0,
     "panelOutbound": "",
@@ -114,6 +115,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "subHappPerAppMode": "",
     "subHappPingType": "",
     "subHappProviderId": "",
+    "subHappRoutingUpdate": false,
     "subHappSubExpire": false,
     "subHappSubExpireButtonLink": "",
     "subHappSubInfoButtonLink": "",
@@ -170,6 +172,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "subKeyFile": "",
     "subListen": "",
     "subPath": "",
+    "subPathAliases": "",
     "subPort": 1,
     "subProfileMode": "",
     "subProfileUrl": "",
@@ -190,6 +193,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "tgBotVpnFallback": false,
     "tgCpu": 0,
     "tgEnabledEvents": "",
+    "tgEventRecipients": "",
     "tgFreePlanEnable": false,
     "tgFreePlanGB": 1,
     "tgFreePlanInbounds": "1,2",
@@ -202,6 +206,9 @@ export const EXAMPLES: Record<string, unknown> = {
     "tgRunTime": "",
     "timeLocation": "",
     "trafficDiff": 0,
+    "trafficResetAllDay": 1,
+    "trafficResetAllMonthly": false,
+    "trafficUsagePeriods": "",
     "trustedProxyCIDRs": "",
     "twoFactorEnable": false,
     "twoFactorToken": "",
@@ -261,7 +268,8 @@ export const EXAMPLES: Record<string, unknown> = {
     "ldapUserAttr": "",
     "ldapUserFilter": "",
     "ldapVlessField": "",
-    "nodeDownThreshold": 1,
+    "nodeDownThreshold": 0,
+    "nodeLoadMinutes": 1,
     "outboundDownThreshold": 1,
     "pageSize": 0,
     "panelOutbound": "",
@@ -313,6 +321,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "subHappPerAppMode": "",
     "subHappPingType": "",
     "subHappProviderId": "",
+    "subHappRoutingUpdate": false,
     "subHappSubExpire": false,
     "subHappSubExpireButtonLink": "",
     "subHappSubInfoButtonLink": "",
@@ -369,6 +378,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "subKeyFile": "",
     "subListen": "",
     "subPath": "",
+    "subPathAliases": "",
     "subPort": 1,
     "subProfileMode": "",
     "subProfileUrl": "",
@@ -389,6 +399,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "tgBotVpnFallback": false,
     "tgCpu": 0,
     "tgEnabledEvents": "",
+    "tgEventRecipients": "",
     "tgFreePlanEnable": false,
     "tgFreePlanGB": 1,
     "tgFreePlanInbounds": "1,2",
@@ -401,6 +412,9 @@ export const EXAMPLES: Record<string, unknown> = {
     "tgRunTime": "",
     "timeLocation": "",
     "trafficDiff": 0,
+    "trafficResetAllDay": 1,
+    "trafficResetAllMonthly": false,
+    "trafficUsagePeriods": "",
     "trustedProxyCIDRs": "",
     "twoFactorEnable": false,
     "twoFactorToken": "",
@@ -450,11 +464,98 @@ export const EXAMPLES: Record<string, unknown> = {
     "scope": "admin",
     "token": "new-token-string"
   },
+  "BackupNodeRun": {
+    "at": 1764039600,
+    "error": "",
+    "file": "ru-msk-1_2026-11-25_030000.tar.gz",
+    "name": "ru-msk-1",
+    "nodeId": 3
+  },
+  "BackupRun": {
+    "at": 1764039600,
+    "error": "",
+    "file": "panel.example.com_2026-11-25_030000.dump"
+  },
+  "BackupSettings": {
+    "dbEnable": true,
+    "dbEveryHours": 24,
+    "dbOnChange": true,
+    "dir": "/root/my-panel-vpn-backups",
+    "hasPassword": false,
+    "hasPrivateKey": true,
+    "host": "backup.example.com",
+    "hostKey": "SHA256:Vf0Yb0kq3y4I2n8M2m0p1Yc3Qz8jv8p0Hq4l5r6s7t8",
+    "keep": 7,
+    "nodesEnable": true,
+    "nodesEveryHours": 24,
+    "port": 22,
+    "user": "root"
+  },
+  "BackupSettingsRequest": {
+    "dbEnable": false,
+    "dbEveryHours": 0,
+    "dbOnChange": false,
+    "dir": "",
+    "host": "",
+    "keep": 0,
+    "nodesEnable": false,
+    "nodesEveryHours": 0,
+    "password": null,
+    "port": 0,
+    "privateKey": null,
+    "user": ""
+  },
+  "BackupStatus": {
+    "db": {
+      "at": 1764039600,
+      "error": "",
+      "file": "panel.example.com_2026-11-25_030000.dump"
+    },
+    "nodes": [
+      {
+        "at": 1764039600,
+        "error": "",
+        "file": "ru-msk-1_2026-11-25_030000.tar.gz",
+        "name": "ru-msk-1",
+        "nodeId": 3
+      }
+    ],
+    "nodesAt": 1764039600,
+    "running": ""
+  },
   "Blocker": {
     "code": "tools",
     "detail": "awg"
   },
+  "CacheUpdate": {
+    "responses": [
+      {
+        "agent": "happ",
+        "body": "dmxlc3M6Ly8uLi4=",
+        "device": "",
+        "header": {},
+        "host": "sub.example.com",
+        "stored": 1762736400,
+        "subId": "abc123",
+        "uri": "/sub/abc123"
+      }
+    ],
+    "subIds": [
+      "abc123"
+    ]
+  },
+  "CachedResponse": {
+    "agent": "happ",
+    "body": "dmxlc3M6Ly8uLi4=",
+    "device": "",
+    "header": {},
+    "host": "sub.example.com",
+    "stored": 1762736400,
+    "subId": "abc123",
+    "uri": "/sub/abc123"
+  },
   "Cascade": {
+    "autoSelect": false,
     "createdAt": 0,
     "directDomains": [
       ""
@@ -494,11 +595,17 @@ export const EXAMPLES: Record<string, unknown> = {
     "strategy": "leastPing",
     "updatedAt": 0
   },
-  "CascadeFixedExit": {
+  "CascadeFixedExitRequest": {
+    "email": "anna",
+    "nodeId": 2,
+    "trafficMode": "all"
+  },
+  "CascadeFixedExitRow": {
     "createdAt": 1762862400,
     "email": "anna",
     "id": 1,
-    "nodeId": 2
+    "nodeId": 2,
+    "trafficMode": "all"
   },
   "CascadeLink": {
     "address": "",
@@ -510,6 +617,31 @@ export const EXAMPLES: Record<string, unknown> = {
     "publicKey": "",
     "serverName": "",
     "shortId": ""
+  },
+  "CascadeRequest": {
+    "autoSelect": false,
+    "directDomains": [
+      ""
+    ],
+    "directIps": [
+      ""
+    ],
+    "enable": true,
+    "entryInboundTags": [
+      ""
+    ],
+    "entryNodeId": 1,
+    "exitCountry": "DE",
+    "exitNodeIds": [
+      2,
+      3
+    ],
+    "mode": "split",
+    "name": "RU → DE",
+    "relayInboundTags": [
+      ""
+    ],
+    "strategy": "leastPing"
   },
   "Client": {
     "adTag": "0123456789abcdef0123456789abcdef",
@@ -566,6 +698,15 @@ export const EXAMPLES: Record<string, unknown> = {
         "discountPercent": 10,
         "months": 3,
         "total": 810
+      }
+    ],
+    "speedTierId": 0,
+    "speedTiers": [
+      {
+        "id": 1,
+        "minMbps": 200,
+        "monthlyPrice": 100,
+        "name": "Plus"
       }
     ],
     "trusted": false
@@ -750,6 +891,31 @@ export const EXAMPLES: Record<string, unknown> = {
     "onlineCount": 1,
     "total": 2000
   },
+  "DNSPlan": {
+    "domain": "sub.example.com",
+    "edgesBefore": [
+      "203.0.113.7"
+    ],
+    "tiers": [
+      [
+        "198.51.100.1"
+      ],
+      [
+        "203.0.113.7"
+      ],
+      []
+    ],
+    "token": "cf-dns-token"
+  },
+  "DNSStatus": {
+    "at": 1762736400,
+    "error": "",
+    "published": [
+      "198.51.100.1"
+    ],
+    "tier": 0,
+    "unmanaged": []
+  },
   "FallbackParentInfo": {
     "masterId": 0,
     "path": ""
@@ -801,6 +967,13 @@ export const EXAMPLES: Record<string, unknown> = {
     "file": "geosite.dat",
     "reason": "categoryMissing",
     "token": "geosite:blabla"
+  },
+  "GroupSpeed": {
+    "floorMbps": 50,
+    "group": "users",
+    "id": 1,
+    "maxMbps": 100,
+    "minMbps": 0
   },
   "HappLinkResult": {
     "encryptedLink": "happ://crypt5/example"
@@ -1178,6 +1351,12 @@ export const EXAMPLES: Record<string, unknown> = {
     "name": "Hetzner DE",
     "serverId": 1
   },
+  "ListenerConfig": {
+    "certFile": "/etc/x-ui/certs/sub.example.com/fullchain.pem",
+    "enable": true,
+    "keyFile": "/etc/x-ui/certs/sub.example.com/privkey.pem",
+    "port": 443
+  },
   "LogEntry": {
     "DateTime": "2025-01-01T12:00:00Z",
     "Email": "alice@example.com",
@@ -1223,6 +1402,8 @@ export const EXAMPLES: Record<string, unknown> = {
   "Node": {
     "activeCount": 23,
     "address": "node1.example.com",
+    "alertCpu": 90,
+    "alertMemory": 0,
     "allowPrivateAddress": false,
     "basePath": "/",
     "clientCount": 27,
@@ -1256,6 +1437,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "port": 2053,
     "remark": "",
     "scheme": "https",
+    "seenBy": "",
     "status": "online",
     "tlsVerifyMode": "verify",
     "transitive": false,
@@ -1275,6 +1457,8 @@ export const EXAMPLES: Record<string, unknown> = {
   },
   "NodeMutationRequest": {
     "address": "",
+    "alertCpu": 0,
+    "alertMemory": 0,
     "allowPrivateAddress": false,
     "apiToken": null,
     "basePath": "",
@@ -1294,9 +1478,29 @@ export const EXAMPLES: Record<string, unknown> = {
     "scheme": "http",
     "tlsVerifyMode": "verify"
   },
+  "NodeRestoreRequest": {
+    "backup": "",
+    "host": "",
+    "password": "",
+    "port": 0,
+    "privateKey": "",
+    "user": ""
+  },
+  "NodeRestoreStatus": {
+    "error": "",
+    "finishedAt": 1764090180,
+    "log": [
+      "Connecting to 203.0.113.20"
+    ],
+    "nodeId": 3,
+    "running": false,
+    "startedAt": 1764090000
+  },
   "NodeView": {
     "activeCount": 20,
     "address": "node.example.com",
+    "alertCpu": 90,
+    "alertMemory": 0,
     "allowPrivateAddress": false,
     "basePath": "/",
     "clientCount": 25,
@@ -1331,6 +1535,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "port": 2053,
     "remark": "Primary edge",
     "scheme": "https",
+    "seenBy": "",
     "status": "online",
     "tlsVerifyMode": "verify",
     "transitive": false,
@@ -1396,6 +1601,12 @@ export const EXAMPLES: Record<string, unknown> = {
     "tag": "inbound-51820",
     "up": 1048576
   },
+  "PeerProbeResult": {
+    "error": "",
+    "latencyMs": 38,
+    "port": 443,
+    "reachable": true
+  },
   "ProbeResultUI": {
     "cpuPct": 12.5,
     "error": "",
@@ -1456,6 +1667,7 @@ export const EXAMPLES: Record<string, unknown> = {
     "freePerUserMbps": 44.5,
     "nodeId": 0,
     "online": 12,
+    "reservedMbps": 300,
     "usedMbps": 420.5
   },
   "ServerSettings": {
@@ -1512,12 +1724,22 @@ export const EXAMPLES: Record<string, unknown> = {
         "minMbps": 20
       }
     ],
+    "groups": [
+      {
+        "floorMbps": 50,
+        "group": "users",
+        "id": 1,
+        "maxMbps": 100,
+        "minMbps": 0
+      }
+    ],
     "load": [
       {
         "capacityMbps": 1000,
         "freePerUserMbps": 44.5,
         "nodeId": 0,
         "online": 12,
+        "reservedMbps": 300,
         "usedMbps": 420.5
       }
     ],
@@ -1530,6 +1752,7 @@ export const EXAMPLES: Record<string, unknown> = {
     ],
     "testSettings": {
       "autoCapacity": true,
+      "dropPercent": 30,
       "everyHours": 6,
       "times": [
         "03:00",
@@ -1550,6 +1773,14 @@ export const EXAMPLES: Record<string, unknown> = {
     ],
     "testing": [
       0
+    ],
+    "tiers": [
+      {
+        "id": 1,
+        "minMbps": 200,
+        "monthlyPrice": 100,
+        "name": "Plus"
+      }
     ]
   },
   "SpeedTestResult": {
@@ -1568,6 +1799,7 @@ export const EXAMPLES: Record<string, unknown> = {
   },
   "SpeedTestSettings": {
     "autoCapacity": true,
+    "dropPercent": 30,
     "everyHours": 6,
     "times": [
       "03:00",
@@ -1584,9 +1816,25 @@ export const EXAMPLES: Record<string, unknown> = {
     "minDownloadMbps": 640,
     "nodeId": 0
   },
+  "SpeedTier": {
+    "id": 1,
+    "minMbps": 200,
+    "monthlyPrice": 100,
+    "name": "Plus"
+  },
+  "StoredFile": {
+    "modTime": 1764039600,
+    "name": "de-fra-1_2026-11-25_030000.tar.gz",
+    "size": 524288
+  },
   "SubBalancer": {
     "createdAt": 1710000000000,
     "enabled": true,
+    "exitForeign": false,
+    "exitNodeIds": [
+      2,
+      3
+    ],
     "id": 1,
     "inboundIds": [
       1,
@@ -1597,6 +1845,48 @@ export const EXAMPLES: Record<string, unknown> = {
     "sortOrder": 1,
     "strategy": "random",
     "updatedAt": 1710000000000
+  },
+  "SubEdge": {
+    "certId": 1,
+    "createdAt": 0,
+    "enable": true,
+    "id": 1,
+    "lastError": "",
+    "lastSeen": 1762736400,
+    "nodeId": 2,
+    "port": 443,
+    "status": "online",
+    "updatedAt": 0
+  },
+  "SubEdgeDNSRequest": {
+    "domain": "sub.example.com",
+    "masterIps": [
+      "198.51.100.1"
+    ],
+    "token": ""
+  },
+  "SubEdgeDNSView": {
+    "domain": "sub.example.com",
+    "masterIps": [
+      "198.51.100.1"
+    ],
+    "status": {
+      "at": 1762736400,
+      "error": "",
+      "published": [
+        "198.51.100.1"
+      ],
+      "tier": 0,
+      "unmanaged": []
+    },
+    "tokenFromTls": false,
+    "tokenSet": true
+  },
+  "SubEdgeRequest": {
+    "certId": 1,
+    "enable": true,
+    "nodeId": 2,
+    "port": 443
   },
   "TgBotCapabilities": {
     "groupPrivacy": false,
@@ -1624,6 +1914,7 @@ export const EXAMPLES: Record<string, unknown> = {
   },
   "TlsCertificate": {
     "applyToPanel": false,
+    "applyToSub": false,
     "autoRenew": true,
     "certFile": "/etc/x-ui/certs/example.com/fullchain.pem",
     "createdAt": 1710000000000,
@@ -1645,6 +1936,51 @@ export const EXAMPLES: Record<string, unknown> = {
     "IsOutbound": false,
     "Tag": "inbound-443",
     "Up": 1048576
+  },
+  "TrafficUsageAmount": {
+    "down": 5368709120,
+    "up": 1073741824
+  },
+  "TrafficUsageReport": {
+    "clients": [
+      {
+        "name": "anna",
+        "subject": "anna",
+        "usage": [
+          {
+            "down": 5368709120,
+            "up": 1073741824
+          }
+        ]
+      }
+    ],
+    "periods": [
+      "24h",
+      "30d",
+      "month"
+    ],
+    "servers": [
+      {
+        "name": "anna",
+        "subject": "anna",
+        "usage": [
+          {
+            "down": 5368709120,
+            "up": 1073741824
+          }
+        ]
+      }
+    ]
+  },
+  "TrafficUsageRow": {
+    "name": "anna",
+    "subject": "anna",
+    "usage": [
+      {
+        "down": 5368709120,
+        "up": 1073741824
+      }
+    ]
   },
   "TuicClientSettings": {
     "email": "",

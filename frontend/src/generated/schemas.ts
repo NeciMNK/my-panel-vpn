@@ -193,7 +193,13 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "string"
       },
       "nodeDownThreshold": {
-        "maximum": 100,
+        "maximum": 3600,
+        "minimum": 0,
+        "type": "integer"
+      },
+      "nodeLoadMinutes": {
+        "description": "NodeLoadMinutes is how long a node's CPU or RAM must stay over the threshold before it alerts.",
+        "maximum": 60,
         "minimum": 1,
         "type": "integer"
       },
@@ -362,6 +368,9 @@ export const SCHEMAS: Record<string, unknown> = {
       },
       "subHappProviderId": {
         "type": "string"
+      },
+      "subHappRoutingUpdate": {
+        "type": "boolean"
       },
       "subHappSubExpire": {
         "type": "boolean"
@@ -533,6 +542,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "subPath": {
         "type": "string"
       },
+      "subPathAliases": {
+        "type": "string"
+      },
       "subPort": {
         "maximum": 65535,
         "minimum": 1,
@@ -600,6 +612,10 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgEnabledEvents": {
         "type": "string"
       },
+      "tgEventRecipients": {
+        "description": "TgEventRecipients maps an event type to the client groups and emails whose Telegram chats also get it.",
+        "type": "string"
+      },
       "tgFreePlanEnable": {
         "description": "Prices and discounts are edited on the Finance page (LedgerService.SavePayment), not here.",
         "type": "boolean"
@@ -651,6 +667,17 @@ export const SCHEMAS: Record<string, unknown> = {
         "maximum": 100,
         "minimum": 0,
         "type": "integer"
+      },
+      "trafficResetAllDay": {
+        "maximum": 31,
+        "minimum": 1,
+        "type": "integer"
+      },
+      "trafficResetAllMonthly": {
+        "type": "boolean"
+      },
+      "trafficUsagePeriods": {
+        "type": "string"
       },
       "trustedProxyCIDRs": {
         "type": "string"
@@ -726,6 +753,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "ldapUserFilter",
       "ldapVlessField",
       "nodeDownThreshold",
+      "nodeLoadMinutes",
       "outboundDownThreshold",
       "pageSize",
       "panelOutbound",
@@ -777,6 +805,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "subHappPerAppMode",
       "subHappPingType",
       "subHappProviderId",
+      "subHappRoutingUpdate",
       "subHappSubExpire",
       "subHappSubExpireButtonLink",
       "subHappSubInfoButtonLink",
@@ -833,6 +862,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "subKeyFile",
       "subListen",
       "subPath",
+      "subPathAliases",
       "subPort",
       "subProfileMode",
       "subProfileUrl",
@@ -853,6 +883,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgBotVpnFallback",
       "tgCpu",
       "tgEnabledEvents",
+      "tgEventRecipients",
       "tgFreePlanEnable",
       "tgFreePlanGB",
       "tgFreePlanInbounds",
@@ -865,6 +896,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgRunTime",
       "timeLocation",
       "trafficDiff",
+      "trafficResetAllDay",
+      "trafficResetAllMonthly",
+      "trafficUsagePeriods",
       "trustedProxyCIDRs",
       "twoFactorEnable",
       "twoFactorToken",
@@ -1032,7 +1066,13 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "string"
       },
       "nodeDownThreshold": {
-        "maximum": 100,
+        "maximum": 3600,
+        "minimum": 0,
+        "type": "integer"
+      },
+      "nodeLoadMinutes": {
+        "description": "NodeLoadMinutes is how long a node's CPU or RAM must stay over the threshold before it alerts.",
+        "maximum": 60,
         "minimum": 1,
         "type": "integer"
       },
@@ -1201,6 +1241,9 @@ export const SCHEMAS: Record<string, unknown> = {
       },
       "subHappProviderId": {
         "type": "string"
+      },
+      "subHappRoutingUpdate": {
+        "type": "boolean"
       },
       "subHappSubExpire": {
         "type": "boolean"
@@ -1372,6 +1415,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "subPath": {
         "type": "string"
       },
+      "subPathAliases": {
+        "type": "string"
+      },
       "subPort": {
         "maximum": 65535,
         "minimum": 1,
@@ -1439,6 +1485,10 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgEnabledEvents": {
         "type": "string"
       },
+      "tgEventRecipients": {
+        "description": "TgEventRecipients maps an event type to the client groups and emails whose Telegram chats also get it.",
+        "type": "string"
+      },
       "tgFreePlanEnable": {
         "description": "Prices and discounts are edited on the Finance page (LedgerService.SavePayment), not here.",
         "type": "boolean"
@@ -1490,6 +1540,17 @@ export const SCHEMAS: Record<string, unknown> = {
         "maximum": 100,
         "minimum": 0,
         "type": "integer"
+      },
+      "trafficResetAllDay": {
+        "maximum": 31,
+        "minimum": 1,
+        "type": "integer"
+      },
+      "trafficResetAllMonthly": {
+        "type": "boolean"
+      },
+      "trafficUsagePeriods": {
+        "type": "string"
       },
       "trustedProxyCIDRs": {
         "type": "string"
@@ -1574,6 +1635,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "ldapUserFilter",
       "ldapVlessField",
       "nodeDownThreshold",
+      "nodeLoadMinutes",
       "outboundDownThreshold",
       "pageSize",
       "panelOutbound",
@@ -1625,6 +1687,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "subHappPerAppMode",
       "subHappPingType",
       "subHappProviderId",
+      "subHappRoutingUpdate",
       "subHappSubExpire",
       "subHappSubExpireButtonLink",
       "subHappSubInfoButtonLink",
@@ -1681,6 +1744,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "subKeyFile",
       "subListen",
       "subPath",
+      "subPathAliases",
       "subPort",
       "subProfileMode",
       "subProfileUrl",
@@ -1701,6 +1765,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgBotVpnFallback",
       "tgCpu",
       "tgEnabledEvents",
+      "tgEventRecipients",
       "tgFreePlanEnable",
       "tgFreePlanGB",
       "tgFreePlanInbounds",
@@ -1713,6 +1778,9 @@ export const SCHEMAS: Record<string, unknown> = {
       "tgRunTime",
       "timeLocation",
       "trafficDiff",
+      "trafficResetAllDay",
+      "trafficResetAllMonthly",
+      "trafficUsagePeriods",
       "trustedProxyCIDRs",
       "twoFactorEnable",
       "twoFactorToken",
@@ -1837,6 +1905,220 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "BackupNodeRun": {
+    "description": "BackupNodeRun is the last backup of one node.",
+    "properties": {
+      "at": {
+        "example": 1764039600,
+        "format": "int64",
+        "type": "integer"
+      },
+      "error": {
+        "type": "string"
+      },
+      "file": {
+        "example": "ru-msk-1_2026-11-25_030000.tar.gz",
+        "type": "string"
+      },
+      "name": {
+        "example": "ru-msk-1",
+        "type": "string"
+      },
+      "nodeId": {
+        "example": 3,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "at",
+      "error",
+      "file",
+      "name",
+      "nodeId"
+    ],
+    "type": "object"
+  },
+  "BackupRun": {
+    "description": "BackupRun is the outcome of the last backup of one thing.",
+    "properties": {
+      "at": {
+        "example": 1764039600,
+        "format": "int64",
+        "type": "integer"
+      },
+      "error": {
+        "type": "string"
+      },
+      "file": {
+        "example": "panel.example.com_2026-11-25_030000.dump",
+        "type": "string"
+      }
+    },
+    "required": [
+      "at",
+      "error",
+      "file"
+    ],
+    "type": "object"
+  },
+  "BackupSettings": {
+    "description": "BackupSettings is the backup server and schedule; the password and key are\nnever sent back, only whether they are set.",
+    "properties": {
+      "dbEnable": {
+        "example": true,
+        "type": "boolean"
+      },
+      "dbEveryHours": {
+        "example": 24,
+        "type": "integer"
+      },
+      "dbOnChange": {
+        "example": true,
+        "type": "boolean"
+      },
+      "dir": {
+        "example": "/root/my-panel-vpn-backups",
+        "type": "string"
+      },
+      "hasPassword": {
+        "example": false,
+        "type": "boolean"
+      },
+      "hasPrivateKey": {
+        "example": true,
+        "type": "boolean"
+      },
+      "host": {
+        "example": "backup.example.com",
+        "type": "string"
+      },
+      "hostKey": {
+        "example": "SHA256:Vf0Yb0kq3y4I2n8M2m0p1Yc3Qz8jv8p0Hq4l5r6s7t8",
+        "type": "string"
+      },
+      "keep": {
+        "example": 7,
+        "type": "integer"
+      },
+      "nodesEnable": {
+        "example": true,
+        "type": "boolean"
+      },
+      "nodesEveryHours": {
+        "example": 24,
+        "type": "integer"
+      },
+      "port": {
+        "example": 22,
+        "type": "integer"
+      },
+      "user": {
+        "example": "root",
+        "type": "string"
+      }
+    },
+    "required": [
+      "dbEnable",
+      "dbEveryHours",
+      "dbOnChange",
+      "dir",
+      "hasPassword",
+      "hasPrivateKey",
+      "host",
+      "hostKey",
+      "keep",
+      "nodesEnable",
+      "nodesEveryHours",
+      "port",
+      "user"
+    ],
+    "type": "object"
+  },
+  "BackupSettingsRequest": {
+    "description": "BackupSettingsRequest saves BackupSettings; a nil password or key keeps the\nstored one and an empty string clears it.",
+    "properties": {
+      "dbEnable": {
+        "type": "boolean"
+      },
+      "dbEveryHours": {
+        "type": "integer"
+      },
+      "dbOnChange": {
+        "type": "boolean"
+      },
+      "dir": {
+        "type": "string"
+      },
+      "host": {
+        "type": "string"
+      },
+      "keep": {
+        "type": "integer"
+      },
+      "nodesEnable": {
+        "type": "boolean"
+      },
+      "nodesEveryHours": {
+        "type": "integer"
+      },
+      "password": {
+        "nullable": true,
+        "type": "string"
+      },
+      "port": {
+        "type": "integer"
+      },
+      "privateKey": {
+        "nullable": true,
+        "type": "string"
+      },
+      "user": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "dbEnable",
+      "dbEveryHours",
+      "dbOnChange",
+      "dir",
+      "host",
+      "keep",
+      "nodesEnable",
+      "nodesEveryHours",
+      "port",
+      "user"
+    ],
+    "type": "object"
+  },
+  "BackupStatus": {
+    "description": "BackupStatus is what the backups tab shows.",
+    "properties": {
+      "db": {
+        "$ref": "#/components/schemas/BackupRun"
+      },
+      "nodes": {
+        "items": {
+          "$ref": "#/components/schemas/BackupNodeRun"
+        },
+        "type": "array"
+      },
+      "nodesAt": {
+        "example": 1764039600,
+        "format": "int64",
+        "type": "integer"
+      },
+      "running": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "db",
+      "nodes",
+      "nodesAt",
+      "running"
+    ],
+    "type": "object"
+  },
   "Blocker": {
     "description": "Blocker is one unmet requirement.",
     "properties": {
@@ -1854,20 +2136,105 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "CacheUpdate": {
+    "description": "CacheUpdate is what a master sends an edge node: new responses, and every\nsubscription that may still be served, so the rest is dropped.",
+    "properties": {
+      "responses": {
+        "items": {
+          "$ref": "#/components/schemas/CachedResponse"
+        },
+        "type": "array"
+      },
+      "subIds": {
+        "example": [
+          "abc123"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "responses",
+      "subIds"
+    ],
+    "type": "object"
+  },
+  "CachedResponse": {
+    "description": "CachedResponse is one subscription answer a master gave a client app, kept\nso an edge can still answer that app while no master does.",
+    "properties": {
+      "agent": {
+        "example": "happ",
+        "type": "string"
+      },
+      "body": {
+        "example": "dmxlc3M6Ly8uLi4=",
+        "type": "string"
+      },
+      "device": {
+        "type": "string"
+      },
+      "header": {
+        "additionalProperties": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "type": "object"
+      },
+      "host": {
+        "example": "sub.example.com",
+        "type": "string"
+      },
+      "stored": {
+        "example": 1762736400,
+        "format": "int64",
+        "type": "integer"
+      },
+      "subId": {
+        "example": "abc123",
+        "type": "string"
+      },
+      "uri": {
+        "example": "/sub/abc123",
+        "type": "string"
+      }
+    },
+    "required": [
+      "agent",
+      "body",
+      "device",
+      "header",
+      "host",
+      "stored",
+      "subId",
+      "uri"
+    ],
+    "type": "object"
+  },
   "Cascade": {
     "description": "Cascade chains an entry server to one or more exit servers: users connect to\nthe entry, their traffic leaves the internet from an exit. Node id 0 means\nthis panel itself.",
     "properties": {
+      "autoSelect": {
+        "description": "AutoSelect marks an auto-select over foreign servers, listed apart from cascades.",
+        "example": false,
+        "type": "boolean"
+      },
       "createdAt": {
         "format": "int64",
         "type": "integer"
       },
       "directDomains": {
+        "description": "DirectDomains are the admin's domain rules added to the split's direct list.",
         "items": {
           "type": "string"
         },
         "type": "array"
       },
       "directIps": {
+        "description": "DirectIPs are the admin's IP rules added to the split's direct list.",
         "items": {
           "type": "string"
         },
@@ -1878,6 +2245,7 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "boolean"
       },
       "entryInboundTags": {
+        "description": "EntryInboundTags are the chained entry inbounds; empty means all of them.",
         "items": {
           "type": "string"
         },
@@ -1888,11 +2256,12 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "integer"
       },
       "exitCountry": {
-        "description": "ExitCountry, when set, makes every enabled node of that country an exit.",
+        "description": "ExitCountry, when set, makes every enabled node of that country an exit;\nFOREIGN makes every node outside the entry's country one.",
         "example": "DE",
         "type": "string"
       },
       "exitNodeIds": {
+        "description": "ExitNodeIds are the exits in use; for a country cascade, the resolved list.",
         "items": {
           "type": "integer"
         },
@@ -1903,9 +2272,11 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "integer"
       },
       "lastError": {
+        "description": "LastError is why the last apply failed; empty when the cascade is live.",
         "type": "string"
       },
       "links": {
+        "description": "Links are the provisioned hops, one per exit; read-only, set by the panel.",
         "items": {
           "$ref": "#/components/schemas/CascadeLink"
         },
@@ -1921,12 +2292,14 @@ export const SCHEMAS: Record<string, unknown> = {
         "type": "string"
       },
       "relayInboundTags": {
+        "description": "RelayInboundTags are the entry inbounds that relay everything in both mode.",
         "items": {
           "type": "string"
         },
         "type": "array"
       },
       "strategy": {
+        "description": "Strategy is the balancer strategy used when there are several exits.",
         "example": "leastPing",
         "type": "string"
       },
@@ -1936,6 +2309,7 @@ export const SCHEMAS: Record<string, unknown> = {
       }
     },
     "required": [
+      "autoSelect",
       "createdAt",
       "directDomains",
       "directIps",
@@ -1955,8 +2329,38 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
-  "CascadeFixedExit": {
-    "description": "CascadeFixedExit is an admin's permanent choice of exit for one user: every\ncascade with that exit sends the user there while it is up.",
+  "CascadeFixedExitRequest": {
+    "description": "CascadeFixedExitRequest pins (or unpins) one user to one exit server.",
+    "properties": {
+      "email": {
+        "description": "Email is the client's email, as in the client list.",
+        "example": "anna",
+        "type": "string"
+      },
+      "nodeId": {
+        "description": "NodeId is the exit server; 0 is this panel.",
+        "example": 2,
+        "type": "integer"
+      },
+      "trafficMode": {
+        "description": "TrafficMode is what the pin carries: \"all\" traffic or \"ai\" sites only; empty keeps the current mode.",
+        "enum": [
+          "all",
+          "ai"
+        ],
+        "example": "all",
+        "type": "string"
+      }
+    },
+    "required": [
+      "email",
+      "nodeId",
+      "trafficMode"
+    ],
+    "type": "object"
+  },
+  "CascadeFixedExitRow": {
+    "description": "CascadeFixedExitRow is one pin as the panel lists it, with what it carries.",
     "properties": {
       "createdAt": {
         "example": 1762862400,
@@ -1974,13 +2378,22 @@ export const SCHEMAS: Record<string, unknown> = {
       "nodeId": {
         "example": 2,
         "type": "integer"
+      },
+      "trafficMode": {
+        "enum": [
+          "all",
+          "ai"
+        ],
+        "example": "all",
+        "type": "string"
       }
     },
     "required": [
       "createdAt",
       "email",
       "id",
-      "nodeId"
+      "nodeId",
+      "trafficMode"
     ],
     "type": "object"
   },
@@ -2025,6 +2438,109 @@ export const SCHEMAS: Record<string, unknown> = {
       "publicKey",
       "serverName",
       "shortId"
+    ],
+    "type": "object"
+  },
+  "CascadeRequest": {
+    "description": "CascadeRequest is the body of /cascades/add and /cascades/update. Update\nreplaces the whole cascade: an omitted field is cleared, not kept.",
+    "properties": {
+      "autoSelect": {
+        "description": "AutoSelect makes it an auto-select over foreign servers: exits are picked\nforeign nodes or exitCountry FOREIGN, every one outside the entry's country.",
+        "example": false,
+        "type": "boolean"
+      },
+      "directDomains": {
+        "description": "DirectDomains extend the split's direct list: a plain domain or domain:,\nfull:, keyword:, regexp:, geosite: rules. Ignored in relay mode.",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "directIps": {
+        "description": "DirectIPs extend the split's direct list: IPs, CIDRs or geoip: rules.",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "enable": {
+        "example": true,
+        "type": "boolean"
+      },
+      "entryInboundTags": {
+        "description": "EntryInboundTags are the entry inbounds whose users are chained; empty\nchains every inbound of the entry.",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "entryNodeId": {
+        "description": "EntryNodeId is the server users connect to; 0 is this panel.",
+        "example": 1,
+        "type": "integer"
+      },
+      "exitCountry": {
+        "description": "ExitCountry (ISO code) makes every enabled node of that country except the\nentry an exit; FOREIGN makes every node outside the entry's country one.",
+        "example": "DE",
+        "type": "string"
+      },
+      "exitNodeIds": {
+        "description": "ExitNodeIds are the servers traffic leaves from; ignored when exitCountry\nis set. Several exits share a balancer and keep each user on one exit.",
+        "example": [
+          2,
+          3
+        ],
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
+      },
+      "mode": {
+        "description": "Mode (default split): split sends the entry country's sites direct and the\nrest to the exit, relay sends everything, both mixes them per inbound.",
+        "enum": [
+          "split",
+          "relay",
+          "both"
+        ],
+        "example": "split",
+        "type": "string"
+      },
+      "name": {
+        "example": "RU → DE",
+        "type": "string"
+      },
+      "relayInboundTags": {
+        "description": "RelayInboundTags are, in both mode only (and then required), the entry\ninbounds that relay everything; they must not be in entryInboundTags.",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "strategy": {
+        "description": "Strategy picks an exit for a new user when there are several (default\nleastPing); the user then stays there, see the section description.",
+        "enum": [
+          "leastPing",
+          "leastLoad",
+          "random",
+          "roundRobin"
+        ],
+        "example": "leastPing",
+        "type": "string"
+      }
+    },
+    "required": [
+      "autoSelect",
+      "directDomains",
+      "directIps",
+      "enable",
+      "entryInboundTags",
+      "entryNodeId",
+      "exitCountry",
+      "exitNodeIds",
+      "mode",
+      "name",
+      "relayInboundTags",
+      "strategy"
     ],
     "type": "object"
   },
@@ -2265,6 +2781,16 @@ export const SCHEMAS: Record<string, unknown> = {
         },
         "type": "array"
       },
+      "speedTierId": {
+        "example": 0,
+        "type": "integer"
+      },
+      "speedTiers": {
+        "items": {
+          "$ref": "#/components/schemas/SpeedTier"
+        },
+        "type": "array"
+      },
       "trusted": {
         "example": false,
         "type": "boolean"
@@ -2281,6 +2807,8 @@ export const SCHEMAS: Record<string, unknown> = {
       "nonPaying",
       "pendingMonths",
       "plans",
+      "speedTierId",
+      "speedTiers",
       "trusted"
     ],
     "type": "object"
@@ -2930,6 +3458,94 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "DNSPlan": {
+    "description": "DNSPlan is what decides the subscription domain's A records: the addresses\nof each tier, best first. EdgesBefore is set only for an edge node.",
+    "properties": {
+      "domain": {
+        "example": "sub.example.com",
+        "type": "string"
+      },
+      "edgesBefore": {
+        "example": [
+          "203.0.113.7"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "tiers": {
+        "example": [
+          [
+            "198.51.100.1"
+          ],
+          [
+            "203.0.113.7"
+          ],
+          []
+        ],
+        "items": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "type": "array"
+      },
+      "token": {
+        "example": "cf-dns-token",
+        "type": "string"
+      }
+    },
+    "required": [
+      "domain",
+      "edgesBefore",
+      "tiers",
+      "token"
+    ],
+    "type": "object"
+  },
+  "DNSStatus": {
+    "description": "DNSStatus is the outcome of the last switching step.",
+    "properties": {
+      "at": {
+        "example": 1762736400,
+        "format": "int64",
+        "type": "integer"
+      },
+      "error": {
+        "type": "string"
+      },
+      "published": {
+        "example": [
+          "198.51.100.1"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "tier": {
+        "example": 0,
+        "type": "integer"
+      },
+      "unmanaged": {
+        "example": [],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "at",
+      "error",
+      "published",
+      "tier",
+      "unmanaged"
+    ],
+    "type": "object"
+  },
   "FallbackParentInfo": {
     "description": "FallbackParentInfo carries everything the frontend needs to rewrite a\nchild inbound's client link: where to connect (the master's address\nand port) and which path matched on the master's fallbacks array.\nThe frontend already has the master inbound in its dbInbounds list,\nso we only ship identifiers + the match path here.",
     "properties": {
@@ -3093,6 +3709,39 @@ export const SCHEMAS: Record<string, unknown> = {
     "required": [
       "reason",
       "token"
+    ],
+    "type": "object"
+  },
+  "GroupSpeed": {
+    "description": "GroupSpeed is the speed every member of a client group gets unless the client\nhas its own ClientSpeed. FloorMbps \u003e 0 makes MaxMbps float between it and MaxMbps.",
+    "properties": {
+      "floorMbps": {
+        "example": 50,
+        "type": "integer"
+      },
+      "group": {
+        "example": "users",
+        "type": "string"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "maxMbps": {
+        "example": 100,
+        "type": "integer"
+      },
+      "minMbps": {
+        "example": 0,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "floorMbps",
+      "group",
+      "id",
+      "maxMbps",
+      "minMbps"
     ],
     "type": "object"
   },
@@ -4378,6 +5027,34 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "ListenerConfig": {
+    "description": "ListenerConfig is what a master tells a node about its edge listener. Empty cert\nfiles serve plain HTTP, for an edge behind the admin's own TLS proxy.",
+    "properties": {
+      "certFile": {
+        "example": "/etc/x-ui/certs/sub.example.com/fullchain.pem",
+        "type": "string"
+      },
+      "enable": {
+        "example": true,
+        "type": "boolean"
+      },
+      "keyFile": {
+        "example": "/etc/x-ui/certs/sub.example.com/privkey.pem",
+        "type": "string"
+      },
+      "port": {
+        "example": 443,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "certFile",
+      "enable",
+      "keyFile",
+      "port"
+    ],
+    "type": "object"
+  },
   "LogEntry": {
     "properties": {
       "DateTime": {
@@ -4579,6 +5256,15 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": "node1.example.com",
         "type": "string"
       },
+      "alertCpu": {
+        "description": "AlertCpu and AlertMemory (percent) replace the notifiers' CPU/RAM threshold for this node; 0 keeps them.",
+        "example": 90,
+        "type": "integer"
+      },
+      "alertMemory": {
+        "example": 0,
+        "type": "integer"
+      },
       "allowPrivateAddress": {
         "type": "boolean"
       },
@@ -4714,8 +5400,12 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": "https",
         "type": "string"
       },
+      "seenBy": {
+        "description": "SeenBy names the nodes that still reached this node while the master could not.",
+        "type": "string"
+      },
       "status": {
-        "description": "Heartbeat-updated fields. UpdatedAt advances on every probe even when\nthe row is otherwise unchanged so the UI's \"last seen\" tooltip is\ntruthful without us having to read LastHeartbeat separately.\nonline|offline|unknown",
+        "description": "Heartbeat-updated fields. UpdatedAt advances on every probe even when\nthe row is otherwise unchanged so the UI's \"last seen\" tooltip is\ntruthful without us having to read LastHeartbeat separately.\nonline|offline|isolated|unknown",
         "example": "online",
         "type": "string"
       },
@@ -4763,6 +5453,8 @@ export const SCHEMAS: Record<string, unknown> = {
     "required": [
       "activeCount",
       "address",
+      "alertCpu",
+      "alertMemory",
       "allowPrivateAddress",
       "basePath",
       "clientCount",
@@ -4793,6 +5485,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "port",
       "remark",
       "scheme",
+      "seenBy",
       "status",
       "tlsVerifyMode",
       "updatedAt",
@@ -4832,6 +5525,12 @@ export const SCHEMAS: Record<string, unknown> = {
     "properties": {
       "address": {
         "type": "string"
+      },
+      "alertCpu": {
+        "type": "integer"
+      },
+      "alertMemory": {
+        "type": "integer"
       },
       "allowPrivateAddress": {
         "type": "boolean"
@@ -4904,6 +5603,8 @@ export const SCHEMAS: Record<string, unknown> = {
     },
     "required": [
       "address",
+      "alertCpu",
+      "alertMemory",
       "allowPrivateAddress",
       "basePath",
       "country",
@@ -4921,6 +5622,83 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "NodeRestoreRequest": {
+    "description": "NodeRestoreRequest names the fresh server a lost node moves to.",
+    "properties": {
+      "backup": {
+        "description": "Backup is a file from the node's backups; empty takes the newest, \"none\" none.",
+        "type": "string"
+      },
+      "host": {
+        "type": "string"
+      },
+      "password": {
+        "type": "string"
+      },
+      "port": {
+        "type": "integer"
+      },
+      "privateKey": {
+        "type": "string"
+      },
+      "user": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "backup",
+      "host",
+      "password",
+      "port",
+      "privateKey",
+      "user"
+    ],
+    "type": "object"
+  },
+  "NodeRestoreStatus": {
+    "description": "NodeRestoreStatus is the progress of the current or last node restore.",
+    "properties": {
+      "error": {
+        "type": "string"
+      },
+      "finishedAt": {
+        "example": 1764090180,
+        "format": "int64",
+        "type": "integer"
+      },
+      "log": {
+        "example": [
+          "Connecting to 203.0.113.20"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "nodeId": {
+        "example": 3,
+        "type": "integer"
+      },
+      "running": {
+        "example": false,
+        "type": "boolean"
+      },
+      "startedAt": {
+        "example": 1764090000,
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "error",
+      "finishedAt",
+      "log",
+      "nodeId",
+      "running",
+      "startedAt"
+    ],
+    "type": "object"
+  },
   "NodeView": {
     "description": "NodeView is the browser/API read contract for nodes. Credentials are\nwrite-only: responses expose only whether a node has a token configured.",
     "properties": {
@@ -4931,6 +5709,14 @@ export const SCHEMAS: Record<string, unknown> = {
       "address": {
         "example": "node.example.com",
         "type": "string"
+      },
+      "alertCpu": {
+        "example": 90,
+        "type": "integer"
+      },
+      "alertMemory": {
+        "example": 0,
+        "type": "integer"
       },
       "allowPrivateAddress": {
         "example": false,
@@ -5067,6 +5853,9 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": "https",
         "type": "string"
       },
+      "seenBy": {
+        "type": "string"
+      },
       "status": {
         "example": "online",
         "type": "string"
@@ -5110,6 +5899,8 @@ export const SCHEMAS: Record<string, unknown> = {
     "required": [
       "activeCount",
       "address",
+      "alertCpu",
+      "alertMemory",
       "allowPrivateAddress",
       "basePath",
       "clientCount",
@@ -5141,6 +5932,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "port",
       "remark",
       "scheme",
+      "seenBy",
       "status",
       "tlsVerifyMode",
       "updatedAt",
@@ -5400,6 +6192,33 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "PeerProbeResult": {
+    "description": "PeerProbeResult is what the asked node saw; Port is the first one that answered.",
+    "properties": {
+      "error": {
+        "type": "string"
+      },
+      "latencyMs": {
+        "example": 38,
+        "type": "integer"
+      },
+      "port": {
+        "example": 443,
+        "type": "integer"
+      },
+      "reachable": {
+        "example": true,
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "error",
+      "latencyMs",
+      "port",
+      "reachable"
+    ],
+    "type": "object"
+  },
   "ProbeResultUI": {
     "properties": {
       "cpuPct": {
@@ -5633,7 +6452,7 @@ export const SCHEMAS: Record<string, unknown> = {
     "type": "object"
   },
   "ServerFreeSpeed": {
-    "description": "ServerFreeSpeed is the live load of a server with a known capacity.",
+    "description": "ServerFreeSpeed is the live load of a server with a known capacity;\nReservedMbps is what the guarantees of the users it carries add up to.",
     "properties": {
       "capacityMbps": {
         "example": 1000,
@@ -5651,6 +6470,10 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": 12,
         "type": "integer"
       },
+      "reservedMbps": {
+        "example": 300,
+        "type": "integer"
+      },
       "usedMbps": {
         "example": 420.5,
         "type": "number"
@@ -5661,6 +6484,7 @@ export const SCHEMAS: Record<string, unknown> = {
       "freePerUserMbps",
       "nodeId",
       "online",
+      "reservedMbps",
       "usedMbps"
     ],
     "type": "object"
@@ -5842,6 +6666,12 @@ export const SCHEMAS: Record<string, unknown> = {
         },
         "type": "array"
       },
+      "groups": {
+        "items": {
+          "$ref": "#/components/schemas/GroupSpeed"
+        },
+        "type": "array"
+      },
       "load": {
         "items": {
           "$ref": "#/components/schemas/ServerFreeSpeed"
@@ -5871,15 +6701,23 @@ export const SCHEMAS: Record<string, unknown> = {
           "type": "integer"
         },
         "type": "array"
+      },
+      "tiers": {
+        "items": {
+          "$ref": "#/components/schemas/SpeedTier"
+        },
+        "type": "array"
       }
     },
     "required": [
       "clients",
+      "groups",
       "load",
       "servers",
       "testSettings",
       "testStats",
-      "testing"
+      "testing",
+      "tiers"
     ],
     "type": "object"
   },
@@ -5958,6 +6796,11 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": true,
         "type": "boolean"
       },
+      "dropPercent": {
+        "description": "DropPercent below the 30-day average triggers rechecks and an alert; 0 turns it off.",
+        "example": 30,
+        "type": "integer"
+      },
       "everyHours": {
         "example": 6,
         "type": "integer"
@@ -5979,6 +6822,7 @@ export const SCHEMAS: Record<string, unknown> = {
     },
     "required": [
       "autoCapacity",
+      "dropPercent",
       "everyHours",
       "times",
       "timezone"
@@ -6031,6 +6875,59 @@ export const SCHEMAS: Record<string, unknown> = {
     ],
     "type": "object"
   },
+  "SpeedTier": {
+    "description": "SpeedTier is a paid speed upgrade: a guaranteed MinMbps for MonthlyPrice on\ntop of every month of the client's term.",
+    "properties": {
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "minMbps": {
+        "example": 200,
+        "type": "integer"
+      },
+      "monthlyPrice": {
+        "example": 100,
+        "type": "integer"
+      },
+      "name": {
+        "example": "Plus",
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "minMbps",
+      "monthlyPrice",
+      "name"
+    ],
+    "type": "object"
+  },
+  "StoredFile": {
+    "description": "StoredFile is one backup kept on the backup server.",
+    "properties": {
+      "modTime": {
+        "example": 1764039600,
+        "format": "int64",
+        "type": "integer"
+      },
+      "name": {
+        "example": "de-fra-1_2026-11-25_030000.tar.gz",
+        "type": "string"
+      },
+      "size": {
+        "example": 524288,
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "modTime",
+      "name",
+      "size"
+    ],
+    "type": "object"
+  },
   "SubBalancer": {
     "description": "SubBalancer is one extra JSON-subscription config document whose members are\nthe selected inbounds' proxy outbounds. SortOrder shares SubSortIndex semantics.",
     "properties": {
@@ -6043,6 +6940,22 @@ export const SCHEMAS: Record<string, unknown> = {
         "description": "No gorm default:true — a bool default makes an explicit false at insert\ncollapse back to the column default (zero value is skipped).",
         "example": true,
         "type": "boolean"
+      },
+      "exitForeign": {
+        "description": "ExitForeign adds the client's inbounds on every enabled foreign node: an\nauto-select without an entry server, re-resolved on each subscription fetch.",
+        "example": false,
+        "type": "boolean"
+      },
+      "exitNodeIds": {
+        "description": "ExitNodeIds adds the client's inbounds on these foreign nodes.",
+        "example": [
+          2,
+          3
+        ],
+        "items": {
+          "type": "integer"
+        },
+        "type": "array"
       },
       "id": {
         "example": 1,
@@ -6094,12 +7007,170 @@ export const SCHEMAS: Record<string, unknown> = {
     "required": [
       "createdAt",
       "enabled",
+      "exitForeign",
+      "exitNodeIds",
       "id",
       "inboundIds",
       "remark",
       "sortOrder",
       "strategy",
       "updatedAt"
+    ],
+    "type": "object"
+  },
+  "SubEdge": {
+    "description": "SubEdge makes a node serve this panel's subscriptions on its own port: every\nmaster keeps a tunnel to the node and the node forwards requests through it.",
+    "properties": {
+      "certId": {
+        "description": "CertId is the panel-managed certificate the edge serves; 0 serves plain HTTP.",
+        "example": 1,
+        "type": "integer"
+      },
+      "createdAt": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "enable": {
+        "example": true,
+        "type": "boolean"
+      },
+      "id": {
+        "example": 1,
+        "type": "integer"
+      },
+      "lastError": {
+        "type": "string"
+      },
+      "lastSeen": {
+        "example": 1762736400,
+        "format": "int64",
+        "type": "integer"
+      },
+      "nodeId": {
+        "example": 2,
+        "type": "integer"
+      },
+      "port": {
+        "example": 443,
+        "type": "integer"
+      },
+      "status": {
+        "description": "Status is online while this master's tunnel to the node is up.",
+        "example": "online",
+        "type": "string"
+      },
+      "updatedAt": {
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "certId",
+      "createdAt",
+      "enable",
+      "id",
+      "lastError",
+      "lastSeen",
+      "nodeId",
+      "port",
+      "status",
+      "updatedAt"
+    ],
+    "type": "object"
+  },
+  "SubEdgeDNSRequest": {
+    "description": "SubEdgeDNSRequest is the admin's DNS switching setup; an empty token keeps\nthe saved one.",
+    "properties": {
+      "domain": {
+        "example": "sub.example.com",
+        "type": "string"
+      },
+      "masterIps": {
+        "example": [
+          "198.51.100.1"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "token": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "domain",
+      "masterIps",
+      "token"
+    ],
+    "type": "object"
+  },
+  "SubEdgeDNSView": {
+    "description": "SubEdgeDNSView is the DNS switching setup without its token, and what the\nlast switching step did.",
+    "properties": {
+      "domain": {
+        "example": "sub.example.com",
+        "type": "string"
+      },
+      "masterIps": {
+        "example": [
+          "198.51.100.1"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "status": {
+        "$ref": "#/components/schemas/DNSStatus"
+      },
+      "tokenFromTls": {
+        "example": false,
+        "type": "boolean"
+      },
+      "tokenSet": {
+        "example": true,
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "domain",
+      "masterIps",
+      "status",
+      "tokenFromTls",
+      "tokenSet"
+    ],
+    "type": "object"
+  },
+  "SubEdgeRequest": {
+    "description": "SubEdgeRequest is the admin's add/update body for an edge node.",
+    "properties": {
+      "certId": {
+        "example": 1,
+        "minimum": 0,
+        "type": "integer"
+      },
+      "enable": {
+        "example": true,
+        "type": "boolean"
+      },
+      "nodeId": {
+        "example": 2,
+        "minimum": 1,
+        "type": "integer"
+      },
+      "port": {
+        "example": 443,
+        "maximum": 65535,
+        "minimum": 1,
+        "type": "integer"
+      }
+    },
+    "required": [
+      "certId",
+      "enable",
+      "nodeId",
+      "port"
     ],
     "type": "object"
   },
@@ -6221,6 +7292,10 @@ export const SCHEMAS: Record<string, unknown> = {
         "example": false,
         "type": "boolean"
       },
+      "applyToSub": {
+        "example": false,
+        "type": "boolean"
+      },
       "autoRenew": {
         "example": true,
         "type": "boolean"
@@ -6278,6 +7353,7 @@ export const SCHEMAS: Record<string, unknown> = {
     },
     "required": [
       "applyToPanel",
+      "applyToSub",
       "autoRenew",
       "certFile",
       "createdAt",
@@ -6324,6 +7400,85 @@ export const SCHEMAS: Record<string, unknown> = {
       "IsOutbound",
       "Tag",
       "Up"
+    ],
+    "type": "object"
+  },
+  "TrafficUsageAmount": {
+    "description": "TrafficUsageAmount is the traffic of one period in bytes.",
+    "properties": {
+      "down": {
+        "example": 5368709120,
+        "format": "int64",
+        "type": "integer"
+      },
+      "up": {
+        "example": 1073741824,
+        "format": "int64",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "down",
+      "up"
+    ],
+    "type": "object"
+  },
+  "TrafficUsageReport": {
+    "description": "TrafficUsageReport is the traffic of every server and client over the periods\nthe admin picked in the settings.",
+    "properties": {
+      "clients": {
+        "items": {
+          "$ref": "#/components/schemas/TrafficUsageRow"
+        },
+        "type": "array"
+      },
+      "periods": {
+        "example": [
+          "24h",
+          "30d",
+          "month"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "servers": {
+        "items": {
+          "$ref": "#/components/schemas/TrafficUsageRow"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "clients",
+      "periods",
+      "servers"
+    ],
+    "type": "object"
+  },
+  "TrafficUsageRow": {
+    "description": "TrafficUsageRow is one client (subject = email) or server (subject = node id,\n\"0\" = this panel); Usage lines up with the report's Periods.",
+    "properties": {
+      "name": {
+        "example": "anna",
+        "type": "string"
+      },
+      "subject": {
+        "example": "anna",
+        "type": "string"
+      },
+      "usage": {
+        "items": {
+          "$ref": "#/components/schemas/TrafficUsageAmount"
+        },
+        "type": "array"
+      }
+    },
+    "required": [
+      "name",
+      "subject",
+      "usage"
     ],
     "type": "object"
   },

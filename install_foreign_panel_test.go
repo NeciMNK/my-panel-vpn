@@ -232,8 +232,8 @@ func TestInstallRemoveForeignXUIBacksUpThenRemoves(t *testing.T) {
 	}
 
 	calls := readScriptState(t, h.dir, "calls")
-	if !strings.HasPrefix(calls, "systemctl stop x-ui\n") {
-		t.Errorf("old panel must be stopped before it is copied, calls:\n%s", calls)
+	if !strings.HasPrefix(calls, "systemctl daemon-reload\nsystemctl stop x-ui\n") {
+		t.Errorf("old panel must be stopped, after a unit reload, before it is copied, calls:\n%s", calls)
 	}
 	if strings.Contains(calls, "hysteria") {
 		t.Errorf("Blitz services were touched:\n%s", calls)

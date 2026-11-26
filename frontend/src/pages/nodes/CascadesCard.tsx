@@ -17,11 +17,19 @@ import {
   Tag,
   Typography,
 } from 'antd';
-import { BranchesOutlined, DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
+import {
+  BranchesOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  PlusOutlined,
+  ThunderboltOutlined,
+} from '@ant-design/icons';
 
 import { HttpUtil } from '@/utils';
 import { selectTagRender } from '@/components/form';
 import type { NodeRecord } from '@/api/queries/useNodesQuery';
+
+import EntrylessAutoSelectList from './EntrylessAutoSelectList';
 
 export interface CascadeLink {
   nodeId: number;
@@ -43,6 +51,7 @@ export interface CascadeRecord {
   directDomains?: string[] | null;
   directIps?: string[] | null;
   relayInboundTags?: string[] | null;
+  autoSelect?: boolean;
   links: CascadeLink[] | null;
   lastError: string;
 }
@@ -61,25 +70,30 @@ export interface CascadeForm {
   directDomains: string[];
   directIps: string[];
   relayInboundTags: string[];
+  autoSelect: boolean;
 }
+
+// Matches CascadeExitForeign in Go: every node outside the entry's country is an exit.
+export const EXIT_FOREIGN = 'FOREIGN';
 
 const CASCADES_KEY = ['cascades', 'list'] as const;
 const STRATEGIES = ['leastPing', 'leastLoad', 'random', 'roundRobin'];
 const JSON_HEADERS = { headers: { 'Content-Type': 'application/json' } };
 
-export function emptyCascadeForm(): CascadeForm {
+export function emptyCascadeForm(autoSelect = false): CascadeForm {
   return {
     name: '',
     enable: true,
     entryNodeId: 0,
     exitNodeIds: [],
-    exitCountry: '',
+    exitCountry: autoSelect ? EXIT_FOREIGN : '',
     entryInboundTags: [],
     strategy: 'leastPing',
     mode: 'split',
     directDomains: [],
     directIps: [],
     relayInboundTags: [],
+    autoSelect,
   };
 }
 
@@ -115,6 +129,7 @@ export function cascadeFormOf(c: CascadeRecord): CascadeForm {
     directDomains: c.directDomains ?? [],
     directIps: c.directIps ?? [],
     relayInboundTags: c.relayInboundTags ?? [],
+    autoSelect: c.autoSelect ?? false,
   };
 }
 
@@ -136,6 +151,20 @@ export function exitOptions<T extends { value: number }>(servers: T[], entryNode
   return servers.filter((s) => s.value !== entryNodeId);
 }
 
+// Auto-select exits: nodes with a country other than the entry's (the panel counts as RU).
+export function foreignExitIds(
+  nodes: { id: number; country?: string; transitive?: boolean }[],
+  entryNodeId: number,
+): number[] {
+  const country = (n?: { country?: string }) => (n?.country ?? '').trim().toUpperCase();
+  const home = country(nodes.find((n) => n.id === entryNodeId)) || 'RU';
+  return nodes
+    .filter(
+      (n) => !n.transitive && n.id !== entryNodeId && country(n) !== '' && country(n) !== home,
+    )
+    .map((n) => n.id);
+}
+
 async function fetchCascades(): Promise<CascadeRecord[]> {
   const msg = await HttpUtil.get<CascadeRecord[]>('/panel/api/cascades/list', undefined, {
     silent: true,
@@ -146,15 +175,17 @@ async function fetchCascades(): Promise<CascadeRecord[]> {
 
 interface CascadesCardProps {
   nodes: NodeRecord[];
+  autoSelect?: boolean;
 }
 
-export default function CascadesCard({ nodes }: CascadesCardProps) {
+export default function CascadesCard({ nodes, autoSelect = false }: CascadesCardProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const { data: cascades = [], isFetching } = useQuery({
+  const { data: allCascades = [], isFetching } = useQuery({
     queryKey: CASCADES_KEY,
     queryFn: fetchCascades,
   });
+  const cascades = allCascades.filter((c) => (c.autoSelect ?? false) === autoSelect);
   const [editing, setEditing] = useState<CascadeRecord | null>(null);
   const [form, setForm] = useState<CascadeForm | null>(null);
 
@@ -185,7 +216,7 @@ export default function CascadesCard({ nodes }: CascadesCardProps) {
 
   const openNew = () => {
     setEditing(null);
-    setForm(emptyCascadeForm());
+    setForm(emptyCascadeForm(autoSelect));
   };
   const openEdit = (c: CascadeRecord) => {
     setEditing(c);
@@ -209,7 +240,10 @@ export default function CascadesCard({ nodes }: CascadesCardProps) {
           <Tag color="blue">{serverName(c.entryNodeId)}</Tag>→
           {c.exitCountry && (
             <Tag color="gold">
-              {countryFlag(c.exitCountry)} {c.exitCountry} ({(c.exitNodeIds ?? []).length})
+              {c.exitCountry === EXIT_FOREIGN
+                ? `🌍 ${t('pages.nodes.cascade.exitModeForeign')}`
+                : `${countryFlag(c.exitCountry)} ${c.exitCountry}`}{' '}
+              ({(c.exitNodeIds ?? []).length})
             </Tag>
           )}
           {(c.exitNodeIds ?? []).map((id) => (
@@ -266,9 +300,15 @@ export default function CascadesCard({ nodes }: CascadesCardProps) {
     },
   ];
 
-  const exits = form ? exitOptions(servers, form.entryNodeId) : [];
+  const foreignIds = form ? foreignExitIds(nodes, form.entryNodeId) : [];
+  const exits = !form
+    ? []
+    : autoSelect
+      ? servers.filter((s) => foreignIds.includes(s.value))
+      : exitOptions(servers, form.entryNodeId);
   const countries = nodeCountries(nodes);
-  const byCountry = form !== null && form.exitCountry !== '';
+  const foreign = form !== null && form.exitCountry === EXIT_FOREIGN;
+  const byCountry = form !== null && form.exitCountry !== '' && !foreign;
 
   return (
     <Card
@@ -276,13 +316,13 @@ export default function CascadesCard({ nodes }: CascadesCardProps) {
       hoverable
       title={
         <Space>
-          <BranchesOutlined aria-hidden />
-          {t('pages.nodes.cascade.title')}
+          {autoSelect ? <ThunderboltOutlined aria-hidden /> : <BranchesOutlined aria-hidden />}
+          {autoSelect ? t('pages.nodes.cascade.autoTitle') : t('pages.nodes.cascade.title')}
         </Space>
       }
       extra={
         <Button type="primary" icon={<PlusOutlined aria-hidden />} onClick={openNew}>
-          {t('pages.nodes.cascade.add')}
+          {autoSelect ? t('pages.nodes.cascade.autoAdd') : t('pages.nodes.cascade.add')}
         </Button>
       }
     >
@@ -295,10 +335,19 @@ export default function CascadesCard({ nodes }: CascadesCardProps) {
         pagination={false}
         scroll={{ x: 'max-content' }}
       />
+      {autoSelect && <EntrylessAutoSelectList nodes={nodes} />}
 
       <Modal
         open={form !== null}
-        title={editing ? t('pages.nodes.cascade.edit') : t('pages.nodes.cascade.add')}
+        title={
+          autoSelect
+            ? editing
+              ? t('pages.nodes.cascade.autoEdit')
+              : t('pages.nodes.cascade.autoAdd')
+            : editing
+              ? t('pages.nodes.cascade.edit')
+              : t('pages.nodes.cascade.add')
+        }
         okText={t('save')}
         onOk={onSubmit}
         confirmLoading={save.isPending}
@@ -308,7 +357,7 @@ export default function CascadesCard({ nodes }: CascadesCardProps) {
         {form && (
           <Form layout="vertical">
             <Typography.Paragraph type="secondary">
-              {t('pages.nodes.cascade.desc')}
+              {autoSelect ? t('pages.nodes.cascade.autoDesc') : t('pages.nodes.cascade.desc')}
             </Typography.Paragraph>
             <Form.Item label={t('pages.nodes.cascade.entry')} required>
               <Select
@@ -319,34 +368,45 @@ export default function CascadesCard({ nodes }: CascadesCardProps) {
                   setForm({
                     ...form,
                     entryNodeId: v,
-                    exitNodeIds: form.exitNodeIds.filter((id) => id !== v),
+                    exitNodeIds: form.exitNodeIds.filter(
+                      (id) => id !== v && (!autoSelect || foreignExitIds(nodes, v).includes(id)),
+                    ),
                   })
                 }
               />
             </Form.Item>
             <Form.Item label={t('pages.nodes.cascade.exitMode')}>
               <Segmented
-                value={byCountry ? 'country' : 'servers'}
-                options={[
-                  {
-                    value: 'servers',
-                    label: t('pages.nodes.cascade.exitModeServers'),
-                  },
-                  {
-                    value: 'country',
-                    label: t('pages.nodes.cascade.exitModeCountry'),
-                    disabled: countries.length === 0,
-                  },
-                ]}
+                value={foreign ? 'foreign' : byCountry ? 'country' : 'servers'}
+                options={
+                  autoSelect
+                    ? [
+                        { value: 'foreign', label: t('pages.nodes.cascade.exitModeForeign') },
+                        { value: 'servers', label: t('pages.nodes.cascade.exitModePickedForeign') },
+                      ]
+                    : [
+                        { value: 'servers', label: t('pages.nodes.cascade.exitModeServers') },
+                        {
+                          value: 'country',
+                          label: t('pages.nodes.cascade.exitModeCountry'),
+                          disabled: countries.length === 0,
+                        },
+                      ]
+                }
                 onChange={(v) =>
                   setForm({
                     ...form,
-                    exitCountry: v === 'country' ? (countries[0] ?? '') : '',
+                    exitCountry:
+                      v === 'country' ? (countries[0] ?? '') : v === 'foreign' ? EXIT_FOREIGN : '',
                   })
                 }
               />
             </Form.Item>
-            {byCountry ? (
+            {foreign ? (
+              <Typography.Paragraph type="secondary">
+                {t('pages.nodes.cascade.exitModeForeignHint')}
+              </Typography.Paragraph>
+            ) : byCountry ? (
               <Form.Item
                 label={t('pages.nodes.cascade.country')}
                 extra={t('pages.nodes.cascade.countryHint')}
@@ -374,7 +434,7 @@ export default function CascadesCard({ nodes }: CascadesCardProps) {
                 />
               </Form.Item>
             )}
-            {(byCountry || form.exitNodeIds.length > 1) && (
+            {(byCountry || foreign || form.exitNodeIds.length > 1) && (
               <Form.Item label={t('pages.nodes.cascade.strategy')}>
                 <Select
                   aria-label={t('pages.nodes.cascade.strategy')}
@@ -469,6 +529,12 @@ export default function CascadesCard({ nodes }: CascadesCardProps) {
             <Form.Item
               label={t('pages.nodes.cascade.inbounds')}
               extra={t('pages.nodes.cascade.inboundsHint')}
+              validateStatus={form.entryInboundTags.length === 0 ? 'warning' : undefined}
+              help={
+                form.entryInboundTags.length === 0
+                  ? t('pages.nodes.cascade.inboundsAllWarning')
+                  : undefined
+              }
             >
               <Select
                 aria-label={t('pages.nodes.cascade.inbounds')}

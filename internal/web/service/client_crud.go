@@ -155,6 +155,20 @@ func (s *ClientService) GetClientsByTrafficReset(period string) ([]ClientResetCy
 	return cycles, nil
 }
 
+// GetClientsFollowingGlobalReset returns the clients with no reset cycle of their
+// own: none on the client, no renewal schedule, and no inbound that resets them.
+func (s *ClientService) GetClientsFollowingGlobalReset() ([]ClientResetCycle, error) {
+	var cycles []ClientResetCycle
+	err := clientResetCycles(database.GetDB()).
+		Where("c.traffic_reset = ? AND c.reset = 0 AND c.reset_day = 0 AND c.reset_weekday = 0", "never").
+		Where("NOT EXISTS (SELECT 1 FROM client_inbounds ci JOIN inbounds i ON i.id = ci.inbound_id WHERE ci.client_id = c.id AND i.traffic_reset <> ?)", "never").
+		Scan(&cycles).Error
+	if err != nil {
+		return nil, err
+	}
+	return cycles, nil
+}
+
 // quotaDisabledEmails lists the disabled clients whose usage reached their quota,
 // only those in within unless it is nil. Read it before zeroing the counters,
 // which hides why a client is off.
@@ -507,6 +521,23 @@ func (s *ClientService) fillProtocolDefaultsAgainstExisting(c *model.Client, ib 
 		}
 	}
 	return nil
+}
+
+// carryMintedCredentials keeps what fillProtocolDefaults minted for one inbound
+// on the shared identity, so every later inbound and the record reuse it.
+func carryMintedCredentials(shared *model.Client, filled model.Client) {
+	if shared.ID == "" {
+		shared.ID = filled.ID
+	}
+	if shared.Password == "" {
+		shared.Password = filled.Password
+	}
+	if shared.Auth == "" {
+		shared.Auth = filled.Auth
+	}
+	if shared.Secret == "" {
+		shared.Secret = filled.Secret
+	}
 }
 
 // defaultMtprotoDomain is the FakeTLS fronting domain used when an mtproto
@@ -1245,6 +1276,7 @@ func (s *ClientService) Attach(inboundSvc *InboundService, id int, inboundIds []
 		if err := s.fillProtocolDefaults(&copyClient, inbound); err != nil {
 			return false, fmt.Errorf("inbound %d: %w", ibId, err)
 		}
+		carryMintedCredentials(clientWire, copyClient)
 		settingsPayload, mErr := json.Marshal(map[string][]model.Client{"clients": {clientWithInboundFlow(copyClient, inbound)}})
 		if mErr != nil {
 			return false, fmt.Errorf("inbound %d: %w", ibId, mErr)

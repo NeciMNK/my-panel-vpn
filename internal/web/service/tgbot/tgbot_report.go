@@ -272,19 +272,13 @@ func (t *Tgbot) UserLoginNotify(attempt LoginAttempt) {
 	})
 }
 
-// notifyExhausted sends notifications for exhausted clients.
+// notifyExhausted warns clients whose traffic quota is about to run out.
 func (t *Tgbot) notifyExhausted() {
 	trDiff := int64(0)
-	exDiff := int64(0)
-	now := time.Now().Unix() * 1000
 
 	TrafficThreshold, err := t.settingService.GetTrafficDiff()
 	if err == nil && TrafficThreshold > 0 {
 		trDiff = int64(TrafficThreshold) * 1073741824
-	}
-	ExpireThreshold, err := t.settingService.GetExpireDiff()
-	if err == nil && ExpireThreshold > 0 {
-		exDiff = int64(ExpireThreshold) * 86400000
 	}
 	inbounds, err := t.inboundService.GetAllInbounds()
 	if err != nil {
@@ -313,8 +307,8 @@ func (t *Tgbot) notifyExhausted() {
 									output.WriteString(t.I18nBot("tgbot.messages.exhaustedCount", "Type=="+t.I18nBot("tgbot.clients")))
 									for _, traffic := range traffics {
 										if traffic.Enable {
-											if (traffic.ExpiryTime > 0 && (traffic.ExpiryTime-now < exDiff)) ||
-												(traffic.Total > 0 && (traffic.Total-(traffic.Up+traffic.Down) < trDiff)) {
+											// Expiry is the hourly payment reminder's job, which the client can tune.
+											if traffic.Total > 0 && (traffic.Total-(traffic.Up+traffic.Down) < trDiff) {
 												exhaustedClients = append(exhaustedClients, traffic)
 											}
 										} else {

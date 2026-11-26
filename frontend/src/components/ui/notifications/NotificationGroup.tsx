@@ -71,6 +71,23 @@ export function NotificationGroup({
                 )}
               </Space>
             )}
+            {event.also && (
+              <Space size={8}>
+                {event.also.extra({
+                  value:
+                    Number(
+                      (allSetting as unknown as Record<string, unknown>)[event.also.settingKey],
+                    ) || 0,
+                  onChange: (v) => event.also && updateSetting({ [event.also.settingKey]: v }),
+                  ariaLabel: t(`pages.settings.${event.also.label}`),
+                })}
+                {event.also.hint && (
+                  <Typography.Text type="secondary">
+                    {t(`pages.settings.${event.also.hint}`)}
+                  </Typography.Text>
+                )}
+              </Space>
+            )}
           </NotificationEvent>
         ))}
       </Space>

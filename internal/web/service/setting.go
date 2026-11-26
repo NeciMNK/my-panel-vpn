@@ -1,18 +1,21 @@
 package service
 
 import (
+	"context"
 	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"reflect"
 	"regexp"
 	"slices"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -37,10 +40,13 @@ import (
 var xrayTemplateConfig string
 
 const (
-	DefaultSubClashUserAgentRegex     = `(?i)(clash|mihomo)`
-	DefaultExternalSubUserAgent       = "v2rayNG/1.8.5"
-	DefaultSubJsonUserAgentRegex      = ``
-	DefaultRemarkTemplate             = "{{INBOUND}}-{{EMAIL}}|📊{{TRAFFIC_LEFT}}|⏳{{DAYS_LEFT}}D"
+	DefaultSubClashUserAgentRegex = `(?i)(clash|mihomo)`
+	DefaultExternalSubUserAgent   = "v2rayNG/1.8.5"
+	DefaultSubJsonUserAgentRegex  = ``
+	DefaultRemarkTemplate         = "{{AUTO_NAME}}"
+	// DefaultSubActiveInfoTemplate fills the usage info entry when the remark
+	// template names only servers ({{AUTO_NAME}} is empty there: no inbound).
+	DefaultSubActiveInfoTemplate      = "{{EMAIL}}|📊{{TRAFFIC_LEFT}}|⏳{{DAYS_LEFT}}D"
 	DefaultSubExpiredTemplate         = "⛔ {{EMAIL}} | Expired: {{EXPIRE_DATE}}"
 	DefaultSubTrafficDepletedTemplate = "🚫 {{EMAIL}} | Traffic Depleted | {{TRAFFIC_USED}}/{{TRAFFIC_TOTAL}}"
 	DefaultTrustedProxyCIDRs          = "127.0.0.1/32,::1/128"
@@ -68,9 +74,25 @@ var defaultValueMap = map[string]string{
 	// token never reaches the settings UI/export.
 	"tlsCloudflareToken": "",
 	"tlsAcmeAccountKey":  "",
+	// Remote backups, edited on their own settings tab; secrets are stored encrypted.
+	"backupHost":            "",
+	"backupPort":            "22",
+	"backupUser":            "root",
+	"backupPassword":        "",
+	"backupPrivateKey":      "",
+	"backupDir":             "/root/my-panel-vpn-backups",
+	"backupHostKey":         "",
+	"backupDbEnable":        "false",
+	"backupDbEveryHours":    "24",
+	"backupDbOnChange":      "true",
+	"backupNodesEnable":     "false",
+	"backupNodesEveryHours": "24",
+	"backupKeep":            "7",
+	"backupStatus":          "",
 	// Edited from the speed card, not the settings page, so kept out of entity.AllSetting.
 	"speedTestAutoCapacity": "true",
 	"speedTestEveryHours":   "0",
+	"speedTestDropPercent":  "30",
 	"speedTestTimes":        "",
 	"speedTestTimezone":     "Europe/Moscow",
 	// Node mTLS material (opt-in). All default empty: the CA + master client
@@ -91,6 +113,9 @@ var defaultValueMap = map[string]string{
 	"pageSize":                    "25",
 	"expireDiff":                  "0",
 	"trafficDiff":                 "0",
+	"trafficResetAllMonthly":      "true",
+	"trafficResetAllDay":          "1",
+	"trafficUsagePeriods":         defaultTrafficUsagePeriods,
 	"remarkTemplate":              DefaultRemarkTemplate,
 	"subShowIdentityOnAllLinks":   "false",
 	"subInfoNodeEnable":           "false",
@@ -144,6 +169,7 @@ var defaultValueMap = map[string]string{
 	"subRoutingRules":             "",
 	"subHideSettings":             "false",
 	"subHappAutoDetect":           "false",
+	"subHappRoutingUpdate":        "false",
 	"subHappProviderId":           "",
 	"subHappNewUrl":               "",
 	"subHappFallbackUrl":          "",
@@ -200,11 +226,18 @@ var defaultValueMap = map[string]string{
 	"subListen":                   "",
 	"subPort":                     "2096",
 	"subPath":                     "/sub/",
+	"subPathAliases":              "",
+	"subEdgeNode":                 "",
+	"subEdgeDnsDomain":            "",
+	"subEdgeDnsToken":             "",
+	"subEdgeDnsMasterIps":         "",
+	"subEdgeDnsStatus":            "",
+	"subEdgeDnsPlan":              "",
 	"subDomain":                   "",
 	"subCertFile":                 "",
 	"subKeyFile":                  "",
 	"externalSubUserAgent":        DefaultExternalSubUserAgent,
-	"subUpdates":                  "12",
+	"subUpdates":                  "1",
 	"subEncrypt":                  "true",
 	"subURI":                      "",
 	"subJsonPath":                 "/json/",
@@ -260,7 +293,8 @@ var defaultValueMap = map[string]string{
 	"ldapDefaultLimitIP":     "0",
 
 	// Event bus — per-subscriber event filtering (empty = all disabled)
-	"tgEnabledEvents":   "login.attempt,cpu.high,speed.low,master.leader",
+	"tgEnabledEvents":   "login.attempt,cpu.high,memory.high,speed.low,speed.drop,master.leader",
+	"tgEventRecipients": "{}",
 	"smtpEnabledEvents": "login.attempt,cpu.high",
 	"smtpCpu":           "80",
 	"smtpMemory":        "80",
@@ -268,7 +302,8 @@ var defaultValueMap = map[string]string{
 	// Consecutive failed observatory probes before an outbound.down event fires
 	"outboundDownThreshold": "3",
 
-	"nodeDownThreshold": "1",
+	"nodeDownThreshold": "60",
+	"nodeLoadMinutes":   "2",
 
 	// Email (SMTP) notifications
 	"smtpEnable":         "false",
@@ -606,7 +641,7 @@ func (s *SettingService) PanelEgressProxyURL() string {
 	}
 	for i := range cfg.InboundConfigs {
 		if cfg.InboundConfigs[i].Tag == PanelEgressInboundTag {
-			return fmt.Sprintf("socks5://127.0.0.1:%d", cfg.InboundConfigs[i].Port)
+			return liveEgressBridgeURL(PanelEgressInboundTag, cfg.InboundConfigs[i].Port)
 		}
 	}
 	if tag, err := s.GetPanelOutbound(); err == nil && tag != "" {
@@ -614,6 +649,26 @@ func (s *SettingService) PanelEgressProxyURL() string {
 	}
 	return ""
 }
+
+// liveEgressBridgeURL returns the bridge only when it accepts connections: a
+// config the core never bound would otherwise fail every panel request (#12).
+func liveEgressBridgeURL(tag string, port int) string {
+	addr := net.JoinHostPort("127.0.0.1", strconv.Itoa(port))
+	dialer := net.Dialer{Timeout: 300 * time.Millisecond}
+	conn, err := dialer.DialContext(context.Background(), "tcp", addr)
+	if err != nil {
+		warning := fmt.Sprintf("egress bridge [%s] on %s does not accept connections (%v), using a direct connection", tag, addr, err)
+		if previous, _ := lastDeadBridgeWarning.Swap(warning).(string); previous != warning {
+			logger.Warning(warning)
+		}
+		return ""
+	}
+	_ = conn.Close()
+	lastDeadBridgeWarning.Store("")
+	return "socks5://" + addr
+}
+
+var lastDeadBridgeWarning atomic.Value
 
 func (s *SettingService) NodeEgressProxyURL(nodeID int) string {
 	tag := NodeEgressInboundTag(nodeID)
@@ -628,7 +683,7 @@ func (s *SettingService) NodeEgressProxyURL(nodeID int) string {
 	}
 	for i := range cfg.InboundConfigs {
 		if cfg.InboundConfigs[i].Tag == tag {
-			return fmt.Sprintf("socks5://127.0.0.1:%d", cfg.InboundConfigs[i].Port)
+			return liveEgressBridgeURL(tag, cfg.InboundConfigs[i].Port)
 		}
 	}
 	logger.Warning("node outbound [", tag, "] is set but the egress bridge is not in the running config, using a direct connection")
@@ -703,6 +758,14 @@ func (s *SettingService) GetSpeedTestAutoCapacity() (bool, error) {
 
 func (s *SettingService) SetSpeedTestAutoCapacity(v bool) error {
 	return s.setBool("speedTestAutoCapacity", v)
+}
+
+func (s *SettingService) GetSpeedTestDropPercent() (int, error) {
+	return s.getInt("speedTestDropPercent")
+}
+
+func (s *SettingService) SetSpeedTestDropPercent(v int) error {
+	return s.setInt("speedTestDropPercent", v)
 }
 
 func (s *SettingService) GetSpeedTestEveryHours() (int, error) {
@@ -866,7 +929,43 @@ func (s *SettingService) GetPort() (int, error) {
 }
 
 func (s *SettingService) SetPort(port int) error {
+	subPort, err := s.GetSubPort()
+	if err != nil {
+		return err
+	}
+	if err := s.checkPorts(port, subPort); err != nil {
+		return err
+	}
 	return s.setInt("webPort", port)
+}
+
+func (s *SettingService) SetSubPort(port int) error {
+	webPort, err := s.GetPort()
+	if err != nil {
+		return err
+	}
+	if err := s.checkPorts(webPort, port); err != nil {
+		return err
+	}
+	return s.setInt("subPort", port)
+}
+
+func (s *SettingService) SetSubEnable(enable bool) error {
+	return s.setBool("subEnable", enable)
+}
+
+// checkPorts re-runs the settings form's port check for the CLI setters, which
+// write straight to the DB and would otherwise skip entity.CheckValid.
+func (s *SettingService) checkPorts(webPort, subPort int) error {
+	webListen, err := s.GetListen()
+	if err != nil {
+		return err
+	}
+	subListen, err := s.GetSubListen()
+	if err != nil {
+		return err
+	}
+	return entity.CheckWebSubPorts(webListen, webPort, subListen, subPort)
 }
 
 func (s *SettingService) SetCertFile(webCertFile string) error {
@@ -907,6 +1006,27 @@ func (s *SettingService) GetExpireDiff() (int, error) {
 
 func (s *SettingService) GetTrafficDiff() (int, error) {
 	return s.getInt("trafficDiff")
+}
+
+// GetTrafficResetAllMonthly returns the panel-wide monthly reset that clients
+// without a reset or renewal cycle of their own follow, and its day of month.
+func (s *SettingService) GetTrafficResetAllMonthly() (bool, int, error) {
+	enable, err := s.getBool("trafficResetAllMonthly")
+	if err != nil {
+		return false, 0, err
+	}
+	day, err := s.getInt("trafficResetAllDay")
+	if err != nil {
+		return false, 0, err
+	}
+	return enable, normalizeTrafficResetDay(day), nil
+}
+
+func (s *SettingService) SetTrafficResetAllMonthly(enable bool, day int) error {
+	if err := s.setBool("trafficResetAllMonthly", enable); err != nil {
+		return err
+	}
+	return s.setInt("trafficResetAllDay", normalizeTrafficResetDay(day))
 }
 
 func (s *SettingService) GetSessionMaxAge() (int, error) {
@@ -1122,6 +1242,10 @@ func (s *SettingService) GetSubRoutingRules() (string, error) {
 
 func (s *SettingService) GetSubHideSettings() (bool, error) {
 	return s.getBool("subHideSettings")
+}
+
+func (s *SettingService) GetSubHappRoutingUpdate() (bool, error) {
+	return s.getBool("subHappRoutingUpdate")
 }
 
 func (s *SettingService) GetSubHappAutoDetect() (bool, error) {
@@ -1346,6 +1470,16 @@ func (s *SettingService) GetSubListen() (string, error) {
 
 func (s *SettingService) GetSubPort() (int, error) {
 	return s.getInt("subPort")
+}
+
+// GetSubPathAliases lists the earlier raw subscription paths still served,
+// each normalized to /path/.
+func (s *SettingService) GetSubPathAliases() ([]string, error) {
+	raw, err := s.getString("subPathAliases")
+	if err != nil {
+		return nil, err
+	}
+	return entity.ParseSubPathAliases(raw), nil
 }
 
 func (s *SettingService) GetSubPath() (string, error) {
@@ -1826,6 +1960,18 @@ func (s *SettingService) SetOutboundDownThreshold(value int) error {
 	return s.setInt("outboundDownThreshold", value)
 }
 
+func (s *SettingService) GetNodeLoadMinutes() (int, error) {
+	return s.getInt("nodeLoadMinutes")
+}
+
+func (s *SettingService) SetNodeLoadMinutes(value int) error {
+	return s.setInt("nodeLoadMinutes", value)
+}
+
+// DefaultNodeDownThreshold is how long a node stays unreachable before node.down goes out.
+const DefaultNodeDownThreshold = 60 * time.Second
+
+// GetNodeDownThreshold returns that hold time in seconds.
 func (s *SettingService) GetNodeDownThreshold() (int, error) {
 	return s.getInt("nodeDownThreshold")
 }
@@ -1845,6 +1991,42 @@ type SecretClears struct {
 	TgPaySecret     bool
 }
 
+// followSubPaths moves a stored sub URI onto its renamed path when the URI
+// pointed at the old one and was not edited in the same save (#10).
+func (s *SettingService) followSubPaths(all *entity.AllSetting) error {
+	for _, p := range []struct {
+		pathKey, uriKey string
+		path, uri       *string
+	}{
+		{"subPath", "subURI", &all.SubPath, &all.SubURI},
+		{"subJsonPath", "subJsonURI", &all.SubJsonPath, &all.SubJsonURI},
+		{"subClashPath", "subClashURI", &all.SubClashPath, &all.SubClashURI},
+	} {
+		oldPath, err := s.getString(p.pathKey)
+		if err != nil {
+			return err
+		}
+		storedURI, err := s.getString(p.uriKey)
+		if err != nil {
+			return err
+		}
+		if *p.uri != storedURI || storedURI == "" || sameSubPath(oldPath, *p.path) {
+			continue
+		}
+		u, err := url.Parse(storedURI)
+		if err != nil || !sameSubPath(u.Path, oldPath) {
+			continue
+		}
+		u.Path, u.RawPath = *p.path, ""
+		*p.uri = u.String()
+	}
+	return nil
+}
+
+func sameSubPath(a, b string) bool {
+	return strings.Trim(a, "/") == strings.Trim(b, "/")
+}
+
 func (s *SettingService) UpdateAllSetting(allSetting *entity.AllSetting, clears SecretClears) error {
 	switch allSetting.SubHostSortMode {
 	case "":
@@ -1859,6 +2041,15 @@ func (s *SettingService) UpdateAllSetting(allSetting *entity.AllSetting, clears 
 	default:
 		return errors.New("subscription profile mode must be none, builtin, or custom")
 	}
+	recipients, err := parseTgEventRecipients(allSetting.TgEventRecipients)
+	if err != nil {
+		return err
+	}
+	normalized, err := json.Marshal(recipients)
+	if err != nil {
+		return err
+	}
+	allSetting.TgEventRecipients = string(normalized)
 	if err := s.preserveRedactedSecrets(allSetting, clears); err != nil {
 		return err
 	}
@@ -1875,6 +2066,9 @@ func (s *SettingService) UpdateAllSetting(allSetting *entity.AllSetting, clears 
 		return err
 	}
 	if err := allSetting.CheckValid(); err != nil {
+		return err
+	}
+	if err := s.followSubPaths(allSetting); err != nil {
 		return err
 	}
 

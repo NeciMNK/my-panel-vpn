@@ -1,0 +1,90 @@
+---
+title: Backups
+description: 'Backups to a folder on another server over SFTP (any SSH server;
+  password or private key, both stored encrypted when NODE_TOKEN_ENCRYPTION is
+  on). The database is copied on its own timer and two minutes after an admin
+  edit; each node’s state (its database, TLS key and certificates) on the node
+  timer. The newest backups are kept, older ones deleted. A lost node is
+  restored onto a fresh server in one call: the master logs in over SSH,
+  installs the node from its own build, unpacks the chosen backup and points the
+  node’s record (or, for a domain, its Cloudflare A record) at the new server.
+  All endpoints under /panel/api/backup.'
+full: true
+_openapi:
+  preload:
+    - ./public/openapi.json
+  toc:
+    - depth: 2
+      title: Read the backup server and schedule. The password and private key are
+        never returned, only whether they are set.
+      url: '#read-the-backup-server-and-schedule-the-password-and-private-key-are-never-returned-only-whether-they-are-set'
+    - depth: 2
+      title: Save the backup server and schedule. Omit password or privateKey to keep
+        the stored one; an empty string clears it. Changing the host or port
+        forgets the pinned host key.
+      url: '#save-the-backup-server-and-schedule-omit-password-or-privatekey-to-keep-the-stored-one-an-empty-string-clears-it-changing-the-host-or-port-forgets-the-pinned-host-key'
+    - depth: 2
+      title: Log in to the backup server and create the folder. The first successful
+        login pins the server’s SSH host key; later logins refuse another key.
+      url: '#log-in-to-the-backup-server-and-create-the-folder-the-first-successful-login-pins-the-servers-ssh-host-key-later-logins-refuse-another-key'
+    - depth: 2
+      title: Start a backup now in the background; poll /panel/api/backup/status for
+        the result.
+      url: '#start-a-backup-now-in-the-background-poll-panelapibackupstatus-for-the-result'
+    - depth: 2
+      title: The backup running now, if any, and the outcome of the last database and
+        node backups.
+      url: '#the-backup-running-now-if-any-and-the-outcome-of-the-last-database-and-node-backups'
+    - depth: 2
+      title: List the backups kept for a node on the backup server, newest first.
+      url: '#list-the-backups-kept-for-a-node-on-the-backup-server-newest-first'
+    - depth: 2
+      title: Move a lost node onto a fresh server in the background. backup names a
+        file from /panel/api/backup/node/:id; empty takes the newest and "none"
+        installs a fresh node. The server must match this master’s CPU
+        architecture. Poll /panel/api/backup/restoreStatus.
+      url: '#move-a-lost-node-onto-a-fresh-server-in-the-background-backup-names-a-file-from-panelapibackupnodeid-empty-takes-the-newest-and-none-installs-a-fresh-node-the-server-must-match-this-masters-cpu-architecture-poll-panelapibackuprestorestatus'
+    - depth: 2
+      title: Progress log and outcome of the current or last node restore.
+      url: '#progress-log-and-outcome-of-the-current-or-last-node-restore'
+  structuredData:
+    headings:
+      - content: Read the backup server and schedule. The password and private key are
+          never returned, only whether they are set.
+        id: read-the-backup-server-and-schedule-the-password-and-private-key-are-never-returned-only-whether-they-are-set
+      - content: Save the backup server and schedule. Omit password or privateKey to
+          keep the stored one; an empty string clears it. Changing the host or
+          port forgets the pinned host key.
+        id: save-the-backup-server-and-schedule-omit-password-or-privatekey-to-keep-the-stored-one-an-empty-string-clears-it-changing-the-host-or-port-forgets-the-pinned-host-key
+      - content: Log in to the backup server and create the folder. The first successful
+          login pins the server’s SSH host key; later logins refuse another key.
+        id: log-in-to-the-backup-server-and-create-the-folder-the-first-successful-login-pins-the-servers-ssh-host-key-later-logins-refuse-another-key
+      - content: Start a backup now in the background; poll /panel/api/backup/status for
+          the result.
+        id: start-a-backup-now-in-the-background-poll-panelapibackupstatus-for-the-result
+      - content: The backup running now, if any, and the outcome of the last database
+          and node backups.
+        id: the-backup-running-now-if-any-and-the-outcome-of-the-last-database-and-node-backups
+      - content: List the backups kept for a node on the backup server, newest first.
+        id: list-the-backups-kept-for-a-node-on-the-backup-server-newest-first
+      - content: Move a lost node onto a fresh server in the background. backup names a
+          file from /panel/api/backup/node/:id; empty takes the newest and
+          "none" installs a fresh node. The server must match this master’s CPU
+          architecture. Poll /panel/api/backup/restoreStatus.
+        id: move-a-lost-node-onto-a-fresh-server-in-the-background-backup-names-a-file-from-panelapibackupnodeid-empty-takes-the-newest-and-none-installs-a-fresh-node-the-server-must-match-this-masters-cpu-architecture-poll-panelapibackuprestorestatus
+      - content: Progress log and outcome of the current or last node restore.
+        id: progress-log-and-outcome-of-the-current-or-last-node-restore
+    contents: []
+---
+
+{/* This file was generated by Fumadocs. Do not edit this file directly. Any changes should be made by running the generation command again. */}
+
+export default function Layout(props) {
+  const { OpenAPIPage } = props.components ?? {};
+  return (
+    <>
+      {props.children}
+      <OpenAPIPage document="./public/openapi.json" webhooks={[]} operations={[{"path":"/panel/api/backup/settings","method":"get"},{"path":"/panel/api/backup/settings","method":"post"},{"path":"/panel/api/backup/test","method":"post"},{"path":"/panel/api/backup/run/{what}","method":"post"},{"path":"/panel/api/backup/status","method":"get"},{"path":"/panel/api/backup/node/{id}","method":"get"},{"path":"/panel/api/backup/restoreNode/{id}","method":"post"},{"path":"/panel/api/backup/restoreStatus","method":"get"}]} showTitle />
+    </>
+  );
+}

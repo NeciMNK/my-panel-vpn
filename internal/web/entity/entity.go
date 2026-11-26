@@ -35,6 +35,9 @@ type AllSetting struct {
 	PageSize                   int    `json:"pageSize" form:"pageSize" validate:"gte=0,lte=1000"`
 	ExpireDiff                 int    `json:"expireDiff" form:"expireDiff" validate:"gte=0"`
 	TrafficDiff                int    `json:"trafficDiff" form:"trafficDiff" validate:"gte=0,lte=100"`
+	TrafficResetAllMonthly     bool   `json:"trafficResetAllMonthly" form:"trafficResetAllMonthly"`
+	TrafficResetAllDay         int    `json:"trafficResetAllDay" form:"trafficResetAllDay" validate:"gte=1,lte=31"`
+	TrafficUsagePeriods        string `json:"trafficUsagePeriods" form:"trafficUsagePeriods"`
 	RemarkTemplate             string `json:"remarkTemplate" form:"remarkTemplate"`
 	SubShowIdentityOnAllLinks  bool   `json:"subShowIdentityOnAllLinks" form:"subShowIdentityOnAllLinks"`
 	SubInfoNodeEnable          bool   `json:"subInfoNodeEnable" form:"subInfoNodeEnable"`
@@ -57,6 +60,8 @@ type AllSetting struct {
 	TgMemory         int    `json:"tgMemory" form:"tgMemory" validate:"gte=0,lte=100"`
 	TgLang           string `json:"tgLang" form:"tgLang"`
 	TgEnabledEvents  string `json:"tgEnabledEvents" form:"tgEnabledEvents"`
+	// TgEventRecipients maps an event type to the client groups and emails whose Telegram chats also get it.
+	TgEventRecipients string `json:"tgEventRecipients" form:"tgEventRecipients"`
 	// Prices and discounts are edited on the Finance page (LedgerService.SavePayment), not here.
 	TgFreePlanEnable bool `json:"tgFreePlanEnable" form:"tgFreePlanEnable"`
 	TgFreePlanGB     int  `json:"tgFreePlanGB" form:"tgFreePlanGB" validate:"gte=1,lte=100000"`
@@ -92,7 +97,9 @@ type AllSetting struct {
 	DiscordEnabledEvents string `json:"discordEnabledEvents" form:"discordEnabledEvents"`
 
 	OutboundDownThreshold int `json:"outboundDownThreshold" form:"outboundDownThreshold" validate:"gte=1,lte=100"`
-	NodeDownThreshold     int `json:"nodeDownThreshold" form:"nodeDownThreshold" validate:"gte=1,lte=100"`
+	NodeDownThreshold     int `json:"nodeDownThreshold" form:"nodeDownThreshold" validate:"gte=0,lte=3600"`
+	// NodeLoadMinutes is how long a node's CPU or RAM must stay over the threshold before it alerts.
+	NodeLoadMinutes int `json:"nodeLoadMinutes" form:"nodeLoadMinutes" validate:"gte=1,lte=60"`
 
 	TimeLocation    string `json:"timeLocation" form:"timeLocation"`
 	TwoFactorEnable bool   `json:"twoFactorEnable" form:"twoFactorEnable"`
@@ -118,6 +125,7 @@ type AllSetting struct {
 	SubListen                   string `json:"subListen" form:"subListen"`
 	SubPort                     int    `json:"subPort" form:"subPort" validate:"gte=1,lte=65535"`
 	SubPath                     string `json:"subPath" form:"subPath"`
+	SubPathAliases              string `json:"subPathAliases" form:"subPathAliases"`
 	SubDomain                   string `json:"subDomain" form:"subDomain"`
 	SubCertFile                 string `json:"subCertFile" form:"subCertFile"`
 	SubKeyFile                  string `json:"subKeyFile" form:"subKeyFile"`
@@ -147,6 +155,7 @@ type AllSetting struct {
 
 	// Happ client customization settings (app-management / routing / UX).
 	SubHappAutoDetect          bool   `json:"subHappAutoDetect" form:"subHappAutoDetect"`
+	SubHappRoutingUpdate       bool   `json:"subHappRoutingUpdate" form:"subHappRoutingUpdate"`
 	SubHappProviderId          string `json:"subHappProviderId" form:"subHappProviderId"`
 	SubHappNewUrl              string `json:"subHappNewUrl" form:"subHappNewUrl"`
 	SubHappFallbackUrl         string `json:"subHappFallbackUrl" form:"subHappFallbackUrl"`
@@ -301,16 +310,8 @@ func (s *AllSetting) CheckValid() error {
 		}
 	}
 
-	if s.WebPort <= 0 || s.WebPort > math.MaxUint16 {
-		return common.NewError("web port is not a valid port:", s.WebPort)
-	}
-
-	if s.SubPort <= 0 || s.SubPort > math.MaxUint16 {
-		return common.NewError("Sub port is not a valid port:", s.SubPort)
-	}
-
-	if (s.SubPort == s.WebPort) && listenAddressesConflict(s.WebListen, s.SubListen) {
-		return common.NewError("Sub and Web could not use same ip:port, ", s.SubListen, ":", s.SubPort, " & ", s.WebListen, ":", s.WebPort)
+	if err := CheckWebSubPorts(s.WebListen, s.WebPort, s.SubListen, s.SubPort); err != nil {
+		return err
 	}
 
 	if s.WebCertFile != "" || s.WebKeyFile != "" {
@@ -353,6 +354,13 @@ func (s *AllSetting) CheckValid() error {
 	if !strings.HasSuffix(s.SubPath, "/") {
 		s.SubPath += "/"
 	}
+
+	for _, alias := range ParseSubPathAliases(s.SubPathAliases) {
+		if pathHasForbiddenChar(alias) {
+			return common.NewError("URI path contains an invalid character:", "subscription path alias "+alias)
+		}
+	}
+	s.SubPathAliases = strings.Join(ParseSubPathAliases(s.SubPathAliases), ",")
 
 	if !strings.HasPrefix(s.SubJsonPath, "/") {
 		s.SubJsonPath = "/" + s.SubJsonPath
@@ -402,6 +410,21 @@ func (s *AllSetting) CheckValid() error {
 		}
 	}
 
+	return nil
+}
+
+// CheckWebSubPorts validates both ports and that the web and subscription servers
+// can bind side by side; shared by the settings form and the x-ui CLI.
+func CheckWebSubPorts(webListen string, webPort int, subListen string, subPort int) error {
+	if webPort <= 0 || webPort > math.MaxUint16 {
+		return common.NewError("web port is not a valid port:", webPort)
+	}
+	if subPort <= 0 || subPort > math.MaxUint16 {
+		return common.NewError("Sub port is not a valid port:", subPort)
+	}
+	if subPort == webPort && listenAddressesConflict(webListen, subListen) {
+		return common.NewError("Sub and Web could not use same ip:port, ", subListen, ":", subPort, " & ", webListen, ":", webPort)
+	}
 	return nil
 }
 
@@ -463,4 +486,20 @@ type HostGroup struct {
 	MihomoX25519           bool     `json:"mihomoX25519"`
 	ShuffleHost            bool     `json:"shuffleHost"`
 	RandomCount            int      `json:"randomCount" validate:"omitempty,min=1,max=100"`
+}
+
+// ParseSubPathAliases splits a comma or newline separated alias list into
+// unique /path/ entries; "/" is dropped because it would shadow every route.
+func ParseSubPathAliases(raw string) []string {
+	var out []string
+	seen := map[string]bool{}
+	for _, part := range strings.FieldsFunc(raw, func(r rune) bool { return r == ',' || r == '\n' || r == '\r' }) {
+		trimmed := strings.Trim(strings.TrimSpace(part), "/")
+		if trimmed == "" || seen[trimmed] {
+			continue
+		}
+		seen[trimmed] = true
+		out = append(out, "/"+trimmed+"/")
+	}
+	return out
 }

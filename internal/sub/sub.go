@@ -69,6 +69,11 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 		return nil, err
 	}
 
+	pathAliases, err := s.settingService.GetSubPathAliases()
+	if err != nil {
+		return nil, err
+	}
+
 	JsonPath, err := s.settingService.GetSubJsonPath()
 	if err != nil {
 		return nil, err
@@ -137,7 +142,7 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 
 	SubUpdates, err := s.settingService.GetSubUpdates()
 	if err != nil {
-		SubUpdates = "10"
+		SubUpdates = "1"
 	}
 
 	SubJsonMux, err := s.settingService.GetSubJsonMux()
@@ -236,6 +241,7 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 
 	happCfg := HappConfig{}
 	happCfg.AutoDetect, _ = s.settingService.GetSubHappAutoDetect()
+	happCfg.RoutingUpdate, _ = s.settingService.GetSubHappRoutingUpdate()
 	happCfg.ProviderId, _ = s.settingService.GetSubHappProviderId()
 	happCfg.NewUrl, _ = s.settingService.GetSubHappNewUrl()
 	happCfg.FallbackUrl, _ = s.settingService.GetSubHappFallbackUrl()
@@ -346,6 +352,7 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 
 	s.sub = NewSUBController(g,
 		WithSUBPath(LinksPath),
+		WithSUBPathAliases(pathAliases),
 		WithSUBJsonPath(JsonPath),
 		WithSUBClashPath(ClashPath),
 		WithSUBClashAutoDetect(subClashAutoDetect),
@@ -461,6 +468,15 @@ func (s *Server) Start() (err error) {
 	go network.ServeHTTP(s.httpServer, listener, "Subscription server")
 
 	return nil
+}
+
+// Handler is the running subscription router, or nil while the server is off;
+// subscription edges on nodes forward their requests to it.
+func (s *Server) Handler() http.Handler {
+	if s.httpServer == nil {
+		return nil
+	}
+	return s.httpServer.Handler
 }
 
 // Stop gracefully shuts down the subscription server and closes the listener.

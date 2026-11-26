@@ -56,6 +56,7 @@ func (a *ServerController) initRouter(g *gin.RouterGroup) {
 	g.GET("/getUpdateStatus", a.getUpdateStatus)
 	g.GET("/getConfigJson", a.getConfigJson)
 	g.GET("/getDb", a.getDb)
+	g.GET("/nodeBackup", a.nodeBackup)
 	g.GET("/getMigration", a.getMigration)
 	g.GET("/getNewUUID", a.getNewUUID)
 	g.GET("/getWebCertFiles", a.getWebCertFiles)
@@ -84,6 +85,7 @@ func (a *ServerController) initRouter(g *gin.RouterGroup) {
 	g.POST("/scanRealityTarget", a.scanRealityTarget)
 	g.POST("/scanRealityTargets", a.scanRealityTargets)
 	g.POST("/clientIps", a.setClientIps)
+	g.POST("/probePeer", a.probePeer)
 }
 
 // startTask registers the @2s ticker that refreshes server status, samples
@@ -340,6 +342,16 @@ func (a *ServerController) getConfigJson(c *gin.Context) {
 	jsonObj(c, configJson, nil)
 }
 
+// nodeBackup streams this panel's own state for its master's node backups.
+func (a *ServerController) nodeBackup(c *gin.Context) {
+	c.Header("Content-Type", "application/gzip")
+	c.Header("Content-Disposition", "attachment; filename=node-backup.tar.gz")
+	if err := a.serverService.WriteNodeBackup(c.Writer); err != nil {
+		logger.Warning("node backup failed:", err)
+		_ = c.AbortWithError(http.StatusInternalServerError, err)
+	}
+}
+
 // getDb downloads the database file.
 func (a *ServerController) getDb(c *gin.Context) {
 	db, err := a.serverService.GetDb()
@@ -539,6 +551,18 @@ func (a *ServerController) getNewmlkem768(c *gin.Context) {
 func (a *ServerController) getClientIps(c *gin.Context) {
 	ips, err := (&service.InboundService{}).GetAllInboundClientIps()
 	jsonObj(c, ips, err)
+}
+
+// probePeer lets the master ask this node whether it still reaches a node the
+// master itself lost, so a master-side network problem does not bury a live node.
+func (a *ServerController) probePeer(c *gin.Context) {
+	var req entity.PeerProbeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		jsonMsg(c, "invalid data", err)
+		return
+	}
+	res, err := service.ProbePeer(c.Request.Context(), req)
+	jsonObj(c, res, err)
 }
 
 func (a *ServerController) setClientIps(c *gin.Context) {

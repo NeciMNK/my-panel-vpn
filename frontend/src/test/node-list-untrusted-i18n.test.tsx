@@ -29,6 +29,7 @@ function renderSubNode(fields: Partial<NodeRecord>) {
       onMtls={noop}
       onEdit={noop}
       onDelete={noop}
+      onRestore={noop}
       onProbe={noop}
       onToggleEnable={noop}
       onUpdateNode={noop}

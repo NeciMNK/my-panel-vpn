@@ -27,20 +27,39 @@ import (
 // and, on the entry, an outbound per exit plus a catch-all rule or balancer.
 type CascadeService struct{}
 
-// CascadeRequest is the "two clicks" form: an entry, its exits, optionally
-// which entry inbounds to chain (empty = all) and the multi-exit strategy.
+// CascadeRequest is the body of /cascades/add and /cascades/update. Update
+// replaces the whole cascade: an omitted field is cleared, not kept.
 type CascadeRequest struct {
-	Name             string   `json:"name" example:"RU → DE"`
-	Enable           bool     `json:"enable" example:"true"`
-	EntryNodeId      int      `json:"entryNodeId" example:"1"`
-	ExitNodeIds      []int    `json:"exitNodeIds" example:"2"`
-	ExitCountry      string   `json:"exitCountry" example:"DE"`
+	Name   string `json:"name" example:"RU → DE"`
+	Enable bool   `json:"enable" example:"true"`
+	// EntryNodeId is the server users connect to; 0 is this panel.
+	EntryNodeId int `json:"entryNodeId" example:"1"`
+	// ExitNodeIds are the servers traffic leaves from; ignored when exitCountry
+	// is set. Several exits share a balancer and keep each user on one exit.
+	ExitNodeIds []int `json:"exitNodeIds" example:"[2,3]"`
+	// ExitCountry (ISO code) makes every enabled node of that country except the
+	// entry an exit; FOREIGN makes every node outside the entry's country one.
+	ExitCountry string `json:"exitCountry" example:"DE"`
+	// EntryInboundTags are the entry inbounds whose users are chained; empty
+	// chains every inbound of the entry.
 	EntryInboundTags []string `json:"entryInboundTags"`
-	Strategy         string   `json:"strategy" example:"leastPing"`
-	Mode             string   `json:"mode" example:"split"`
-	DirectDomains    []string `json:"directDomains"`
-	DirectIPs        []string `json:"directIps"`
+	// Strategy picks an exit for a new user when there are several (default
+	// leastPing); the user then stays there, see the section description.
+	Strategy string `json:"strategy" validate:"omitempty,oneof=leastPing leastLoad random roundRobin" example:"leastPing"`
+	// Mode (default split): split sends the entry country's sites direct and the
+	// rest to the exit, relay sends everything, both mixes them per inbound.
+	Mode string `json:"mode" validate:"omitempty,oneof=split relay both" example:"split"`
+	// DirectDomains extend the split's direct list: a plain domain or domain:,
+	// full:, keyword:, regexp:, geosite: rules. Ignored in relay mode.
+	DirectDomains []string `json:"directDomains"`
+	// DirectIPs extend the split's direct list: IPs, CIDRs or geoip: rules.
+	DirectIPs []string `json:"directIps"`
+	// RelayInboundTags are, in both mode only (and then required), the entry
+	// inbounds that relay everything; they must not be in entryInboundTags.
 	RelayInboundTags []string `json:"relayInboundTags"`
+	// AutoSelect makes it an auto-select over foreign servers: exits are picked
+	// foreign nodes or exitCountry FOREIGN, every one outside the entry's country.
+	AutoSelect bool `json:"autoSelect" example:"false"`
 }
 
 var cascadeMu sync.Mutex
@@ -73,17 +92,25 @@ func (s *CascadeService) validate(req *CascadeRequest) error {
 		return common.NewError("cascade request is required")
 	}
 	req.ExitCountry = strings.ToUpper(strings.TrimSpace(req.ExitCountry))
+	if err := validateAutoSelectKind(req); err != nil {
+		return err
+	}
 	if req.ExitCountry != "" {
-		if !isCountryCode(req.ExitCountry) {
-			return common.NewError("country must be a two-letter code such as DE")
+		if req.ExitCountry != CascadeExitForeign && !isCountryCode(req.ExitCountry) {
+			return common.NewError("country must be a two-letter code such as DE, or FOREIGN")
 		}
-		exits, err := countryExits(req.ExitCountry, req.EntryNodeId)
+		exits, err := cascadeExits(req.ExitCountry, req.EntryNodeId)
 		if err != nil {
 			return err
 		}
 		req.ExitNodeIds = exits
 	} else if len(req.ExitNodeIds) == 0 {
 		return common.NewError("pick at least one exit server")
+	}
+	if req.AutoSelect && req.ExitCountry == "" {
+		if err := requireForeignExits(req.EntryNodeId, req.ExitNodeIds); err != nil {
+			return err
+		}
 	}
 	seen := map[int]bool{}
 	for _, id := range req.ExitNodeIds {
@@ -134,7 +161,7 @@ func (s *CascadeService) Create(ctx context.Context, req *CascadeRequest, userID
 		Name: strings.TrimSpace(req.Name), Enable: req.Enable, EntryNodeId: req.EntryNodeId,
 		ExitNodeIds: req.ExitNodeIds, ExitCountry: req.ExitCountry, EntryInboundTags: req.EntryInboundTags,
 		Strategy: req.Strategy, Mode: req.Mode, DirectDomains: req.DirectDomains,
-		DirectIPs: req.DirectIPs, RelayInboundTags: req.RelayInboundTags,
+		DirectIPs: req.DirectIPs, RelayInboundTags: req.RelayInboundTags, AutoSelect: req.AutoSelect,
 	}
 	if err := database.GetDB().Create(c).Error; err != nil {
 		return nil, err
@@ -172,6 +199,7 @@ func (s *CascadeService) Update(ctx context.Context, id int, req *CascadeRequest
 	c.DirectDomains = req.DirectDomains
 	c.DirectIPs = req.DirectIPs
 	c.RelayInboundTags = req.RelayInboundTags
+	c.AutoSelect = req.AutoSelect
 	err = s.apply(ctx, c, prevEntry, userID, masterAddress)
 	s.saveState(c, err)
 	return c, err
@@ -308,21 +336,32 @@ func applyCascadeToTemplate(cfg map[string]any, stored *model.Cascade, nodeID in
 		target["balancerTag"] = cascadeRouteTag(c.Id)
 	}
 	multi := len(c.Links) > 1
+	if multi && len(cascadeOutageRules(c, ai.Outages, "", nil)) > 0 {
+		appendOutbounds(cfg, map[string]any{"tag": cascadeBlockTag(c.Id), "protocol": "blackhole"})
+	}
 	if mode == CascadeModeBoth {
 		if multi {
+			appendTailRules(cfg, cascadeOutageRules(c, ai.Outages, cascadePrefix(c.Id)+"relay-", c.RelayInboundTags)...)
 			appendTailRules(cfg, cascadeAIRules(c, ai.Domains, ai.Sites, cascadePrefix(c.Id)+"relay-", c.RelayInboundTags)...)
 			appendTailRules(cfg, cascadePinRules(c, pins, cascadePrefix(c.Id)+"relay-", c.RelayInboundTags)...)
 		}
 		appendTailRules(cfg, cascadeRule(cascadePrefix(c.Id)+"relay", c.RelayInboundTags, target))
 	}
+	if multi {
+		appendTailRules(cfg, cascadeOutageRules(c, ai.Outages, cascadePrefix(c.Id), c.EntryInboundTags)...)
+	}
 	if mode != CascadeModeRelay {
 		appendOutbounds(cfg, map[string]any{"tag": cascadeDirectTag(c.Id), "protocol": "freedom"})
 		direct := map[string]any{"outboundTag": cascadeDirectTag(c.Id)}
-		domain := cascadeRule(cascadePrefix(c.Id)+"direct-domain", c.EntryInboundTags, direct)
-		domain["domain"] = append(slices.Clone(zone.Domains), c.DirectDomains...)
+		if domains := append(slices.Clone(zone.Domains), c.DirectDomains...); len(domains) > 0 {
+			domain := cascadeRule(cascadePrefix(c.Id)+"direct-domain", c.EntryInboundTags, direct)
+			domain["domain"] = domains
+			appendTailRules(cfg, domain)
+		}
 		ip := cascadeRule(cascadePrefix(c.Id)+"direct-ip", c.EntryInboundTags, direct)
 		ip["ip"] = append(slices.Clone(zone.IPs), c.DirectIPs...)
-		appendTailRules(cfg, domain, ip)
+		appendTailRules(cfg, ip)
+		templateRouting(cfg)["domainStrategy"] = splitDomainStrategy
 	}
 	if multi {
 		appendTailRules(cfg, cascadeAIRules(c, ai.Domains, ai.Sites, cascadePrefix(c.Id), c.EntryInboundTags)...)
@@ -509,12 +548,54 @@ func (s *CascadeService) removeLink(l model.CascadeLink) {
 	}
 }
 
-// countryExits lists the enabled nodes of a country, entry excluded, in id order.
-func countryExits(country string, entryNodeID int) ([]int, error) {
+// CascadeExitForeign as an exit country picks every enabled node whose country
+// differs from the entry's; the panel itself counts as Russia, as in splitZone.
+const CascadeExitForeign = "FOREIGN"
+
+func validateAutoSelectKind(req *CascadeRequest) error {
+	switch {
+	case !req.AutoSelect && req.ExitCountry == CascadeExitForeign:
+		return common.NewError("all foreign servers is an auto-select option")
+	case req.AutoSelect && req.ExitCountry != "" && req.ExitCountry != CascadeExitForeign:
+		return common.NewError("auto-select takes all foreign servers or picked ones, not a country")
+	}
+	return nil
+}
+
+// cascadeHomeCountry is the entry's country; the panel and a node without one count as Russia.
+func cascadeHomeCountry(entryNodeID int) string {
+	if home := strings.ToUpper(strings.TrimSpace(nodeCountry(entryNodeID))); home != "" {
+		return home
+	}
+	return "RU"
+}
+
+func requireForeignExits(entryNodeID int, exits []int) error {
+	home := cascadeHomeCountry(entryNodeID)
+	var foreign []int
+	if err := database.GetDB().Model(model.Node{}).
+		Where("id IN ? AND country <> '' AND country <> ?", exits, home).
+		Pluck("id", &foreign).Error; err != nil {
+		return err
+	}
+	for _, id := range exits {
+		if !slices.Contains(foreign, id) {
+			return common.NewError("auto-select exits must be foreign servers")
+		}
+	}
+	return nil
+}
+
+// cascadeExits lists the enabled exits of a country cascade, entry excluded, in id order.
+func cascadeExits(country string, entryNodeID int) ([]int, error) {
+	q := database.GetDB().Model(model.Node{}).Where("enable = ? AND id <> ?", true, entryNodeID)
+	if country == CascadeExitForeign {
+		q = q.Where("country <> '' AND country <> ?", cascadeHomeCountry(entryNodeID))
+	} else {
+		q = q.Where("country = ?", country)
+	}
 	var ids []int
-	err := database.GetDB().Model(model.Node{}).
-		Where("country = ? AND enable = ? AND id <> ?", country, true, entryNodeID).
-		Order("id asc").Pluck("id", &ids).Error
+	err := q.Order("id asc").Pluck("id", &ids).Error
 	return ids, err
 }
 
@@ -530,7 +611,7 @@ func (s *CascadeService) ReconcileCountryCascades(ctx context.Context) {
 		return
 	}
 	for _, c := range rows {
-		exits, err := countryExits(c.ExitCountry, c.EntryNodeId)
+		exits, err := cascadeExits(c.ExitCountry, c.EntryNodeId)
 		if err != nil {
 			logger.Warning("cascade", c.Id, ": resolve country exits:", err)
 			continue

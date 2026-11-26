@@ -8,6 +8,7 @@ import {
   ClusterOutlined,
   CloudDownloadOutlined,
   DeleteOutlined,
+  RollbackOutlined,
   EditOutlined,
   ExclamationCircleOutlined,
   EyeInvisibleOutlined,
@@ -39,6 +40,7 @@ interface NodeListProps {
   onMtls: () => void;
   onEdit: (node: NodeRecord) => void;
   onDelete: (node: NodeRecord) => void;
+  onRestore: (node: NodeRecord) => void;
   onProbe: (node: NodeRecord) => void;
   onToggleEnable: (node: NodeRecord, next: boolean) => void;
   onUpdateNode: (node: NodeRecord) => void;
@@ -60,6 +62,8 @@ function badgeStatus(status?: string): BadgeProps['status'] {
       return 'success';
     case 'offline':
       return 'error';
+    case 'isolated':
+      return 'warning';
     default:
       return 'default';
   }
@@ -69,6 +73,7 @@ interface HealthProps {
   status?: string;
   xrayState?: string;
   xrayError?: string;
+  seenBy?: string;
 }
 
 // Purple: the node's panel API is reachable (status=online) but its Xray core
@@ -107,8 +112,16 @@ function StatusDot({ status, xrayState }: HealthProps) {
   return <Badge status={badgeStatus(status)} />;
 }
 
-function StatusLabel({ status, xrayState }: HealthProps) {
+function StatusLabel({ status, xrayState, seenBy }: HealthProps) {
   const { t } = useTranslation();
+  if (status === 'isolated') {
+    return (
+      <span style={{ color: 'var(--ant-color-warning)' }}>
+        {t('pages.nodes.statusValues.isolated')}
+        {seenBy ? ` (${seenBy})` : ''}
+      </span>
+    );
+  }
   if (status === 'online') {
     const xs = (xrayState || '').toLowerCase().trim();
     if (xs === 'error' || xs === 'stop') {
@@ -185,6 +198,7 @@ export default function NodeList({
   onMtls,
   onEdit,
   onDelete,
+  onRestore,
   onProbe,
   onToggleEnable,
   onUpdateNode,
@@ -301,6 +315,16 @@ export default function NodeList({
                   onClick={() => onEdit(record)}
                 />
               </Tooltip>
+              <Tooltip title={t('pages.nodes.restore.action')}>
+                <Button
+                  type="text"
+                  size="small"
+                  style={{ fontSize: 16 }}
+                  icon={<RollbackOutlined aria-hidden />}
+                  aria-label={t('pages.nodes.restore.action')}
+                  onClick={() => onRestore(record)}
+                />
+              </Tooltip>
               <Tooltip title={t('delete')}>
                 <Button
                   type="text"
@@ -400,7 +424,11 @@ export default function NodeList({
           return (
             <Space size={4}>
               <StatusDot status={record.status} xrayState={record.xrayState} />
-              <StatusLabel status={record.status} xrayState={record.xrayState} />
+              <StatusLabel
+                status={record.status}
+                xrayState={record.xrayState}
+                seenBy={record.seenBy}
+              />
               {tip && (
                 <Tooltip title={tip}>
                   <ExclamationCircleOutlined style={{ color: iconColor }} aria-label={tip} />
@@ -544,6 +572,7 @@ export default function NodeList({
       onProbe,
       onEdit,
       onDelete,
+      onRestore,
       onUpdateNode,
       nameByGuid,
     ],
@@ -711,6 +740,16 @@ export default function NodeList({
                                 onClick: () => onEdit(record),
                               },
                               {
+                                key: 'restore',
+                                label: (
+                                  <>
+                                    <RollbackOutlined aria-hidden />{' '}
+                                    {t('pages.nodes.restore.action')}
+                                  </>
+                                ),
+                                onClick: () => onRestore(record),
+                              },
+                              {
                                 key: 'delete',
                                 danger: true,
                                 label: (
@@ -796,7 +835,11 @@ export default function NodeList({
                 <div className="stat-row">
                   <span className="stat-label">{t('pages.nodes.status')}</span>
                   <StatusDot status={statsNode.status} xrayState={statsNode.xrayState} />
-                  <StatusLabel status={statsNode.status} xrayState={statsNode.xrayState} />
+                  <StatusLabel
+                    status={statsNode.status}
+                    xrayState={statsNode.xrayState}
+                    seenBy={statsNode.seenBy}
+                  />
                   {(() => {
                     const { tip, iconColor } = statusIssue(statsNode);
                     return tip ? (

@@ -149,6 +149,32 @@ func (h *metricHistory) drop(metric string) {
 	h.mu.Unlock()
 }
 
+// span returns the lowest and highest sample in [from, to] of the finest tier;
+// ok is false unless samples start within slack of from and end within slack of to.
+func (h *metricHistory) span(metric string, from, to, slack int64) (low, high float64, ok bool) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	s := h.series[metric]
+	if s == nil {
+		return 0, 0, false
+	}
+	var first, last int64
+	for _, p := range s.pickTier(to - from).readSamples() {
+		if p.T < from || p.T > to {
+			continue
+		}
+		if !ok {
+			low, high, first, last, ok = p.V, p.V, p.T, p.T, true
+		}
+		low, high = min(low, p.V), max(high, p.V)
+		first, last = min(first, p.T), max(last, p.T)
+	}
+	if !ok || first-from > slack || to-last > slack {
+		return 0, 0, false
+	}
+	return low, high, true
+}
+
 // aggregate returns up to maxPoints buckets of size bucketSeconds, each carrying
 // the arithmetic mean of the underlying samples from the finest tier that covers
 // the requested span. Bucket alignment is to absolute Unix-second boundaries so

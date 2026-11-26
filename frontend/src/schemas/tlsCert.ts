@@ -20,6 +20,7 @@ export const TlsCertificateSchema = z.object({
   notAfter: z.number(),
   autoRenew: z.boolean(),
   applyToPanel: z.boolean(),
+  applyToSub: z.boolean(),
   lastError: z.string(),
   nodeInstalls: z.record(z.string(), TlsCertNodeInstallSchema).nullish(),
   createdAt: z.number().optional(),

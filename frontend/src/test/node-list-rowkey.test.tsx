@@ -32,6 +32,7 @@ describe('NodeList desktop table row keys', () => {
         onMtls={noop}
         onEdit={noop}
         onDelete={noop}
+        onRestore={noop}
         onProbe={noop}
         onToggleEnable={noop}
         onUpdateNode={noop}

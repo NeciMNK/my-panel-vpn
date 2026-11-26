@@ -65,6 +65,7 @@ export interface AllSetting {
   ldapUserFilter: string;
   ldapVlessField: string;
   nodeDownThreshold: number;
+  nodeLoadMinutes: number;
   outboundDownThreshold: number;
   pageSize: number;
   panelOutbound: string;
@@ -116,6 +117,7 @@ export interface AllSetting {
   subHappPerAppMode: string;
   subHappPingType: string;
   subHappProviderId: string;
+  subHappRoutingUpdate: boolean;
   subHappSubExpire: boolean;
   subHappSubExpireButtonLink: string;
   subHappSubInfoButtonLink: string;
@@ -172,6 +174,7 @@ export interface AllSetting {
   subKeyFile: string;
   subListen: string;
   subPath: string;
+  subPathAliases: string;
   subPort: number;
   subProfileMode: string;
   subProfileUrl: string;
@@ -192,6 +195,7 @@ export interface AllSetting {
   tgBotVpnFallback: boolean;
   tgCpu: number;
   tgEnabledEvents: string;
+  tgEventRecipients: string;
   tgFreePlanEnable: boolean;
   tgFreePlanGB: number;
   tgFreePlanInbounds: string;
@@ -204,6 +208,9 @@ export interface AllSetting {
   tgRunTime: string;
   timeLocation: string;
   trafficDiff: number;
+  trafficResetAllDay: number;
+  trafficResetAllMonthly: boolean;
+  trafficUsagePeriods: string;
   trustedProxyCIDRs: string;
   twoFactorEnable: boolean;
   twoFactorToken: string;
@@ -265,6 +272,7 @@ export interface AllSettingView {
   ldapUserFilter: string;
   ldapVlessField: string;
   nodeDownThreshold: number;
+  nodeLoadMinutes: number;
   outboundDownThreshold: number;
   pageSize: number;
   panelOutbound: string;
@@ -316,6 +324,7 @@ export interface AllSettingView {
   subHappPerAppMode: string;
   subHappPingType: string;
   subHappProviderId: string;
+  subHappRoutingUpdate: boolean;
   subHappSubExpire: boolean;
   subHappSubExpireButtonLink: string;
   subHappSubInfoButtonLink: string;
@@ -372,6 +381,7 @@ export interface AllSettingView {
   subKeyFile: string;
   subListen: string;
   subPath: string;
+  subPathAliases: string;
   subPort: number;
   subProfileMode: string;
   subProfileUrl: string;
@@ -392,6 +402,7 @@ export interface AllSettingView {
   tgBotVpnFallback: boolean;
   tgCpu: number;
   tgEnabledEvents: string;
+  tgEventRecipients: string;
   tgFreePlanEnable: boolean;
   tgFreePlanGB: number;
   tgFreePlanInbounds: string;
@@ -404,6 +415,9 @@ export interface AllSettingView {
   tgRunTime: string;
   timeLocation: string;
   trafficDiff: number;
+  trafficResetAllDay: number;
+  trafficResetAllMonthly: boolean;
+  trafficUsagePeriods: string;
   trustedProxyCIDRs: string;
   twoFactorEnable: boolean;
   twoFactorToken: string;
@@ -442,12 +456,81 @@ export interface ApiTokenView {
   token?: string;
 }
 
+export interface BackupNodeRun {
+  at: number;
+  error: string;
+  file: string;
+  name: string;
+  nodeId: number;
+}
+
+export interface BackupRun {
+  at: number;
+  error: string;
+  file: string;
+}
+
+export interface BackupSettings {
+  dbEnable: boolean;
+  dbEveryHours: number;
+  dbOnChange: boolean;
+  dir: string;
+  hasPassword: boolean;
+  hasPrivateKey: boolean;
+  host: string;
+  hostKey: string;
+  keep: number;
+  nodesEnable: boolean;
+  nodesEveryHours: number;
+  port: number;
+  user: string;
+}
+
+export interface BackupSettingsRequest {
+  dbEnable: boolean;
+  dbEveryHours: number;
+  dbOnChange: boolean;
+  dir: string;
+  host: string;
+  keep: number;
+  nodesEnable: boolean;
+  nodesEveryHours: number;
+  password?: string | null;
+  port: number;
+  privateKey?: string | null;
+  user: string;
+}
+
+export interface BackupStatus {
+  db: BackupRun;
+  nodes: BackupNodeRun[];
+  nodesAt: number;
+  running: string;
+}
+
 export interface Blocker {
   code: BlockerCode;
   detail?: string;
 }
 
+export interface CacheUpdate {
+  responses: CachedResponse[];
+  subIds: string[];
+}
+
+export interface CachedResponse {
+  agent: string;
+  body: string;
+  device: string;
+  header: Record<string, string[]>;
+  host: string;
+  stored: number;
+  subId: string;
+  uri: string;
+}
+
 export interface Cascade {
+  autoSelect: boolean;
   createdAt: number;
   directDomains: string[];
   directIps: string[];
@@ -466,11 +549,18 @@ export interface Cascade {
   updatedAt: number;
 }
 
-export interface CascadeFixedExit {
+export interface CascadeFixedExitRequest {
+  email: string;
+  nodeId: number;
+  trafficMode: string;
+}
+
+export interface CascadeFixedExitRow {
   createdAt: number;
   email: string;
   id: number;
   nodeId: number;
+  trafficMode: string;
 }
 
 export interface CascadeLink {
@@ -483,6 +573,21 @@ export interface CascadeLink {
   publicKey: string;
   serverName: string;
   shortId: string;
+}
+
+export interface CascadeRequest {
+  autoSelect: boolean;
+  directDomains: string[];
+  directIps: string[];
+  enable: boolean;
+  entryInboundTags: string[];
+  entryNodeId: number;
+  exitCountry: string;
+  exitNodeIds: number[];
+  mode: string;
+  name: string;
+  relayInboundTags: string[];
+  strategy: string;
 }
 
 export interface Client {
@@ -532,6 +637,8 @@ export interface ClientBillingView {
   nonPaying: boolean;
   pendingMonths: number;
   plans: PaymentPlanPrice[];
+  speedTierId: number;
+  speedTiers: SpeedTier[];
   trusted: boolean;
 }
 
@@ -674,6 +781,21 @@ export interface ClientsSummary {
   total: number;
 }
 
+export interface DNSPlan {
+  domain: string;
+  edgesBefore: string[];
+  tiers: string[][];
+  token: string;
+}
+
+export interface DNSStatus {
+  at: number;
+  error: string;
+  published: string[];
+  tier: number;
+  unmanaged: string[];
+}
+
 export interface FallbackParentInfo {
   masterId: number;
   path?: string;
@@ -714,6 +836,14 @@ export interface GeodataTokenIssue {
   file?: string;
   reason: string;
   token: string;
+}
+
+export interface GroupSpeed {
+  floorMbps: number;
+  group: string;
+  id: number;
+  maxMbps: number;
+  minMbps: number;
 }
 
 export interface HappLinkResult {
@@ -989,6 +1119,13 @@ export interface LedgerServerDue {
   serverId: number;
 }
 
+export interface ListenerConfig {
+  certFile: string;
+  enable: boolean;
+  keyFile: string;
+  port: number;
+}
+
 export interface LogEntry {
   DateTime: string;
   Email: string;
@@ -1041,6 +1178,8 @@ export interface NewUUIDResponse {
 export interface Node {
   activeCount: number;
   address: string;
+  alertCpu: number;
+  alertMemory: number;
   allowPrivateAddress: boolean;
   basePath: string;
   clientCount: number;
@@ -1072,6 +1211,7 @@ export interface Node {
   port: number;
   remark: string;
   scheme: string;
+  seenBy: string;
   status: string;
   tlsVerifyMode: string;
   transitive?: boolean;
@@ -1091,6 +1231,8 @@ export interface NodeJoinTokenView {
 
 export interface NodeMutationRequest {
   address: string;
+  alertCpu: number;
+  alertMemory: number;
   allowPrivateAddress: boolean;
   apiToken?: string | null;
   basePath: string;
@@ -1109,9 +1251,29 @@ export interface NodeMutationRequest {
   tlsVerifyMode: string;
 }
 
+export interface NodeRestoreRequest {
+  backup: string;
+  host: string;
+  password: string;
+  port: number;
+  privateKey: string;
+  user: string;
+}
+
+export interface NodeRestoreStatus {
+  error: string;
+  finishedAt: number;
+  log: string[];
+  nodeId: number;
+  running: boolean;
+  startedAt: number;
+}
+
 export interface NodeView {
   activeCount: number;
   address: string;
+  alertCpu: number;
+  alertMemory: number;
   allowPrivateAddress: boolean;
   basePath: string;
   clientCount: number;
@@ -1144,6 +1306,7 @@ export interface NodeView {
   port: number;
   remark: string;
   scheme: string;
+  seenBy: string;
   status: string;
   tlsVerifyMode: string;
   transitive?: boolean;
@@ -1213,6 +1376,13 @@ export interface PeerActivity {
   up: number;
 }
 
+export interface PeerProbeResult {
+  error: string;
+  latencyMs: number;
+  port: number;
+  reachable: boolean;
+}
+
 export interface ProbeResultUI {
   cpuPct: number;
   error: string;
@@ -1268,6 +1438,7 @@ export interface ServerFreeSpeed {
   freePerUserMbps: number;
   nodeId: number;
   online: number;
+  reservedMbps: number;
   usedMbps: number;
 }
 
@@ -1320,11 +1491,13 @@ export interface Setting {
 
 export interface SpeedOverview {
   clients: ClientSpeed[];
+  groups: GroupSpeed[];
   load: ServerFreeSpeed[];
   servers: ServerCapacity[];
   testSettings: SpeedTestSettings;
   testStats: SpeedTestStats[];
   testing: number[];
+  tiers: SpeedTier[];
 }
 
 export interface SpeedTestResult {
@@ -1344,6 +1517,7 @@ export interface SpeedTestResult {
 
 export interface SpeedTestSettings {
   autoCapacity: boolean;
+  dropPercent: number;
   everyHours: number;
   times: string[];
   timezone: string;
@@ -1359,9 +1533,24 @@ export interface SpeedTestStats {
   nodeId: number;
 }
 
+export interface SpeedTier {
+  id: number;
+  minMbps: number;
+  monthlyPrice: number;
+  name: string;
+}
+
+export interface StoredFile {
+  modTime: number;
+  name: string;
+  size: number;
+}
+
 export interface SubBalancer {
   createdAt: number;
   enabled: boolean;
+  exitForeign: boolean;
+  exitNodeIds: number[];
   id: number;
   inboundIds: number[];
   memberWeights?: Record<number, number>;
@@ -1369,6 +1558,40 @@ export interface SubBalancer {
   sortOrder: number;
   strategy: string;
   updatedAt: number;
+}
+
+export interface SubEdge {
+  certId: number;
+  createdAt: number;
+  enable: boolean;
+  id: number;
+  lastError: string;
+  lastSeen: number;
+  nodeId: number;
+  port: number;
+  status: string;
+  updatedAt: number;
+}
+
+export interface SubEdgeDNSRequest {
+  domain: string;
+  masterIps: string[];
+  token: string;
+}
+
+export interface SubEdgeDNSView {
+  domain: string;
+  masterIps: string[];
+  status: DNSStatus;
+  tokenFromTls: boolean;
+  tokenSet: boolean;
+}
+
+export interface SubEdgeRequest {
+  certId: number;
+  enable: boolean;
+  nodeId: number;
+  port: number;
 }
 
 export interface TgBotCapabilities {
@@ -1402,6 +1625,7 @@ export interface TlsCertSettings {
 
 export interface TlsCertificate {
   applyToPanel: boolean;
+  applyToSub: boolean;
   autoRenew: boolean;
   certFile: string;
   createdAt: number;
@@ -1421,6 +1645,23 @@ export interface Traffic {
   IsOutbound: boolean;
   Tag: string;
   Up: number;
+}
+
+export interface TrafficUsageAmount {
+  down: number;
+  up: number;
+}
+
+export interface TrafficUsageReport {
+  clients: TrafficUsageRow[];
+  periods: string[];
+  servers: TrafficUsageRow[];
+}
+
+export interface TrafficUsageRow {
+  name: string;
+  subject: string;
+  usage: TrafficUsageAmount[];
 }
 
 export interface TuicClientSettings {

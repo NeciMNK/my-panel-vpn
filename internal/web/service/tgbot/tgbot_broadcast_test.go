@@ -115,6 +115,7 @@ func broadcastLocalizer(t *testing.T) {
 		&i18n.Message{ID: "tgbot.messages.broadcastPreview", Other: "📤 This message will go to {{ .Count }} recipients. Send it?"},
 		&i18n.Message{ID: "tgbot.messages.broadcastNotCopyable", Other: "❗ This message can't be copied for broadcast."},
 		&i18n.Message{ID: "tgbot.messages.broadcastAskText", Other: "send the message"},
+		&i18n.Message{ID: "tgbot.messages.broadcastAskGroups", Other: "pick groups: {{ .Count }} recipients"},
 		&i18n.Message{ID: "tgbot.messages.broadcastAlreadyRunning", Other: "already running"},
 		&i18n.Message{ID: "tgbot.messages.broadcastProgress", Other: "progress {{ .Sent }}/{{ .Total }} failed {{ .Failed }}"},
 		&i18n.Message{ID: "tgbot.messages.broadcastFinished", Other: "finished"},
@@ -189,7 +190,7 @@ func TestCollectBroadcastRecipients(t *testing.T) {
 	createBroadcastInbound(t, "in-1", broadcastClientsJSON(t, 111, 111, 222))
 	createBroadcastInbound(t, "in-2", broadcastClientsJSON(t, 111, 333, 0, 444))
 
-	got := tb.collectBroadcastRecipients()
+	got := tb.collectBroadcastRecipients(nil)
 	slices.Sort(got)
 	if !slices.Equal(got, []int64{111, 333, 444}) {
 		t.Fatalf("collectBroadcastRecipients() = %v, want [111 333 444]", got)
@@ -573,7 +574,7 @@ func TestBroadcastCommandRequiresAdmin(t *testing.T) {
 	}
 }
 
-func TestBroadcastStartCommandSetsState(t *testing.T) {
+func TestBroadcastStartCommandOpensGroupPick(t *testing.T) {
 	broadcastLocalizer(t)
 	const chatID = int64(9103)
 	resetBroadcastState(t)
@@ -582,11 +583,15 @@ func TestBroadcastStartCommandSetsState(t *testing.T) {
 		broadcastResetAll()
 	}()
 
-	(&Tgbot{}).answerCommand(&telego.Message{Chat: telego.Chat{ID: chatID}, From: &telego.User{ID: chatID}, Text: "/broadcast"}, chatID, true)
+	tb := newStaleButtonTgbot(t)
+	tb.answerCommand(&telego.Message{Chat: telego.Chat{ID: chatID}, From: &telego.User{ID: chatID}, Text: "/broadcast"}, chatID, true)
 
-	state, ok := userStateMgr.get(chatUser{chatID: chatID, userID: chatID})
-	if !ok || state != broadcastAwaitingText {
-		t.Fatalf("state = %q (ok=%v), want %q", state, ok, broadcastAwaitingText)
+	actor := chatUser{chatID: chatID, userID: chatID}
+	if state, ok := userStateMgr.get(actor); ok {
+		t.Fatalf("state = %q right after /broadcast, want none until the groups are picked", state)
+	}
+	if !broadcastPickPending(actor) {
+		t.Fatal("/broadcast opened no group pick")
 	}
 }
 
@@ -720,7 +725,7 @@ func TestHandleBroadcastInputSingleMessage(t *testing.T) {
 		t.Errorf("copyMessage calls = %d, want 1 self-copy preview", got)
 	}
 	card := bodies("sendMessage")[0]
-	confirmData := card["reply_markup"].(map[string]any)["inline_keyboard"].([]any)[0].([]any)[0].(map[string]any)["callback_data"]
+	confirmData := broadcastConfirmData(t, card)
 	if confirmData != "broadcast_confirm "+token {
 		t.Errorf("card button = %v, want a confirm bound to the pending token %q", confirmData, token)
 	}
@@ -798,7 +803,7 @@ func TestBroadcastComposesArePerAdmin(t *testing.T) {
 
 	// Each admin confirms their own card, A first; each run must deliver its own draft.
 	for i, admin := range []int64{adminA, adminB} {
-		confirm := cards[i]["reply_markup"].(map[string]any)["inline_keyboard"].([]any)[0].([]any)[0].(map[string]any)["callback_data"].(string)
+		confirm := broadcastConfirmData(t, cards[i])
 		tb.answerCallback(&telego.CallbackQuery{
 			ID:      "q",
 			From:    telego.User{ID: admin},
@@ -1028,4 +1033,137 @@ func TestCancelledBroadcastRecallsDeliveredCopies(t *testing.T) {
 	if got := countMethod(calls(), "deleteMessage"); got < delivered {
 		t.Errorf("deleteMessage calls = %d, want one per delivered copy (%d)", got, delivered)
 	}
+}
+
+// groupedClientsJSON renders an inbound settings blob of tgId → group pairs.
+func groupedClientsJSON(t *testing.T, members map[int64]string) string {
+	t.Helper()
+	clients := make([]string, 0, len(members))
+	for tgID, group := range members {
+		clients = append(clients, fmt.Sprintf(`{"email":"g%d@x","tgId":%d,"group":%q}`, tgID, tgID, group))
+	}
+	return `{"clients":[` + strings.Join(clients, ",") + `]}`
+}
+
+// A client without a group is a "users" member (the panel's default) and a
+// custom group is reached only by "all", never by a pick of the auto groups.
+func TestCollectBroadcastRecipientsByGroup(t *testing.T) {
+	tb := newStaleButtonTgbot(t)
+	setBroadcastAdmins(t, nil)
+	createBroadcastInbound(t, "in-g1", groupedClientsJSON(t, map[int64]string{
+		601: "users", 602: "paid", 603: "friends", 604: "tech", 605: "", 606: "family",
+	}))
+	// 602 also owns a friends client: one pick of either group reaches them once.
+	createBroadcastInbound(t, "in-g2", `{"clients":[{"email":"g602b@x","tgId":602,"group":"friends"}]}`)
+
+	cases := []struct {
+		name   string
+		groups []string
+		want   []int64
+	}{
+		{"all", nil, []int64{601, 602, 603, 604, 605, 606}},
+		{"users takes ungrouped", []string{"users"}, []int64{601, 605}},
+		{"paid", []string{"paid"}, []int64{602}},
+		{"friends dedups shared tg id", []string{"friends"}, []int64{602, 603}},
+		{"several", []string{"paid", "tech"}, []int64{602, 604}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := tb.collectBroadcastRecipients(tc.groups)
+			slices.Sort(got)
+			if !slices.Equal(got, tc.want) {
+				t.Fatalf("collectBroadcastRecipients(%v) = %v, want %v", tc.groups, got, tc.want)
+			}
+		})
+	}
+}
+
+// Picking groups when the broadcast starts must narrow who the confirmed run
+// reaches; a dropped pick would silently send a paid-only notice to free users.
+func TestBroadcastGroupPickNarrowsDelivery(t *testing.T) {
+	broadcastLocalizer(t)
+	url, _, bodies := newBroadcastMock(t)
+	swapTestBot(t, url)
+	setBroadcastRunning(t, true)
+	tb := newStaleButtonTgbot(t)
+	setBroadcastAdmins(t, []int64{5000})
+	resetBroadcastState(t)
+
+	const chatID = int64(9106)
+	admin := chatUser{chatID: chatID, userID: 5000}
+	createBroadcastInbound(t, "in-gp", groupedClientsJSON(t, map[int64]string{701: "users", 702: "paid", 703: "friends"}))
+
+	tb.startBroadcast(admin)
+	if state, ok := userStateMgr.get(admin); ok {
+		t.Fatalf("state = %q before the groups are picked, want none: the message comes after", state)
+	}
+	pickCard := bodies("sendMessage")[0]
+	if text, _ := pickCard["text"].(string); !strings.Contains(text, "3 recipients") {
+		t.Errorf("group card says %q, want all 3 recipients preselected", text)
+	}
+	next := broadcastButtonData(t, pickCard, "broadcast_next ")
+	token := strings.TrimPrefix(next, "broadcast_next ")
+
+	tap := func(data string) {
+		tb.answerCallback(&telego.CallbackQuery{
+			ID: "q", From: telego.User{ID: 5000}, Data: data,
+			Message: &telego.Message{Chat: telego.Chat{ID: chatID}, MessageID: 5},
+		}, true)
+	}
+	tap("broadcast_group " + token + " paid")
+	tap("broadcast_group " + token + " friends")
+	tap("broadcast_group " + token + " friends")
+	tap("broadcast_group " + token + " users")
+	edits := bodies("editMessageText")
+	if len(edits) != 4 {
+		t.Fatalf("editMessageText calls = %d, want 4 (one per tap)", len(edits))
+	}
+	if text, _ := edits[3]["text"].(string); !strings.Contains(text, "2 recipients") {
+		t.Errorf("group card after paid+users says %q, want 2 recipients", text)
+	}
+
+	tap(next)
+	if state, _ := userStateMgr.get(admin); state != broadcastAwaitingText {
+		t.Fatalf("state after Next = %q, want %q", state, broadcastAwaitingText)
+	}
+	tb.handleBroadcastInput(&telego.Message{Chat: telego.Chat{ID: chatID}, From: &telego.User{ID: 5000}, MessageID: 9, Text: "hi"}, admin)
+	_, draftToken := waitBroadcastPending(t, admin)
+	cards := bodies("sendMessage")
+	if text, _ := cards[len(cards)-1]["text"].(string); !strings.Contains(text, "go to 2 recipients") {
+		t.Errorf("preview says %q, want the picked groups' 2 recipients", text)
+	}
+
+	tap("broadcast_confirm " + draftToken)
+	waitBroadcastFinished(t)
+
+	var delivered []int64
+	for _, b := range bodies("copyMessage") {
+		if id := int64(b["chat_id"].(float64)); id != chatID {
+			delivered = append(delivered, id)
+		}
+	}
+	slices.Sort(delivered)
+	if !slices.Equal(delivered, []int64{701, 702}) {
+		t.Fatalf("delivered to %v, want [701 702] (users + paid)", delivered)
+	}
+}
+
+// broadcastConfirmData finds the send button on a preview card.
+func broadcastConfirmData(t *testing.T, card map[string]any) string {
+	t.Helper()
+	return broadcastButtonData(t, card, "broadcast_confirm ")
+}
+
+// broadcastButtonData returns the callback data of the card's button with prefix.
+func broadcastButtonData(t *testing.T, card map[string]any, prefix string) string {
+	t.Helper()
+	for _, row := range card["reply_markup"].(map[string]any)["inline_keyboard"].([]any) {
+		for _, btn := range row.([]any) {
+			if data, _ := btn.(map[string]any)["callback_data"].(string); strings.HasPrefix(data, prefix) {
+				return data
+			}
+		}
+	}
+	t.Fatalf("card has no %q button", prefix)
+	return ""
 }

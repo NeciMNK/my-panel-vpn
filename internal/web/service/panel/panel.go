@@ -434,46 +434,60 @@ func downloadPanelUpdater() (string, error) {
 	return path, nil
 }
 
+// fetchLatestPanelVersion returns the newest vX.Y.Z release tag, pre-releases
+// included: every fork tag before 1.0 is a pre-release, so releases/latest is 404.
 func fetchLatestPanelVersion() (string, error) {
-	release, err := fetchPanelRelease("")
-	if err != nil {
+	url := strings.TrimSuffix(panelReleaseAPI, "/") + "?per_page=100"
+	var releases []service.Release
+	if err := getPanelReleaseJSON(url, &releases); err != nil {
 		return "", err
 	}
-	if release.TagName == "" {
-		return "", fmt.Errorf("latest panel release tag is empty")
+	latest := ""
+	for _, release := range releases {
+		if !releaseTagPattern.MatchString(release.TagName) {
+			continue
+		}
+		if latest == "" || isNewerVersion(release.TagName, latest) {
+			latest = release.TagName
+		}
 	}
-	return release.TagName, nil
+	if latest == "" {
+		return "", fmt.Errorf("%w: no vX.Y.Z tag at %s", errPanelReleaseNotFound, url)
+	}
+	return latest, nil
 }
 
-// fetchPanelRelease fetches a release from GitHub. An empty tag resolves the
-// latest stable release; a non-empty tag (e.g. dev-latest) resolves that tag.
-func fetchPanelRelease(tag string) (*service.Release, error) {
-	url := panelReleaseAPI + "latest"
-	if tag != "" {
-		url = panelReleaseAPI + "tags/" + tag
-	}
-	client := (&service.SettingService{}).NewProxiedHTTPClient(10 * time.Second)
-	req, reqErr := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
-	if reqErr != nil {
-		return nil, reqErr
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode == http.StatusNotFound {
-		return nil, fmt.Errorf("%w: %s", errPanelReleaseNotFound, url)
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("GitHub API returned status %d: %s", resp.StatusCode, resp.Status)
-	}
+// releaseTagPattern matches the tags release.yml builds archives for.
+var releaseTagPattern = regexp.MustCompile(`^v\d+\.\d+\.\d+$`)
 
+// fetchPanelRelease fetches the GitHub release published under tag.
+func fetchPanelRelease(tag string) (*service.Release, error) {
 	var release service.Release
-	if err := json.NewDecoder(io.LimitReader(resp.Body, maxPanelReleaseBytes)).Decode(&release); err != nil {
+	if err := getPanelReleaseJSON(panelReleaseAPI+"tags/"+tag, &release); err != nil {
 		return nil, err
 	}
 	return &release, nil
+}
+
+func getPanelReleaseJSON(url string, out any) error {
+	client := (&service.SettingService{}).NewProxiedHTTPClient(10 * time.Second)
+	req, reqErr := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
+	if reqErr != nil {
+		return reqErr
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusNotFound {
+		return fmt.Errorf("%w: %s", errPanelReleaseNotFound, url)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("GitHub API returned status %d: %s", resp.StatusCode, resp.Status)
+	}
+
+	return json.NewDecoder(io.LimitReader(resp.Body, maxPanelReleaseBytes)).Decode(out)
 }
 
 // extractReleaseCommit reads the build commit recorded in the dev release: first

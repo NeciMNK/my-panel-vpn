@@ -139,7 +139,8 @@
     "unpinSidebar": "برداشتن تثبیت نوار کناری",
     "subFormats": "Sub Formats",
     "ledger": "Finance",
-    "aiDomains": "AI domains"
+    "aiDomains": "AI domains",
+    "trafficUsage": "Traffic by period"
   },
   "pages": {
     "login": {
@@ -838,7 +839,11 @@
         "peerNumberConfig": "پیکربندی Peer {n}"
       },
       "sniffingDestOverride": "بازنویسی مقصد",
-      "advancedTitle": "تنظیمات پیشرفته"
+      "advancedTitle": "تنظیمات پیشرفته",
+      "copyAsXhttp": "کپی به‌صورت XHTTP",
+      "copyAsXhttpContent": "یک ورودی XHTTP روی پورت جدید با همان کاربران و امنیت می‌سازد. ورودی gRPC همچنان کار می‌کند؛ پس از به‌روزرسانی اشتراک کاربران آن را حذف کنید.",
+      "grpcDeprecated": "انتقال gRPC در Xray منسوخ شده و ممکن است حذف شود. این ورودی را به XHTTP منتقل کنید.",
+      "deprecated": "منسوخ"
     },
     "clients": {
       "tabBasics": "پایه",
@@ -1210,7 +1215,8 @@
         "offline": "آفلاین",
         "unknown": "نامشخص",
         "xrayError": "خطای Xray",
-        "xrayStopped": "متوقف"
+        "xrayStopped": "متوقف",
+        "isolated": "پنل اصلی دسترسی ندارد، نود کار می‌کند"
       },
       "toasts": {
         "list": "بارگذاری نودها ناموفق",
@@ -1276,6 +1282,7 @@
         "strategy": "How to pick the exit",
         "inbounds": "Only these entry inbounds",
         "inboundsHint": "Empty = all traffic of the entry server goes through the cascade.",
+        "inboundsAllWarning": "No inbounds chosen: the cascade takes over every inbound of the entry server, direct ones included. Pick the inbounds that should go through the exit.",
         "desc": "Users connect to the entry server and reach the internet through the exit. The panel creates the link between the servers itself. Several exits = load balancing.",
         "deleteConfirm": "Delete the cascade and its link inbounds?",
         "toasts": {
@@ -1285,10 +1292,21 @@
         "exitMode": "Exits",
         "exitModeServers": "Picked servers",
         "exitModeCountry": "All servers of a country",
+        "exitModeForeign": "All foreign servers",
+        "exitModeForeignHint": "Auto-select: traffic leaves through the fastest server outside the entry's country (Russia for this panel). Cascade rules (local sites direct, AI and exit pins) still apply; new foreign nodes join automatically.",
+        "exitModePickedForeign": "Picked foreign servers",
+        "noEntry": "No entry",
+        "noEntryTitle": "Without an entry server",
+        "noEntryAdd": "Auto-select without entry",
+        "noEntryDesc": "The client app connects straight to the fastest foreign server, with no entry server. Works in the JSON subscription (Happ, v2rayN, …); routing rules (local sites direct) come from the JSON subscription settings. An exit pin works as on a cascade: \"All traffic\" makes the pinned server lead, \"AI sites only\" sends just AI through it and the rest stays on auto-select; while it is down, their bot outage choice applies (after a subscription refresh).",
+        "autoTitle": "Server auto-select",
+        "autoAdd": "New auto-select",
+        "autoEdit": "Edit auto-select",
+        "autoDesc": "Users connect to the entry server and leave the internet through the fastest foreign server. Every cascade rule applies: split/relay modes, local sites direct, AI and exit pins.",
         "country": "Exit country",
         "countryHint": "Traffic leaves through the fastest server of this country. New nodes of the country join automatically.",
         "split": "Split traffic",
-        "splitHint": "Sites and IPs of the entry server's country (Russia: .ru, .su, .рф, geosite:category-ru, geoip:ru) and the entries below leave the internet from the entry itself; everything else goes through the exit.",
+        "splitHint": "Sites whose servers are in the entry server's country (by server IP, geoip; for Russia also geosite:category-ru) and the entries below leave the internet from the entry itself; everything else goes through the exit, even a .ru site hosted abroad.",
         "relay": "Pure relay",
         "relayHint": "The entry only forwards traffic: everything goes through the exit.",
         "relayInbounds": "Inbounds that only relay",
@@ -1305,9 +1323,12 @@
       },
       "fixedExits": {
         "title": "Pinned exits",
-        "desc": "The user always leaves to the internet through the chosen server (with its IP) in every cascade that has this server as an exit, e.g. \"all servers of DE\". One pinned server per country. While it is down the user is moved to another exit for the time being and comes back as soon as the server is online again.",
+        "desc": "The user always leaves to the internet through the chosen server (with its IP) in every cascade that has this server as an exit, e.g. \"all servers of DE\". One pinned server per country. While it is down the user is moved to another exit for the time being and comes back as soon as the server is online again. Traffic: “All traffic” sends everything through this server; “AI sites only” sends only AI services (the list on the AI domains page) and picks the rest automatically. AI sites only works in one country per user, the same choice as the bot’s AI button.",
         "user": "User",
         "exit": "Exit server",
+        "traffic": "Traffic",
+        "trafficAll": "All traffic",
+        "trafficAI": "AI sites only",
         "pin": "Pin",
         "fallback": "down — on another exit for now",
         "toasts": {
@@ -1317,6 +1338,9 @@
       },
       "country": "Country",
       "countryHint": "Two-letter country code (DE, NL, FI). Nodes of one country together join \"by country\" cascades.",
+      "alertCpu": "CPU alert, %",
+      "alertMemory": "RAM alert, %",
+      "alertHint": "This node's own alert threshold. 0 uses the threshold from the notification settings.",
       "countryInvalid": "Use a two-letter country code such as DE",
       "home": {
         "title": "Home networks",
@@ -1381,17 +1405,19 @@
       },
       "speed": {
         "title": "Speed limits",
-        "desc": "Max caps a user's speed on every server they use. Min is the speed a server must still have free for the user: when a server drops below it, new connections go to another server of the cascade, and if no server has room the admin gets a Telegram alert. Set each server's link speed so free speed can be measured.",
+        "desc": "Max caps a user's speed. Min is guaranteed: on the server the user connects to, their downloads keep at least that much of the link (uploads can only be capped). Guarantees are counted on the cascade's entry and exit; when an exit cannot cover a new user's guarantee they go to another exit, and if no server can the admin gets a Telegram alert. A user's own speed replaces their group's. Set each server's link speed so guarantees and free speed can be measured.",
         "server": "Server",
         "capacity": "Link speed, Mbit/s",
         "load": "Load",
-        "loadValue": "{used} Mbit/s used, {online} online, {free} Mbit/s free per user",
+        "loadValue": "{used} Mbit/s used, {online} online, {free} Mbit/s free per user, {reserved} Mbit/s guaranteed",
         "user": "User",
         "min": "Min, Mbit/s",
         "max": "Max, Mbit/s",
         "test": "Speed test",
         "testDesc": "A speed test measures the server's own internet link with Speedtest by Ookla, or with Yandex Internetometer when Speedtest is unreachable. With automatic link speed on, the result sets the server's link speed: the slower direction plus what users were using during the test.",
         "autoCapacity": "Set link speed from speed tests",
+        "dropPercent": "Alert on a drop of",
+        "dropPercentHint": "A scheduled test this far below the 30-day average is measured twice more within 10 minutes, then alerts if both are low too. 0 turns it off.",
         "everyHours": "Test every, hours (0 = button only)",
         "testNow": "Test",
         "testing": "Testing…",
@@ -1467,6 +1493,75 @@
         "addDbHost": "Database address for the new master",
         "addDbHostHint": "Fill in when this master reaches PostgreSQL over 127.0.0.1: the new master gets this address instead. PostgreSQL must accept connections from the new server (listen_addresses and pg_hba.conf).",
         "setupDbLocal": "XUI_DB_DSN still points to this server's own database (127.0.0.1 or a socket), which the new master cannot reach. Put the database address into the DSN, or add the master again with the database address filled in."
+      },
+      "subEdge": {
+        "title": "Subscriptions through nodes",
+        "add": "Add node",
+        "edit": "Edit node",
+        "desc": "The node serves this panel's subscriptions on its own port. Every master keeps a tunnel to it, so the master's subscription server needs no public address.",
+        "node": "Node",
+        "port": "Port",
+        "cert": "Certificate",
+        "certNone": "None (plain HTTP)",
+        "certNotOnNode": "The panel has not copied this certificate to the node yet; the edge starts once it has.",
+        "tunnel": "Tunnel",
+        "online": "Connected",
+        "offline": "Not connected",
+        "enable": "Enabled",
+        "deleteConfirm": "Stop serving subscriptions on this node?",
+        "dnsHint": "Point the subscription domain's DNS at this node and set the subscription URI to that domain.",
+        "dns": {
+          "title": "DNS switching",
+          "desc": "The panel points the subscription domain at the masters, else at the edge nodes in Russia, else at the other edge nodes, and goes back to a better tier once it stays up for 2 minutes. It changes only the A records it created itself; edge nodes get the token and switch DNS while no master is up. The token needs DNS:Edit on the domain's zone only.",
+          "domain": "Subscription domain",
+          "token": "Cloudflare API token (DNS:Edit)",
+          "tokenKeep": "A token is saved; leave empty to keep it.",
+          "tokenFromTls": "Empty: the Cloudflare token from SSL certificates is used. Enter one here only to use a separate token.",
+          "masterIps": "Masters' IPv4 addresses",
+          "masterIpsHint": "The public addresses where the masters serve subscriptions on port 443. Leave empty to publish only edge nodes.",
+          "tier": "Published tier",
+          "tiers": {
+            "none": "None",
+            "masters": "Masters",
+            "ru": "Edge nodes in Russia",
+            "foreign": "Other edge nodes"
+          },
+          "unmanaged": "The domain also has A records the panel did not create ({{ips}}); remove them in Cloudflare, or clients may still go there.",
+          "toasts": {
+            "saved": "DNS switching saved"
+          }
+        },
+        "toasts": {
+          "saved": "Subscription node saved",
+          "deleted": "Subscription node removed",
+          "tunnel": "Subscription tunnel refused"
+        }
+      },
+      "groupSpeed": {
+        "title": "Speed by group",
+        "desc": "Every member of a group gets its speed unless the user has their own in the speed limits above. Min is guaranteed. With \"Floating from\" set, the max floats between that and Max: what the guarantees of the users on the server leave free, shared among the floating users, in 10 Mbit/s steps. A cascade user gets the smaller share of the entry and the exit.",
+        "group": "Group",
+        "floor": "Floating from, Mbit/s"
+      },
+      "tabs": {
+        "nodes": "Nodes",
+        "speed": "Speed"
+      },
+      "restore": {
+        "action": "Restore to a new server",
+        "title": "Restore {name} to a new server",
+        "desc": "The panel logs in to the new server over SSH, installs the node, brings back the chosen backup and points the node at the new address. A node kept by domain gets its Cloudflare A record moved when a Cloudflare token is saved.",
+        "server": "New server address and SSH port",
+        "keyPlaceholder": "…or an SSH private key",
+        "backup": "Backup",
+        "latest": "Newest backup",
+        "noBackup": "Without a backup (fresh node)",
+        "start": "Restore",
+        "done": "The node is restored; the master is pushing its inbounds and clients.",
+        "toasts": {
+          "list": "List node backups",
+          "start": "Start the restore"
+        }
       }
     },
     "settings": {
@@ -1583,9 +1678,9 @@
       "subClashUserAgentRegex": "عبارت User-Agent برای Clash/Mihomo",
       "subClashUserAgentRegexDesc": "عبارت منظم Go RE2 که با عامل کاربر (User-Agent) کلاینت مطابقت داده می‌شود تا کلاینت‌های Clash/Mihomo در آدرس استاندارد اشتراک شناسایی شوند. برای استفاده از الگوی پیش‌فرض خالی بگذارید. پس از تغییر، پنل را راه‌اندازی مجدد کنید.",
       "subTitle": "عنوان اشتراک",
-      "subTitleDesc": "عنوان نمایش داده شده در کلاینت VPN. از توکن‌های هویت کلاینت پشتیبانی می‌کند: {{EMAIL}}, {{ID}}, {{SHORT_ID}}, {{SUB_ID}}, {{TELEGRAM_ID}}.",
+      "subTitleDesc": "عنوان نمایش داده شده در کلاینت VPN. از توکن‌های هویت کلاینت پشتیبانی می‌کند: {{EMAIL}}, {{ID}}, {{SHORT_ID}}, {{SUB_ID}}, {{TELEGRAM_ID}}. Empty uses the subscription domain.",
       "subSupportUrl": "آدرس پشتیبانی",
-      "subSupportUrlDesc": "لینک پشتیبانی فنی که در کلاینت VPN نمایش داده می‌شود. از توکن‌های هویت کلاینت پشتیبانی می‌کند: {{EMAIL}}, {{ID}}, {{SHORT_ID}}, {{SUB_ID}}, {{TELEGRAM_ID}}.",
+      "subSupportUrlDesc": "لینک پشتیبانی فنی که در کلاینت VPN نمایش داده می‌شود. از توکن‌های هویت کلاینت پشتیبانی می‌کند: {{EMAIL}}, {{ID}}, {{SHORT_ID}}, {{SUB_ID}}, {{TELEGRAM_ID}}. Empty uses the subscription domain.",
       "subProfileMode": "صفحه پروفایل",
       "subProfileModeDesc": "انتخاب کنید کدام لینک وب‌سایت در کلاینت VPN نمایش داده شود.",
       "subProfileModeNone": "بدون لینک",
@@ -1595,7 +1690,7 @@
       "subProfileUrl": "آدرس پروفایل",
       "subProfileUrlDesc": "لینک وب‌سایت شما که در کلاینت VPN نمایش داده می‌شود. از توکن‌های هویت کلاینت پشتیبانی می‌کند: {{EMAIL}}, {{ID}}, {{SHORT_ID}}, {{SUB_ID}}, {{TELEGRAM_ID}}. برای عدم نمایش لینک وب‌سایت در کلاینت VPN، این فیلد را خالی بگذارید.",
       "subAnnounce": "اعلان",
-      "subAnnounceDesc": "متن اعلانی که در کلاینت VPN نمایش داده می‌شود. از توکن‌های هویت کلاینت پشتیبانی می‌کند: {{EMAIL}}, {{ID}}, {{SHORT_ID}}, {{SUB_ID}}, {{TELEGRAM_ID}}.",
+      "subAnnounceDesc": "متن اعلانی که در کلاینت VPN نمایش داده می‌شود. از توکن‌های هویت کلاینت پشتیبانی می‌کند: {{EMAIL}}, {{ID}}, {{SHORT_ID}}, {{SUB_ID}}, {{TELEGRAM_ID}}. Empty uses the subscription domain.",
       "subThemeDir": "پوشه قالب صفحه اشتراک",
       "subThemeDirDesc": "مسیر مطلق پوشه‌ای که شامل یک قالب سفارشی (index.html/sub.html) برای صفحه اشتراک است (مثلاً /etc/3x-ui/sub_templates/my-theme/). برای استفاده از صفحه پیش‌فرض خالی بگذارید.",
       "subThemeDirDocs": "راهنمای قالب ↗",
@@ -1603,6 +1698,8 @@
       "happLinkEnable": "لینک‌های رمزگذاری‌شدهٔ اشتراک",
       "happLinkEnableDesc": "امکان ایجاد لینک‌های رمزگذاری‌شدهٔ Happ در پنجرهٔ کد QR کلاینت را فراهم می‌کند. نشانی‌های اشتراک به‌صورت محلی پردازش می‌شوند.",
       "subEnableRoutingDesc": "تنظیمات سراسری برای فعال‌سازی مسیریابی در کلاینت VPN. (فقط برای Happ)",
+      "subHappRoutingUpdate": "Update routing on added subscriptions",
+      "subHappRoutingUpdateDesc": "Sends routing as happ://routing/add, so rule changes reach users who already added the subscription. Off: happ://routing/onadd, applied only when the subscription is first added.",
       "subRoutingRules": "قوانین مسیریابی",
       "subRoutingRulesDesc": "یک پیوند آماده happ:// یا یک نشانی دائمی HTTPS وارد کنید. پنل قوانین راه‌دور را در پس‌زمینه به‌روزرسانی و آخرین مقدار معتبر را نگه می‌دارد، بنابراین درخواست اشتراک منتظر منبع نمی‌ماند. (فقط برای Happ)",
       "subHideSettings": "پنهان کردن تنظیمات سرور",
@@ -1627,6 +1724,12 @@
       "subKeyPathDesc": "مسیر فایل کلیدخصوصی برای سرویس سابسکریپشن. با '/' شروع‌می‌شود",
       "subPath": "مسیر URI",
       "subPathDesc": "برای سرویس سابسکریپشن. با '/' شروع‌ و با '/' خاتمه‌ می‌یابد URI مسیر",
+      "subPathAliases": "Old subscription paths",
+      "subPathAliasesDesc": "Earlier paths that keep serving the same subscriptions, comma separated. Remove one to stop links on it.",
+      "subPathChangeTitle": "Change the subscription path?",
+      "subPathChangeDesc": "Links already handed out use {old}. They stop working unless the old path is kept as an extra one.",
+      "subPathKeepOld": "Keep old links working",
+      "subPathDropOld": "Break old links",
       "subDomain": "نام دامنه",
       "subDomainDesc": "آدرس دامنه برای سرویس سابسکریپشن. برای گوش دادن به تمام دامنه‌ها و آی‌پی‌ها خالی‌بگذارید. همچنین وقتی «مسیر پراکسی معکوس» خالی باشد، به عنوان دامنه پیش‌فرض لینک سابسکریپشن نمایش‌داده‌شده استفاده می‌شود — اگر پنل و سابسکریپشن از دامنه‌های متفاوتی در دسترس هستند (مثلاً پشت یک پراکسی معکوس)، «مسیر پراکسی معکوس» را پر کنید.",
       "subUpdates": "فاصله بروزرسانی‌ سابسکریپشن",
@@ -1798,6 +1901,7 @@
       "eventOutboundDown": "قطع",
       "eventOutboundUp": "وصل",
       "eventDownThresholdHint": "بررسی ناموفق پیاپی",
+      "eventNodeDownSecondsHint": "ثانیه بدون ارتباط",
       "eventXrayCrash": "کرش",
       "eventNodeDown": "قطع",
       "eventNodeUp": "وصل",
@@ -2151,6 +2255,8 @@
         "autoRenew": "Auto-renew",
         "applyToPanel": "Use for the panel",
         "applyToPanelDesc": "Once issued, the panel switches to this certificate and restarts.",
+        "applyToSub": "Use for the subscription server",
+        "applyToSubDesc": "The subscription server switches to HTTPS on this certificate and the panel restarts. Leave it off when a reverse proxy reaches the subscription port over plain HTTP.",
         "status": "Status",
         "statusPending": "Issuing…",
         "statusValid": "Valid",
@@ -2176,8 +2282,15 @@
         }
       },
       "eventSpeedLow": "Speed below user minimum",
+      "eventSpeedDrop": "Speed far below average",
+      "nodeLoadMinutes": "Hold time, min",
+      "nodeLoadMinutesHint": "Nodes alert only when their CPU or RAM stays over the threshold this long.",
+      "tgRecipientsTitle": "Who else gets these alerts",
+      "tgRecipientsHint": "Besides the admins, the Telegram chats of the chosen client groups and clients get the event too. Login alerts always stay with the admins.",
+      "tgRecipientsGroups": "Client groups",
+      "tgRecipientsClients": "Clients",
       "eventMasterLeader": "Another master took over",
-      "tgPaymentMoved": "The price, discounts and where to pay are set on the Finance page.",
+      "tgPaymentMoved": "Prices, discounts, payment details, the free plan and online payment (YooKassa, which confirms payments by itself) are set on the Finance page, Prices and payment tab.",
       "tgFreePlanPrice": "Free plan price (online)",
       "tgFreePlanPriceDesc": "A one-off payment that keeps spam bots out. Above 0 and with a payment provider connected, a new user pays it by card in the bot and gets the free plan automatically, with no admin approval; the amount comes off their first paid plan. 0, or no provider, keeps the free request that an admin approves.",
       "tgFreePlanInbounds": "Inbounds for paid free plans",
@@ -2196,7 +2309,54 @@
       "tgPayTest": "Check connection",
       "tgPayTestFailed": "Payment provider check failed (save the settings first)",
       "tgPayTestLive": "Connected to YooKassa shop {{ .Account }}: real payments.",
-      "tgPayTestSandbox": "Connected to YooKassa test shop {{ .Account }}: no real money moves. Switch to the live shop's keys when ready."
+      "tgPayTestSandbox": "Connected to YooKassa test shop {{ .Account }}: no real money moves. Switch to the live shop's keys when ready.",
+      "trafficAccounting": "Traffic accounting",
+      "trafficResetAllMonthly": "Monthly traffic reset for everyone",
+      "trafficResetAllMonthlyDesc": "Resets the traffic of every client that has no reset or renewal cycle of its own, and is not in an inbound with a reset cycle. A client's own cycle always wins.",
+      "trafficResetAllDay": "Reset day of the month",
+      "trafficResetAllDayDesc": "In months shorter than this, the reset runs on the last day.",
+      "trafficUsagePeriods": "Traffic periods to show",
+      "trafficUsagePeriodsDesc": "Which periods the Traffic by period page counts. History is always collected, so a period switched on later shows past data at once.",
+      "backup": {
+        "menu": "Backups",
+        "desc": "Copies the panel database and each node's state (its database, TLS key and certificates) to a folder on another server over SSH/SFTP. A lost node can then be moved to a fresh server from the Nodes page in one step.",
+        "server": "Backup server",
+        "host": "Address and SSH port",
+        "hostDesc": "Any server you can reach over SSH; SFTP must be allowed.",
+        "port": "Port",
+        "user": "User",
+        "password": "Password",
+        "privateKey": "SSH private key",
+        "privateKeyDesc": "Unencrypted OpenSSH or PEM key. Use either a password or a key.",
+        "secretSet": "Saved, leave empty to keep",
+        "dir": "Backup folder",
+        "hostKey": "Pinned host key",
+        "hostKeyDesc": "Learned on the first login; a server answering with another key is refused. Changing the address forgets it.",
+        "schedule": "Schedule",
+        "dbEnable": "Back up the database on a timer",
+        "everyHours": "Every N hours",
+        "dbOnChange": "Back up the database after changes",
+        "dbOnChangeDesc": "Two minutes after inbounds, clients, nodes or settings change; at most every 10 minutes.",
+        "nodesEnable": "Back up nodes on a timer",
+        "nodesEnableDesc": "Every enabled node, every N hours.",
+        "keep": "Backups to keep of each",
+        "test": "Test connection",
+        "runDb": "Back up database now",
+        "runNodes": "Back up nodes now",
+        "running": "A backup is running…",
+        "lastDb": "Last database backup",
+        "lastBackup": "Last backup",
+        "node": "Node",
+        "noNodeBackups": "No node backups yet",
+        "never": "Never",
+        "ok": "Done",
+        "failed": "Failed",
+        "toasts": {
+          "save": "Save backup settings",
+          "test": "Connect to the backup server",
+          "run": "Start the backup"
+        }
+      }
     },
     "xray": {
       "save": "ذخیره",
@@ -2813,6 +2973,7 @@
         },
         "descEMAIL": "ایمیل کاربر",
         "descINBOUND": "نام خود اینباند (نام کانفیگ)",
+        "descAUTO_NAME": "Server name built automatically: entry flag, Pure / Split / Auto, exit country, protocol",
         "descHOST": "نام میزبان",
         "descID": "UUID کاربر",
         "descSHORT_ID": "۸ کاراکتر اول UUID",
@@ -2921,7 +3082,18 @@
       "nodeHint": "Pick the node this server runs; its address is shown and follows the node's settings. For a server that is not a node (e.g. this panel) type the IP below.",
       "noNode": "— not a node —",
       "aiExitPrice": "AI button price",
-      "aiExitPriceDesc": "One-off price of the bot's \"🤖 I will use AI\" button (a permanent exit IP). Friends always get it free. 0 hides it from everyone else. It is paid by card when a provider is connected, or by hand to the payment details with an admin's confirm in the bot. Clients who already paid keep it."
+      "aiExitPriceDesc": "One-off price of the bot's \"🤖 I will use AI\" button (a permanent exit IP). Friends always get it free. 0 hides it from everyone else. It is paid by card when a provider is connected, or by hand to the payment details with an admin's confirm in the bot. Clients who already paid keep it.",
+      "tabs": {
+        "summary": "Servers and totals",
+        "payment": "Prices and payment",
+        "nonPaying": "Not paying"
+      },
+      "speedTiers": {
+        "title": "Speed tiers",
+        "desc": "A speed upgrade clients can buy in the bot when they pay: its price is added to every month of the term, and its minimum is guaranteed until the term ends. It beats the group's speed; a speed set on the client itself still wins. Deleting a tier returns its buyers to their group's speed.",
+        "name": "Name",
+        "price": "Price per month"
+      }
     },
     "aiDomains": {
       "list": "Sites for the AI pin",
@@ -2942,6 +3114,26 @@
       "alreadyAnswered": "This suggestion has already been answered",
       "notSaved": "The list was not saved",
       "notAnswered": "The answer was not sent"
+    },
+    "trafficUsage": {
+      "desc": "Traffic each server and client used. Resets of the traffic counters do not affect this history. Calendar periods start over at midnight in the panel timezone; weeks start on Monday.",
+      "servers": "Servers",
+      "clients": "Clients",
+      "name": "Name",
+      "thisPanel": "This panel",
+      "search": "Search by email",
+      "periods": {
+        "24h": "24 hours",
+        "7d": "7 days",
+        "30d": "30 days",
+        "180d": "180 days",
+        "365d": "365 days",
+        "day": "Today",
+        "week": "This week",
+        "month": "This month",
+        "halfyear": "This half-year",
+        "year": "This year"
+      }
     }
   },
   "tgbot": {
@@ -2978,6 +3170,7 @@
     },
     "messages": {
       "cpuThreshold": "بار ‌پردازنده {{ .Percent }}% بیشتر از آستانه است {{ .Threshold }}%",
+      "cpuNormal": "CPU load is back to normal: {{ .Percent }}%, below the threshold of {{ .Threshold }}%",
       "selectUserFailed": "❌ خطا در انتخاب کاربر!",
       "userSaved": "✅ کاربر تلگرام ذخیره شد.",
       "loginSuccess": "✅ با موفقیت به پنل وارد شدید.\r\n",
@@ -3033,6 +3226,7 @@
       "error_add_client": "⚠️ خطا:\n\n {{ .error }}",
       "incorrect_input": "ورودی شما معتبر نیست.\nعبارت‌ها باید بدون فاصله باشند.\nمثال صحیح: aaaaaa\nمثال نادرست: aaa aaa 🚫",
       "broadcastAskText": "📤 ارسال گروهی: پیام خود را برای ارسال به کاربران بفرستید — متن، عکس، ویدیو، فایل یا یک آلبوم کامل.",
+      "broadcastAskGroups": "📤 ارسال همگانی: به چه کسانی ارسال شود؟ یک یا چند گروه را انتخاب کنید و بعدی را بزنید.\r\n👥 گیرندگان: {{ .Count }}",
       "broadcastAlreadyRunning": "❗ یک ارسال گروهی در حال اجراست، تا پایان آن صبر کنید.",
       "broadcastNoRecipients": "❗ هیچ کاربری با شناسه تلگرام متصل یافت نشد.",
       "broadcastPreview": "📤 این پیام برای {{ .Count }} دریافت‌کننده ارسال می‌شود. ارسال شود؟",
@@ -3053,8 +3247,10 @@
       "eventXrayCrashError": "خطا: {{ .Error }}",
       "eventNodeDown": "نود {{ .Name }} قطع است",
       "eventNodeUp": "نود {{ .Name }} وصل است",
+      "eventNodeIsolated": "پنل اصلی به نود {{ .Name }} دسترسی ندارد، اما نود کار می‌کند: {{ .SeenBy }} به آن دسترسی دارند",
       "eventLoginFallback": "ورود ناموفق از {{ .Source }}",
       "memoryThreshold": "مصرف حافظه {{ .Percent }}% از حد آستانه {{ .Threshold }}% فراتر رفته است",
+      "memoryNormal": "Memory load is back to normal: {{ .Percent }}%, below the threshold of {{ .Threshold }}%",
       "inboundsCount": "🔌 Inbounds: {{ .Count }}\r\n",
       "clientsCount": "👥 Clients: {{ .Count }}\r\n",
       "category_server": "🖥 سرور",
@@ -3073,6 +3269,8 @@
       "paymentReported": "💳 {{ .User }} paid for {{ .Months }} mo ({{ .Total }}): ",
       "paymentConfirmed": "✅ Payment confirmed: {{ .Email }} is active until {{ .Date }}.",
       "paymentConfirmedBy": "✅ {{ .Email }}: confirmed by {{ .Admin }}, active until {{ .Date }}",
+      "paymentRefusedBy": "❌ Not received: {{ .Admin }}",
+      "paymentNotReceived": "❌ The admin has not received your payment for {{ .Months }} mo. Check the payment details and report the payment again, or write to the admin.",
       "graceTaken": "⏳ {{ .User }} deferred payment by {{ .Days }} days for: ",
       "aiExitIntro": "🤖 AI services (ChatGPT, Claude, Gemini…) block accounts whose IP keeps changing. Your exit IP is pinned per country and stays the same on every connection.\r\n\r\n",
       "aiExitPinnedLine": "{{ .Country }}: 📌 pinned to {{ .Server }}\r\n",
@@ -3089,6 +3287,7 @@
       "freeApproved": "🎉 Your free subscription is ready: {{ .GB }} GB a month. Pay for any term to remove the limit.",
       "freeDeclined": "❌ Your request for a free subscription was declined.",
       "speedLow": "Server {{ .Server }} has {{ .Free }} Mbit/s free per user, below the {{ .Min }} Mbit/s minimum of {{ .Users }}, and no other server has room. Add a server or raise its link speed.",
+      "speedDrop": "Speed on {{ .Server }} dropped well below its 30-day average (↓{{ .AvgDown }} ↑{{ .AvgUp }} Mbit/s) and stayed there on two rechecks within 10 minutes: {{ .Results }} Mbit/s.",
       "masterLeader": "Master {{ .Master }} now leads the panel cluster.",
       "masterLeaderPrevious": "It took over from {{ .Previous }}.",
       "attachedInbounds": "🔗 Inbounds: {{ .Inbounds }}\r\n",
@@ -3113,12 +3312,30 @@
       "aiSuggestAdded": "✅ Your suggestion was accepted: {{ .Domains }} now go through your AI IP.",
       "aiSuggestPartial": "➗ An admin added some of the sites you suggested ({{ .Domains }}), but not all of them.",
       "aiSuggestDeclined": "❌ An admin decided not to add {{ .Domains }}.",
-      "aiSuggestPresent": "📋 {{ .Domains }} already go through your AI IP, so nothing needed adding."
+      "aiSuggestPresent": "📋 {{ .Domains }} already go through your AI IP, so nothing needed adding.",
+      "aiOutageNotice": "🔴 The server {{ .Server }} with your pinned IP is down.\r\n\r\n",
+      "aiOutageBack": "🟢 The server {{ .Server }} is back: your pinned IP works again.",
+      "aiOutageDownLine": "🔴 {{ .Server }} is down. ",
+      "aiOutageNowSwapped": "Until it is back, its traffic goes via {{ .Server }}.\r\n",
+      "aiOutageNowOff": "Your VPN is off until it is back.\r\n",
+      "aiOutageNowBlocked": "Blocked until it is back: {{ .Services }}.\r\n",
+      "aiOutageChoiceBlockAll": "\r\nIf a server with your pinned IP goes down: AI services are blocked so they never see another IP, and the rest of your traffic goes through other servers.\r\n",
+      "aiOutageChoiceBlock": "\r\nIf a server with your pinned IP goes down: {{ .Services }} are blocked, everything else goes through other servers.\r\n",
+      "aiOutageChoiceOther": "\r\nIf a server with your pinned IP goes down: you get another IP of the same country until it is back.\r\n",
+      "aiOutageChoiceOtherIn": "\r\nIf a server with your pinned IP goes down: you get another IP of the same country, or of {{ .Country }} when it has none left.\r\n",
+      "aiOutageChoiceOff": "\r\nIf a server with your pinned IP goes down: your VPN is off until it is back.\r\n",
+      "aiOutageNoUse": "How should the server not be used while it is down?\r\n\r\n🚫 Not at all: your VPN is off until it is back.\r\n🤖 For AI only: the AI services you tick are cut off, the rest goes through other servers.",
+      "aiOutagePickCountry": "There is no live server left in that country. Which country should the temporary IP come from?",
+      "aiOutageNoCountry": "No other country has a live server either, so AI services stay blocked for now.",
+      "aiOutageServices": "Tick the AI services to cut off while the server is down:",
+      "paymentReportedTier": "{{ .Total }}, speed {{ .Name }} from {{ .Mbps }} Mbit/s"
     },
     "buttons": {
       "closeKeyboard": "❌ بستن کیبورد",
       "cancel": "❌ لغو",
       "broadcastSend": "📤 ارسال",
+      "broadcastAllGroups": "👥 همه کاربران",
+      "broadcastNext": "➡️ بعدی",
       "cancelReset": "❌ لغو تنظیم مجدد",
       "cancelIpLimit": "❌ لغو محدودیت آی‌پی",
       "confirmResetTraffic": "✅ تأیید تنظیم مجدد ترافیک؟",
@@ -3173,9 +3390,11 @@
       "attachInbound": "افزودن ورودی ({{ .Count }})",
       "attachDone": "✅ انجام شد",
       "iPaid": "✅ I have paid",
+      "pay": "💳 Payment",
       "planOption": "{{ .Months }} mo",
       "payLater": "⏳ Pay later (up to {{ .Days }} days)",
       "confirmPayment": "✅ {{ .Email }}: +{{ .Months }} mo",
+      "paymentNotReceived": "❌ Not received",
       "trusted": "⭐ Trusted (pay later): {{ .State }}",
       "requestFree": "🆓 Request a free subscription ({{ .GB }} GB/month)",
       "approve": "✅ Approve",
@@ -3213,7 +3432,15 @@
       "aiSuggestAdded": "✅ Added all",
       "aiSuggestPartial": "➗ Added some",
       "aiSuggestDeclined": "❌ Added none",
-      "aiSuggestPresent": "📋 All already listed"
+      "aiSuggestPresent": "📋 All already listed",
+      "aiOutage": "⚠️ If my server goes down",
+      "aiOutageOther": "🔁 Use another IP for now",
+      "aiOutageNoUse": "🚫 Don't use it",
+      "aiOutageOff": "🚫 Not at all",
+      "aiOutageBlock": "🤖 For AI only",
+      "aiOutageAll": "✅ All AI services",
+      "tierNone": "Standard speed",
+      "tierOption": "{{ .Name }}: from {{ .Mbps }} Mbit/s, +{{ .Total }}/mo"
     },
     "answers": {
       "broadcastStarted": "🚀 ارسال گروهی آغاز شد.",
@@ -3257,7 +3484,8 @@
       "paymentCanceled": "This invoice is closed. Open a new one if you still want to pay.",
       "aiExitLocked": "The AI button is not available on your subscription.",
       "aiSuggestAnswered": "Done, the client has been told.",
-      "aiSuggestAlreadyAnswered": "This suggestion has already been answered."
+      "aiSuggestAlreadyAnswered": "This suggestion has already been answered.",
+      "aiOutageKeepOne": "Keep at least one service ticked."
     },
     "screens": {
       "panel": "Panel",
@@ -3275,7 +3503,8 @@
       "deplete": "Running out",
       "commands": "Commands",
       "broadcast": "Broadcast",
-      "pay": "Payment"
+      "pay": "Payment",
+      "reminders": "Reminders"
     },
     "inline": {
       "noneTitle": "Nothing found",
@@ -3289,6 +3518,16 @@
     "noValue": "—",
     "notices": {
       "repeat": "\r\n\r\n🔁 repeated {{ .Count }}× · last {{ .Time }}"
+    },
+    "reminders": {
+      "button": "🔔 Reminders",
+      "message": "⏰ Your subscription ends in {{ .Days }} d., on {{ .Date }}.\r\nYou can change or turn off these reminders with the 🔔 Reminders button.\r\n",
+      "screen": "🔔 <b>Payment reminders</b>\r\n\r\nStatus: {{ .Status }}\r\nRemind me before the end: {{ .Days }} d.\r\n\r\nTap a day to add or remove it.",
+      "on": "on",
+      "off": "off",
+      "turnOn": "🔔 Turn on",
+      "turnOff": "🔕 Turn off",
+      "day": "{{ .Days }} d."
     },
     "payment": {
       "title": "\r\n💳 <b>Payment</b>\r\n",
@@ -3311,7 +3550,11 @@
       "orderDescription": "VPN {{ .Email }}, {{ .Months }} mo",
       "aiExitDescription": "VPN: permanent exit IP for AI services",
       "aiExitInvoice": "🧾 <b>🤖 I will use AI</b>: a permanent exit IP, so AI services do not block your account — {{ .Total }} once, yours for good.\r\nThe button unlocks automatically after payment.",
-      "aiExitManual": "🧾 <b>🤖 I will use AI</b>: a permanent exit IP, so AI services do not block your account — {{ .Total }} once, yours for good.\r\n🏦 Where to pay:\r\n{{ .Details }}\r\n\r\nThen tap \"I paid\": the button opens once an admin confirms the payment."
+      "aiExitManual": "🧾 <b>🤖 I will use AI</b>: a permanent exit IP, so AI services do not block your account — {{ .Total }} once, yours for good.\r\n🏦 Where to pay:\r\n{{ .Details }}\r\n\r\nThen tap \"I paid\": the button opens once an admin confirms the payment.",
+      "tiersTitle": "⚡ Faster speed, added to every month:\r\n",
+      "tier": "• {{ .Name }}: at least {{ .Mbps }} Mbit/s, +{{ .Total }} a month\r\n",
+      "tierCurrent": "Your speed now: {{ .Name }}.\r\n",
+      "chooseTier": "⚡ Which speed do you pay for? A faster tier adds its price to every month of the term."
     },
     "ledger": {
       "summary": "💰 <b>Finance for {{ .Month }}</b>\r\n\r\n➕ Income: {{ .Income }}\r\n➖ Expenses: {{ .Expenses }} (servers {{ .Servers }})\r\n{{ .Sign }} <b>Result: {{ .Balance }}</b>\r\n👥 Paying clients: {{ .Paying }}, expected {{ .Expected }}\r\n",
@@ -3359,7 +3602,8 @@
       "threshold": "آستانه",
       "reason": "دلیل",
       "time": "زمان",
-      "source": "منبع"
+      "source": "منبع",
+      "seenBy": "در دسترس از"
     },
     "values": {
       "uptime": "{{ .Days }} روز {{ .Hours }} ساعت",
@@ -3372,6 +3616,7 @@
       "outboundUp": "خروجی در دسترس است",
       "nodeDown": "نود از دسترس خارج شد",
       "nodeUp": "نود در دسترس است",
+      "nodeIsolated": "نود از پنل اصلی در دسترس نیست",
       "xrayCrash": "هسته Xray از کار افتاد",
       "cpuHigh": "عبور از آستانه پردازنده",
       "memoryHigh": "عبور از آستانه حافظه",
@@ -3429,6 +3674,7 @@
     "statusSuccess": "موفق",
     "statusFailed": "ناموفق",
     "statusDown": "قطع",
+    "statusIsolated": "پنل اصلی دسترسی ندارد",
     "statusUp": "وصل"
   },
   "commandPalette": {

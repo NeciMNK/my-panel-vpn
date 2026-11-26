@@ -47,6 +47,8 @@ type NodeHealthData struct {
 	MemPct    float64
 	XrayState string // "running", "stopped", etc.
 	XrayError string
+	// SeenBy names the nodes that still reach a node the master lost; empty means dead.
+	SeenBy []string
 }
 
 // LoginEventData carries login attempt details.
@@ -60,7 +62,8 @@ type LoginEventData struct {
 
 // SystemMetricData carries raw system metric values for threshold-based events.
 type SystemMetricData struct {
-	Percent   float64 // current usage percentage
+	Percent   float64 // usage held throughout the sample (a node's lowest over the window)
+	Peak      float64 // highest usage in the same sample; below a threshold = back to normal
 	Threshold int     // configured threshold
 }
 
@@ -81,4 +84,16 @@ type SpeedLowData struct {
 	FreePerUserMbps float64
 	MinMbps         int
 	Users           []string
+}
+
+// EventSpeedDrop fires when a server's scheduled speed test and both rechecks
+// after it stayed far below its 30-day average.
+const EventSpeedDrop EventType = "speed.drop"
+
+// SpeedDropData is the server's average and the low results that confirmed it.
+type SpeedDropData struct {
+	AvgDownloadMbps float64
+	AvgUploadMbps   float64
+	DownloadMbps    []float64
+	UploadMbps      []float64
 }

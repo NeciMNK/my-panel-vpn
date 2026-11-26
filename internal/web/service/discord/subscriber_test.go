@@ -549,3 +549,64 @@ func TestFormatEmbed_ValueTypes(t *testing.T) {
 		t.Fatalf("expected green embed for Login success value type, got ok=%v", ok)
 	}
 }
+
+// A node's overload must name the node: under the master's hostname the admin
+// would go looking at the wrong server.
+func TestFormatEmbed_NodeLoadNamesTheNode(t *testing.T) {
+	settingService := setupTestDB(t)
+	_ = settingService.SetDiscordCpu(80)
+	sub := NewSubscriber(settingService, NewDiscordService(settingService))
+
+	embed, ok := sub.FormatEmbed(eventbus.Event{
+		Type:   eventbus.EventCPUHigh,
+		Source: "de-1",
+		Data:   &eventbus.SystemMetricData{Percent: 95, Peak: 97},
+	})
+	if !ok {
+		t.Fatal("expected an embed for a node above the threshold")
+	}
+	if want := "3x-ui • de-1"; embed.Footer == nil || embed.Footer.Text != want {
+		t.Fatalf("footer = %+v, want %q", embed.Footer, want)
+	}
+}
+
+// A node's own threshold wins over the Discord one, both ways.
+func TestFormatEmbed_NodeOwnThreshold(t *testing.T) {
+	settingService := setupTestDB(t)
+	_ = settingService.SetDiscordCpu(80)
+	sub := NewSubscriber(settingService, NewDiscordService(settingService))
+	for _, tc := range []struct {
+		percent float64
+		want    bool
+	}{{95, false}, {99.5, true}} {
+		_, ok := sub.FormatEmbed(eventbus.Event{
+			Type:   eventbus.EventCPUHigh,
+			Source: "hot-1",
+			Data:   &eventbus.SystemMetricData{Percent: tc.percent, Peak: tc.percent, Threshold: 99},
+		})
+		if ok != tc.want {
+			t.Errorf("%v%% against the node's 99%%: embed = %v, want %v", tc.percent, ok, tc.want)
+		}
+	}
+}
+
+// A node only the master lost is a warning, not an outage, and names who reaches it.
+func TestFormatEmbed_NodeOnlyTheMasterLost(t *testing.T) {
+	settingService := setupTestDB(t)
+	sub := NewSubscriber(settingService, NewDiscordService(settingService))
+
+	embed, ok := sub.FormatEmbed(eventbus.Event{
+		Type:   eventbus.EventNodeDown,
+		Source: "node-de",
+		Data:   &eventbus.NodeHealthData{SeenBy: []string{"node-nl", "node-fi"}},
+	})
+	if !ok {
+		t.Fatal("expected embed to be formatted")
+	}
+	if embed.Color != ColorOrange {
+		t.Errorf("color = 0x%X, want ColorOrange", embed.Color)
+	}
+	if len(embed.Fields) != 2 || embed.Fields[1].Value != "node-nl, node-fi" {
+		t.Fatalf("fields = %+v, want the node and who reaches it", embed.Fields)
+	}
+}

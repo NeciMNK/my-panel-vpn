@@ -8,6 +8,7 @@ import (
 
 	"github.com/op/go-logging"
 
+	"github.com/mhsanaei/3x-ui/v3/internal/database"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/dbtest"
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	xuilogger "github.com/mhsanaei/3x-ui/v3/internal/logger"
@@ -238,5 +239,28 @@ func TestSubBalancerServiceWeightValidation(t *testing.T) {
 	}
 	if len(reget.MemberWeights) != 1 || reget.MemberWeights[1] != 2.5 {
 		t.Fatalf("re-Get memberWeights = %v, want persisted {1:2.5}", reget.MemberWeights)
+	}
+}
+
+func TestSubBalancerForeignExitsRejectRussianNodes(t *testing.T) {
+	setupSubBalancerDB(t)
+	db := database.GetDB()
+	ru := &model.Node{Name: "ru", Address: "10.0.0.1", Port: 1, Enable: true, Country: "RU"}
+	de := &model.Node{Name: "de", Address: "10.0.0.2", Port: 1, Enable: true, Country: "DE"}
+	for _, n := range []*model.Node{ru, de} {
+		if err := db.Create(n).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	svc := &SubBalancerService{}
+	if _, err := svc.Create(&model.SubBalancer{Remark: "abroad", ExitForeign: true}); err != nil {
+		t.Fatalf("all-foreign balancer without inbounds rejected: %v", err)
+	}
+	if _, err := svc.Create(&model.SubBalancer{Remark: "de", ExitNodeIds: []int{de.Id}}); err != nil {
+		t.Fatalf("picked foreign node rejected: %v", err)
+	}
+	_, err := svc.Create(&model.SubBalancer{Remark: "ru", ExitNodeIds: []int{de.Id, ru.Id}})
+	if err == nil || strings.TrimSpace(err.Error()) != "auto-select exits must be foreign servers" {
+		t.Fatalf("Russian exit node: err = %v, want the foreign-only error", err)
 	}
 }

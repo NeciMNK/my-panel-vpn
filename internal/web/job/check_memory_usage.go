@@ -26,6 +26,7 @@ func (j *CheckMemJob) Run() {
 			Type: eventbus.EventMemoryHigh,
 			Data: &eventbus.SystemMetricData{
 				Percent: memInfo.UsedPercent,
+				Peak:    memInfo.UsedPercent,
 			},
 		})
 	}

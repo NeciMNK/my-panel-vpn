@@ -55,6 +55,8 @@ function defaultValues(): NodeFormValues {
     inboundTags: [],
     outboundTag: '',
     country: '',
+    alertCpu: 0,
+    alertMemory: 0,
   };
 }
 
@@ -156,6 +158,8 @@ export default function NodeFormModal({
       inboundTags: values.inboundSyncMode === 'selected' ? values.inboundTags : [],
       outboundTag: values.outboundTag || '',
       country: (values.country || '').toUpperCase(),
+      alertCpu: values.alertCpu || 0,
+      alertMemory: values.alertMemory || 0,
     };
     if (token) payload.apiToken = token;
     return payload;
@@ -411,6 +415,29 @@ export default function NodeFormModal({
                 style={{ textTransform: 'uppercase', width: 96 }}
               />
             </FormField>
+
+            <Row gutter={16}>
+              <Col xs={24} md={12}>
+                <FormField
+                  label={t('pages.nodes.alertCpu')}
+                  name="alertCpu"
+                  tooltip={t('pages.nodes.alertHint')}
+                  rules={{ validate: rhfZodValidate(NodeFormSchema.shape.alertCpu) }}
+                >
+                  <InputNumber min={0} max={100} suffix="%" style={{ width: 120 }} />
+                </FormField>
+              </Col>
+              <Col xs={24} md={12}>
+                <FormField
+                  label={t('pages.nodes.alertMemory')}
+                  name="alertMemory"
+                  tooltip={t('pages.nodes.alertHint')}
+                  rules={{ validate: rhfZodValidate(NodeFormSchema.shape.alertMemory) }}
+                >
+                  <InputNumber min={0} max={100} suffix="%" style={{ width: 120 }} />
+                </FormField>
+              </Col>
+            </Row>
 
             <FormField
               label={t('pages.nodes.outboundTag')}

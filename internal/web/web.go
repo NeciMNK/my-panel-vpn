@@ -204,9 +204,7 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 		return nil, err
 	}
 	assetsBasePath := basePath + "assets/"
-	// The bundles are served below from a gzip copy made once per file: compressing them
-	// per request lets every stalled download pin its own compressor until WriteTimeout.
-	engine.Use(gzip.Gzip(gzip.DefaultCompression, gzip.WithExcludedPaths([]string{assetsBasePath})))
+	engine.Use(panelGzip(basePath))
 
 	store := cookie.NewStore(secret)
 	// Configure default session cookie options, including expiration (MaxAge)
@@ -301,34 +299,39 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 // node/xray state is unchanged, and export per-job duration/skipped/error
 // counters.
 const (
-	cadenceXrayRunning   = "@every 1s"
-	cadenceXrayRestart   = "@every 30s"
-	cadenceXrayTraffic   = "@every 5s"
-	cadenceMtproto       = "@every 10s"
-	cadenceAmneziaWG     = "@every 10s"
-	cadenceTuic          = "@every 10s"
-	cadenceClientIPScan  = "@every 10s"
-	cadenceNodeHeartbeat = "@every 5s"
-	cadenceNodeTraffic   = "@every 5s"
-	cadenceOutboundSub   = "@every 5m"
-	cadenceReapOrphans   = "@every 5m"
-	cadenceRemoteRouting = "@every 5m"
-	cadenceTgVpnFallback = "@every 2m"
-	cadencePanelProxyPin = "@every 15s"
-	cadenceCascadeSticky = "@every 15s"
-	cadenceHomeNetwork   = "@every 1m"
-	cadenceSpeed         = "@every 30s"
-	cadenceShaping       = "@every 5s"
-	cadenceSpeedTest     = "@every 1m"
-	cadenceMasterBeat    = "@every 5s"
-	cadenceXrayLogPrune  = "@every 10m"
-	cadenceTlsCertRenew  = "@every 1h"
-	cadenceCheckHash     = "@every 2m"
-	cadencePaymentOrders = "@every 15s"
+	cadenceXrayRunning    = "@every 1s"
+	cadenceXrayRestart    = "@every 30s"
+	cadenceXrayTraffic    = "@every 5s"
+	cadenceMtproto        = "@every 10s"
+	cadenceAmneziaWG      = "@every 10s"
+	cadenceTuic           = "@every 10s"
+	cadenceClientIPScan   = "@every 10s"
+	cadenceNodeHeartbeat  = "@every 5s"
+	cadenceNodeTraffic    = "@every 5s"
+	cadenceOutboundSub    = "@every 5m"
+	cadenceReapOrphans    = "@every 5m"
+	cadenceRemoteRouting  = "@every 5m"
+	cadenceTgVpnFallback  = "@every 2m"
+	cadencePanelProxyPin  = "@every 15s"
+	cadenceCascadeSticky  = "@every 15s"
+	cadenceSubEdgeTunnels = "@every 15s"
+	cadenceSubEdgeCache   = "@every 1m"
+	cadenceSubEdgeDNS     = "@every 30s"
+	cadenceHomeNetwork    = "@every 1m"
+	cadenceSpeed          = "@every 30s"
+	cadenceShaping        = "@every 5s"
+	cadenceSpeedTest      = "@every 1m"
+	cadenceMasterBeat     = "@every 5s"
+	cadenceXrayLogPrune   = "@every 10m"
+	cadenceTlsCertRenew   = "@every 1h"
+	cadenceCheckHash      = "@every 2m"
+	cadencePaymentOrders  = "@every 15s"
+	cadenceExpiredFree    = "@every 10s"
 	// cpu.Percent samples over a full minute (blocking), so a finer cadence just
 	// stacks overlapping samplers; subscribers rate-limit alerts to 1/min anyway.
-	cadenceCPUAlarm    = "@every 1m"
-	cadenceMemoryAlarm = "@every 1m"
+	cadenceCPUAlarm      = "@every 1m"
+	cadenceMemoryAlarm   = "@every 1m"
+	cadenceNodeLoadAlarm = "@every 1m"
 )
 
 // startTask schedules background jobs (Xray checks, traffic jobs, cron
@@ -380,8 +383,12 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	_, _ = s.cron.AddJob(cadenceReapOrphans, job.LeaderOnly(job.NewReapSyncOrphansJob()))
 
 	_, _ = s.cron.AddJob(cadenceCascadeSticky, job.LeaderOnly(job.NewCascadeStickyJob()))
+	_, _ = s.cron.AddJob(cadenceSubEdgeTunnels, job.NewSubEdgeTunnelJob())
+	_, _ = s.cron.AddJob(cadenceSubEdgeCache, job.NewSubEdgeCacheJob())
+	_, _ = s.cron.AddJob(cadenceSubEdgeDNS, job.NewSubEdgeDNSJob())
 	_, _ = s.cron.AddJob(cadenceHomeNetwork, job.LeaderOnly(job.NewHomeNetworkJob()))
 	_, _ = s.cron.AddJob(cadenceTgVpnFallback, job.LeaderOnly(job.NewTgVpnFallbackJob()))
+	_, _ = s.cron.AddJob(cadenceExpiredFree, job.LeaderOnly(job.NewExpiredFreePlanJob()))
 	// Every master runs its own Xray, so each pins its own panel proxy exit.
 	_, _ = s.cron.AddJob(cadencePanelProxyPin, job.NewPanelProxyPinJob())
 	_, _ = s.cron.AddJob(cadenceSpeed, job.LeaderOnly(job.NewSpeedJob()))
@@ -418,6 +425,10 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	// Check monthly reset days at midnight
 	_, _ = s.cron.AddJob("@daily", job.LeaderOnly(job.NewPeriodicTrafficResetJob("monthly", loc)))
 
+	_, _ = s.cron.AddJob("@every 1m", job.NewTrafficUsageFlushJob())
+	_, _ = s.cron.AddJob("@every 1m", job.NewBackupJob())
+	_, _ = s.cron.AddJob("@daily", job.LeaderOnly(job.NewTrafficUsageRollupJob(loc)))
+
 	// LDAP sync scheduling
 	if ldapEnabled, _ := s.settingService.GetLdapEnable(); ldapEnabled {
 		runtime, _ := s.settingService.GetLdapSyncCron()
@@ -438,6 +449,8 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 		_, _ = s.cron.AddJob(cadenceCheckHash, job.NewCheckHashStorageJob())
 		// Hourly so a restart cannot skip a day; each bill is announced once.
 		_, _ = s.cron.AddJob("@hourly", job.LeaderOnly(job.NewLedgerReminderJob()))
+		// Clients' own payment reminders: each chosen day once per due date.
+		_, _ = s.cron.AddJob("@hourly", job.LeaderOnly(job.NewPaymentReminderJob()))
 	}
 
 	// Outside the bot block: an invoice paid while the bot is off must still be applied.
@@ -461,6 +474,10 @@ func (s *Server) startTask(restartXray bool, loc *time.Location) {
 	// Memory monitor publishes memory.high events; register it whenever any notifier wants them.
 	if s.memoryAlarmWanted() {
 		_, _ = s.cron.AddJob(cadenceMemoryAlarm, job.NewCheckMemJob())
+	}
+	// Node load reads the heartbeat history, which only the leader keeps.
+	if s.cpuAlarmWanted() || s.memoryAlarmWanted() {
+		_, _ = s.cron.AddJob(cadenceNodeLoadAlarm, job.LeaderOnly(job.NewNodeLoadAlarmJob()))
 	}
 
 	if mins := sys.MemoryReleaseIntervalMinutes(); mins > 0 {
@@ -610,6 +627,7 @@ func (s *Server) start(restartXray bool, startTgBot bool) (err error) {
 	if err != nil {
 		return err
 	}
+	s.settingService.ApplySavedSubEdge()
 
 	certFile, err := s.settingService.GetCertFile()
 	if err != nil {
@@ -823,6 +841,8 @@ func (s *Server) StopPanelOnly() error {
 
 func (s *Server) stop(stopXray bool, stopTgBot bool) error {
 	s.cancel()
+	service.StopSubEdgeTunnels()
+	service.SubEdgeNode().Stop()
 	var err1 error
 	var err2 error
 	if s.httpServer != nil {
@@ -916,4 +936,13 @@ func scheduleSettingJob(c *cron.Cron, name, spec, fallback string, j cron.Job) c
 	}
 	logger.Infof("%s scheduled, run at %s", name, spec)
 	return c.Schedule(schedule, j)
+}
+
+// panelGzip skips the bundles, served from a gzip copy made once per file (a per-request
+// compressor stays pinned by every stalled download), and the already-gzipped node backup.
+func panelGzip(basePath string) gin.HandlerFunc {
+	return gzip.Gzip(gzip.DefaultCompression, gzip.WithExcludedPaths([]string{
+		basePath + "assets/",
+		basePath + "panel/api/server/nodeBackup",
+	}))
 }

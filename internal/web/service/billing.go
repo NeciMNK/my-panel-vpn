@@ -10,6 +10,8 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/web/entity"
+
+	"gorm.io/gorm"
 )
 
 const (
@@ -21,6 +23,7 @@ const (
 var (
 	ErrPaymentMonths = errors.New("months must be 1-36")
 	ErrNoClient      = errors.New("client not found")
+	ErrSpeedTier     = errors.New("unknown speed tier")
 )
 
 // BillingService applies client payments; the Telegram bot and the API share it
@@ -53,6 +56,8 @@ type ClientBillingView struct {
 	Credit        int                `json:"credit" example:"0"`
 	Currency      string             `json:"currency" example:"RUB"`
 	Plans         []PaymentPlanPrice `json:"plans"`
+	SpeedTierId   int                `json:"speedTierId" example:"0"`
+	SpeedTiers    []model.SpeedTier  `json:"speedTiers"`
 }
 
 // PaymentResult is what one applied payment changed.
@@ -107,10 +112,36 @@ func ClientPrice(total int, billing *model.ClientBilling, friendDiscount int) in
 	return max(total-max(billing.Credit, 0), 0)
 }
 
-// ClientPaymentAmount is what the client pays for months now, with its own discounts.
-func (s *BillingService) ClientPaymentAmount(billing *model.ClientBilling, months int) (int, string) {
+// ClientPaymentAmount is what the client pays for months with tier (nil = none)
+// now: the term plus the tier's monthly surcharge, with the client's own discounts.
+func (s *BillingService) ClientPaymentAmount(billing *model.ClientBilling, months int, tier *model.SpeedTier) (int, string) {
 	total, currency := s.PaymentAmount(months)
+	if tier != nil {
+		total += tier.MonthlyPrice * months
+	}
 	return ClientPrice(total, billing, s.FriendDiscount()), currency
+}
+
+// SpeedTiers lists the speed upgrades clients can buy, cheapest first.
+func (s *BillingService) SpeedTiers() ([]model.SpeedTier, error) {
+	var tiers []model.SpeedTier
+	err := database.GetDB().Order("monthly_price asc, id asc").Find(&tiers).Error
+	return tiers, err
+}
+
+// SpeedTier is the tier with id, nil for 0 (no upgrade).
+func (s *BillingService) SpeedTier(id int) (*model.SpeedTier, error) {
+	if id == 0 {
+		return nil, nil
+	}
+	tier := &model.SpeedTier{}
+	if err := database.GetDB().Where("id = ?", id).First(tier).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrSpeedTier
+		}
+		return nil, err
+	}
+	return tier, nil
 }
 
 func (s *BillingService) GetClientBilling(email string) (*ClientBillingView, error) {
@@ -131,6 +162,10 @@ func (s *BillingService) GetClientBilling(email string) (*ClientBillingView, err
 		Email: email, ExpiryTime: traffic.ExpiryTime, Trusted: billing.Trusted, FreePlan: billing.FreePlan,
 		NonPaying: billing.NonPaying, GraceDays: billing.GraceDays, PendingMonths: billing.PendingMonths,
 		Friend: billing.Friend, Credit: billing.Credit, Currency: currency, Plans: make([]PaymentPlanPrice, 0, len(plans)),
+		SpeedTierId: billing.SpeedTierId,
+	}
+	if view.SpeedTiers, err = s.SpeedTiers(); err != nil {
+		return nil, err
 	}
 	for _, plan := range plans {
 		view.Plans = append(view.Plans, PaymentPlanPrice{
@@ -157,21 +192,25 @@ func PaidExpiry(expiry int64, billing *model.ClientBilling, days int, now int64)
 	}
 }
 
-// ApplyPayment extends the client's term by months, lifts a free plan's quota,
-// settles credit, drops any pending bot report and books the client's price under note.
-func (s *BillingService) ApplyPayment(email string, months int, note string, now time.Time) (*PaymentResult, error) {
-	return s.applyPayment(email, months, -1, note, now)
+// ApplyPayment extends the client's term by months with speed tier tierID (0 = none),
+// lifts a free plan's quota, settles credit, drops any pending bot report and books the price.
+func (s *BillingService) ApplyPayment(email string, months, tierID int, note string, now time.Time) (*PaymentResult, error) {
+	return s.applyPayment(email, months, tierID, -1, note, now)
 }
 
 // ApplyOnlinePayment is ApplyPayment for money the provider took: it books the
 // amount actually charged, even if prices changed while the client paid.
-func (s *BillingService) ApplyOnlinePayment(email string, months, amount int, note string, now time.Time) (*PaymentResult, error) {
-	return s.applyPayment(email, months, max(amount, 0), note, now)
+func (s *BillingService) ApplyOnlinePayment(email string, months, tierID, amount int, note string, now time.Time) (*PaymentResult, error) {
+	return s.applyPayment(email, months, tierID, max(amount, 0), note, now)
 }
 
-func (s *BillingService) applyPayment(email string, months, paid int, note string, now time.Time) (*PaymentResult, error) {
+func (s *BillingService) applyPayment(email string, months, tierID, paid int, note string, now time.Time) (*PaymentResult, error) {
 	if months < 1 || months > maxPaymentMonths {
 		return nil, ErrPaymentMonths
+	}
+	tier, err := s.SpeedTier(tierID)
+	if err != nil {
+		return nil, err
 	}
 	traffic, err := s.inboundService.GetClientTrafficByEmail(email)
 	if err != nil {
@@ -184,7 +223,7 @@ func (s *BillingService) applyPayment(email string, months, paid int, note strin
 	if err != nil {
 		return nil, err
 	}
-	amount, currency := s.ClientPaymentAmount(billing, months)
+	amount, currency := s.ClientPaymentAmount(billing, months, tier)
 	if paid >= 0 {
 		amount = paid
 	}
@@ -203,9 +242,12 @@ func (s *BillingService) applyPayment(email string, months, paid int, note strin
 	if err := s.clientService.SaveBilling(billing); err != nil {
 		logger.Warning("payment: saving billing for", email, "failed:", err)
 	}
+	if err := s.clientService.MarkPaid(email); err != nil {
+		logger.Warning("payment: moving", email, "to the paid group failed:", err)
+	}
 	if err := database.GetDB().Model(&model.ClientBilling{}).Where("client_id = ?", billing.ClientId).
-		Update("pending_months", 0).Error; err != nil {
-		logger.Warning("payment: clearing the pending report for", email, "failed:", err)
+		Updates(map[string]any{"pending_months": 0, "pending_speed_tier": 0, "speed_tier_id": tierID}).Error; err != nil {
+		logger.Warning("payment: saving the speed tier and clearing the pending report for", email, "failed:", err)
 	}
 	result := &PaymentResult{Email: email, Months: months, ExpiryTime: expiry, Amount: amount, Currency: currency}
 	if result.Amount > 0 {

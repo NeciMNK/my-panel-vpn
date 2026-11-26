@@ -17,7 +17,10 @@ export class AllSetting {
   pageSize = 25;
   expireDiff = 0;
   trafficDiff = 0;
-  remarkTemplate = '{{INBOUND}}-{{EMAIL}}|📊{{TRAFFIC_LEFT}}|⏳{{DAYS_LEFT}}D';
+  trafficResetAllMonthly = true;
+  trafficResetAllDay = 1;
+  trafficUsagePeriods = '24h,7d,30d,month';
+  remarkTemplate = '{{AUTO_NAME}}';
   subShowIdentityOnAllLinks = false;
   subInfoNodeEnable = false;
   subHostSortMode: SubHostSortMode = 'inbound-first';
@@ -66,6 +69,7 @@ export class AllSetting {
   subListen = '';
   subPort = 2096;
   subPath = '/sub/';
+  subPathAliases = '';
   subJsonPath = '/json/';
   subClashEnable = false;
   subClashPath = '/clash/';
@@ -76,7 +80,7 @@ export class AllSetting {
   subCertFile = '';
   subKeyFile = '';
   externalSubUserAgent = 'v2rayNG/1.8.5';
-  subUpdates = 12;
+  subUpdates = 1;
   subEncrypt = true;
   subURI = '';
   subJsonURI = '';
@@ -93,6 +97,7 @@ export class AllSetting {
   subThemeDir = '';
   subHideSettings = false;
   subHappAutoDetect = false;
+  subHappRoutingUpdate = false;
   subHappProviderId = '';
   subHappNewUrl = '';
   subHappFallbackUrl = '';
@@ -169,7 +174,8 @@ export class AllSetting {
   ldapDefaultTotalGB = 0;
   ldapDefaultExpiryDays = 0;
   ldapDefaultLimitIP = 0;
-  tgEnabledEvents = 'login.attempt,cpu.high,speed.low,master.leader';
+  tgEnabledEvents = 'login.attempt,cpu.high,memory.high,speed.low,speed.drop,master.leader';
+  tgEventRecipients = '{}';
   smtpEnable = false;
   smtpHost = '';
   smtpPort = 587;
@@ -183,7 +189,8 @@ export class AllSetting {
   smtpCpu = 80;
   smtpMemory = 80;
   outboundDownThreshold = 3;
-  nodeDownThreshold = 1;
+  nodeDownThreshold = 60;
+  nodeLoadMinutes = 2;
   hasTgBotToken = false;
   hasTwoFactorToken = false;
   hasLdapPassword = false;
@@ -230,8 +237,12 @@ export class AllSetting {
       : 3;
     const nodeThreshold = Math.round(Number(this.nodeDownThreshold));
     this.nodeDownThreshold = Number.isFinite(nodeThreshold)
-      ? Math.min(100, Math.max(1, nodeThreshold))
-      : 1;
+      ? Math.min(3600, Math.max(0, nodeThreshold))
+      : 60;
+    const loadMinutes = Math.round(Number(this.nodeLoadMinutes));
+    this.nodeLoadMinutes = Number.isFinite(loadMinutes)
+      ? Math.min(60, Math.max(1, loadMinutes))
+      : 2;
   }
 
   equals(other: AllSetting): boolean {

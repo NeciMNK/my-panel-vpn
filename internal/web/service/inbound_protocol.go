@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
+	"github.com/mhsanaei/3x-ui/v3/internal/protocol"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/version"
 	"github.com/mhsanaei/3x-ui/v3/internal/xray"
@@ -48,28 +49,11 @@ func inboundCanEnableTlsFlow(protocol, streamSettings, settings string) bool {
 	return vlessEncryptionEnabled(settings)
 }
 
-// nodeEligibleProtocols mirrors the frontend's NODE_ELIGIBLE_PROTOCOLS. A sidecar
+// nodeEligibleProtocol mirrors the frontend's NODE_ELIGIBLE_PROTOCOLS. A sidecar
 // protocol's row is local on the node it is pushed to, so that panel runs it.
-var nodeEligibleProtocols = map[model.Protocol]bool{
-	model.VLESS:       true,
-	model.VMESS:       true,
-	model.Trojan:      true,
-	model.Shadowsocks: true,
-	model.Hysteria:    true,
-	model.WireGuard:   true,
-	model.MTProto:     true,
-	model.AmneziaWG:   true,
-	model.TUIC:        true,
-	model.MASQUE:      true,
-}
-
-// nodeProtocolFirstRelease is the panel release that introduced each protocol
-// newer than node support itself; an older node would hand it to Xray as-is.
-var nodeProtocolFirstRelease = map[model.Protocol]string{
-	model.MTProto:   "v3.5.0",
-	model.AmneziaWG: "v3.7.0",
-	model.TUIC:      "v3.8.0",
-	model.MASQUE:    "v3.9.1",
+func nodeEligibleProtocol(p model.Protocol) bool {
+	spec, ok := protocol.Lookup(p)
+	return ok && spec.NodeEligible
 }
 
 // Upstream node mode began at v3.0.0, so a lower version is a my-panel-vpn release,
@@ -88,12 +72,13 @@ func upstreamEquivalentVersion(panelVersion string) string {
 
 // checkNodeCanHostProtocol refuses assigning protocol to nodeID unless the
 // protocol may live on a node and that node's panel is new enough to run it.
-func checkNodeCanHostProtocol(db *gorm.DB, nodeID int, protocol model.Protocol) error {
-	if !nodeEligibleProtocols[protocol] {
-		return common.NewErrorf("%s inbounds cannot be assigned to a node", protocol)
+func checkNodeCanHostProtocol(db *gorm.DB, nodeID int, p model.Protocol) error {
+	spec, ok := protocol.Lookup(p)
+	if !ok || !spec.NodeEligible {
+		return common.NewErrorf("%s inbounds cannot be assigned to a node", p)
 	}
-	firstRelease, ok := nodeProtocolFirstRelease[protocol]
-	if !ok {
+	firstRelease := spec.NodeMinPanelVersion
+	if firstRelease == "" {
 		return nil
 	}
 	var node model.Node
@@ -102,12 +87,12 @@ func checkNodeCanHostProtocol(db *gorm.DB, nodeID int, protocol model.Protocol) 
 	}
 	if strings.TrimSpace(node.PanelVersion) == "" {
 		return common.NewErrorf("node %q has not reported its panel version yet; %s inbounds need %s or newer",
-			node.Name, protocol, firstRelease)
+			node.Name, p, firstRelease)
 	}
 	// A dev build reports "dev+<sha>": it tracks main, which carries every protocol.
 	if cmp, ok := version.Compare(upstreamEquivalentVersion(node.PanelVersion), firstRelease); ok && cmp < 0 {
 		return common.NewErrorf("node %q runs panel %s; %s inbounds need %s or newer",
-			node.Name, node.PanelVersion, protocol, firstRelease)
+			node.Name, node.PanelVersion, p, firstRelease)
 	}
 	return nil
 }

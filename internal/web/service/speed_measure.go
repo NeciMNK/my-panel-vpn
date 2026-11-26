@@ -23,6 +23,8 @@ import (
 const (
 	SpeedTestManual   = "manual"
 	SpeedTestSchedule = "schedule"
+	// SpeedTestRecheck re-measures a suspiciously slow result; it stays out of averages.
+	SpeedTestRecheck = "recheck"
 
 	// speedTestKeep is how long results stay in the history.
 	speedTestKeep = 180 * 24 * time.Hour
@@ -42,6 +44,8 @@ type SpeedTestSettings struct {
 	EveryHours   int      `json:"everyHours" example:"6"`
 	Times        []string `json:"times" example:"[\"03:00\",\"13:30\"]"`
 	Timezone     string   `json:"timezone" example:"Europe/Moscow"`
+	// DropPercent below the 30-day average triggers rechecks and an alert; 0 turns it off.
+	DropPercent int `json:"dropPercent" example:"30"`
 }
 
 // SpeedTestStats sums up one server's successful tests over the last 30 days.
@@ -153,7 +157,11 @@ func (s *SpeedService) TestSettings() (SpeedTestSettings, error) {
 	if err != nil {
 		return SpeedTestSettings{}, err
 	}
-	out := SpeedTestSettings{AutoCapacity: auto, EveryHours: every, Times: []string{}, Timezone: zone}
+	drop, err := settings.GetSpeedTestDropPercent()
+	if err != nil {
+		return SpeedTestSettings{}, err
+	}
+	out := SpeedTestSettings{AutoCapacity: auto, EveryHours: every, Times: []string{}, Timezone: zone, DropPercent: drop}
 	if times != "" {
 		out.Times = strings.Split(times, ",")
 	}
@@ -171,7 +179,13 @@ func (s *SpeedService) SetTestSettings(req *SpeedTestSettings) error {
 	if _, err := time.LoadLocation(req.Timezone); err != nil || req.Timezone == "" {
 		return common.NewErrorf("unknown time zone %q", req.Timezone)
 	}
+	if req.DropPercent < 0 || req.DropPercent > speedDropMaxPercent {
+		return common.NewErrorf("the speed drop must be 0 to %d%%", speedDropMaxPercent)
+	}
 	settings := &SettingService{}
+	if err := settings.SetSpeedTestDropPercent(req.DropPercent); err != nil {
+		return err
+	}
 	if err := settings.SetSpeedTestAutoCapacity(req.AutoCapacity); err != nil {
 		return err
 	}
@@ -258,18 +272,22 @@ func (s *SpeedService) StartTest(nodeID int) error {
 
 // RunScheduled measures, one after another, every server whose last test is
 // older than the schedule; servers sharing an uplink would skew each other.
-func (s *SpeedService) RunScheduled(now time.Time) {
+// It returns the speed drops its rechecks confirmed.
+func (s *SpeedService) RunScheduled(now time.Time) []SpeedDrop {
+	drops := s.runRechecks(now)
 	settings, err := s.TestSettings()
 	if err != nil {
-		return
+		return drops
 	}
 	for _, id := range s.dueForTest(now, settings) {
 		if !claimSpeedTest(id) {
 			continue
 		}
-		s.runTest(id, SpeedTestSchedule)
+		row := s.runTest(id, SpeedTestSchedule)
 		releaseSpeedTest(id)
+		watchSpeedDrop(row, settings.DropPercent, now)
 	}
+	return drops
 }
 
 // dueForTest lists the panel and every enabled online node that is past its
@@ -421,7 +439,7 @@ func speedTestStats(now time.Time) ([]SpeedTestStats, error) {
 			order = append(order, r.NodeId)
 		}
 		st.Last = r
-		if r.Error != "" {
+		if r.Error != "" || r.Trigger == SpeedTestRecheck {
 			continue
 		}
 		if st.Count == 0 || r.DownloadMbps < st.MinDownloadMbps {

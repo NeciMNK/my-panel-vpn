@@ -5,12 +5,14 @@ import (
 	"errors"
 	"slices"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	telegoapi "github.com/mymmrac/telego/telegoapi"
 
+	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 	"github.com/mhsanaei/3x-ui/v3/internal/logger"
 	"github.com/mhsanaei/3x-ui/v3/internal/util/common"
 
@@ -31,6 +33,14 @@ const (
 	// A long retry_after is slept in slices so cancel and bot state stay checked.
 	broadcastFloodWaitSlice = 5 * time.Second
 )
+
+// broadcastAllGroups is the toggle that clears the pick; broadcastGroupChoices
+// are the automatic groups the preview card offers.
+const broadcastAllGroups = "all"
+
+var broadcastGroupChoices = []string{
+	model.ClientGroupUsers, model.ClientGroupPaid, model.ClientGroupFriends, model.ClientGroupTech,
+}
 
 // broadcastDraft references the admin's original message: copyMessage relays
 // any message type 1:1 on behalf of the liveBot(). An album lists its messages.
@@ -83,7 +93,9 @@ type broadcastCompose struct {
 	inputMessageIDs []int
 	groupID         string
 	token           string
-	timer           *time.Timer
+	// groups narrows the recipients to clients in these groups; empty means all.
+	groups []string
+	timer  *time.Timer
 }
 
 var (
@@ -93,7 +105,15 @@ var (
 	// only so that leaving the flow takes it out of the chat.
 	broadcastPrompts = make(map[chatUser]int)
 	broadcastActive  *broadcastRunner
+	// broadcastPicks is each admin's group pick, made before the message is sent.
+	broadcastPicks = make(map[chatUser]*broadcastPick)
 )
+
+// broadcastPick binds the group card to its token; empty groups means all.
+type broadcastPick struct {
+	token  string
+	groups []string
+}
 
 // broadcastAlbumDebounce waits out Telegram's stream of one media group: an
 // album reaches the bot as separate messages sharing a media_group_id.
@@ -119,6 +139,7 @@ func broadcastResetAll() {
 		broadcastActive = nil
 	}
 	broadcastPrompts = make(map[chatUser]int)
+	broadcastPicks = make(map[chatUser]*broadcastPick)
 }
 
 func broadcastDropCompose(actor chatUser) {
@@ -156,15 +177,70 @@ func broadcastPendingDraft(actor chatUser) ([]int, string, bool) {
 
 // broadcastTakePending removes the pending draft only when its card token
 // matches; ok is false for stale taps or admins with no pending draft.
-func broadcastTakePending(actor chatUser, token string) ([]int, bool) {
+func broadcastTakePending(actor chatUser, token string) ([]int, []string, bool) {
 	broadcastMu.Lock()
 	defer broadcastMu.Unlock()
 	c := broadcastComposes[actor]
 	if c == nil || c.token == "" || c.token != token {
-		return nil, false
+		return nil, nil, false
 	}
 	delete(broadcastComposes, actor)
-	return c.messageIDs, true
+	return c.messageIDs, c.groups, true
+}
+
+// broadcastToggleGroup flips one group in the admin's pick ("all" clears it)
+// and returns the new pick; ok is false for a stale card.
+func broadcastToggleGroup(actor chatUser, token, group string) ([]string, bool) {
+	broadcastMu.Lock()
+	defer broadcastMu.Unlock()
+	p := broadcastPicks[actor]
+	if p == nil || p.token != token {
+		return nil, false
+	}
+	switch {
+	case group == broadcastAllGroups:
+		p.groups = nil
+	case slices.Contains(p.groups, group):
+		p.groups = slices.DeleteFunc(p.groups, func(g string) bool { return g == group })
+	case slices.Contains(broadcastGroupChoices, group):
+		p.groups = append(p.groups, group)
+	default:
+		return nil, false
+	}
+	return slices.Clone(p.groups), true
+}
+
+// broadcastPickPending reports whether the admin has a group card open.
+func broadcastPickPending(actor chatUser) bool {
+	broadcastMu.Lock()
+	defer broadcastMu.Unlock()
+	return broadcastPicks[actor] != nil
+}
+
+// broadcastPickMatches reports whether token is the admin's current group card.
+func broadcastPickMatches(actor chatUser, token string) bool {
+	broadcastMu.Lock()
+	defer broadcastMu.Unlock()
+	p := broadcastPicks[actor]
+	return p != nil && p.token == token
+}
+
+// broadcastTakePick returns the admin's group pick and forgets it.
+func broadcastTakePick(actor chatUser) []string {
+	broadcastMu.Lock()
+	defer broadcastMu.Unlock()
+	p := broadcastPicks[actor]
+	delete(broadcastPicks, actor)
+	if p == nil {
+		return nil
+	}
+	return p.groups
+}
+
+func broadcastDropPick(actor chatUser) {
+	broadcastMu.Lock()
+	defer broadcastMu.Unlock()
+	delete(broadcastPicks, actor)
 }
 
 // broadcastRegisterRunner claims the single broadcast slot; nil means one is
@@ -211,12 +287,34 @@ func (t *Tgbot) startBroadcast(actor chatUser) {
 		return
 	}
 	broadcastDropCompose(actor)
-	// A second prompt supersedes the first: twin "send me the message" cards in
-	// one chat is the sort of litter this flow is supposed to avoid.
+	// A second prompt supersedes the first: twin prompt cards in one chat is the
+	// sort of litter this flow is supposed to avoid.
 	t.clearBroadcastPrompt(actor)
-	userStateMgr.set(actor, broadcastAwaitingText)
-	id := t.SendMsgToTgbot(chatId, t.I18nBot("tgbot.messages.broadcastAskText"), t.broadcastCancelKeyboard())
+	userStateMgr.clear(actor)
+	token := t.randomLowerAndNum(12)
+	broadcastMu.Lock()
+	broadcastPicks[actor] = &broadcastPick{token: token}
+	broadcastMu.Unlock()
+	id := t.SendMsgToTgbot(chatId, t.broadcastGroupsText(nil), t.broadcastGroupsKeyboard(token, nil))
 	broadcastSetPrompt(actor, id)
+}
+
+// broadcastGroupsText asks who gets the broadcast and how many that reaches.
+func (t *Tgbot) broadcastGroupsText(groups []string) string {
+	count := len(t.collectBroadcastRecipients(groups))
+	return t.I18nBot("tgbot.messages.broadcastAskGroups", "Count=="+strconv.Itoa(count))
+}
+
+// broadcastNextGroups ends the group pick: the same card becomes the "send me
+// the message" prompt, and the chat starts awaiting that message.
+func (t *Tgbot) broadcastNextGroups(actor chatUser, token string, messageID int, queryID string) {
+	if !broadcastPickMatches(actor, token) {
+		t.sendCallbackAnswerTgBot(queryID, t.I18nBot("tgbot.wentWrong"))
+		return
+	}
+	t.answerSilent(queryID)
+	userStateMgr.set(actor, broadcastAwaitingText)
+	t.editMessageTgBot(actor.chatID, messageID, t.I18nBot("tgbot.messages.broadcastAskText"), t.broadcastCancelKeyboard())
 }
 
 // broadcastSetPrompt remembers the "send me the message" card, so leaving the
@@ -274,16 +372,20 @@ func (t *Tgbot) acceptBroadcastDraft(actor chatUser, ids []int) {
 		t.SendMsgToTgbot(chatId, t.I18nBot("tgbot.messages.broadcastNotCopyable"))
 		return
 	}
-	recipients := t.collectBroadcastRecipients()
+	groups := broadcastTakePick(actor)
+	recipients := t.collectBroadcastRecipients(groups)
 	token := t.randomLowerAndNum(12)
+	// Clear before publishing: a reader that sees the pending draft must not
+	// still find the chat awaiting broadcast input.
+	userStateMgr.clear(actor)
 	broadcastMu.Lock()
 	broadcastComposes[actor] = &broadcastCompose{
 		messageIDs:      ids,
 		inputMessageIDs: ids,
 		token:           token,
+		groups:          groups,
 	}
 	broadcastMu.Unlock()
-	userStateMgr.clear(actor)
 	keyboard := tu.InlineKeyboard(tu.InlineKeyboardRow(
 		tu.InlineKeyboardButton(t.I18nBot("tgbot.buttons.broadcastSend")).WithCallbackData("broadcast_confirm "+token),
 		tu.InlineKeyboardButton(t.I18nBot("tgbot.buttons.cancel")).WithCallbackData("broadcast_cancel"),
@@ -353,6 +455,42 @@ func (t *Tgbot) finalizeBroadcastAlbum(actor chatUser, groupID string) {
 	t.acceptBroadcastDraft(actor, ids)
 }
 
+// broadcastGroupsKeyboard shows the group pick as toggles above next/cancel;
+// an empty pick is "all".
+func (t *Tgbot) broadcastGroupsKeyboard(token string, groups []string) *telego.InlineKeyboardMarkup {
+	toggle := func(group, label string, on bool) telego.InlineKeyboardButton {
+		mark := "▫️ "
+		if on {
+			mark = "✅ "
+		}
+		return tu.InlineKeyboardButton(mark + label).WithCallbackData("broadcast_group " + token + " " + group)
+	}
+	var groupRow []telego.InlineKeyboardButton
+	for _, g := range broadcastGroupChoices {
+		groupRow = append(groupRow, toggle(g, g, slices.Contains(groups, g)))
+	}
+	return tu.InlineKeyboard(
+		tu.InlineKeyboardRow(toggle(broadcastAllGroups, t.I18nBot("tgbot.buttons.broadcastAllGroups"), len(groups) == 0)),
+		groupRow,
+		tu.InlineKeyboardRow(
+			tu.InlineKeyboardButton(t.I18nBot("tgbot.buttons.broadcastNext")).WithCallbackData("broadcast_next "+token),
+			tu.InlineKeyboardButton(t.I18nBot("tgbot.buttons.cancel")).WithCallbackData("broadcast_cancel"),
+		),
+	)
+}
+
+// pickBroadcastGroup handles a group toggle: the pick and the recipient count
+// are redrawn in place.
+func (t *Tgbot) pickBroadcastGroup(actor chatUser, token, group string, messageID int, queryID string) {
+	groups, ok := broadcastToggleGroup(actor, token, group)
+	if !ok {
+		t.sendCallbackAnswerTgBot(queryID, t.I18nBot("tgbot.wentWrong"))
+		return
+	}
+	t.answerSilent(queryID)
+	t.editMessageTgBot(actor.chatID, messageID, t.broadcastGroupsText(groups), t.broadcastGroupsKeyboard(token, groups))
+}
+
 // The broadcast flow stays message-scoped, not screen-scoped: in a shared group
 // a per-chat screen would make one admin's preview overwrite another's confirm token.
 func (t *Tgbot) broadcastCancelKeyboard() *telego.InlineKeyboardMarkup {
@@ -370,14 +508,14 @@ func (t *Tgbot) confirmBroadcast(actor chatUser, token string, messageID int, qu
 		t.sendCallbackAnswerTgBot(queryID, t.I18nBot("tgbot.messages.broadcastAlreadyRunning"))
 		return
 	}
-	ids, ok := broadcastTakePending(actor, token)
+	ids, groups, ok := broadcastTakePending(actor, token)
 	if !ok {
 		broadcastUnregisterRunner(runner)
 		t.sendCallbackAnswerTgBot(queryID, t.I18nBot("tgbot.wentWrong"))
 		return
 	}
 	draft := broadcastDraft{FromChatID: chatId, MessageIDs: ids}
-	recipients := t.collectBroadcastRecipients()
+	recipients := t.collectBroadcastRecipients(groups)
 	if len(recipients) == 0 {
 		broadcastUnregisterRunner(runner)
 		t.sendCallbackAnswerTgBot(queryID, t.I18nBot("tgbot.messages.broadcastNoRecipients"))
@@ -526,6 +664,7 @@ func (t *Tgbot) cancelBroadcast(actor chatUser, messageID int, queryID string) {
 	// copy and both prompt cards, leaving the chat as it was before /broadcast.
 	inputIDs := broadcastComposeInputs(actor)
 	broadcastDropCompose(actor)
+	broadcastDropPick(actor)
 	userStateMgr.clear(actor)
 	t.clearBroadcastPrompt(actor)
 	t.clearBroadcastDraft(actor, inputIDs, nil)
@@ -533,9 +672,9 @@ func (t *Tgbot) cancelBroadcast(actor chatUser, messageID int, queryID string) {
 	t.sendCallbackAnswerTgBot(queryID, t.I18nBot("tgbot.answers.broadcastCanceled"))
 }
 
-// collectBroadcastRecipients returns the distinct client Telegram IDs to
-// deliver to: clients with a linked tg_id, admins excluded.
-func (t *Tgbot) collectBroadcastRecipients() []int64 {
+// collectBroadcastRecipients returns the distinct client Telegram IDs to deliver
+// to: clients with a linked tg_id in one of groups (empty = all), admins excluded.
+func (t *Tgbot) collectBroadcastRecipients(groups []string) []int64 {
 	inbounds, err := t.inboundService.GetAllInbounds()
 	if err != nil {
 		logger.Warning("broadcast: unable to load inbounds:", err)
@@ -552,11 +691,23 @@ func (t *Tgbot) collectBroadcastRecipients() []int64 {
 			if client.TgID == 0 || seen[client.TgID] || checkAdmin(client.TgID) {
 				continue
 			}
+			if len(groups) > 0 && !slices.Contains(groups, broadcastClientGroup(client)) {
+				continue
+			}
 			seen[client.TgID] = true
 			recipients = append(recipients, client.TgID)
 		}
 	}
 	return recipients
+}
+
+// broadcastClientGroup is the client's group as the panel treats it: a client
+// not yet put in one counts as a member of its default group.
+func broadcastClientGroup(client model.Client) string {
+	if g := strings.TrimSpace(client.Group); g != "" {
+		return g
+	}
+	return model.DefaultClientGroup(client.Email)
 }
 
 // broadcastDeliverOne retries a recipient through flood-control waits so a 429

@@ -99,14 +99,21 @@ func allModels() []any {
 		&model.CascadeFixedExit{},
 		&model.CascadeAICountry{},
 		&model.AIDomainSuggestion{},
+		&model.AIOutageChoice{},
 		&model.HomeNetwork{},
 		&model.WarpSwitch{},
 		&model.ClientSpeed{},
+		&model.GroupSpeed{},
+		&model.SpeedTier{},
 		&model.ServerCapacity{},
 		&model.SpeedTestResult{},
 		&model.MasterMember{},
 		&model.TlsCertificate{},
 		&model.TelegramTag{},
+		&model.PaymentReminder{},
+		&model.SubEdge{},
+		&model.TrafficUsageHour{},
+		&model.TrafficUsageDay{},
 	}
 }
 
@@ -537,6 +544,29 @@ func seedMtprotoCustomShareAddrToHosts() error {
 			}).Error; err != nil {
 				return err
 			}
+		}
+		return tx.Create(&model.HistoryOfSeeders{SeederName: seederName}).Error
+	})
+}
+
+// legacyDefaultRemarkTemplate is the remark template before {{AUTO_NAME}}; a
+// panel still on it never chose a template, so it moves to the new default.
+const legacyDefaultRemarkTemplate = "{{INBOUND}}-{{EMAIL}}|📊{{TRAFFIC_LEFT}}|⏳{{DAYS_LEFT}}D"
+
+func seedAutoNameRemarkTemplate() error {
+	const seederName = "AutoNameRemarkTemplate"
+	var count int64
+	if err := db.Model(&model.HistoryOfSeeders{}).Where("seeder_name = ?", seederName).Count(&count).Error; err != nil {
+		return err
+	}
+	if count > 0 {
+		return nil
+	}
+	return db.Transaction(func(tx *gorm.DB) error {
+		err := tx.Model(&model.Setting{}).Where("key = ? AND value = ?", "remarkTemplate", legacyDefaultRemarkTemplate).
+			Update("value", "{{AUTO_NAME}}").Error
+		if err != nil {
+			return err
 		}
 		return tx.Create(&model.HistoryOfSeeders{SeederName: seederName}).Error
 	})
@@ -1550,11 +1580,14 @@ func runSeeders(isUsersEmpty bool) error {
 	}
 
 	if empty && isUsersEmpty {
-		seeders := []string{"UserPasswordHash", "ClientsTable", "InboundClientsArrayFix", "InboundClientTgIdFix2", "InboundClientSubIdFix", "FreedomFinalRulesReverseFix", "FreedomFinalRulesPrivateEgressBlock", "UppercaseFreedomFinalRulesFix", "InboundRealityFinalmaskTcpStrip", "ApiTokensHash", "LegacyProxySettingsCleanup", "SessionSecretRotation", "OutboundRemovedKeysFix", "FreedomDomainStrategyFix", "DNSOutboundLegacyKeysFix", "DNSOutboundQTypeZeroFix", "WireguardDomainStrategyFix", "XdnsFinalmaskNamesAddrsFix", "UDPHopClientMaskFix", "HostVerifyPeerCertByNameBoolFix", "HostMihomoX25519Reset", "WireguardPeersToClients", "MtprotoSecretsToClients", "NodeInboundsAdopted", "NodeDownNotified", "ResetIpLimitNoFail2ban", "ClientGroupNameTrim", "OwnerlessClientHwidPurge", "ClientForwardedPortsBackfill"}
+		seeders := []string{"UserPasswordHash", "ClientsTable", "InboundClientsArrayFix", "InboundClientTgIdFix2", "InboundClientSubIdFix", "FreedomFinalRulesReverseFix", "FreedomFinalRulesPrivateEgressBlock", "UppercaseFreedomFinalRulesFix", "InboundRealityFinalmaskTcpStrip", "ApiTokensHash", "LegacyProxySettingsCleanup", "SessionSecretRotation", "OutboundRemovedKeysFix", "FreedomDomainStrategyFix", "DNSOutboundLegacyKeysFix", "DNSOutboundQTypeZeroFix", "WireguardDomainStrategyFix", "XdnsFinalmaskNamesAddrsFix", "UDPHopClientMaskFix", "HostVerifyPeerCertByNameBoolFix", "HostMihomoX25519Reset", "WireguardPeersToClients", "MtprotoSecretsToClients", "NodeInboundsAdopted", "NodeDownNotified", "ResetIpLimitNoFail2ban", "ClientGroupNameTrim", "OwnerlessClientHwidPurge", "ClientForwardedPortsBackfill", "ClientAutoGroups", "AutoNameRemarkTemplate", "SubUpdatesHourly", "TgNodeLoadSpeedDropEvents", "NodeDownThresholdSeconds"}
 		for _, name := range seeders {
 			if err := db.Create(&model.HistoryOfSeeders{SeederName: name}).Error; err != nil {
 				return err
 			}
+		}
+		if err := seedGroupSpeedDefaults(); err != nil {
+			return err
 		}
 		return seedApiTokens()
 	}
@@ -1745,8 +1778,38 @@ func runSeeders(isUsersEmpty bool) error {
 		}
 	}
 
+	if !slices.Contains(seedersHistory, "TgNodeLoadSpeedDropEvents") {
+		if err := seedTgNodeLoadSpeedDropEvents(); err != nil {
+			return err
+		}
+	}
+
 	if !slices.Contains(seedersHistory, "ClientForwardedPortsBackfill") {
 		if err := backfillClientForwardedPorts(); err != nil {
+			return err
+		}
+	}
+
+	if !slices.Contains(seedersHistory, "SubUpdatesHourly") {
+		if err := seedSubUpdatesHourly(); err != nil {
+			return err
+		}
+	}
+
+	if !slices.Contains(seedersHistory, "ClientAutoGroups") {
+		if err := assignClientAutoGroups(); err != nil {
+			return err
+		}
+	}
+
+	if !slices.Contains(seedersHistory, "NodeDownThresholdSeconds") {
+		if err := seedNodeDownThresholdSeconds(); err != nil {
+			return err
+		}
+	}
+
+	if !slices.Contains(seedersHistory, "GroupSpeedDefaults") {
+		if err := seedGroupSpeedDefaults(); err != nil {
 			return err
 		}
 	}
@@ -1756,6 +1819,10 @@ func runSeeders(isUsersEmpty bool) error {
 	}
 
 	if err := seedMtprotoCustomShareAddrToHosts(); err != nil {
+		return err
+	}
+
+	if err := seedAutoNameRemarkTemplate(); err != nil {
 		return err
 	}
 
@@ -1798,6 +1865,62 @@ func seedNodeInboundsAdopted() error {
 		return err
 	}
 	return db.Create(&model.HistoryOfSeeders{SeederName: "NodeInboundsAdopted"}).Error
+}
+
+// seedTgNodeLoadSpeedDropEvents turns on RAM and speed-drop alerts for an install
+// that already saved its Telegram event list; a fresh one gets them by default.
+func seedTgNodeLoadSpeedDropEvents() error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		var setting model.Setting
+		err := tx.Where("key = ?", "tgEnabledEvents").First(&setting).Error
+		switch {
+		case err == nil:
+			events := setting.Value
+			for _, e := range []string{"memory.high", "speed.drop"} {
+				if !slices.Contains(strings.Split(events, ","), e) {
+					events = strings.TrimPrefix(events+","+e, ",")
+				}
+			}
+			if err := tx.Model(&model.Setting{}).Where("id = ?", setting.Id).Update("value", events).Error; err != nil {
+				return err
+			}
+		case !errors.Is(err, gorm.ErrRecordNotFound):
+			return err
+		}
+		return tx.Create(&model.HistoryOfSeeders{SeederName: "TgNodeLoadSpeedDropEvents"}).Error
+	})
+}
+
+// seedSubUpdatesHourly moves the old 12-hour subscription refresh default to hourly,
+// so a node dropped from the subscription leaves client apps within the hour.
+func seedSubUpdatesHourly() error {
+	if err := db.Model(&model.Setting{}).
+		Where("key = ? AND value = ?", "subUpdates", "12").
+		Update("value", "1").Error; err != nil {
+		return err
+	}
+	return db.Create(&model.HistoryOfSeeders{SeederName: "SubUpdatesHourly"}).Error
+}
+
+// seedNodeDownThresholdSeconds turns the stored count of 5-second heartbeats into
+// seconds, held to a minute so a one-probe blip no longer pages the admin.
+func seedNodeDownThresholdSeconds() error {
+	var row model.Setting
+	err := db.Where("key = ?", "nodeDownThreshold").First(&row).Error
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
+	}
+	if err == nil {
+		checks, convErr := strconv.Atoi(strings.TrimSpace(row.Value))
+		if convErr != nil {
+			checks = 0
+		}
+		seconds := max(checks*5, 60)
+		if err := db.Model(&row).Update("value", strconv.Itoa(seconds)).Error; err != nil {
+			return err
+		}
+	}
+	return db.Create(&model.HistoryOfSeeders{SeederName: "NodeDownThresholdSeconds"}).Error
 }
 
 // seedNodeDownNotified treats nodes already offline at upgrade as announced,
@@ -2036,6 +2159,118 @@ func purgeOwnerlessClientHwids() error {
 			return err
 		}
 		return tx.Create(&model.HistoryOfSeeders{SeederName: "OwnerlessClientHwidPurge"}).Error
+	})
+}
+
+// legacyTechGroup is the Russian name the panel's tech group had before groups
+// were assigned automatically under English names.
+const legacyTechGroup = "тех"
+
+// Clients predating automatic groups: тех becomes tech wherever a group name is
+// stored, and a group-less client joins tech, friends, paid or users.
+func assignClientAutoGroups() error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		if err := renameLegacyTechGroup(tx); err != nil {
+			return err
+		}
+		if err := tx.Model(&model.ClientRecord{}).
+			Where("COALESCE(group_name, '') = '' AND email LIKE ?", model.ManagedClientPrefix+"%").
+			UpdateColumn("group_name", model.ClientGroupTech).Error; err != nil {
+			return err
+		}
+		if err := tx.Model(&model.ClientRecord{}).
+			Where("COALESCE(group_name, '') = '' AND id IN (?)",
+				tx.Model(&model.ClientBilling{}).Select("client_id").Where("friend = ?", true)).
+			UpdateColumn("group_name", model.ClientGroupFriends).Error; err != nil {
+			return err
+		}
+		payers := tx.Model(&model.LedgerEntry{}).Select("email").Where("kind = ?", model.LedgerIncome)
+		onFreePlan := tx.Model(&model.ClientBilling{}).Select("client_id").Where("free_plan = ?", true)
+		if err := tx.Model(&model.ClientRecord{}).
+			Where("COALESCE(group_name, '') = '' AND email IN (?) AND id NOT IN (?)", payers, onFreePlan).
+			UpdateColumn("group_name", model.ClientGroupPaid).Error; err != nil {
+			return err
+		}
+		if err := tx.Model(&model.ClientRecord{}).Where("COALESCE(group_name, '') = ''").
+			UpdateColumn("group_name", model.ClientGroupUsers).Error; err != nil {
+			return err
+		}
+		return tx.Create(&model.HistoryOfSeeders{SeederName: "ClientAutoGroups"}).Error
+	})
+}
+
+func renameLegacyTechGroup(tx *gorm.DB) error {
+	if err := tx.Model(&model.ClientRecord{}).Where("group_name = ?", legacyTechGroup).
+		UpdateColumn("group_name", model.ClientGroupTech).Error; err != nil {
+		return err
+	}
+	var techRows int64
+	if err := tx.Model(&model.ClientGroup{}).Where("name = ?", model.ClientGroupTech).Count(&techRows).Error; err != nil {
+		return err
+	}
+	if techRows > 0 {
+		if err := tx.Where("name = ?", legacyTechGroup).Delete(&model.ClientGroup{}).Error; err != nil {
+			return err
+		}
+	} else if err := tx.Model(&model.ClientGroup{}).Where("name = ?", legacyTechGroup).
+		Update("name", model.ClientGroupTech).Error; err != nil {
+		return err
+	}
+	var freeRows int64
+	if err := tx.Model(&model.LedgerFreeGroup{}).Where("name = ?", legacyTechGroup).Count(&freeRows).Error; err != nil {
+		return err
+	}
+	if freeRows > 0 {
+		if err := tx.Where("name = ?", legacyTechGroup).Delete(&model.LedgerFreeGroup{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&model.LedgerFreeGroup{Name: model.ClientGroupTech}).Error; err != nil {
+			return err
+		}
+	}
+	var inbounds []model.Inbound
+	if err := tx.Select("id", "settings").Where("settings LIKE ?", "%"+legacyTechGroup+"%").Find(&inbounds).Error; err != nil {
+		return err
+	}
+	for _, ib := range inbounds {
+		var settings map[string]any
+		if json.Unmarshal([]byte(ib.Settings), &settings) != nil {
+			continue
+		}
+		clients, _ := settings["clients"].([]any)
+		changed := false
+		for _, c := range clients {
+			if cm, ok := c.(map[string]any); ok && cm["group"] == legacyTechGroup {
+				cm["group"] = model.ClientGroupTech
+				changed = true
+			}
+		}
+		if !changed {
+			continue
+		}
+		raw, err := json.Marshal(settings)
+		if err != nil {
+			return err
+		}
+		if err := tx.Model(&model.Inbound{}).Where("id = ?", ib.Id).UpdateColumn("settings", string(raw)).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Free users share 50-100 Mbit/s by load and paying users are promised 100; runs on
+// fresh installs too and only once, so an admin's later edit or removal sticks.
+func seedGroupSpeedDefaults() error {
+	return db.Transaction(func(tx *gorm.DB) error {
+		defaults := []model.GroupSpeed{
+			{Group: model.ClientGroupUsers, FloorMbps: 50, MaxMbps: 100},
+			{Group: model.ClientGroupPaid, MinMbps: 100},
+		}
+		if err := tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&defaults).Error; err != nil {
+			return err
+		}
+		return tx.Create(&model.HistoryOfSeeders{SeederName: "GroupSpeedDefaults"}).Error
 	})
 }
 
@@ -3520,7 +3755,10 @@ func InitDB(dbPath string) error {
 			return err
 		}
 	}
-	return runSeeders(isUsersEmpty)
+	if err := runSeeders(isUsersEmpty); err != nil {
+		return err
+	}
+	return registerConfigChangeTracker(db)
 }
 
 func normalizeApiTokenCreatedAtSeconds() error {

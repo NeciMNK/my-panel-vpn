@@ -125,6 +125,12 @@ var nodeSyncScopeAllow = map[string]map[string]struct{}{
 	"/clients/clientIpsByGuid":     {http.MethodPost: {}},
 	"/hosts/list":                  {http.MethodGet: {}},
 	"/certs/install":               {http.MethodPost: {}},
+	"/subEdges/node/configure":     {http.MethodPost: {}},
+	"/subEdges/node/tunnel":        {http.MethodPost: {}},
+	"/subEdges/node/cache":         {http.MethodPost: {}},
+	"/subEdges/node/dns":           {http.MethodPost: {}},
+	"/server/probePeer":            {http.MethodPost: {}},
+	"/server/nodeBackup":           {http.MethodGet: {}},
 }
 
 // nodeXrayScopeAllow lets a master manage a node's Xray template (outbounds,
@@ -255,9 +261,11 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 	a.nodeController = NewNodeController(nodes)
 
 	NewCascadeController(api.Group("/cascades"))
+	NewSubEdgeController(api.Group("/subEdges"))
 	NewHomeNetworkController(api.Group("/homeNetworks"))
 	NewWarpSwitchController(api.Group("/warpSwitch"))
 	NewSpeedController(api.Group("/speed"))
+	NewTrafficUsageController(api.Group("/trafficUsage"))
 	NewMasterClusterController(api.Group("/masters"))
 
 	// Hosts API — per-inbound override endpoints for subscription links
@@ -279,6 +287,8 @@ func (a *APIController) initRouter(g *gin.RouterGroup) {
 
 	// Panel-issued TLS certificates (ACME DNS-01 over Cloudflare)
 	NewTlsCertController(api)
+	// Remote backups over SFTP and one-click restore of a lost node
+	NewBackupController(api)
 	// Import of another panel (Remnawave, 3x-ui) keeping users' configs
 	NewMigrationController(api.Group("/migration"))
 
