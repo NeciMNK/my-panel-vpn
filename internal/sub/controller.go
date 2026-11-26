@@ -529,7 +529,7 @@ func (a *SUBController) subs(c *gin.Context) {
 		logSubscriptionRoute(userAgent, "json")
 		return
 	}
-	if IsHappClient(userAgent) && hasEntrylessAutoSelect() && a.serveJsonBody(c, true, "application/json; charset=utf-8", false) {
+	if isAutoSelectJsonClient(userAgent) && hasEntrylessAutoSelect() && a.serveJsonBody(c, true, "application/json; charset=utf-8", false) {
 		a.recordSubscriptionFetch(c)
 		logSubscriptionRoute(userAgent, "json-auto-select")
 		return

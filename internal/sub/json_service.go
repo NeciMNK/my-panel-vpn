@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"maps"
 	"net/url"
+	"regexp"
 	"slices"
 	"sort"
 	"strings"
@@ -474,6 +475,14 @@ type balancerPin struct {
 var entrylessSplitRules = []any{
 	map[string]any{"type": "field", "domain": []string{"geosite:category-ru"}, "outboundTag": "direct"},
 	map[string]any{"type": "field", "ip": []string{"geoip:ru", "geoip:private"}, "outboundTag": "direct"},
+}
+
+var v2rayNUserAgentRegex = regexp.MustCompile(`(?i)\bv2rayng?\b`)
+
+// isAutoSelectJsonClient lists the apps that run an Xray JSON array with a
+// balancer, so the plain link can hand them the entryless auto-select.
+func isAutoSelectJsonClient(userAgent string) bool {
+	return IsHappClient(userAgent) || IsIncyClient(userAgent) || v2rayNUserAgentRegex.MatchString(userAgent)
 }
 
 func isEntryless(b *model.SubBalancer) bool { return b.ExitForeign || len(b.ExitNodeIds) > 0 }

@@ -12,9 +12,9 @@ import (
 	"github.com/mhsanaei/3x-ui/v3/internal/database/model"
 )
 
-// An entryless auto-select only exists as a JSON document, so Happ must get
-// JSON from the plain link without the admin turning JSON on; others keep raw.
-func TestEntrylessAutoSelectReachesHappWithoutJsonSettings(t *testing.T) {
+// An entryless auto-select only exists as a JSON document, so Happ, INCY and
+// v2rayN(G) get JSON from the plain link with JSON off; other clients keep raw.
+func TestEntrylessAutoSelectReachesJsonClientsWithoutJsonSettings(t *testing.T) {
 	seedSubDB(t)
 	db := database.GetDB()
 	nl := &model.Node{Name: "nl", Address: "10.0.0.3", Port: 1, Enable: true, Country: "NL", Status: "online"}
@@ -54,7 +54,12 @@ func TestEntrylessAutoSelectReachesHappWithoutJsonSettings(t *testing.T) {
 	if !strings.Contains(routing, `"geosite:category-ru"`) || !strings.Contains(routing, `"geoip:ru"`) {
 		t.Fatalf("auto-select lacks the cascade split (Russian sites direct): %s", routing)
 	}
-	if body := fetch("v2rayNG/1.9"); strings.HasPrefix(strings.TrimSpace(body), "[") {
-		t.Fatalf("a non-Happ client was switched to JSON: %s", body)
+	for _, ua := range []string{"INCY/1.0.0/ios", "v2rayN/7.10", "v2rayNG/1.9.40"} {
+		if findDocByRemarks(parseSubJsonDocs(t, fetch(ua)), "Auto") == nil {
+			t.Fatalf("%s list lacks the auto-select", ua)
+		}
+	}
+	if body := fetch("Shadowrocket/2.2"); strings.HasPrefix(strings.TrimSpace(body), "[") {
+		t.Fatalf("a client without Xray JSON support was switched to JSON: %s", body)
 	}
 }
