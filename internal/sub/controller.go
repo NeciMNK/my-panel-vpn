@@ -529,6 +529,11 @@ func (a *SUBController) subs(c *gin.Context) {
 		logSubscriptionRoute(userAgent, "json")
 		return
 	}
+	if isAutoSelectJsonClient(userAgent) && hasEntrylessAutoSelect() && a.serveJsonBody(c, true, "application/json; charset=utf-8", false) {
+		a.recordSubscriptionFetch(c)
+		logSubscriptionRoute(userAgent, "json-auto-select")
+		return
+	}
 	logSubscriptionRoute(userAgent, "raw")
 	subId := c.Param("subid")
 	scheme, host, hostWithPort, _ := a.subService.ResolveRequest(c)

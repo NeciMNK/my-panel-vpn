@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"maps"
 	"net/url"
+	"regexp"
 	"slices"
 	"sort"
 	"strings"
@@ -466,20 +467,51 @@ func (s *SubJsonService) appendBalancerEntries(entries []subConfigEntry, emails 
 // balancerPin is a client's exit pin applied to their own auto-select.
 type balancerPin struct {
 	service.EntrylessPin
+	entryless      bool
 	pinnedInbounds []int
+}
+
+// entrylessSplitRules keep Russian sites direct, as a split cascade does on its entry.
+var entrylessSplitRules = []any{
+	map[string]any{"type": "field", "domain": []string{"geosite:category-ru"}, "outboundTag": "direct"},
+	map[string]any{"type": "field", "ip": []string{"geoip:ru", "geoip:private"}, "outboundTag": "direct"},
+}
+
+var v2rayNUserAgentRegex = regexp.MustCompile(`(?i)\bv2rayng?\b`)
+
+// isAutoSelectJsonClient lists the apps that run an Xray JSON array with a
+// balancer, so the plain link can hand them the entryless auto-select.
+func isAutoSelectJsonClient(userAgent string) bool {
+	return IsHappClient(userAgent) || IsIncyClient(userAgent) || v2rayNUserAgentRegex.MatchString(userAgent)
+}
+
+func isEntryless(b *model.SubBalancer) bool { return b.ExitForeign || len(b.ExitNodeIds) > 0 }
+
+// hasEntrylessAutoSelect reports an enabled auto-select without an entry
+// server, which only a JSON document can carry.
+func hasEntrylessAutoSelect() bool {
+	for _, b := range getEnabledSubBalancers() {
+		if isEntryless(&b) {
+			return true
+		}
+	}
+	return false
 }
 
 // entrylessPin reads the client's pin for an auto-select without an entry
 // server; a balancer of picked inbounds keeps no pins, as before.
 func entrylessPin(b *model.SubBalancer, emails []string) balancerPin {
-	if (!b.ExitForeign && len(b.ExitNodeIds) == 0) || len(emails) == 0 {
+	if !isEntryless(b) {
 		return balancerPin{}
+	}
+	if len(emails) == 0 {
+		return balancerPin{entryless: true}
 	}
 	var rows []model.Inbound
 	if err := database.GetDB().Select("id, node_id").Where("id IN ? AND node_id IS NOT NULL", b.InboundIds).
 		Find(&rows).Error; err != nil {
 		logger.Warning("subscription: balancer", b.Id, "member nodes:", err)
-		return balancerPin{}
+		return balancerPin{entryless: true}
 	}
 	var nodeIDs []int
 	for _, ib := range rows {
@@ -490,9 +522,9 @@ func entrylessPin(b *model.SubBalancer, emails []string) balancerPin {
 	pin, err := (&service.CascadeService{}).EntrylessPinOf(emails, nodeIDs)
 	if err != nil {
 		logger.Warning("subscription: balancer", b.Id, "exit pin:", err)
-		return balancerPin{}
+		return balancerPin{entryless: true}
 	}
-	out := balancerPin{EntrylessPin: pin}
+	out := balancerPin{EntrylessPin: pin, entryless: true}
 	for _, ib := range rows {
 		if pin.NodeId != 0 && *ib.NodeID == pin.NodeId {
 			out.pinnedInbounds = append(out.pinnedInbounds, ib.Id)
@@ -504,15 +536,19 @@ func entrylessPin(b *model.SubBalancer, emails []string) balancerPin {
 // pinRules go ahead of the template's rules: everything cut, the AI services
 // cut, or the AI services sent only to the pinned member.
 func (p balancerPin) pinRules(pinnedTag string) []any {
+	var rules []any
 	switch {
 	case p.AllOff:
 		return []any{map[string]any{"type": "field", "network": "tcp,udp", "outboundTag": "block"}}
 	case len(p.AIBlock) > 0:
-		return []any{map[string]any{"type": "field", "domain": slices.Clone(p.AIBlock), "outboundTag": "block"}}
+		rules = append(rules, map[string]any{"type": "field", "domain": slices.Clone(p.AIBlock), "outboundTag": "block"})
 	case pinnedTag != "" && len(p.AIDomains) > 0:
-		return []any{map[string]any{"type": "field", "domain": slices.Clone(p.AIDomains), "outboundTag": pinnedTag}}
+		rules = append(rules, map[string]any{"type": "field", "domain": slices.Clone(p.AIDomains), "outboundTag": pinnedTag})
 	}
-	return nil
+	if p.entryless {
+		rules = append(rules, entrylessSplitRules...)
+	}
+	return rules
 }
 
 // extractProxyOutbound returns the first outbound of a document when it is the
