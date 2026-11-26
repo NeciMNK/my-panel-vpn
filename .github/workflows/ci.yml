@@ -17,6 +17,7 @@ on:
   push:
     branches:
       - main
+      - test
     paths:
       - "**.go"
       - "go.mod"

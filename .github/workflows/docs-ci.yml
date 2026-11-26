@@ -2,7 +2,7 @@ name: Docs CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, test]
     paths:
       - 'docs/**'
       - 'frontend/public/openapi.json'

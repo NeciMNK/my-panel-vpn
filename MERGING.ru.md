@@ -7,54 +7,39 @@
 
 | Ветка | Что в ней | Кто пушит |
 | --- | --- | --- |
-| `main` | проверенный код; из неё собираются `dev-latest` и версии `vX.Y.Z` | только слияние PR, прямые пуши запрещены |
-| `test` | `main` плюс функции, которые сейчас гоняются на тестовом стенде | агент или человек, который проверяет на стенде |
+| `main` | выпущенный код: каждый коммит `main` — это релиз, на нём стоит тег `vX.Y.Z` | только слияние `test` → `main` при выпуске версии |
+| `test` | рабочая ветка: сюда сливаются все PR, из неё собирается стенд | только слияние PR, прямые пуши запрещены |
 | `<агент>/<кратко>`, `claude/...` | одна задача | автор задачи |
 
-Правило: **всё, что ставится на тестовую ноду или тестовый мастер, собирается из `test`**.
-Сборки из веток задач и из `main` на стенд напрямую не ставятся.
+Правило: **все PR открываются в `test`**. В `main` попадает только `test` целиком, в
+момент выпуска версии. Сборка для тестового мастера и тестовой ноды тоже берётся из
+`test`. Дефолтная ветка репозитория — `main`; Dependabot открывает PR в `test`.
 
 ## Путь одной задачи
 
-1. **Ветка от свежего `main`.**
+1. **Ветка от свежего `test`.**
    ```bash
-   git fetch origin main
-   git checkout -b claude/моя-задача origin/main
+   git fetch origin test
+   git checkout -b claude/моя-задача origin/test
    ```
 2. **Тест → код → `make verify`.** Если задеты база, ноды или синхронизация, ещё
    `make race`, Postgres-тесты и `make node-e2e` (см. `CLAUDE.md`).
-3. **PR в `main`.** Описание по-русски по шаблону `.github/pull_request_template.md`:
-   что сделано, зачем, что проверено, что нет. Исполнитель — `NeciMNK`. В том же PR
-   обновить таблицы раздела 3 в `plan.md`.
-4. **Прогон на стенде через `test`** (если задачу нужно проверить на живых серверах):
-   ```bash
-   git fetch origin main test claude/моя-задача
-   git checkout test
-   git merge --no-edit origin/main
-   git merge --no-edit origin/claude/моя-задача
-   git push origin test
-   ```
-   Сборка из `test`: Actions → «Release 3X-UI» → Run workflow → ветка `test`, архивы
-   лежат в артефактах запуска; или локально `make build`. Её ставят на тестовый мастер и
-   тестовую ноду. Итог проверки пишется в PR задачи.
-5. **Ошибка на стенде** — исправление в ветке задачи (с тестом), затем снова шаг 4.
-6. **Всё ок и CI зелёный** — PR сливается в `main` обычным merge-коммитом (не squash и не
+3. **PR в `test`** (base = `test`, не `main`). Описание по-русски по шаблону
+   `.github/pull_request_template.md`: что сделано, зачем, что проверено, что нет.
+   Исполнитель — `NeciMNK`. В том же PR обновить таблицы раздела 3 в `plan.md`.
+4. **CI зелёный** — PR сливается в `test` обычным merge-коммитом (не squash и не
    rebase, чтобы сохранилась история).
+5. **Проверка на стенде.** Сборка из `test`: Actions → «Release 3X-UI» → Run workflow →
+   ветка `test`, архивы лежат в артефактах запуска; или локально `make build`. Её
+   ставят на тестовый мастер и тестовую ноду. Итог проверки пишется в PR задачи.
+6. **Ошибка на стенде** — отдельный `fix(...)` PR в `test` с тестом, затем снова шаг 5.
 
-Ветка `test` — общая. Перед мержем в неё сделайте `fetch`, чтобы не затереть чужие
-функции, которые сейчас на проверке. Когда на стенде ничего не гоняется, `test`
-выравнивается по `main`:
+`test` никогда не откатывается назад (`reset --hard`, force-push): в нём уже лежат
+чужие слитые PR. Если функцию нужно убрать до релиза — `git revert` отдельным PR в `test`.
 
-```bash
-git fetch origin main test
-git checkout test
-git reset --hard origin/main
-git push --force-with-lease origin test
-```
+## Если PR конфликтует с `test`
 
-## Если PR конфликтует с `main`
-
-Обновлять ветку слиянием, а не rebase: `git merge origin/main` в ветке задачи.
+Обновлять ветку слиянием, а не rebase: `git merge origin/test` в ветке задачи.
 
 - `internal/web/translation/*.json` — оставить ключи обеих сторон.
 - Сгенерированные файлы (`frontend/src/generated/`, `frontend/public/openapi.json`,
@@ -67,12 +52,12 @@ git push --force-with-lease origin test
 
 ## Подтягивание 3x-ui
 
-Раз в 1–2 недели, отдельным PR `chore(upstream): merge 3x-ui <дата>`:
+Раз в 1–2 недели, отдельным PR в `test` `chore(upstream): merge 3x-ui <дата>`:
 
 ```bash
 git remote add upstream https://github.com/MHSanaei/3x-ui.git   # один раз
 git fetch upstream main
-git checkout -b claude/upstream-<дата> origin/main
+git checkout -b claude/upstream-<дата> origin/test
 git merge upstream/main
 make verify
 ```
@@ -84,20 +69,22 @@ make verify
 Схема номеров (подробно в `README.md`, раздел «Версии»): альфа `v0.0.x`–`v0.4.x`, бета
 `v0.5.x`–`v0.9.x`, релиз `v1.0.0` — без кода 3x-ui, под MIT и с новым именем.
 
-1. Все нужные PR слиты в `main`, итоговый `main` проверен на стенде через `test`.
-2. PR в `main`, который меняет `internal/config/version` на новый номер (без `v`), и
+1. Все нужные PR слиты в `test`, итоговый `test` проверен на стенде.
+2. PR в `test`, который меняет `internal/config/version` на новый номер (без `v`), и
    строку в разделе 3 `plan.md`. Слить. Сборка по тегу всё равно берёт номер из тега, так
    что забытый шаг не даст релиз с чужой версией, но локальные сборки читают файл.
-3. Тег на этом коммите `main` и пуш тега:
+3. **PR `test` → `main`** с заголовком `chore(release): v0.0.6` и списком вошедших PR.
+   Слить обычным merge-коммитом. После этого `main` совпадает с `test`.
+4. Тег на этом коммите `main` и пуш тега (с ПК, тред «Выпускать релизы по запросу»):
    ```bash
    git fetch origin main
-   git tag -a v0.0.2 origin/main -m "v0.0.2 (альфа)"
-   git push origin v0.0.2
+   git tag -a v0.0.6 origin/main -m "v0.0.6 (альфа)"
+   git push origin v0.0.6
    ```
-4. Workflow «Release 3X-UI» сам собирает архивы и выкладывает их в pre-release с именем
+5. Workflow «Release 3X-UI» сам собирает архивы и выкладывает их в pre-release с именем
    тега. Затем в описании релиза написать, что вошло (список PR) и что известно как
    недоработка.
-5. До `v1.0.0` все версии остаются pre-release. `install.sh`, `update.sh` и проверка
+6. До `v1.0.0` все версии остаются pre-release. `install.sh`, `update.sh` и проверка
    обновлений в панели без тега берут самый новый тег `vX.Y.Z`, включая pre-release, и
    только если такого нет — `dev-latest`. Конкретная версия ставится по тегу:
    `install.sh v0.0.2`.
